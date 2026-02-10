@@ -1,0 +1,46 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  password      String
+  name          String
+  role          String         @default("CHILD")
+  points        Int            @default(0)
+  createdAt     DateTime       @default(now())
+  assignedChores Chore[]       @relation("AssignedChores")
+  notifications Notification[]
+}
+
+model Chore {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  points      Int
+  status      String     @default("PENDING")
+  assignedToId Int
+  assignedTo  User       @relation("AssignedChores", fields: [assignedToId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  completedAt DateTime?
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
