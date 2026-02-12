@@ -28,12 +28,16 @@ app.use(express.urlencoded({ extended: true }))
 const sessionSecret = process.env.SESSION_SECRET || 'dev-secret-not-secure'
 const sessionMaxAge = Number(process.env.SESSION_MAX_AGE) || 604800000 // 7 days
 
+// Check if we're behind a trusted proxy
+const isProduction = process.env.NODE_ENV === 'production'
+const isSecureCookie = isProduction && process.env.SECURE_COOKIES !== 'false'
+
 app.use(session({
   secret: sessionSecret,
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,  // Create session even if not modified
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecureCookie,
     httpOnly: true,
     maxAge: sessionMaxAge,
     sameSite: 'lax',

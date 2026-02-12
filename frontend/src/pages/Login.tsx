@@ -11,10 +11,18 @@ export const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-
-    const result = await login({ email, password })
-    if (!result.success) {
-      setError(result.error || 'Login failed')
+    
+    console.log('[Login] handleSubmit called with:', { email, password })
+    
+    try {
+      const result = await login({ email, password })
+      console.log('[Login] login result:', result)
+      if (!result.success) {
+        setError(result.error || 'Login failed')
+      }
+    } catch (err) {
+      console.error('[Login] login error:', err)
+      setError('An unexpected error occurred')
     }
   }
 
@@ -57,12 +65,6 @@ export const Login: React.FC = () => {
             Sign In
           </Button>
         </form>
-
-        <div className="mt-6 text-center text-sm text-gray-600">
-          <p>Demo credentials:</p>
-          <p className="mt-1">Parent: parent@example.com / password123</p>
-          <p>Child: child@example.com / password123</p>
-        </div>
       </div>
     </div>
   )

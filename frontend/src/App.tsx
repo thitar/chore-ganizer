@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { useAuth, useNotifications } from './hooks'
+import { useAuth, useNotifications, AuthProvider } from './hooks'
 import { ErrorBoundary } from './components/common'
 import { Navbar, Sidebar, Footer } from './components/layout'
 import { Login, Dashboard, Chores, Profile, NotFound } from './pages'
 
-function App() {
+function AppContent() {
   const { isAuthenticated, loading } = useAuth()
   const { notifications, markAsRead, markAllAsRead } = useNotifications()
   const [currentPage, setCurrentPage] = useState('dashboard')
@@ -54,6 +54,14 @@ function App() {
         <Footer />
       </div>
     </ErrorBoundary>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 

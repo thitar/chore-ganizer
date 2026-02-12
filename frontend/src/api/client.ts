@@ -1,24 +1,46 @@
 import axios, { AxiosInstance, AxiosError } from 'axios'
 import type { ApiResponse, ApiError } from '../types'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+// Use VITE_API_URL if set, otherwise use empty string for relative URLs (proxied by nginx)
+const API_URL = import.meta.env.VITE_API_URL || ''
+
+console.log('[ApiClient] Initializing with API_URL:', API_URL || '(empty - using relative URLs)')
 
 class ApiClient {
   private client: AxiosInstance
 
   constructor() {
+    const baseURL = API_URL ? `${API_URL}/api` : '/api'
+    console.log('[ApiClient] baseURL:', baseURL)
+    
     this.client = axios.create({
-      baseURL: `${API_URL}/api`,
+      baseURL,
       withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
       },
     })
 
+    // Request interceptor for logging
+    this.client.interceptors.request.use(
+      (config) => {
+        console.log('[ApiClient] Request:', config.method?.toUpperCase(), config.url, config.data)
+        return config
+      },
+      (error) => {
+        console.error('[ApiClient] Request error:', error)
+        return Promise.reject(error)
+      }
+    )
+
     // Response interceptor
     this.client.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        console.log('[ApiClient] Response:', response.status, response.data)
+        return response
+      },
       (error: AxiosError<ApiError>) => {
+        console.error('[ApiClient] Response error:', error.message, error.response?.status, error.response?.data)
         if (error.response) {
           // Server responded with error status
           throw error.response.data
