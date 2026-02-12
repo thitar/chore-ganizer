@@ -18,20 +18,29 @@ This guide is for parents and administrators who manage the Chore-Ganizer applic
 
 ## Initial Setup
 
-### First-Time Login
+### First-Time Setup
+
+The application comes with demo users pre-seeded in the database. You can log in with these credentials:
+
+**Demo Parent Accounts:**
+- Email: `dad@home` / Password: `password123`
+- Email: `mom@home` / Password: `password123`
+
+**Demo Child Accounts:**
+- Email: `alice@home` / Password: `password123`
+- Email: `bob@home` / Password: `password123`
+
+### Logging In
 
 1. Navigate to the application URL
-2. Click **Register** to create the first parent account
-3. Enter your details:
-   - Email address
-   - Password (use a strong password)
-   - Name
-   - Role: Select **PARENT**
-4. Click **Create Account**
+2. Enter your email address
+3. Enter your password
+4. Click **Login**
+5. You'll be taken to the dashboard
 
-### Creating Additional Parent Accounts
+### Creating New Parent Accounts
 
-1. Log in as a parent
+1. Log in as an existing parent
 2. Go to **Users** → **Add User**
 3. Fill in the details and select **PARENT** role
 4. Share the login credentials with the other parent

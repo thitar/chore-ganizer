@@ -94,7 +94,7 @@ After running the seed script:
 - alice@home / password123
 - bob@home / password123
 
-**⚠️ Change these passwords in `backend/prisma/seed.ts` before deploying!**
+**⚠️ Change these passwords in `backend/src/prisma/seed.ts` before deploying!**
 
 ## 🐳 Production Deployment
 
@@ -120,30 +120,25 @@ openssl rand -base64 32  # Copy output to SESSION_SECRET in .env
 
 ```bash
 # Build and start containers
-docker-compose up -d --build
+docker compose up -d --build
 
-# Run database migrations
-docker-compose exec backend npx prisma migrate deploy
-
-# Seed initial data
-docker-compose exec backend npx prisma db seed
-
+# The database is automatically migrated and seeded on first run
 # Check status
-docker-compose ps
-docker-compose logs -f
+docker compose ps
+docker compose logs -f
 ```
 
 ### 3. Verify Deployment
 
 ```bash
 # Check backend health
-curl http://localhost:3000/health
+curl http://localhost:3002/api/health
 
 # Check frontend
-curl http://localhost:3001/
+curl http://localhost:3002/
 
 # Access from browser
-# Navigate to: http://YOUR_SERVER_IP:3001
+# Navigate to: http://YOUR_SERVER_IP:3002
 ```
 
 ### 4. Set Up Backups
@@ -170,10 +165,10 @@ chore-ganizer/
 │   │   ├── services/     # Business logic
 │   │   ├── routes/       # API routes
 │   │   ├── middleware/   # Auth, validation, etc.
+│   │   ├── prisma/       # Seed script
 │   │   └── types/        # TypeScript types
 │   ├── prisma/
 │   │   ├── schema.prisma # Database schema
-│   │   ├── seed.ts       # Initial data
 │   │   └── migrations/   # Database migrations
 │   └── Dockerfile
 │
@@ -187,8 +182,14 @@ chore-ganizer/
 │   ├── nginx.conf
 │   └── Dockerfile
 │
+├── docs/                 # Documentation
+│   ├── ADMIN-GUIDE.md    # Admin/parent guide
+│   ├── USER-GUIDE.md     # User/child guide
+│   ├── API-DOCUMENTATION.md
+│   └── ...               # Other docs
+│
 ├── data/                 # Persistent data (gitignored)
-│   ├── chores.db         # SQLite database
+│   ├── chore-ganizer.db  # SQLite database
 │   ├── uploads/          # User uploads
 │   └── backups/          # Database backups
 │
@@ -204,16 +205,16 @@ chore-ganizer/
 **Backend (.env):**
 ```bash
 NODE_ENV=production
-DATABASE_URL=file:/app/data/chores.db
+DATABASE_URL=file:/app/data/chore-ganizer.db
 SESSION_SECRET=your-secret-here
-PORT=3000
-CORS_ORIGIN=http://localhost:3001
+PORT=3010
+CORS_ORIGIN=http://localhost:3002
 LOG_LEVEL=info
 ```
 
 **Frontend (.env):**
 ```bash
-VITE_API_URL=http://localhost:3000
+VITE_API_URL=http://localhost:3002
 ```
 
 See `.env.example` files for complete configuration options.
@@ -224,53 +225,53 @@ See `.env.example` files for complete configuration options.
 
 ```bash
 git pull
-docker-compose up -d --build
-docker-compose exec backend npx prisma migrate deploy
+docker compose up -d --build
+docker compose exec backend npx prisma migrate deploy
 ```
 
 ### View Logs
 
 ```bash
 # All services
-docker-compose logs -f
+docker compose logs -f
 
 # Specific service
-docker-compose logs -f backend
-docker-compose logs -f frontend
+docker compose logs -f backend
+docker compose logs -f frontend
 
 # Last 100 lines
-docker-compose logs --tail=100
+docker compose logs --tail=100
 ```
 
 ### Database Management
 
 ```bash
 # Open Prisma Studio (database GUI)
-docker-compose exec backend npx prisma studio
+docker compose exec backend npx prisma studio
 
 # Run migrations
-docker-compose exec backend npx prisma migrate deploy
+docker compose exec backend npx prisma migrate deploy
 
 # Check migration status
-docker-compose exec backend npx prisma migrate status
+docker compose exec backend npx prisma migrate status
 
 # Manual backup
-docker-compose exec backend cp /app/data/chores.db /app/data/chores-$(date +%Y%m%d).db
+docker compose exec backend cp /app/data/chore-ganizer.db /app/data/chore-ganizer-$(date +%Y%m%d).db
 ```
 
 ### Restart Services
 
 ```bash
 # Restart everything
-docker-compose restart
+docker compose restart
 
 # Restart specific service
-docker-compose restart backend
-docker-compose restart frontend
+docker compose restart backend
+docker compose restart frontend
 
 # Stop and start
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 ```
 
 ## 🐛 Troubleshooting
@@ -278,12 +279,12 @@ docker-compose up -d
 ### Backend won't start
 ```bash
 # Check logs
-docker-compose logs backend
+docker compose logs backend
 
 # Common issues:
 # 1. Missing SESSION_SECRET in .env
 # 2. Database file permissions
-# 3. Port 3000 already in use
+# 3. Port 3010 already in use
 
 # Fix permissions
 chmod 755 data
@@ -294,38 +295,37 @@ chown -R 1000:1000 data
 ```bash
 # Check firewall
 sudo ufw status
-sudo ufw allow 3000
-sudo ufw allow 3001
+sudo ufw allow 3002
 
 # Update CORS_ORIGIN in .env to include your network
-# CORS_ORIGIN=http://192.168.1.100:3001
+# CORS_ORIGIN=http://192.168.1.100:3002
 ```
 
 ### Database locked errors
 ```bash
 # Restart backend
-docker-compose restart backend
+docker compose restart backend
 
 # If persistent, increase timeout in DATABASE_URL:
-# DATABASE_URL="file:/app/data/chores.db?timeout=10000"
+# DATABASE_URL="file:/app/data/chore-ganizer.db?timeout=10000"
 ```
 
 ### Sessions not persisting
 ```bash
 # Verify SESSION_SECRET is set
-docker-compose exec backend printenv SESSION_SECRET
+docker compose exec backend printenv SESSION_SECRET
 
 # Check cookie settings in browser DevTools
 # Ensure withCredentials: true in frontend API client
 ```
 
-For more detailed troubleshooting, see the [Development Plan](./CHORE-GANIZER-DEVELOPMENT-PLAN.md).
+For more detailed troubleshooting, see the [Development Plan](./docs/CHORE-GANIZER-DEVELOPMENT-PLAN.md).
 
 ## 🔒 Security Considerations
 
 ### Before Deploying:
 1. ✅ Change `SESSION_SECRET` to a strong random value
-2. ✅ Update default passwords in `seed.ts`
+2. ✅ Update default passwords in `src/prisma/seed.ts`
 3. ✅ Configure firewall rules
 4. ✅ Set up HTTPS if exposing publicly (use reverse proxy)
 5. ✅ Regular backups configured
@@ -339,6 +339,18 @@ For more detailed troubleshooting, see the [Development Plan](./CHORE-GANIZER-DE
 - Use strong passwords for all accounts
 
 ## 🧪 Testing
+
+### Backend Tests
+```bash
+cd backend
+npm test
+```
+
+### Frontend Tests
+```bash
+cd frontend
+npm test
+```
 
 ### Manual Testing Checklist
 
@@ -366,24 +378,40 @@ For more detailed troubleshooting, see the [Development Plan](./CHORE-GANIZER-DE
 
 ## 📚 Documentation
 
+### User Guides
+- **[User Guide](./docs/USER-GUIDE.md)** - Guide for children and family members
+- **[Admin Guide](./docs/ADMIN-GUIDE.md)** - Guide for parents and administrators
+
 ### Getting Started
 - **[README](./README.md)** - This file - project overview and quick start
-- **[Quick Reference](./QUICK-REFERENCE.md)** - Daily operations and common commands
-- **[Deployment Checklist](./DEPLOYMENT-CHECKLIST.md)** - Step-by-step deployment guide
+- **[Quick Reference](./docs/QUICK-REFERENCE.md)** - Daily operations and common commands
+- **[Deployment Checklist](./docs/DEPLOYMENT-CHECKLIST.md)** - Step-by-step deployment guide
 
 ### Implementation
-- **[Development Plan](./CHORE-GANIZER-DEVELOPMENT-PLAN.md)** - Complete implementation guide with detailed milestones
-- **[Docker Configuration](./DOCKER-CONFIGURATION.md)** - Docker setup, Dockerfiles, and docker-compose reference
+- **[Development Plan](./docs/CHORE-GANIZER-DEVELOPMENT-PLAN.md)** - Complete implementation guide with detailed milestones
+- **[Implementation Plan](./docs/IMPLEMENTATION-PLAN.md)** - Phase-by-phase implementation details
+- **[Docker Configuration](./docs/DOCKER-CONFIGURATION.md)** - Docker setup, Dockerfiles, and docker-compose reference
 
 ### API Reference
-- **[API Documentation](./API-DOCUMENTATION.md)** - Complete REST API reference with all endpoints
+- **[API Documentation](./docs/API-DOCUMENTATION.md)** - Complete REST API reference with all endpoints
 
 ### Operations
-- **[Post-Deployment Guide](./POST-DEPLOYMENT-GUIDE.md)** - User management, updates, rollbacks, and monitoring
-- **[Backup & Restore Guide](./BACKUP-RESTORE-GUIDE.md)** - Backup procedures, automated backups, and disaster recovery
+- **[Post-Deployment Guide](./docs/POST-DEPLOYMENT-GUIDE.md)** - User management, updates, rollbacks, and monitoring
+- **[Backup & Restore Guide](./docs/BACKUP-RESTORE-GUIDE.md)** - Backup procedures, automated backups, and disaster recovery
+
+### Implementation Logs
+- **[Phase 1 Log](./docs/PHASE-1-IMPLEMENTATION-LOG.md)** - Project setup
+- **[Phase 2 Log](./docs/PHASE-2-IMPLEMENTATION-LOG.md)** - Backend core
+- **[Phase 3 Log](./docs/PHASE-3-IMPLEMENTATION-LOG.md)** - Frontend core
+- **[Phase 4 Log](./docs/PHASE-4-IMPLEMENTATION-LOG.md)** - Docker configuration
+- **[Phase 5 Log](./docs/PHASE-5-DEPLOYMENT-LOG.md)** - Testing & deployment
+- **[Testing Log](./docs/TESTING-LOG.md)** - Test results
+
+### Future
+- **[Future Roadmap](./docs/FUTURE-ROADMAP.md)** - Planned features and enhancements
 
 ### Database
-- **[Database Schema](./backend/prisma/schema.prisma)** - Prisma schema with comments (after implementation)
+- **[Database Schema](./backend/prisma/schema.prisma)** - Prisma schema with comments
 
 ## 🤝 Contributing
 
@@ -401,30 +429,14 @@ MIT License - see LICENSE file for details
 
 ## 🎯 Roadmap
 
-### Q2 2026
-- [ ] Rewards system implementation
-- [ ] Recurring chores (daily/weekly/monthly)
-- [ ] Round-robin assignment rotation
-- [ ] Mobile app (PWA)
-
-### Q3 2026
-- [ ] Advanced analytics dashboard
-- [ ] Family calendar integration
-- [ ] Chore templates
-- [ ] Dark mode
-
-### Future
-- [ ] Multi-household support
-- [ ] Email notifications
-- [ ] API for third-party integrations
-- [ ] Voice assistant integration (Alexa/Google Home)
+See the [Future Roadmap](./docs/FUTURE-ROADMAP.md) for planned features.
 
 ## 💬 Support
 
 Having issues? Check these resources:
 
-1. **[Troubleshooting Guide](./CHORE-GANIZER-DEVELOPMENT-PLAN.md#troubleshooting)** in the development plan
-2. Review `docker-compose logs` for error messages
+1. **[Troubleshooting Guide](./docs/CHORE-GANIZER-DEVELOPMENT-PLAN.md#troubleshooting)** in the development plan
+2. Review `docker compose logs` for error messages
 3. Check [Prisma documentation](https://www.prisma.io/docs)
 4. Visit [r/homelab](https://reddit.com/r/homelab) or [r/selfhosted](https://reddit.com/r/selfhosted)
 

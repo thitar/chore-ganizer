@@ -30,8 +30,8 @@ FROM node:20-slim AS production
 
 WORKDIR /app
 
-# Install OpenSSL for Prisma
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+# Install OpenSSL for Prisma and sqlite3 for seed check
+RUN apt-get update && apt-get install -y openssl sqlite3 && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
