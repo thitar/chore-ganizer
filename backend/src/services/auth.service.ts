@@ -6,6 +6,13 @@ export interface LoginCredentials {
   password: string
 }
 
+export interface RegisterCredentials {
+  email: string
+  password: string
+  name: string
+  role: string
+}
+
 export interface AuthResult {
   user: {
     id: number
@@ -14,6 +21,47 @@ export interface AuthResult {
     role: string
     points: number
     createdAt: Date
+  }
+}
+
+/**
+ * Register a new user
+ */
+export const register = async (credentials: RegisterCredentials): Promise<AuthResult> => {
+  const { email, password, name, role } = credentials
+
+  // Check if user already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+  })
+
+  if (existingUser) {
+    throw new Error('User with this email already exists')
+  }
+
+  // Hash password
+  const hashedPassword = await bcrypt.hash(password, 10)
+
+  // Create user
+  const user = await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+      name,
+      role: role || 'CHILD',
+      points: 0,
+    },
+  })
+
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      points: user.points,
+      createdAt: user.createdAt,
+    },
   }
 }
 

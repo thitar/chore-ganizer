@@ -3,6 +3,33 @@ import * as authService from '../services/auth.service.js'
 import { AppError } from '../middleware/errorHandler.js'
 
 /**
+ * POST /api/auth/register
+ * Register a new user
+ */
+export const register = async (req: Request, res: Response) => {
+  const { email, password, name, role } = req.body
+
+  if (!email || !password || !name) {
+    throw new AppError('Email, password, and name are required', 400, 'VALIDATION_ERROR')
+  }
+
+  const result = await authService.register({ 
+    email, 
+    password, 
+    name, 
+    role: role || 'CHILD' 
+  })
+
+  // Set session
+  req.session.userId = result.user.id
+
+  res.status(201).json({
+    success: true,
+    data: result,
+  })
+}
+
+/**
  * POST /api/auth/login
  * Login user with email and password
  */

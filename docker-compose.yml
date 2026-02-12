@@ -1,0 +1,62 @@
+# Docker Compose configuration for Chore-Ganizer
+# Family-friendly chore management system for homelab deployment
+
+services:
+  # Frontend service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api
+    container_name: chore-ganizer-frontend
+    restart: unless-stopped
+    ports:
+      - "3002:80"
+    depends_on:
+      - backend
+    networks:
+      - chore-ganizer-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Backend service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: chore-ganizer-backend
+    restart: unless-stopped
+    ports:
+      - "3010:3010"
+    environment:
+      - NODE_ENV=production
+      - PORT=3010
+      - SESSION_SECRET=${SESSION_SECRET:-your-super-secret-session-key-change-in-production}
+      - DATABASE_URL=file:/app/data/chore-ganizer.db
+    volumes:
+      - backend-data:/app/data
+    networks:
+      - chore-ganizer-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+# Named volumes for persistent data
+volumes:
+  backend-data:
+    driver: local
+    name: chore-ganizer-data
+
+# Network configuration
+networks:
+  chore-ganizer-network:
+    driver: bridge
+    name: chore-ganizer-network

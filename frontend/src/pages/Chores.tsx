@@ -18,9 +18,9 @@ export const Chores: React.FC = () => {
     return chore.status === filter
   })
 
-  const handleCreate = async (data: CreateChoreData) => {
+  const handleCreate = async (data: CreateChoreData | UpdateChoreData) => {
     setFormLoading(true)
-    const result = await createChore(data)
+    const result = await createChore(data as CreateChoreData)
     setFormLoading(false)
     if (result.success) {
       setIsFormOpen(false)
@@ -28,10 +28,10 @@ export const Chores: React.FC = () => {
     }
   }
 
-  const handleUpdate = async (data: UpdateChoreData) => {
+  const handleUpdate = async (data: CreateChoreData | UpdateChoreData) => {
     if (!editingChore) return
     setFormLoading(true)
-    const result = await updateChore(editingChore.id, data)
+    const result = await updateChore(editingChore.id, data as UpdateChoreData)
     setFormLoading(false)
     if (result.success) {
       setEditingChore(undefined)

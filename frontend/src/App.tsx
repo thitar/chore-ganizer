@@ -1,8 +1,7 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useAuth, useNotifications } from './hooks'
 import { ErrorBoundary } from './components/common'
 import { Navbar, Sidebar, Footer } from './components/layout'
-import { NotificationBell } from './components/notifications'
 import { Login, Dashboard, Chores, Profile, NotFound } from './pages'
 
 function App() {
