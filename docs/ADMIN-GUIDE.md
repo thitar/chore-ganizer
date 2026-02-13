@@ -90,7 +90,6 @@ The UI currently supports **viewing users only**. The following operations requi
 | Status | Description |
 |--------|-------------|
 | **PENDING** | Chore needs to be done |
-| **IN_PROGRESS** | Currently being worked on |
 | **COMPLETED** | Finished, points awarded |
 
 ---

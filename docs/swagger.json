@@ -943,7 +943,7 @@
           },
           "status": {
             "type": "string",
-            "enum": ["PENDING", "IN_PROGRESS", "COMPLETED"],
+            "enum": ["PENDING", "COMPLETED"],
             "example": "PENDING"
           },
           "points": {
@@ -952,26 +952,19 @@
           },
           "assignedToId": {
             "type": "integer",
-            "nullable": true,
             "example": 2
           },
           "assignedTo": {
-            "$ref": "#/components/schemas/User"
-          },
-          "createdById": {
-            "type": "integer",
-            "example": 1
-          },
-          "createdBy": {
             "$ref": "#/components/schemas/User"
           },
           "createdAt": {
             "type": "string",
             "format": "date-time"
           },
-          "updatedAt": {
+          "completedAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "nullable": true
           }
         }
       },
@@ -982,15 +975,24 @@
             "type": "integer",
             "example": 1
           },
+          "userId": {
+            "type": "integer",
+            "example": 2
+          },
           "type": {
             "type": "string",
+            "enum": ["CHORE_ASSIGNED", "CHORE_COMPLETED", "POINTS_EARNED"],
             "example": "CHORE_ASSIGNED"
+          },
+          "title": {
+            "type": "string",
+            "example": "New Chore Assigned"
           },
           "message": {
             "type": "string",
             "example": "You have been assigned a new chore: Wash dishes"
           },
-          "isRead": {
+          "read": {
             "type": "boolean",
             "example": false
           },
@@ -1043,7 +1045,7 @@
       },
       "CreateChoreRequest": {
         "type": "object",
-        "required": ["title", "points"],
+        "required": ["title", "points", "assignedToId"],
         "properties": {
           "title": {
             "type": "string",
@@ -1060,7 +1062,6 @@
           },
           "assignedToId": {
             "type": "integer",
-            "nullable": true,
             "example": 2
           }
         }

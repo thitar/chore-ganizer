@@ -436,7 +436,7 @@ Create a new chore.
 | `title` | string | Yes | 1-100 characters |
 | `description` | string | No | Max 500 characters |
 | `points` | number | Yes | 1-1000 |
-| `assignedToId` | number | No | Must be valid user ID if provided |
+| `assignedToId` | number | Yes | Must be valid user ID |
 
 **Response (201 Created):**
 ```json
@@ -689,13 +689,10 @@ Health check endpoint (no authentication required).
   title: string;
   description: string | null;
   points: number;
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
-  assignedToId: number | null;
-  assignedTo: { id: number; name: string } | null;
-  createdById: number;
-  createdBy: { id: number; name: string };
+  status: 'PENDING' | 'COMPLETED';
+  assignedToId: number;
+  assignedTo: { id: number; name: string };
   createdAt: Date;
-  updatedAt: Date;
   completedAt: Date | null;
 }
 ```
