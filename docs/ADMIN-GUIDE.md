@@ -2,97 +2,60 @@
 
 ## Overview
 
-This guide is for parents and administrators who manage the Chore-Ganizer application. As an admin (Parent role), you have full control over users, chores, and the reward system.
+This guide is for parents and administrators who manage the Chore-Ganizer application. As an admin (Parent role), you have access to manage chores and view family member information.
 
 ## Table of Contents
 
 1. [Initial Setup](#initial-setup)
 2. [User Management](#user-management)
 3. [Chore Management](#chore-management)
-4. [Points System](#points-system)
-5. [Notifications](#notifications)
-6. [Reports & Monitoring](#reports--monitoring)
-7. [Troubleshooting](#troubleshooting)
+4. [Database Administration](#database-administration)
+5. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Initial Setup
 
-### First-Time Setup
+### Default Login Credentials
 
-The application comes with demo users pre-seeded in the database. You can log in with these credentials:
+The application comes with demo users pre-seeded in the database:
 
-**Demo Parent Accounts:**
+**Parent Accounts:**
 - Email: `dad@home` / Password: `password123`
 - Email: `mom@home` / Password: `password123`
 
-**Demo Child Accounts:**
+**Child Accounts:**
 - Email: `alice@home` / Password: `password123`
 - Email: `bob@home` / Password: `password123`
+
+> **Security Note:** Change these passwords after initial setup using the SQL commands below.
 
 ### Logging In
 
 1. Navigate to the application URL
 2. Enter your email address
 3. Enter your password
-4. Click **Login**
-5. You'll be taken to the dashboard
-
-### Creating New Parent Accounts
-
-1. Log in as an existing parent
-2. Go to **Users** → **Add User**
-3. Fill in the details and select **PARENT** role
-4. Share the login credentials with the other parent
+4. Click **Sign In**
 
 ---
 
 ## User Management
 
-### Adding Family Members
+### Current Limitations
 
-1. Navigate to **Users** section
-2. Click **Add User** button
-3. Fill in the required information:
-   - **Email:** Unique email address (required)
-   - **Name:** Display name
-   - **Password:** Initial password (user can change later)
-   - **Role:** PARENT or CHILD
-4. Click **Save**
+The UI currently supports **viewing users only**. The following operations require database access or API calls:
 
-### User Roles
+- Creating new users
+- Editing user information
+- Resetting passwords
+- Adjusting points manually
+- Deactivating users
 
-| Role | Permissions |
-|------|-------------|
-| **PARENT** | Full access: manage users, chores, approve completions, view all data |
-| **CHILD** | Limited access: view own chores, mark completions, view own points |
+### Viewing Family Members
 
-### Editing Users
-
-1. Go to **Users** section
-2. Click on the user's name
-3. Make changes as needed:
-   - Update name
-   - Reset password
-   - Adjust points
-   - Change role
-4. Click **Save**
-
-### Resetting Passwords
-
-1. Go to **Users** section
-2. Click on the user
-3. Click **Reset Password**
-4. Enter a new temporary password
-5. Share the new password with the user
-
-### Deactivating Users
-
-1. Go to **Users** section
-2. Click on the user
-3. Click **Deactivate**
-4. The user will no longer be able to log in
-5. Their historical data is preserved
+1. Log in as a parent
+2. Click **Family Members** in the sidebar
+3. View all registered users with their roles and point totals
 
 ---
 
@@ -100,152 +63,142 @@ The application comes with demo users pre-seeded in the database. You can log in
 
 ### Creating Chores
 
-1. Navigate to **Chores** section
-2. Click **Add Chore**
+1. Go to **Chores** page
+2. Click **Create Chore** button
 3. Fill in the details:
    - **Title:** Short, descriptive name
    - **Description:** Detailed instructions
    - **Points:** Point value for completion
-   - **Assigned To:** Select family member(s)
-   - **Due Date:** Optional deadline
-   - **Recurring:** Set up repeat schedule (if enabled)
-4. Click **Save**
-
-### Chore Categories
-
-Organize chores by category for easier management:
-- **Daily:** Regular daily tasks (making bed, dishes)
-- **Weekly:** Once-per-week tasks (vacuuming, laundry)
-- **Monthly:** Deep cleaning tasks
-- **Seasonal:** Yard work, garage cleaning
-
-### Assigning Chores
-
-**Single Assignment:**
-1. Create or edit a chore
-2. Select one family member from the dropdown
-3. Save the chore
-
-**Multiple Assignments:**
-1. Create the chore once
-2. Select multiple family members
-3. Each person will see the chore in their list
+   - **Assigned To:** Select family member
+4. Click **Create**
 
 ### Editing Chores
 
-1. Go to **Chores** section
-2. Click on the chore name
-3. Make your changes
-4. Click **Save**
+1. Find the chore in the list
+2. Click **Edit**
+3. Modify the details
+4. Click **Update**
 
 ### Deleting Chores
 
-1. Go to **Chores** section
-2. Click on the chore
-3. Click **Delete**
-4. Confirm deletion
-5. Note: Historical completion records are preserved
+1. Find the chore in the list
+2. Click **Delete**
+3. Confirm the deletion
 
-### Approving Completions
+### Chore Statuses
 
-When a child marks a chore as complete:
-
-1. You'll receive a notification
-2. Go to **Pending Approvals** or the chore
-3. Review the completion
-4. Choose:
-   - **Approve:** Points are awarded
-   - **Reject:** Mark as incomplete, no points
-   - **Partial:** Award partial points with feedback
+| Status | Description |
+|--------|-------------|
+| **PENDING** | Chore needs to be done |
+| **IN_PROGRESS** | Currently being worked on |
+| **COMPLETED** | Finished, points awarded |
 
 ---
 
-## Points System
+## Database Administration
 
-### Setting Point Values
+Since some user management features are not available in the UI, you can perform administrative tasks directly on the SQLite database.
 
-Consider these factors when assigning points:
-- **Time required:** More time = more points
-- **Difficulty:** Harder tasks = more points
-- **Frequency:** Daily tasks might be lower points
-- **Age appropriateness:** Adjust for each child
+### Accessing the Database
 
-### Suggested Point Scale
+```bash
+# Enter the backend container
+docker exec -it chore-ganizer-backend /bin/bash
 
-| Chore Type | Points |
-|------------|--------|
-| Simple daily (make bed) | 5-10 |
-| Standard daily (dishes) | 10-20 |
-| Weekly cleaning | 25-50 |
-| Major tasks | 50-100 |
+# Open the database
+sqlite3 /app/data/chore-ganizer.db
+```
 
-### Adjusting Points
+Or from the host machine:
 
-1. Go to **Users** section
-2. Click on the user
-3. Find **Points Adjustment**
-4. Enter positive or negative adjustment
-5. Add a reason (visible to user)
-6. Click **Adjust**
+```bash
+# If you have sqlite3 installed locally
+sqlite3 /var/lib/docker/volumes/chore-ganizer-data/_data/chore-ganizer.db
+```
 
-### Point Rewards
+### Useful SQL Queries
 
-Set up a reward system:
-1. Create a list of rewards with point costs
-2. Display in a visible location
-3. When a child wants to redeem:
-   - Deduct the points
-   - Record the redemption
+#### View All Users
 
----
+```sql
+SELECT id, email, name, role, points FROM User;
+```
 
-## Notifications
+#### Create a New User
 
-### Notification Types
+```sql
+-- Password is hashed with bcrypt. Use the API or copy hash from existing user for testing.
+INSERT INTO User (email, name, password, role, points, createdAt, updatedAt)
+VALUES ('newuser@home', 'New User', '$2b$10$...', 'CHILD', 0, datetime('now'), datetime('now'));
+```
 
-| Type | Recipients | Trigger |
-|------|------------|---------|
-| New Assignment | Assigned user | Chore assigned |
-| Due Reminder | Assigned user | Before due date |
-| Completion Pending | Parents | Chore marked complete |
-| Approval/Rejection | Assigned user | Parent reviews |
-| Point Adjustment | User | Points modified |
+> **Note:** For production, use the API endpoint `POST /api/auth/register` to create users with properly hashed passwords.
 
-### Configuring Notifications
+#### Reset a User's Password
 
-1. Go to **Settings** → **Notifications**
-2. Enable/disable notification types
-3. Set reminder timing (e.g., 1 day before due)
-4. Configure email notifications (if enabled)
+```sql
+-- First, get a properly hashed password (create via API or use existing)
+-- This example sets password to "newpassword123" (you need the bcrypt hash)
+UPDATE User SET password = '$2b$10$...' WHERE email = 'user@home';
+```
 
----
+#### Adjust User Points
 
-## Reports & Monitoring
+```sql
+-- Add 50 points to a user
+UPDATE User SET points = points + 50 WHERE email = 'alice@home';
 
-### Dashboard Overview
+-- Set specific point value
+UPDATE User SET points = 100 WHERE email = 'bob@home';
+```
 
-The admin dashboard shows:
-- Total active chores
-- Pending approvals
-- Recent completions
-- Points leaderboard
+#### Change User Role
 
-### Viewing Reports
+```sql
+-- Promote to parent
+UPDATE User SET role = 'PARENT' WHERE email = 'user@home';
 
-1. Go to **Reports** section
-2. Select report type:
-   - **Completion History:** All chore completions
-   - **User Activity:** Individual user statistics
-   - **Points Summary:** Points earned/spent
-3. Filter by date range, user, or chore
-4. Export to CSV if needed
+-- Demote to child
+UPDATE User SET role = 'CHILD' WHERE email = 'user@home';
+```
 
-### Monitoring Activity
+#### Delete a User
 
-1. Check the dashboard regularly
-2. Review pending approvals promptly
-3. Monitor point balances
-4. Address any disputes quickly
+```sql
+-- First unassign their chores
+UPDATE Chore SET assignedToId = NULL WHERE assignedToId = (SELECT id FROM User WHERE email = 'user@home');
+
+-- Then delete the user
+DELETE FROM User WHERE email = 'user@home';
+```
+
+#### View All Chores
+
+```sql
+SELECT c.id, c.title, c.status, c.points, u.name as assigned_to 
+FROM Chore c 
+LEFT JOIN User u ON c.assignedToId = u.id;
+```
+
+#### View Notifications
+
+```sql
+SELECT n.id, n.type, n.message, u.name as user, n.isRead, n.createdAt 
+FROM Notification n 
+JOIN User u ON n.userId = u.id 
+ORDER BY n.createdAt DESC;
+```
+
+### Using the API for User Creation
+
+The recommended way to create users is via the API:
+
+```bash
+# Register a new user (requires authentication)
+curl -X POST http://localhost:3010/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"newuser@home","password":"password123","name":"New User","role":"CHILD"}'
+```
 
 ---
 
@@ -254,44 +207,26 @@ The admin dashboard shows:
 ### Common Issues
 
 **User can't log in:**
-- Verify email is correct
-- Reset password
-- Check if account is active
+- Verify email is correct (check database)
+- Reset password using SQL above
+- Check browser console for errors
 
 **Chore not showing for user:**
-- Verify chore is assigned to them
-- Check chore status isn't completed
+- Verify chore is assigned to them (check `assignedToId` in database)
+- Check chore status isn't already COMPLETED
 - Refresh the page
 
 **Points not updating:**
-- Check if completion was approved
-- Look for pending approvals
-- Verify point adjustment was saved
-
-**Notifications not received:**
-- Check notification settings
-- Verify email configuration (if applicable)
-- Check browser notification permissions
-
-### Database Backup
-
-Regular backups are recommended:
-
-```bash
-# Manual backup
-./backup.sh
-
-# Or copy the database file
-cp /path/to/data/chore-ganizer.db ./backup/
-```
+- Points are awarded when chore is marked complete
+- Check the database: `SELECT points FROM User WHERE email = 'user@home'`
 
 ### Application Logs
 
-View logs for troubleshooting:
-
 ```bash
-# Docker logs
+# View backend logs
 docker logs chore-ganizer-backend
+
+# View frontend logs
 docker logs chore-ganizer-frontend
 
 # Follow logs in real-time
@@ -306,40 +241,50 @@ docker compose restart
 
 # Restart specific service
 docker compose restart backend
+docker compose restart frontend
 ```
 
----
+### Database Backup
 
-## Best Practices
+```bash
+# Create backup
+docker exec chore-ganizer-backend sqlite3 /app/data/chore-ganizer.db ".backup /app/data/backup.db"
 
-1. **Regular Reviews:** Check pending approvals daily
-2. **Fair Points:** Be consistent with point values
-3. **Clear Instructions:** Write detailed chore descriptions
-4. **Positive Reinforcement:** Use the points system to encourage
-5. **Family Meetings:** Discuss chores and rewards together
-6. **Age-Appropriate:** Assign chores suitable for each child's age
-7. **Rotate Chores:** Prevent boredom by rotating assignments
-8. **Celebrate Success:** Acknowledge achievements
+# Copy backup to host
+docker cp chore-ganizer-backend:/app/data/backup.db ./chore-ganizer-backup-$(date +%Y%m%d).db
+```
 
 ---
 
 ## Security Recommendations
 
-1. **Strong Passwords:** Use strong passwords for parent accounts
-2. **Limited Access:** Only give parent role to actual parents
-3. **Regular Updates:** Keep the application updated
-4. **Secure Network:** Run on a secure home network
-5. **Backup Regularly:** Maintain regular database backups
+1. **Change default passwords** after initial setup
+2. **Use strong passwords** for parent accounts
+3. **Limit parent role** to actual parents only
+4. **Regular backups** of the database
+5. **Run on secure network** (home network recommended)
 
 ---
 
-## Getting Help
+## Feature Status
 
-- Check this documentation
-- Review the [API Documentation](API-DOCUMENTATION.md)
-- Check application logs for errors
-- Contact the system administrator
+| Feature | UI | API | Database |
+|---------|----|----|----------|
+| Login/Logout | ✅ | ✅ | ✅ |
+| View Dashboard | ✅ | ✅ | ✅ |
+| View Chores | ✅ | ✅ | ✅ |
+| Create Chore | ✅ (Parents) | ✅ | ✅ |
+| Edit Chore | ✅ (Parents) | ✅ | ✅ |
+| Delete Chore | ✅ (Parents) | ✅ | ✅ |
+| Complete Chore | ✅ (Children) | ✅ | ✅ |
+| View Profile | ✅ | ✅ | ✅ |
+| View Users | ✅ (Parents) | ✅ | ✅ |
+| Create User | ❌ | ✅ | ✅ |
+| Edit User | ❌ | ❌ | ✅ |
+| Reset Password | ❌ | ❌ | ✅ |
+| Adjust Points | ❌ | ❌ | ✅ |
+| Notifications | ❌ (UI only) | ✅ | ✅ |
 
 ---
 
-*Happy managing! 🎯*
+*For API details, see [API-DOCUMENTATION.md](API-DOCUMENTATION.md)*

@@ -21,8 +21,11 @@ Complete REST API reference for Chore-Ganizer backend.
 
 ## 🔗 Base URL
 
-**Development:** `http://localhost:3000/api`  
-**Production:** `http://YOUR_SERVER_IP:3000/api`
+**Development (direct):** `http://localhost:3010/api`  
+**Production (via nginx proxy):** `http://YOUR_SERVER_IP:3002/api`  
+**Example:** `http://docker.lab:3002/api`
+
+> **Note:** In production, the frontend nginx proxies `/api` requests to the backend container.
 
 ---
 
@@ -94,6 +97,51 @@ Cookie: connect.sid=<session_id>
 ---
 
 ### Authentication Endpoints
+
+#### POST `/api/auth/register`
+
+Register a new user account.
+
+**Request Body:**
+```json
+{
+  "email": "newuser@home",
+  "password": "password123",
+  "name": "New User",
+  "role": "CHILD"
+}
+```
+
+**Validation Rules:**
+| Field | Type | Required | Constraints |
+|-------|------|----------|-------------|
+| `email` | string | Yes | Valid email, unique |
+| `password` | string | Yes | Min 6 characters |
+| `name` | string | Yes | 1-100 characters |
+| `role` | string | No | `PARENT` or `CHILD`, defaults to `CHILD` |
+
+**Response (201 Created):**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": 5,
+      "email": "newuser@home",
+      "name": "New User",
+      "role": "CHILD",
+      "points": 0,
+      "createdAt": "2026-02-10T00:00:00.000Z"
+    }
+  }
+}
+```
+
+**Error Responses:**
+- `400` - Invalid input data
+- `409` - Email already exists
+
+---
 
 #### POST `/api/auth/login`
 
@@ -388,7 +436,7 @@ Create a new chore.
 | `title` | string | Yes | 1-100 characters |
 | `description` | string | No | Max 500 characters |
 | `points` | number | Yes | 1-1000 |
-| `assignedToId` | number | Yes | Must be valid user ID |
+| `assignedToId` | number | No | Must be valid user ID if provided |
 
 **Response (201 Created):**
 ```json
@@ -601,16 +649,18 @@ Mark all notifications as read for the current user.
 
 ### Health Endpoints
 
-#### GET `/health`
+#### GET `/api/health`
 
 Health check endpoint (no authentication required).
 
 **Response (200 OK):**
 ```json
 {
-  "status": "ok",
-  "timestamp": "2026-02-10T20:00:00.000Z",
-  "version": "1.0.0"
+  "success": true,
+  "data": {
+    "status": "healthy",
+    "timestamp": "2026-02-10T20:00:00.000Z"
+  }
 }
 ```
 
@@ -639,10 +689,13 @@ Health check endpoint (no authentication required).
   title: string;
   description: string | null;
   points: number;
-  status: 'PENDING' | 'COMPLETED';
-  assignedToId: number;
-  assignedTo: { id: number; name: string };
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+  assignedToId: number | null;
+  assignedTo: { id: number; name: string } | null;
+  createdById: number;
+  createdBy: { id: number; name: string };
   createdAt: Date;
+  updatedAt: Date;
   completedAt: Date | null;
 }
 ```
@@ -668,18 +721,18 @@ Health check endpoint (no authentication required).
 ### Using cURL
 
 ```bash
-# Login
-curl -X POST http://localhost:3000/api/auth/login \
+# Login (via nginx proxy)
+curl -X POST http://docker.lab:3002/api/auth/login \
   -H "Content-Type: application/json" \
   -c cookies.txt \
   -d '{"email":"dad@home","password":"password123"}'
 
 # Get all chores (using session cookie)
-curl -X GET http://localhost:3000/api/chores \
+curl -X GET http://docker.lab:3002/api/chores \
   -b cookies.txt
 
 # Create a chore
-curl -X POST http://localhost:3000/api/chores \
+curl -X POST http://docker.lab:3002/api/chores \
   -H "Content-Type: application/json" \
   -b cookies.txt \
   -d '{"title":"Clean room","description":"Make bed","points":10,"assignedToId":2}'
@@ -687,8 +740,8 @@ curl -X POST http://localhost:3000/api/chores \
 
 ### Using Postman/Insomnia
 
-1. Import the API collection (create one based on this documentation)
-2. Set base URL: `http://localhost:3000/api`
+1. Import the OpenAPI spec from `docs/swagger.json`
+2. Set base URL: `http://docker.lab:3002/api` (or your server URL)
 3. Enable cookie handling in settings
 4. Login first, then use the session for subsequent requests
 
