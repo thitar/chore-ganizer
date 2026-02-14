@@ -1,11 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useAuth, useChores, useUsers } from '../hooks'
 import { Loading } from '../components/common'
+import type { ChoreAssignment } from '../types'
 
 export const Dashboard: React.FC = () => {
   const { user, isParent } = useAuth()
-  const { chores, loading: choresLoading } = useChores()
+  const { chores, loading: choresLoading, completeChore } = useChores()
   const { users, loading: usersLoading } = useUsers()
+  const [showAllPending, setShowAllPending] = useState(false)
 
   if (choresLoading || usersLoading) {
     return <Loading text="Loading dashboard..." />
@@ -17,6 +19,26 @@ export const Dashboard: React.FC = () => {
   const myPendingChores = chores.filter(
     (c) => c.status === 'PENDING' && c.assignedToId === user?.id
   ).length
+
+  // Get user's pending chores, sorted by due date
+  const myPendingList = myPendingChores > 0 
+    ? chores
+        .filter((c) => c.status === 'PENDING' && c.assignedToId === user?.id)
+        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+    : []
+
+  // Show first 5 or all based on state
+  const displayedPending = showAllPending ? myPendingList : myPendingList.slice(0, 5)
+  const hasMorePending = myPendingList.length > 5
+
+  const handleComplete = async (choreId: number) => {
+    await completeChore(choreId)
+  }
+
+  const getUserName = (userId: number) => {
+    const u = users.find((u) => u.id === userId)
+    return u?.name || 'Unknown'
+  }
 
   return (
     <div className="space-y-6">
@@ -105,7 +127,54 @@ export const Dashboard: React.FC = () => {
         {myPendingChores === 0 ? (
           <p className="text-gray-600">You have no pending chores. Great job!</p>
         ) : (
-          <p className="text-gray-600">You have {myPendingChores} pending chore(s).</p>
+          <>
+            <p className="text-gray-600 mb-4">You have {myPendingChores} pending chore(s).</p>
+            
+            {/* Pending chores list */}
+            <div className="space-y-3 mb-4">
+              {displayedPending.map((chore: ChoreAssignment) => (
+                <div 
+                  key={chore.id} 
+                  className={`flex items-center justify-between p-3 rounded-lg border ${
+                    chore.isOverdue ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                  }`}
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">
+                      {chore.choreTemplate?.title || 'Unknown Chore'}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Due: {new Date(chore.dueDate).toLocaleDateString()}
+                      {chore.isOverdue && (
+                        <span className="ml-2 text-red-600 font-medium">Overdue!</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-600">
+                      {chore.choreTemplate?.points || 0} pts
+                    </span>
+                    <button
+                      onClick={() => handleComplete(chore.id)}
+                      className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                    >
+                      Complete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Show More / Show Less button */}
+            {hasMorePending && (
+              <button
+                onClick={() => setShowAllPending(!showAllPending)}
+                className="w-full py-2 text-blue-600 hover:text-blue-800 font-medium transition-colors"
+              >
+                {showAllPending ? 'Show Less' : `Show All ${myPendingList.length} Chores`}
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

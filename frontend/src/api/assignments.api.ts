@@ -8,8 +8,11 @@ export const assignmentsApi = {
     fromDate?: string
     toDate?: string
   }): Promise<ChoreAssignment[]> => {
+    // Pass the inner data type (not ApiResponse) to client.get
+    // client.get returns ApiResponse<T>, so response.data = { assignments: [...] }
     const response = await client.get<{ assignments: ChoreAssignment[] }>('/chore-assignments', { params })
-    return response.data?.assignments || []
+    const assignments = response.data?.assignments || []
+    return assignments
   },
 
   getById: async (id: number): Promise<ChoreAssignment> => {
@@ -39,9 +42,26 @@ export const assignmentsApi = {
       year: number
       month: number
       assignments: ChoreAssignment[]
-      days: Record<number, ChoreAssignment[]>
     }>('/chore-assignments/calendar', { params: { year, month } })
-    return response.data || { year: year || new Date().getFullYear(), month: month || new Date().getMonth() + 1, assignments: [], days: {} }
+    const result = response.data || { assignments: [], year: year || new Date().getFullYear(), month: month || new Date().getMonth() + 1 }
+    
+    // Group assignments by day
+    const days: Record<number, ChoreAssignment[]> = {}
+    for (const assignment of result.assignments) {
+      const dueDate = new Date(assignment.dueDate)
+      const day = dueDate.getDate()
+      if (!days[day]) {
+        days[day] = []
+      }
+      days[day].push(assignment)
+    }
+    
+    return {
+      year: result.year,
+      month: result.month,
+      assignments: result.assignments,
+      days,
+    }
   },
 
   create: async (data: CreateAssignmentData): Promise<ChoreAssignment> => {
@@ -58,10 +78,12 @@ export const assignmentsApi = {
     await client.delete(`/chore-assignments/${id}`)
   },
 
-  complete: async (id: number): Promise<{ assignment: ChoreAssignment; pointsAwarded: number }> => {
-    const response = await client.post<{ assignment: ChoreAssignment; pointsAwarded: number }>(
-      `/chore-assignments/${id}/complete`
+  complete: async (id: number, options?: { status?: 'COMPLETED' | 'PARTIALLY_COMPLETE'; customPoints?: number }): Promise<{ assignment: ChoreAssignment; pointsAwarded: number }> => {
+    const response = await client.post<{ success: boolean; data: { assignment: ChoreAssignment; pointsAwarded: number } }>(
+      `/chore-assignments/${id}/complete`,
+      options
     )
-    return response.data || { assignment: {} as ChoreAssignment, pointsAwarded: 0 }
+    const data = response.data?.data
+    return data || { assignment: {} as ChoreAssignment, pointsAwarded: 0 }
   },
 }

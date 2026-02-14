@@ -57,3 +57,19 @@ export const markAllAsRead = async (req: Request, res: Response) => {
     },
   })
 }
+
+/**
+ * POST /api/notifications/check-overdue
+ * Create notifications for overdue chores (can be called periodically or manually)
+ */
+export const checkOverdue = async (_req: Request, res: Response) => {
+  const count = await notificationsService.createOverdueNotifications()
+
+  res.json({
+    success: true,
+    data: {
+      message: `Created ${count} overdue notifications`,
+      count,
+    },
+  })
+}

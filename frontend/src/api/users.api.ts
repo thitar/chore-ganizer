@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { User, CreateUserData, UpdateUserData, ApiResponse } from '../types'
+import type { User, CreateUserData, UpdateUserData } from '../types'
 
 export interface UsersResponse {
   users: User[]
@@ -10,18 +10,27 @@ export interface UserResponse {
 }
 
 export const usersApi = {
-  getAll: () =>
-    apiClient.get<UsersResponse>('/users'),
+  getAll: async (): Promise<User[]> => {
+    const response = await apiClient.get<{ users: User[] }>('/users')
+    return response.data?.users || []
+  },
 
-  getById: (id: number) =>
-    apiClient.get<UserResponse>(`/users/${id}`),
+  getById: async (id: number): Promise<User> => {
+    const response = await apiClient.get<{ user: User }>(`/users/${id}`)
+    return response.data?.user
+  },
 
-  create: (data: CreateUserData) =>
-    apiClient.post<UserResponse>('/users', data),
+  create: async (data: CreateUserData): Promise<User> => {
+    const response = await apiClient.post<{ user: User }>('/users', data)
+    return response.data?.user
+  },
 
-  update: (id: number, data: UpdateUserData) =>
-    apiClient.put<UserResponse>(`/users/${id}`, data),
+  update: async (id: number, data: UpdateUserData): Promise<User> => {
+    const response = await apiClient.put<{ user: User }>(`/users/${id}`, data)
+    return response.data?.user
+  },
 
-  delete: (id: number) =>
-    apiClient.delete<{ message: string }>(`/users/${id}`),
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/users/${id}`)
+  },
 }

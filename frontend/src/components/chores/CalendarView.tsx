@@ -12,9 +12,10 @@ interface CalendarDay {
 
 interface CalendarViewProps {
   onAssignmentClick?: (assignment: ChoreAssignment) => void
+  refreshTrigger?: number
 }
 
-export default function CalendarView({ onAssignmentClick }: CalendarViewProps) {
+export default function CalendarView({ onAssignmentClick, refreshTrigger }: CalendarViewProps) {
   const [year, setYear] = useState(new Date().getFullYear())
   const [month, setMonth] = useState(new Date().getMonth() + 1)
   const [calendarData, setCalendarData] = useState<{
@@ -28,7 +29,7 @@ export default function CalendarView({ onAssignmentClick }: CalendarViewProps) {
 
   useEffect(() => {
     loadCalendar()
-  }, [year, month])
+  }, [year, month, refreshTrigger])
 
   const loadCalendar = async () => {
     try {

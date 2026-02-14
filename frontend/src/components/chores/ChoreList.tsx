@@ -7,7 +7,7 @@ interface ChoreListProps {
   chores: ChoreAssignment[]
   loading: boolean
   error: string | null
-  onComplete: (id: number) => void
+  onComplete: (id: number, status?: 'COMPLETED' | 'PARTIALLY_COMPLETE') => void
   onEdit: (assignment: ChoreAssignment) => void
   onDelete: (id: number) => void
   canEdit: boolean

@@ -4,7 +4,7 @@ import { Button } from '../common'
 
 interface ChoreCardProps {
   chore: ChoreAssignment
-  onComplete: (id: number) => void
+  onComplete: (id: number, status?: 'COMPLETED' | 'PARTIALLY_COMPLETE') => void
   onEdit: (assignment: ChoreAssignment) => void
   onDelete: (id: number) => void
   canEdit: boolean
@@ -19,9 +19,10 @@ export const ChoreCard: React.FC<ChoreCardProps> = ({
   canEdit,
   canComplete,
 }) => {
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     PENDING: 'bg-yellow-100 text-yellow-800',
     COMPLETED: 'bg-green-100 text-green-800',
+    PARTIALLY_COMPLETE: 'bg-orange-100 text-orange-800',
   }
 
   const title = chore.choreTemplate?.title || 'Untitled'
@@ -34,8 +35,8 @@ export const ChoreCard: React.FC<ChoreCardProps> = ({
     <div className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start mb-2">
         <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[chore.status]}`}>
-          {chore.status}
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[chore.status] || statusColors.PENDING}`}>
+          {chore.status === 'PARTIALLY_COMPLETE' ? 'PARTIALLY COMPLETE' : chore.status}
         </span>
       </div>
       {description && (
@@ -55,9 +56,14 @@ export const ChoreCard: React.FC<ChoreCardProps> = ({
       </div>
       <div className="flex gap-2">
         {canComplete && chore.status === 'PENDING' && (
-          <Button size="sm" variant="primary" onClick={() => onComplete(chore.id)}>
-            Complete
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="primary" onClick={() => onComplete(chore.id, 'COMPLETED')}>
+              Complete
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => onComplete(chore.id, 'PARTIALLY_COMPLETE')}>
+              Partial
+            </Button>
+          </div>
         )}
         {canEdit && (
           <>

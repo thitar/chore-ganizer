@@ -1,26 +1,25 @@
 import client from './client'
 import type { ChoreCategory, CreateCategoryData, UpdateCategoryData, ChoreTemplate } from '../types'
-import type { ApiResponse } from '../types'
 
 export const categoriesApi = {
   getAll: async (): Promise<ChoreCategory[]> => {
-    const response = await client.get<ApiResponse<{ categories: ChoreCategory[] }>>('/chore-categories')
-    return response.data.data.categories
+    const response = await client.get<{ categories: ChoreCategory[] }>('/chore-categories')
+    return response.data?.categories || []
   },
 
   getById: async (id: number): Promise<ChoreCategory> => {
-    const response = await client.get<ApiResponse<{ category: ChoreCategory }>>(`/chore-categories/${id}`)
-    return response.data.data.category
+    const response = await client.get<{ category: ChoreCategory }>(`/chore-categories/${id}`)
+    return response.data?.category
   },
 
   create: async (data: CreateCategoryData): Promise<ChoreCategory> => {
-    const response = await client.post<ApiResponse<{ category: ChoreCategory }>>('/chore-categories', data)
-    return response.data.data.category
+    const response = await client.post<{ category: ChoreCategory }>('/chore-categories', data)
+    return response.data?.category
   },
 
   update: async (id: number, data: UpdateCategoryData): Promise<ChoreCategory> => {
-    const response = await client.put<ApiResponse<{ category: ChoreCategory }>>(`/chore-categories/${id}`, data)
-    return response.data.data.category
+    const response = await client.put<{ category: ChoreCategory }>(`/chore-categories/${id}`, data)
+    return response.data?.category
   },
 
   delete: async (id: number): Promise<void> => {
@@ -28,7 +27,7 @@ export const categoriesApi = {
   },
 
   getTemplates: async (id: number): Promise<ChoreTemplate[]> => {
-    const response = await client.get<ApiResponse<{ templates: ChoreTemplate[] }>>(`/chore-categories/${id}/templates`)
-    return response.data.data.templates
+    const response = await client.get<{ templates: ChoreTemplate[] }>(`/chore-categories/${id}/templates`)
+    return response.data?.templates || []
   },
 }

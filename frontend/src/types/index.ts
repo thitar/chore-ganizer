@@ -54,7 +54,7 @@ export interface ChoreAssignment {
     name: string
   }
   dueDate: string
-  status: 'PENDING' | 'COMPLETED'
+  status: 'PENDING' | 'COMPLETED' | 'PARTIALLY_COMPLETE'
   notes: string | null
   createdAt: string
   completedAt: string | null

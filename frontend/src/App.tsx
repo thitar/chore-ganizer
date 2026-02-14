@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuth, useNotifications, AuthProvider } from './hooks'
 import { ErrorBoundary } from './components/common'
 import { Navbar, Sidebar, Footer } from './components/layout'
-import { Login, Dashboard, Chores, Templates, Profile, NotFound, Users } from './pages'
+import { Login, Dashboard, Chores, Templates, Profile, NotFound, Users, Calendar } from './pages'
 
 function AppContent() {
   const { isAuthenticated, loading } = useAuth()
@@ -34,6 +34,8 @@ function AppContent() {
         return <Templates />
       case 'profile':
         return <Profile />
+      case 'calendar':
+        return <Calendar />
       case 'users':
         return <Users />
       default:

@@ -11,8 +11,8 @@ export function useUsers() {
     try {
       setError(null)
       setLoading(true)
-      const response = await usersApi.getAll()
-      setUsers(response.data.users)
+      const data = await usersApi.getAll()
+      setUsers(data)
     } catch (err: any) {
       const errorMessage = err.error?.message || 'Failed to fetch users'
       setError(errorMessage)
@@ -28,9 +28,9 @@ export function useUsers() {
   const createUser = async (data: CreateUserData) => {
     try {
       setError(null)
-      const response = await usersApi.create(data)
-      setUsers([...users, response.data.user])
-      return { success: true, user: response.data.user }
+      const user = await usersApi.create(data)
+      setUsers([...users, user])
+      return { success: true, user }
     } catch (err: any) {
       const errorMessage = err.error?.message || 'Failed to create user'
       setError(errorMessage)
@@ -41,9 +41,9 @@ export function useUsers() {
   const updateUser = async (id: number, data: UpdateUserData) => {
     try {
       setError(null)
-      const response = await usersApi.update(id, data)
-      setUsers(users.map((u) => (u.id === id ? response.data.user : u)))
-      return { success: true, user: response.data.user }
+      const user = await usersApi.update(id, data)
+      setUsers(users.map((u) => (u.id === id ? user : u)))
+      return { success: true, user }
     } catch (err: any) {
       const errorMessage = err.error?.message || 'Failed to update user'
       setError(errorMessage)

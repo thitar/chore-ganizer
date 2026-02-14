@@ -11,6 +11,10 @@ export function useNotifications(unreadOnly: boolean = false) {
     try {
       setError(null)
       setLoading(true)
+      
+      // Check for overdue chores and create notifications
+      await notificationsApi.checkOverdue()
+      
       const response = await notificationsApi.getAll({ unreadOnly })
       setNotifications(response.data.notifications)
     } catch (err: any) {

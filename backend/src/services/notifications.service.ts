@@ -122,3 +122,52 @@ export const deleteNotification = async (
     where: { id: notificationId },
   })
 }
+
+/**
+ * Create notifications for all overdue assignments
+ * This should be called periodically (e.g., on dashboard load or via cron job)
+ */
+export const createOverdueNotifications = async (): Promise<number> => {
+  const now = new Date()
+  
+  // Find all pending assignments that are overdue and don't have a notification
+  const overdueAssignments = await prisma.choreAssignment.findMany({
+    where: {
+      status: 'PENDING',
+      dueDate: { lt: now },
+    },
+    include: {
+      choreTemplate: true,
+      assignedTo: true,
+    },
+  })
+
+  let notificationsCreated = 0
+
+  for (const assignment of overdueAssignments) {
+    // Check if notification already exists for this assignment
+    const existingNotification = await prisma.notification.findFirst({
+      where: {
+        userId: assignment.assignedToId,
+        type: 'OVERDUE_CHORE',
+        message: {
+          contains: `chore #${assignment.id}`,
+        },
+      },
+    })
+
+    if (!existingNotification) {
+      await prisma.notification.create({
+        data: {
+          userId: assignment.assignedToId,
+          type: 'OVERDUE_CHORE',
+          title: 'Overdue Chore!',
+          message: `Your chore "${assignment.choreTemplate.title}" (chore #${assignment.id}) is overdue! Due date was ${new Date(assignment.dueDate).toLocaleDateString()}`,
+        },
+      })
+      notificationsCreated++
+    }
+  }
+
+  return notificationsCreated
+}

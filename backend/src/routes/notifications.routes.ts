@@ -38,4 +38,15 @@ router.put(
   asyncHandler(notificationsController.markAllAsRead)
 )
 
+/**
+ * @route   POST /api/notifications/check-overdue
+ * @desc    Check for overdue chores and create notifications
+ * @access  Private
+ */
+router.post(
+  '/check-overdue',
+  authenticate,
+  asyncHandler(notificationsController.checkOverdue)
+)
+
 export default router

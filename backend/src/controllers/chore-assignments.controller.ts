@@ -177,9 +177,11 @@ export const updateAssignment = async (req: Request, res: Response) => {
 /**
  * POST /api/chore-assignments/:id/complete
  * Complete a chore assignment (awards points)
+ * Body: { status?: 'COMPLETED' | 'PARTIALLY_COMPLETE', customPoints?: number }
  */
 export const completeAssignment = async (req: Request, res: Response) => {
   const assignmentId = Number(req.params.id)
+  const { status, customPoints } = req.body
 
   if (isNaN(assignmentId)) {
     throw new AppError('Invalid assignment ID', 400, 'VALIDATION_ERROR')
@@ -191,19 +193,36 @@ export const completeAssignment = async (req: Request, res: Response) => {
     throw new AppError('Assignment not found', 404, 'NOT_FOUND')
   }
 
-  const assignment = await assignmentsService.completeAssignment(assignmentId, req.user!.id)
+  // Determine if the user is a parent
+  const isParent = req.user?.role === 'PARENT'
+
+  const assignment = await assignmentsService.completeAssignment(assignmentId, req.user!.id, {
+    status: status || 'COMPLETED',
+    customPoints: customPoints,
+    isParent
+  })
+
+  // Calculate points that were awarded
+  let pointsAwarded: number
+  if (customPoints !== undefined) {
+    pointsAwarded = customPoints
+  } else if (status === 'PARTIALLY_COMPLETE') {
+    pointsAwarded = Math.floor(existing.choreTemplate.points / 2)
+  } else {
+    pointsAwarded = existing.choreTemplate.points
+  }
 
   // Create notification for points earned
   await notificationsService.createNotification({
-    userId: req.user!.id,
+    userId: existing.assignedToId,
     type: 'POINTS_EARNED',
-    title: 'Points Earned!',
-    message: `You earned ${existing.choreTemplate.points} points for completing: ${existing.choreTemplate.title}`,
+    title: status === 'PARTIALLY_COMPLETE' ? 'Partial Points Earned!' : 'Points Earned!',
+    message: `You earned ${pointsAwarded} points for completing: ${existing.choreTemplate.title}`,
   })
 
   res.json({
     success: true,
-    data: { assignment },
+    data: { assignment, pointsAwarded },
   })
 }
 

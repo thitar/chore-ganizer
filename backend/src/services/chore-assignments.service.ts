@@ -42,7 +42,7 @@ export interface AssignmentWithDetails {
 }
 
 export interface AssignmentFilters {
-  status?: 'PENDING' | 'COMPLETED' | 'OVERDUE' | 'ALL'
+  status?: 'PENDING' | 'COMPLETED' | 'PARTIALLY_COMPLETE' | 'OVERDUE' | 'ALL'
   assignedToId?: number
   dueDateFrom?: Date
   dueDateTo?: Date
@@ -112,7 +112,14 @@ export const getAllAssignments = async (
     ],
   })
 
-  return assignments as AssignmentWithDetails[]
+  // Add isOverdue computed field to each assignment
+  const now = new Date()
+  const assignmentsWithOverdue = assignments.map((assignment) => ({
+    ...assignment,
+    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < now,
+  }))
+
+  return assignmentsWithOverdue as AssignmentWithDetails[]
 }
 
 /**
@@ -191,7 +198,14 @@ export const createAssignment = async (
     },
   })
 
-  return assignment as AssignmentWithDetails
+  const now = new Date()
+  // Add isOverdue computed field
+  const assignmentWithOverdue = {
+    ...assignment,
+    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < now,
+  }
+
+  return assignmentWithOverdue as AssignmentWithDetails
 }
 
 /**
@@ -238,7 +252,12 @@ export const updateAssignment = async (
  */
 export const completeAssignment = async (
   assignmentId: number,
-  userId: number
+  userId: number,
+  options?: {
+    status?: 'COMPLETED' | 'PARTIALLY_COMPLETE'
+    customPoints?: number
+    isParent?: boolean
+  }
 ): Promise<AssignmentWithDetails> => {
   // Get the assignment with template info
   const assignment = await prisma.choreAssignment.findUnique({
@@ -256,9 +275,25 @@ export const completeAssignment = async (
     throw new Error('Assignment is already completed')
   }
 
-  // Verify the user is the one assigned
-  if (assignment.assignedToId !== userId) {
+  // Determine if user can complete this assignment
+  // Parents can complete any assignment, children can only complete their own
+  const isParent = options?.isParent || false
+  if (!isParent && assignment.assignedToId !== userId) {
     throw new Error('You can only complete your own assignments')
+  }
+
+  // Determine status and points
+  const status = options?.status || 'COMPLETED'
+  
+  // Calculate points: use custom points if provided (parent), otherwise use template points
+  // For PARTIALLY_COMPLETE, award half the points by default (unless custom points provided)
+  let pointsToAward: number
+  if (options?.customPoints !== undefined) {
+    pointsToAward = options.customPoints
+  } else if (status === 'PARTIALLY_COMPLETE') {
+    pointsToAward = Math.floor(assignment.choreTemplate.points / 2)
+  } else {
+    pointsToAward = assignment.choreTemplate.points
   }
 
   // Use transaction to update assignment and award points
@@ -267,7 +302,7 @@ export const completeAssignment = async (
     const updated = await tx.choreAssignment.update({
       where: { id: assignmentId },
       data: {
-        status: 'COMPLETED',
+        status: status,
         completedAt: new Date(),
       },
       include: {
@@ -298,18 +333,18 @@ export const completeAssignment = async (
 
     // Award points to the user
     await tx.user.update({
-      where: { id: userId },
+      where: { id: assignment.assignedToId },
       data: {
         points: {
-          increment: assignment.choreTemplate.points,
+          increment: pointsToAward,
         },
       },
     })
 
-    return updated
+    return { assignment: updated, pointsAwarded: pointsToAward }
   })
 
-  return result as AssignmentWithDetails
+  return result.assignment as AssignmentWithDetails
 }
 
 /**
@@ -530,5 +565,12 @@ export const getAssignmentsForMonth = async (
     },
   })
 
-  return assignments as AssignmentWithDetails[]
+  // Add isOverdue computed field to each assignment
+  const now = new Date()
+  const assignmentsWithOverdue = assignments.map((assignment) => ({
+    ...assignment,
+    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < now,
+  }))
+
+  return assignmentsWithOverdue as AssignmentWithDetails[]
 }

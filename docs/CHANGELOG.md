@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Frontend API Response Parsing** (2026-02-14)
+  - Fixed all API files using incorrect response data access pattern
+  - Issue: APIs were using `response.data.data.X` when they should use `response.data.X`
+  - Affected files:
+    - `frontend/src/api/assignments.api.ts` - getAll, getById, getUpcoming, getOverdue, getCalendar, create, update, complete
+    - `frontend/src/api/templates.api.ts` - getAll, getById, create, update
+    - `frontend/src/api/users.api.ts` - getAll, getById, create, update
+    - `frontend/src/api/categories.api.ts` - getAll, getById, create, update, getTemplates
+    - `frontend/src/api/chores.api.ts` - getAll, getById, create, update, complete
+  - Root cause: The API client returns unwrapped response data, so there was an extra `.data` in the access path
+  - This fix resolved issues with:
+    - Calendar not displaying assignments
+    - Dashboard showing empty pending chores list
+    - Templates and categories not loading
+
+- **Overdue Status Display** (2026-02-14)
+  - Backend now includes `isOverdue` computed field in all assignment responses
+  - Dashboard and Calendar now correctly show overdue chores with red styling
+
+- **Overdue Notifications** (2026-02-14)
+  - Added automatic overdue notification creation
+  - New endpoint: `POST /api/notifications/check-overdue`
+  - Frontend calls this when loading notifications
+  - Prevents duplicate notifications for same overdue chore
+
 ### Added
 
 - **Chore Templates System** (2026-02-13)

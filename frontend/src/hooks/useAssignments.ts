@@ -10,7 +10,7 @@ interface UseAssignmentsReturn {
   createAssignment: (data: CreateAssignmentData) => Promise<{ success: boolean; message?: string }>
   updateAssignment: (id: number, data: UpdateAssignmentData) => Promise<{ success: boolean; message?: string }>
   deleteAssignment: (id: number) => Promise<{ success: boolean; message?: string }>
-  completeAssignment: (id: number) => Promise<{ success: boolean; pointsAwarded?: number; message?: string }>
+  completeAssignment: (id: number, options?: { status?: 'COMPLETED' | 'PARTIALLY_COMPLETE'; customPoints?: number }) => Promise<{ success: boolean; pointsAwarded?: number; message?: string }>
 }
 
 export const useAssignments = (): UseAssignmentsReturn => {
@@ -75,9 +75,9 @@ export const useAssignments = (): UseAssignmentsReturn => {
     }
   }
 
-  const completeAssignment = async (id: number) => {
+  const completeAssignment = async (id: number, options?: { status?: 'COMPLETED' | 'PARTIALLY_COMPLETE'; customPoints?: number }) => {
     try {
-      const response = await assignmentsApi.complete(id)
+      const response = await assignmentsApi.complete(id, options)
       await fetchAssignments()
       return { success: true, pointsAwarded: response.pointsAwarded }
     } catch (err) {

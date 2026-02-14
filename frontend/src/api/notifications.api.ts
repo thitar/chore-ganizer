@@ -11,17 +11,21 @@ export interface NotificationResponse {
 
 export const notificationsApi = {
   getAll: (params?: { unreadOnly?: boolean }) =>
-    apiClient.get<NotificationsResponse>('/notifications', { params }),
+    apiClient.get<{ notifications: Notification[] }>('/notifications', { params }),
 
   getById: (id: number) =>
-    apiClient.get<NotificationResponse>(`/notifications/${id}`),
+    apiClient.get<{ notification: Notification }>(`/notifications/${id}`),
 
   markAsRead: (id: number) =>
-    apiClient.put<NotificationResponse>(`/notifications/${id}/read`),
+    apiClient.put<{ notification: Notification }>(`/notifications/${id}/read`),
 
   markAllAsRead: () =>
     apiClient.put<{ message: string }>('/notifications/read-all'),
 
   delete: (id: number) =>
     apiClient.delete<{ message: string }>(`/notifications/${id}`),
+
+  // Check for overdue chores and create notifications
+  checkOverdue: () =>
+    apiClient.post<{ count: number }>('/notifications/check-overdue'),
 }

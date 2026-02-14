@@ -12,6 +12,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) =
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'chores', label: 'Chores', icon: '📋' },
+    { id: 'calendar', label: 'Calendar', icon: '📅' },
     { id: 'templates', label: 'Templates', icon: '📝' },
     { id: 'profile', label: 'Profile', icon: '👤' },
   ]
