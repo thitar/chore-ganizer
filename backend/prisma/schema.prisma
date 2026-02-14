@@ -11,27 +11,68 @@ datasource db {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  email         String         @unique
-  password      String
-  name          String
-  role          String         @default("CHILD")
-  points        Int            @default(0)
-  createdAt     DateTime       @default(now())
-  assignedChores Chore[]       @relation("AssignedChores")
-  notifications Notification[]
+  id                   Int                 @id @default(autoincrement())
+  email                String              @unique
+  password             String
+  name                 String
+  role                 String              @default("CHILD")
+  points               Int                 @default(0)
+  createdAt            DateTime            @default(now())
+  createdTemplates     ChoreTemplate[]     @relation("CreatedTemplates")
+  assignedChores       ChoreAssignment[]   @relation("AssignedTo")
+  assignedByChores     ChoreAssignment[]   @relation("AssignedBy")
+  notifications        Notification[]
 }
 
-model Chore {
-  id          Int        @id @default(autoincrement())
+model ChoreCategory {
+  id          Int              @id @default(autoincrement())
+  name        String
+  description String?
+  icon        String?
+  color       String?
+  templates   ChoreTemplate[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([name])
+}
+
+model ChoreTemplate {
+  id          Int              @id @default(autoincrement())
   title       String
   description String?
   points      Int
-  status      String     @default("PENDING")
-  assignedToId Int
-  assignedTo  User       @relation("AssignedChores", fields: [assignedToId], references: [id], onDelete: Cascade)
-  createdAt   DateTime   @default(now())
-  completedAt DateTime?
+  icon        String?
+  color       String?
+  categoryId  Int?
+  category    ChoreCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdById Int
+  createdBy   User             @relation("CreatedTemplates", fields: [createdById], references: [id], onDelete: Cascade)
+  assignments ChoreAssignment[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([createdById])
+  @@index([categoryId])
+}
+
+model ChoreAssignment {
+  id              Int          @id @default(autoincrement())
+  choreTemplateId Int
+  choreTemplate   ChoreTemplate @relation(fields: [choreTemplateId], references: [id], onDelete: Cascade)
+  assignedToId    Int
+  assignedTo      User         @relation("AssignedTo", fields: [assignedToId], references: [id], onDelete: Cascade)
+  assignedById    Int
+  assignedBy      User         @relation("AssignedBy", fields: [assignedById], references: [id], onDelete: Cascade)
+  dueDate         DateTime
+  status          String       @default("PENDING")
+  notes           String?
+  createdAt       DateTime     @default(now())
+  completedAt     DateTime?
+
+  @@index([assignedToId])
+  @@index([dueDate])
+  @@index([status])
 }
 
 model Notification {
@@ -43,4 +84,6 @@ model Notification {
   message   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }

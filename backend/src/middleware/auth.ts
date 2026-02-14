@@ -93,3 +93,32 @@ export const authorize = (...allowedRoles: string[]) => {
     next()
   }
 }
+
+/**
+ * Require parent role middleware
+ */
+export const requireParent = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.user) {
+    res.status(401).json({
+      success: false,
+      error: {
+        message: 'Unauthorized - No user found',
+        code: 'UNAUTHORIZED',
+      },
+    })
+    return
+  }
+
+  if (req.user.role !== 'PARENT') {
+    res.status(403).json({
+      success: false,
+      error: {
+        message: 'Forbidden - Parent access required',
+        code: 'FORBIDDEN',
+      },
+    })
+    return
+  }
+
+  next()
+}

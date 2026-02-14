@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import authRoutes from './auth.routes.js'
-import choresRoutes from './chores.routes.js'
+import choreTemplatesRoutes from './chore-templates.routes.js'
+import choreAssignmentsRoutes from './chore-assignments.routes.js'
+import choreCategoriesRoutes from './chore-categories.routes.js'
 import usersRoutes from './users.routes.js'
 import notificationsRoutes from './notifications.routes.js'
 import * as healthController from '../controllers/health.controller.js'
@@ -13,7 +15,9 @@ router.get('/health', asyncHandler(healthController.healthCheck))
 
 // API routes
 router.use('/auth', authRoutes)
-router.use('/chores', choresRoutes)
+router.use('/chore-templates', choreTemplatesRoutes)
+router.use('/chore-assignments', choreAssignmentsRoutes)
+router.use('/chore-categories', choreCategoriesRoutes)
 router.use('/users', usersRoutes)
 router.use('/notifications', notificationsRoutes)
 

@@ -38,6 +38,18 @@
     {
       "name": "Notifications",
       "description": "Notification endpoints"
+    },
+    {
+      "name": "Chore Templates",
+      "description": "Chore template management (Parent-only: create, update, delete)"
+    },
+    {
+      "name": "Chore Assignments",
+      "description": "Chore assignment management with due dates and completion tracking"
+    },
+    {
+      "name": "Chore Categories",
+      "description": "Chore category management (Parent-only: create, update, delete)"
     }
   ],
   "paths": {
@@ -862,6 +874,1167 @@
           }
         }
       }
+    },
+    "/chore-templates": {
+      "get": {
+        "tags": ["Chore Templates"],
+        "summary": "Get all chore templates",
+        "description": "Retrieve all chore templates (all authenticated users)",
+        "operationId": "getAllChoreTemplates",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of chore templates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreTemplateListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Chore Templates"],
+        "summary": "Create a chore template",
+        "description": "Create a new chore template (Parents only)",
+        "operationId": "createChoreTemplate",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChoreTemplateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Chore template created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreTemplateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chore-templates/{id}": {
+      "get": {
+        "tags": ["Chore Templates"],
+        "summary": "Get chore template by ID",
+        "description": "Retrieve a specific chore template by its ID",
+        "operationId": "getChoreTemplateById",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore Template ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chore template details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreTemplateResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chore template not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Chore Templates"],
+        "summary": "Update a chore template",
+        "description": "Update an existing chore template (Parents only)",
+        "operationId": "updateChoreTemplate",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore Template ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChoreTemplateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chore template updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreTemplateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chore template not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Chore Templates"],
+        "summary": "Delete a chore template",
+        "description": "Delete a chore template (Parents only)",
+        "operationId": "deleteChoreTemplate",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore Template ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chore template deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chore template not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chore-assignments": {
+      "get": {
+        "tags": ["Chore Assignments"],
+        "summary": "Get all chore assignments",
+        "description": "Retrieve all chore assignments with optional filters (status, userId, fromDate, toDate)",
+        "operationId": "getAllChoreAssignments",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by status (PENDING, COMPLETED)",
+            "schema": {
+              "type": "string",
+              "enum": ["PENDING", "COMPLETED"]
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "Filter by assigned user ID",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "fromDate",
+            "in": "query",
+            "description": "Filter from due date (ISO 8601)",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "toDate",
+            "in": "query",
+            "description": "Filter to due date (ISO 8601)",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of chore assignments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreAssignmentListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Chore Assignments"],
+        "summary": "Create a chore assignment",
+        "description": "Assign a chore template to a user with a due date (Parents only)",
+        "operationId": "createChoreAssignment",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChoreAssignmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Chore assignment created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreAssignmentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chore-assignments/upcoming": {
+      "get": {
+        "tags": ["Chore Assignments"],
+        "summary": "Get upcoming assignments",
+        "description": "Get assignments due in the next N days",
+        "operationId": "getUpcomingAssignments",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "description": "Number of days to look ahead (default: 7)",
+            "schema": {
+              "type": "integer",
+              "default": 7
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of upcoming assignments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreAssignmentListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chore-assignments/overdue": {
+      "get": {
+        "tags": ["Chore Assignments"],
+        "summary": "Get overdue assignments",
+        "description": "Get all overdue (past due date) assignments",
+        "operationId": "getOverdueAssignments",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of overdue assignments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreAssignmentListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chore-assignments/calendar": {
+      "get": {
+        "tags": ["Chore Assignments"],
+        "summary": "Get calendar view",
+        "description": "Get assignments for a specific month (calendar view)",
+        "operationId": "getCalendarAssignments",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "description": "Year (default: current year)",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "description": "Month (1-12, default: current month)",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Calendar view of assignments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarAssignmentResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chore-assignments/{id}": {
+      "get": {
+        "tags": ["Chore Assignments"],
+        "summary": "Get chore assignment by ID",
+        "description": "Retrieve a specific chore assignment by its ID",
+        "operationId": "getChoreAssignmentById",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore Assignment ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chore assignment details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreAssignmentResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chore assignment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Chore Assignments"],
+        "summary": "Update a chore assignment",
+        "description": "Update an existing chore assignment (reschedule, reassign) (Parents only)",
+        "operationId": "updateChoreAssignment",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore Assignment ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChoreAssignmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chore assignment updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreAssignmentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chore assignment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Chore Assignments"],
+        "summary": "Delete a chore assignment",
+        "description": "Delete a chore assignment (Parents only)",
+        "operationId": "deleteChoreAssignment",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore Assignment ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chore assignment deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chore assignment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chore-assignments/{id}/complete": {
+      "post": {
+        "tags": ["Chore Assignments"],
+        "summary": "Complete a chore assignment",
+        "description": "Mark a chore assignment as completed and award points",
+        "operationId": "completeChoreAssignment",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore Assignment ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chore assignment completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteChoreAssignmentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or already completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chore assignment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chore-categories": {
+      "get": {
+        "tags": ["Chore Categories"],
+        "summary": "Get all chore categories",
+        "description": "Retrieve all chore categories with template counts",
+        "operationId": "getAllChoreCategories",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of chore categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreCategoryListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Chore Categories"],
+        "summary": "Create a chore category",
+        "description": "Create a new chore category (Parents only)",
+        "operationId": "createChoreCategory",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChoreCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Chore category created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreCategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chore-categories/{id}": {
+      "get": {
+        "tags": ["Chore Categories"],
+        "summary": "Get chore category by ID",
+        "description": "Retrieve a specific chore category by its ID",
+        "operationId": "getChoreCategoryById",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore Category ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chore category details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreCategoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chore category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Chore Categories"],
+        "summary": "Update a chore category",
+        "description": "Update an existing chore category (Parents only)",
+        "operationId": "updateChoreCategory",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore Category ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChoreCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chore category updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreCategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chore category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Chore Categories"],
+        "summary": "Delete a chore category",
+        "description": "Delete a chore category (Parents only)",
+        "operationId": "deleteChoreCategory",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore Category ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chore category deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chore category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chore-categories/{id}/templates": {
+      "get": {
+        "tags": ["Chore Categories"],
+        "summary": "Get templates by category",
+        "description": "Retrieve all templates in a specific category",
+        "operationId": "getCategoryTemplates",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore Category ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of templates in the category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreTemplateListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1256,6 +2429,443 @@
               "code": {
                 "type": "string",
                 "example": "ERROR_CODE"
+              }
+            }
+          }
+        }
+      },
+      "ChoreTemplate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "example": "Wash dishes"
+          },
+          "description": {
+            "type": "string",
+            "example": "Wash all dishes after dinner"
+          },
+          "points": {
+            "type": "integer",
+            "example": 10
+          },
+          "icon": {
+            "type": "string",
+            "example": "soap"
+          },
+          "color": {
+            "type": "string",
+            "example": "#FF6B6B"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChoreAssignment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "templateId": {
+            "type": "integer",
+            "example": 1
+          },
+          "template": {
+            "$ref": "#/components/schemas/ChoreTemplate"
+          },
+          "assignedToId": {
+            "type": "integer",
+            "example": 2
+          },
+          "assignedTo": {
+            "$ref": "#/components/schemas/User"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-12-31T23:59:59.000Z"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "COMPLETED"],
+            "example": "PENDING"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "isOverdue": {
+            "type": "boolean",
+            "description": "Computed field: true if past due date and not completed",
+            "example": false
+          }
+        }
+      },
+      "CreateChoreTemplateRequest": {
+        "type": "object",
+        "required": ["title", "points"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Wash dishes"
+          },
+          "description": {
+            "type": "string",
+            "example": "Wash all dishes after dinner"
+          },
+          "points": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 10
+          },
+          "icon": {
+            "type": "string",
+            "example": "soap"
+          },
+          "color": {
+            "type": "string",
+            "example": "#FF6B6B"
+          }
+        }
+      },
+      "UpdateChoreTemplateRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Wash dishes"
+          },
+          "description": {
+            "type": "string",
+            "example": "Wash all dishes after dinner"
+          },
+          "points": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 15
+          },
+          "icon": {
+            "type": "string",
+            "example": "soap"
+          },
+          "color": {
+            "type": "string",
+            "example": "#FF6B6B"
+          }
+        }
+      },
+      "CreateChoreAssignmentRequest": {
+        "type": "object",
+        "required": ["templateId", "assignedToId", "dueDate"],
+        "properties": {
+          "templateId": {
+            "type": "integer",
+            "description": "ID of the chore template to assign",
+            "example": 1
+          },
+          "assignedToId": {
+            "type": "integer",
+            "description": "ID of the user to assign the chore to",
+            "example": 2
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Due date for the assignment",
+            "example": "2024-12-31T23:59:59.000Z"
+          }
+        }
+      },
+      "UpdateChoreAssignmentRequest": {
+        "type": "object",
+        "properties": {
+          "assignedToId": {
+            "type": "integer",
+            "description": "Reassign to a different user",
+            "example": 3
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Reschedule to a different date",
+            "example": "2025-01-15T23:59:59.000Z"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "COMPLETED"],
+            "description": "Manually set status (Parents only)",
+            "example": "PENDING"
+          }
+        }
+      },
+      "ChoreTemplateResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "template": {
+                "$ref": "#/components/schemas/ChoreTemplate"
+              }
+            }
+          }
+        }
+      },
+      "ChoreTemplateListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "templates": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ChoreTemplate"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ChoreAssignmentResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "assignment": {
+                "$ref": "#/components/schemas/ChoreAssignment"
+              }
+            }
+          }
+        }
+      },
+      "ChoreAssignmentListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "assignments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ChoreAssignment"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CompleteChoreAssignmentResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "assignment": {
+                "$ref": "#/components/schemas/ChoreAssignment"
+              },
+              "pointsAwarded": {
+                "type": "integer",
+                "description": "Points earned for completing this assignment",
+                "example": 10
+              }
+            }
+          }
+        }
+      },
+      "CalendarAssignmentResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "year": {
+                "type": "integer",
+                "example": 2024
+              },
+              "month": {
+                "type": "integer",
+                "example": 12
+              },
+              "assignments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ChoreAssignment"
+                }
+              },
+              "days": {
+                "type": "object",
+                "description": "Map of day number to assignments for that day",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChoreAssignment"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ChoreCategory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Cleaning"
+          },
+          "description": {
+            "type": "string",
+            "example": "House cleaning chores"
+          },
+          "icon": {
+            "type": "string",
+            "example": "broom"
+          },
+          "color": {
+            "type": "string",
+            "example": "#4CAF50"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "_count": {
+            "type": "object",
+            "properties": {
+              "templates": {
+                "type": "integer",
+                "example": 5
+              }
+            }
+          }
+        }
+      },
+      "CreateChoreCategoryRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Cleaning"
+          },
+          "description": {
+            "type": "string",
+            "example": "House cleaning chores"
+          },
+          "icon": {
+            "type": "string",
+            "example": "broom"
+          },
+          "color": {
+            "type": "string",
+            "example": "#4CAF50"
+          }
+        }
+      },
+      "UpdateChoreCategoryRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Cleaning"
+          },
+          "description": {
+            "type": "string",
+            "example": "House cleaning chores"
+          },
+          "icon": {
+            "type": "string",
+            "example": "broom"
+          },
+          "color": {
+            "type": "string",
+            "example": "#4CAF50"
+          }
+        }
+      },
+      "ChoreCategoryResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "category": {
+                "$ref": "#/components/schemas/ChoreCategory"
+              }
+            }
+          }
+        }
+      },
+      "ChoreCategoryListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "categories": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ChoreCategory"
+                }
               }
             }
           }

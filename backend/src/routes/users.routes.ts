@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import * as usersController from '../controllers/users.controller.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
-import { authenticate, authorize } from '../middleware/auth.js'
+import { authenticate, authorize, requireParent } from '../middleware/auth.js'
 
 const router = Router()
 
@@ -30,14 +30,26 @@ router.get(
 )
 
 /**
- * @route   GET /api/users/:id/chores
- * @desc    Get chores assigned to a user
+ * @route   GET /api/users/:id/assignments
+ * @desc    Get assignments assigned to a user
  * @access  Private
  */
 router.get(
-  '/:id/chores',
+  '/:id/assignments',
   authenticate,
-  asyncHandler(usersController.getUserChores)
+  asyncHandler(usersController.getUserAssignments)
+)
+
+/**
+ * @route   PUT /api/users/:id
+ * @desc    Update user
+ * @access  Private (Parents only)
+ */
+router.put(
+  '/:id',
+  authenticate,
+  requireParent,
+  asyncHandler(usersController.updateUser)
 )
 
 export default router

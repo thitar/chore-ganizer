@@ -13,7 +13,9 @@ Complete REST API reference for Chore-Ganizer backend.
 5. [Endpoints](#endpoints)
    - [Authentication](#authentication-endpoints)
    - [Users](#users-endpoints)
-   - [Chores](#chores-endpoints)
+   - [Chore Templates](#chore-templates-endpoints)
+   - [Chore Assignments](#chore-assignments-endpoints)
+   - [Chore Categories](#chore-categories-endpoints)
    - [Notifications](#notifications-endpoints)
    - [Health](#health-endpoints)
 
@@ -753,6 +755,295 @@ The following endpoints are planned for future releases:
 - `POST /api/rewards/:id/redeem` - Redeem a reward (children only)
 - `POST /api/chores/:id/recurring` - Set up recurring chores
 - `GET /api/analytics` - Get family analytics (parents only)
+
+---
+
+## ⚠️ Deprecated Endpoints
+
+> **Note:** The following endpoints from the old chore system have been deprecated:
+
+| Deprecated Endpoint | Replacement |
+|-------------------|-------------|
+| `GET /api/chores` | `GET /api/chore-assignments` |
+| `GET /api/chores/:id` | `GET /api/chore-assignments/:id` |
+| `POST /api/chores` | `POST /api/chore-assignments` (requires template) |
+| `PUT /api/chores/:id` | `PUT /api/chore-assignments/:id` |
+| `DELETE /api/chores/:id` | `DELETE /api/chore-assignments/:id` |
+| `POST /api/chores/:id/complete` | `POST /api/chore-assignments/:id/complete` |
+
+### New Chore Templates System
+
+The new system uses **Chore Templates** (reusable chore definitions) and **Chore Assignments** (instances assigned to users with due dates).
+
+#### Chore Template Object
+```typescript
+{
+  id: number;
+  title: string;
+  description: string | null;
+  points: number;
+  icon: string | null;
+  color: string | null;
+  categoryId: number | null;
+  createdById: number;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+#### Chore Assignment Object
+```typescript
+{
+  id: number;
+  choreTemplateId: number;
+  choreTemplate: ChoreTemplate;
+  assignedToId: number;
+  assignedTo: { id: number; name: string };
+  assignedById: number;
+  assignedBy: { id: number; name: string };
+  dueDate: string;
+  status: 'PENDING' | 'COMPLETED';
+  notes: string | null;
+  createdAt: string;
+  completedAt: string | null;
+  isOverdue: boolean;
+}
+```
+
+---
+
+### Chore Templates Endpoints
+
+#### GET `/api/chore-templates`
+
+Get all chore templates.
+
+**Authentication:** Required  
+**Role:** Any authenticated user
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `categoryId` | number | - | Filter by category |
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "templates": [
+      {
+        "id": 1,
+        "title": "Clean bedroom",
+        "description": "Make bed and pick up toys",
+        "points": 10,
+        "icon": null,
+        "color": "#FF5733",
+        "categoryId": 1,
+        "createdById": 1,
+        "createdAt": "2026-02-13T00:00:00.000Z",
+        "updatedAt": "2026-02-13T00:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+#### POST `/api/chore-templates`
+
+Create a new chore template.
+
+**Authentication:** Required  
+**Role:** `PARENT` only
+
+**Request Body:**
+```json
+{
+  "title": "Clean bedroom",
+  "description": "Make bed and pick up toys",
+  "points": 10,
+  "icon": "🧹",
+  "color": "#FF5733",
+  "categoryId": 1
+}
+```
+
+---
+
+### Chore Assignments Endpoints
+
+#### GET `/api/chore-assignments`
+
+Get all chore assignments.
+
+**Authentication:** Required  
+**Role:** Any authenticated user
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `status` | string | - | Filter by status: `PENDING`, `COMPLETED` |
+| `userId` | number | - | Filter by assigned user ID |
+| `fromDate` | string | - | Filter from date (ISO) |
+| `toDate` | string | - | Filter to date (ISO) |
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "assignments": [
+      {
+        "id": 1,
+        "choreTemplateId": 1,
+        "choreTemplate": {
+          "id": 1,
+          "title": "Clean bedroom",
+          "description": "Make bed and pick up toys",
+          "points": 10
+        },
+        "assignedToId": 2,
+        "assignedTo": { "id": 2, "name": "Alice" },
+        "assignedById": 1,
+        "assignedBy": { "id": 1, "name": "Dad" },
+        "dueDate": "2026-02-15T23:59:59.999Z",
+        "status": "PENDING",
+        "notes": null,
+        "createdAt": "2026-02-13T00:00:00.000Z",
+        "completedAt": null,
+        "isOverdue": false
+      }
+    ]
+  }
+}
+```
+
+#### GET `/api/chore-assignments/upcoming`
+
+Get upcoming assignments (next N days).
+
+**Authentication:** Required
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `days` | number | 7 | Number of days to look ahead |
+
+#### GET `/api/chore-assignments/overdue`
+
+Get overdue assignments.
+
+**Authentication:** Required
+
+#### GET `/api/chore-assignments/calendar`
+
+Get assignments for calendar view.
+
+**Authentication:** Required
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `year` | number | current year | Year for calendar |
+| `month` | number | current month | Month for calendar |
+
+#### POST `/api/chore-assignments`
+
+Create a new chore assignment.
+
+**Authentication:** Required  
+**Role:** `PARENT` only
+
+**Request Body:**
+```json
+{
+  "templateId": 1,
+  "assignedToId": 2,
+  "dueDate": "2026-02-15"
+}
+```
+
+#### POST `/api/chore-assignments/:id/complete`
+
+Mark assignment as complete.
+
+**Authentication:** Required  
+**Role:** Assigned user or parent
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "assignment": { ... },
+    "pointsAwarded": 10
+  }
+}
+```
+
+---
+
+### Chore Categories Endpoints
+
+#### GET `/api/chore-categories`
+
+Get all chore categories.
+
+**Authentication:** Required
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "categories": [
+      {
+        "id": 1,
+        "name": "Cleaning",
+        "description": "Cleaning chores",
+        "icon": "🧹",
+        "color": "#FF5733",
+        "createdAt": "2026-02-13T00:00:00.000Z",
+        "updatedAt": "2026-02-13T00:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 🧪 Testing the New API
+
+```bash
+# Login
+curl -X POST http://localhost:3002/api/auth/login \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{"email":"dad@home","password":"password123"}'
+
+# Get all templates
+curl -X GET http://localhost:3002/api/chore-templates \
+  -b cookies.txt
+
+# Get all assignments
+curl -X GET http://localhost:3002/api/chore-assignments \
+  -b cookies.txt
+
+# Get upcoming assignments
+curl -X GET "http://localhost:3002/api/chore-assignments/upcoming?days=7" \
+  -b cookies.txt
+
+# Create an assignment
+curl -X POST http://localhost:3002/api/chore-assignments \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"templateId":1,"assignedToId":2,"dueDate":"2026-02-20"}'
+
+# Complete an assignment
+curl -X POST http://localhost:3002/api/chore-assignments/1/complete \
+  -b cookies.txt
+```
 
 ---
 

@@ -35,10 +35,10 @@ export const getUserById = async (req: Request, res: Response) => {
 }
 
 /**
- * GET /api/users/:id/chores
- * Get chores assigned to a user
+ * GET /api/users/:id/assignments
+ * Get assignments assigned to a user
  */
-export const getUserChores = async (req: Request, res: Response) => {
+export const getUserAssignments = async (req: Request, res: Response) => {
   const userId = Number(req.params.id)
   const { status } = req.query
 
@@ -48,16 +48,36 @@ export const getUserChores = async (req: Request, res: Response) => {
 
   // Check if user has access (parent or own user)
   if (req.user!.role !== 'PARENT' && userId !== req.user!.id) {
-    throw new AppError('Forbidden - You can only view your own chores', 403, 'FORBIDDEN')
+    throw new AppError('Forbidden - You can only view your own assignments', 403, 'FORBIDDEN')
   }
 
-  const chores = await usersService.getUserChores(
+  const assignments = await usersService.getUserAssignments(
     userId,
-    status as 'pending' | 'completed' | 'all'
+    status as 'pending' | 'completed' | 'overdue' | 'all'
   )
 
   res.json({
     success: true,
-    data: { chores },
+    data: { assignments },
+  })
+}
+
+/**
+ * PUT /api/users/:id
+ * Update user (parents only)
+ */
+export const updateUser = async (req: Request, res: Response) => {
+  const userId = Number(req.params.id)
+  const { name, role } = req.body
+
+  if (isNaN(userId)) {
+    throw new AppError('Invalid user ID', 400, 'VALIDATION_ERROR')
+  }
+
+  const user = await usersService.updateUser(userId, { name, role })
+
+  res.json({
+    success: true,
+    data: { user },
   })
 }

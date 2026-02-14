@@ -54,24 +54,45 @@ export const getUserById = async (userId: number): Promise<User> => {
 }
 
 /**
- * Get chores assigned to a user
+ * Get assignments assigned to a user
  */
-export const getUserChores = async (
+export const getUserAssignments = async (
   userId: number,
-  status?: 'pending' | 'completed' | 'all'
+  status?: 'pending' | 'completed' | 'overdue' | 'all'
 ) => {
   const where: any = {
     assignedToId: userId,
   }
 
   if (status && status !== 'all') {
-    where.status = status.toUpperCase()
+    if (status === 'overdue') {
+      where.status = 'PENDING'
+      where.dueDate = { lt: new Date() }
+    } else {
+      where.status = status.toUpperCase()
+    }
   }
 
-  const chores = await prisma.chore.findMany({
+  const assignments = await prisma.choreAssignment.findMany({
     where,
     include: {
+      choreTemplate: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          points: true,
+          icon: true,
+          color: true,
+        },
+      },
       assignedTo: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      assignedBy: {
         select: {
           id: true,
           name: true,
@@ -79,9 +100,29 @@ export const getUserChores = async (
       },
     },
     orderBy: {
-      createdAt: 'desc',
+      dueDate: 'asc',
     },
   })
 
-  return chores
+  return assignments
+}
+
+/**
+ * Update user
+ */
+export const updateUser = async (userId: number, data: { name?: string; role?: string }) => {
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data,
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      points: true,
+      createdAt: true,
+    },
+  })
+
+  return user
 }

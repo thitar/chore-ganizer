@@ -7,6 +7,60 @@ export interface User {
   createdAt: string
 }
 
+export interface ChoreCategory {
+  id: number
+  name: string
+  description: string | null
+  icon: string | null
+  color: string | null
+  createdAt: string
+  updatedAt: string
+  _count?: {
+    templates: number
+  }
+}
+
+export interface ChoreTemplate {
+  id: number
+  title: string
+  description: string | null
+  points: number
+  icon: string | null
+  color: string | null
+  categoryId: number | null
+  category: {
+    id: number
+    name: string
+  } | null
+  createdById: number
+  createdBy: {
+    id: number
+    name: string
+  }
+  createdAt: string
+  updatedAt: string
+  _count?: {
+    assignments: number
+  }
+}
+
+export interface ChoreAssignment {
+  id: number
+  choreTemplateId: number
+  choreTemplate: ChoreTemplate
+  assignedToId: number
+  assignedTo: {
+    id: number
+    name: string
+  }
+  dueDate: string
+  status: 'PENDING' | 'COMPLETED'
+  notes: string | null
+  createdAt: string
+  completedAt: string | null
+  isOverdue: boolean
+}
+
 export interface Chore {
   id: number
   title: string
@@ -42,6 +96,7 @@ export interface CreateChoreData {
   description?: string
   points: number
   assignedToId: number
+  categoryId?: number
 }
 
 export interface UpdateChoreData {
@@ -49,6 +104,51 @@ export interface UpdateChoreData {
   description?: string
   points?: number
   assignedToId?: number
+  categoryId?: number
+}
+
+export interface CreateCategoryData {
+  name: string
+  description?: string
+  icon?: string
+  color?: string
+}
+
+export interface UpdateCategoryData {
+  name?: string
+  description?: string
+  icon?: string
+  color?: string
+}
+
+export interface CreateTemplateData {
+  title: string
+  description?: string
+  points: number
+  icon?: string
+  color?: string
+  categoryId?: number
+}
+
+export interface UpdateTemplateData {
+  title?: string
+  description?: string
+  points?: number
+  icon?: string
+  color?: string
+  categoryId?: number
+}
+
+export interface CreateAssignmentData {
+  templateId: number
+  assignedToId: number
+  dueDate: string
+}
+
+export interface UpdateAssignmentData {
+  assignedToId?: number
+  dueDate?: string
+  status?: 'PENDING' | 'COMPLETED'
 }
 
 export interface CreateUserData {

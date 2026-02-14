@@ -1,14 +1,14 @@
 import React from 'react'
-import type { Chore, User } from '../../types'
+import type { ChoreAssignment, User } from '../../types'
 import { ChoreCard } from './ChoreCard'
 import { Loading } from '../common'
 
 interface ChoreListProps {
-  chores: Chore[]
+  chores: ChoreAssignment[]
   loading: boolean
   error: string | null
   onComplete: (id: number) => void
-  onEdit: (chore: Chore) => void
+  onEdit: (assignment: ChoreAssignment) => void
   onDelete: (id: number) => void
   canEdit: boolean
   canComplete: boolean

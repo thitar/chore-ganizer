@@ -1,63 +1,64 @@
 import React, { useState } from 'react'
-import { useAuth, useChores, useUsers } from '../hooks'
+import { useAuth, useAssignments, useUsers, useTemplates } from '../hooks'
 import { Button } from '../components/common'
 import { ChoreList, ChoreForm, ChoreFilters } from '../components/chores'
-import type { Chore, CreateChoreData, UpdateChoreData } from '../types'
+import type { ChoreAssignment, CreateAssignmentData, UpdateAssignmentData } from '../types'
 
 export const Chores: React.FC = () => {
   const { user, isParent } = useAuth()
-  const { chores, loading, error, createChore, updateChore, deleteChore, completeChore, refresh } = useChores()
+  const { assignments, loading, error, createAssignment, updateAssignment, deleteAssignment, completeAssignment, fetchAssignments } = useAssignments()
   const { users } = useUsers()
+  const { templates } = useTemplates()
   const [filter, setFilter] = useState('all')
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const [editingChore, setEditingChore] = useState<Chore | undefined>(undefined)
+  const [editingAssignment, setEditingAssignment] = useState<ChoreAssignment | undefined>(undefined)
   const [formLoading, setFormLoading] = useState(false)
 
-  const filteredChores = chores.filter((chore) => {
+  const filteredAssignments = assignments.filter((assignment) => {
     if (filter === 'all') return true
-    return chore.status === filter
+    return assignment.status === filter
   })
 
-  const handleCreate = async (data: CreateChoreData | UpdateChoreData) => {
+  const handleCreate = async (data: CreateAssignmentData | UpdateAssignmentData) => {
     setFormLoading(true)
-    const result = await createChore(data as CreateChoreData)
+    const result = await createAssignment(data as CreateAssignmentData)
     setFormLoading(false)
     if (result.success) {
       setIsFormOpen(false)
-      refresh()
+      fetchAssignments()
     }
   }
 
-  const handleUpdate = async (data: CreateChoreData | UpdateChoreData) => {
-    if (!editingChore) return
+  const handleUpdate = async (data: CreateAssignmentData | UpdateAssignmentData) => {
+    if (!editingAssignment) return
     setFormLoading(true)
-    const result = await updateChore(editingChore.id, data as UpdateChoreData)
+    const result = await updateAssignment(editingAssignment.id, data as UpdateAssignmentData)
     setFormLoading(false)
     if (result.success) {
-      setEditingChore(undefined)
+      setEditingAssignment(undefined)
       setIsFormOpen(false)
-      refresh()
+      fetchAssignments()
     }
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this chore?')) return
-    const result = await deleteChore(id)
+    if (!confirm('Are you sure you want to delete this assignment?')) return
+    const result = await deleteAssignment(id)
     if (result.success) {
-      refresh()
+      fetchAssignments()
     }
   }
 
   const handleComplete = async (id: number) => {
-    const result = await completeChore(id)
+    const result = await completeAssignment(id)
     if (result.success) {
       alert(`Chore completed! You earned ${result.pointsAwarded} points!`)
-      refresh()
+      fetchAssignments()
     }
   }
 
-  const handleEdit = (chore: Chore) => {
-    setEditingChore(chore)
+  const handleEdit = (assignment: ChoreAssignment) => {
+    setEditingAssignment(assignment)
     setIsFormOpen(true)
   }
 
@@ -78,7 +79,7 @@ export const Chores: React.FC = () => {
       <ChoreFilters currentFilter={filter} onFilterChange={setFilter} />
 
       <ChoreList
-        chores={filteredChores}
+        chores={filteredAssignments}
         loading={loading}
         error={error}
         onComplete={handleComplete}
@@ -93,11 +94,12 @@ export const Chores: React.FC = () => {
         isOpen={isFormOpen}
         onClose={() => {
           setIsFormOpen(false)
-          setEditingChore(undefined)
+          setEditingAssignment(undefined)
         }}
-        onSubmit={editingChore ? handleUpdate : handleCreate}
-        chore={editingChore}
+        onSubmit={editingAssignment ? handleUpdate : handleCreate}
+        assignment={editingAssignment}
         users={users}
+        templates={templates}
         loading={formLoading}
       />
     </div>

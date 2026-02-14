@@ -1,5 +1,7 @@
 export { Login } from './Login'
 export { Dashboard } from './Dashboard'
 export { Chores } from './Chores'
+export { Templates } from './Templates'
 export { Profile } from './Profile'
 export { NotFound } from './NotFound'
+export { Users } from './Users'

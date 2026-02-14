@@ -29,14 +29,15 @@ Parents also see a **Family Members** section showing all users and their point 
 
 ## Managing Chores
 
+> **Note:** The chore system has been updated! Chores are now created from **Templates** and assigned to family members with **due dates**.
+
 ### Viewing Chores
 
 1. Click **Chores** in the sidebar menu
-2. You'll see a list of all chores
+2. You'll see a list of all chore assignments
 3. Use the filter buttons to show:
-   - **All** - All chores
-   - **Pending** - Chores not yet started
-   - **In Progress** - Chores being worked on
+   - **All** - All assignments
+   - **Pending** - Chores not yet completed
    - **Completed** - Finished chores
 
 ### For Children: Completing Chores
@@ -47,16 +48,27 @@ Parents also see a **Family Members** section showing all users and their point 
 
 > **Note:** Only chores assigned to you can be completed by you.
 
-### For Parents: Creating Chores
+### For Parents: Creating Chore Assignments
 
-1. Go to **Chores** page
-2. Click **Create Chore** button
-3. Fill in the details:
+1. Go to **Templates** page first to create chore templates (if needed)
+2. Go to **Chores** page
+3. Click **Create Chore** button
+4. Fill in the details:
+   - **Template:** Select which chore template to assign
+   - **Assign To:** Select which family member should do this chore
+   - **Due Date:** When the chore should be completed
+5. Click **Create**
+
+### For Parents: Managing Templates
+
+1. Click **Templates** in the sidebar menu
+2. View all available chore templates
+3. Create new templates with:
    - **Title:** Name of the chore
    - **Description:** Instructions for completing the chore
    - **Points:** Point value for completing this chore
-   - **Assigned To:** Select which family member should do this chore
-4. Click **Create**
+   - **Icon/Emoji:** Visual icon (optional)
+   - **Color:** Color for the card (optional)
 
 ### For Parents: Editing or Deleting Chores
 
