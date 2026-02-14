@@ -12,8 +12,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) =
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'chores', label: 'Chores', icon: '📋' },
-    { id: 'calendar', label: 'Calendar', icon: '📅' },
-    { id: 'templates', label: 'Templates', icon: '📝' },
+    // Global Calendar is parents-only - children see their personal calendar on Dashboard
+    ...(isParent ? [{ id: 'calendar', label: 'Family Calendar', icon: '📅' }] : []),
+    // Templates is parents-only - only parents can create/manage chore templates
+    ...(isParent ? [{ id: 'templates', label: 'Templates', icon: '📝' }] : []),
     { id: 'profile', label: 'Profile', icon: '👤' },
   ]
 

@@ -5,7 +5,7 @@ import { Navbar, Sidebar, Footer } from './components/layout'
 import { Login, Dashboard, Chores, Templates, Profile, NotFound, Users, Calendar } from './pages'
 
 function AppContent() {
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, loading, isParent } = useAuth()
   const { notifications, markAsRead, markAllAsRead } = useNotifications()
   const [currentPage, setCurrentPage] = useState('dashboard')
 
@@ -31,10 +31,18 @@ function AppContent() {
       case 'chores':
         return <Chores />
       case 'templates':
+        // Templates is parents-only - redirect children to dashboard
+        if (!isParent) {
+          return <Dashboard />
+        }
         return <Templates />
       case 'profile':
         return <Profile />
       case 'calendar':
+        // Family Calendar is parents-only - redirect children to dashboard
+        if (!isParent) {
+          return <Dashboard />
+        }
         return <Calendar />
       case 'users':
         return <Users />

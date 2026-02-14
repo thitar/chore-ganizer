@@ -10,7 +10,14 @@ export const assignmentsApi = {
   }): Promise<ChoreAssignment[]> => {
     // Pass the inner data type (not ApiResponse) to client.get
     // client.get returns ApiResponse<T>, so response.data = { assignments: [...] }
-    const response = await client.get<{ assignments: ChoreAssignment[] }>('/chore-assignments', { params })
+    // Map userId to assignedToId for the backend API
+    const apiParams: any = {}
+    if (params?.status) apiParams.status = params.status
+    if (params?.userId) apiParams.assignedToId = params.userId
+    if (params?.fromDate) apiParams.dueDateFrom = params.fromDate
+    if (params?.toDate) apiParams.dueDateTo = params.toDate
+    
+    const response = await client.get<{ assignments: ChoreAssignment[] }>('/chore-assignments', { params: apiParams })
     const assignments = response.data?.assignments || []
     return assignments
   },
@@ -65,7 +72,13 @@ export const assignmentsApi = {
   },
 
   create: async (data: CreateAssignmentData): Promise<ChoreAssignment> => {
-    const response = await client.post<{ assignment: ChoreAssignment }>('/chore-assignments', data)
+    // Map frontend field names to backend expected names
+    const payload = {
+      choreTemplateId: data.templateId,
+      assignedToId: data.assignedToId,
+      dueDate: data.dueDate,
+    }
+    const response = await client.post<{ assignment: ChoreAssignment }>('/chore-assignments', payload)
     return response.data?.assignment
   },
 

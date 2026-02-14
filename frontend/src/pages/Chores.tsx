@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth, useAssignments, useUsers, useTemplates } from '../hooks'
 import { Button } from '../components/common'
 import { ChoreList, ChoreForm, ChoreFilters } from '../components/chores'
+import { assignmentsApi } from '../api'
 import type { ChoreAssignment, CreateAssignmentData, UpdateAssignmentData } from '../types'
 
 export const Chores: React.FC = () => {
@@ -14,8 +15,36 @@ export const Chores: React.FC = () => {
   const [editingAssignment, setEditingAssignment] = useState<ChoreAssignment | undefined>(undefined)
   const [formLoading, setFormLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [myAssignments, setMyAssignments] = useState<ChoreAssignment[]>([])
+  const [myLoading, setMyLoading] = useState(true)
 
-  const filteredAssignments = assignments.filter((assignment) => {
+  // For children, fetch only their own assignments
+  useEffect(() => {
+    if (!user?.id) return
+    
+    loadMyAssignments()
+  }, [user?.id, isParent])
+
+  const loadMyAssignments = async () => {
+    try {
+      setMyLoading(true)
+      // Children only see their own assignments
+      if (!isParent && user?.id) {
+        const data = await assignmentsApi.getAll({ userId: user.id })
+        setMyAssignments(data)
+      }
+    } catch (err) {
+      console.error('Failed to load assignments:', err)
+    } finally {
+      setMyLoading(false)
+    }
+  }
+
+  // For parents, use all assignments; for children, use only their own
+  const displayAssignments = isParent ? assignments : myAssignments
+  const isLoading = isParent ? loading : myLoading
+
+  const filteredAssignments = displayAssignments.filter((assignment) => {
     if (filter === 'all') return true
     return assignment.status === filter
   })
@@ -55,8 +84,12 @@ export const Chores: React.FC = () => {
     if (result.success) {
       const statusText = status === 'PARTIALLY_COMPLETE' ? 'partially completed' : 'completed'
       setSuccessMessage(`Chore ${statusText}! You earned ${result.pointsAwarded} points!`)
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(null), 3000)
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccessMessage(null), 5000)
+      // Refresh the assignments list for children
+      if (!isParent) {
+        await loadMyAssignments()
+      }
     }
   }
 
@@ -91,7 +124,7 @@ export const Chores: React.FC = () => {
 
       <ChoreList
         chores={filteredAssignments}
-        loading={loading}
+        loading={isLoading}
         error={error}
         onComplete={handleComplete}
         onEdit={handleEdit}

@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Personal Dashboard System** (2026-02-14)
+  - Complete redesign of Dashboard to show only the current user's own data
+  - Each family member now sees their personal chore statistics and calendar
+  - Personal stats cards showing: My Pending, Partial, Completed, and My Points
+  - Personal calendar showing only the current user's assigned chores
+  - Collapsible completed chores section to reduce clutter
+  - In-app success notifications instead of browser alerts
+  - Auto-refresh after completing chores
+
+- **Partial Completion Feature** (2026-02-14)
+  - New `PARTIALLY_COMPLETE` status for chore assignments
+  - Children can mark chores as partially complete
+  - Half points awarded for partial completion (unless custom points specified)
+  - Partially completed chores shown separately on Dashboard with orange styling
+
+- **Custom Points for Parents** (2026-02-14)
+  - Parents can award custom points when completing any chore
+  - Useful for rewarding extra effort or deducting for poor work
+  - Custom points override the default half-points for partial completion
+
+- **Role-Based Access Control** (2026-02-14)
+  - Family Calendar is now parents-only (children see personal calendar on Dashboard)
+  - Templates menu hidden from children (only parents can manage templates)
+  - Route protection: children redirected to Dashboard when accessing restricted pages
+
+### Changed
+
+- **Dashboard Personal Data Loading** (2026-02-14)
+  - `loadMyAssignments()` function fetches only current user's assignments via `assignmentsApi.getAll({ userId: user.id })`
+  - Calendar data filtered to show only user's own assignments
+  - Stats calculated from personal assignments only
+
+- **Sidebar Menu** (2026-02-14)
+  - Conditional menu items using `isParent` check
+  - Family Calendar and Templates only visible to parents
+  - Children see simplified menu: Dashboard, Chores, Profile
+
+- **App Routing** (2026-02-14)
+  - Route protection in `renderPage()` function
+  - Children accessing `/templates` or `/calendar` redirected to Dashboard
+
 ### Fixed
 
 - **Frontend API Response Parsing** (2026-02-14)
