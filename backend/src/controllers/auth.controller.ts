@@ -45,6 +45,14 @@ export const login = async (req: Request, res: Response) => {
   // Set session
   req.session.userId = result.user.id
 
+  // Debug logging
+  if (process.env.LOG_LEVEL === 'debug') {
+    console.log('[Login] Session set for user:', result.user.id)
+    console.log('[Login] Session ID:', req.sessionID)
+    console.log('[Login] X-Forwarded-Proto:', req.headers['x-forwarded-proto'])
+    console.log('[Login] Secure cookies enabled:', process.env.SECURE_COOKIES)
+  }
+
   res.json({
     success: true,
     data: result,

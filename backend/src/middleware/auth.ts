@@ -10,6 +10,15 @@ export const authenticate = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Debug logging
+    if (process.env.LOG_LEVEL === 'debug') {
+      console.log('[Auth] Session ID:', req.sessionID)
+      console.log('[Auth] Session data:', req.session)
+      console.log('[Auth] Cookies:', req.headers.cookie)
+      console.log('[Auth] Origin:', req.headers.origin)
+      console.log('[Auth] Host:', req.headers.host)
+    }
+
     const userId = req.session.userId
 
     if (!userId) {

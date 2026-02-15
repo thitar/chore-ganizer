@@ -4,14 +4,24 @@ import type { ApiResponse, ApiError } from '../types'
 // Use VITE_API_URL if set, otherwise use empty string for relative URLs (proxied by nginx)
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-console.log('[ApiClient] Initializing with API_URL:', API_URL || '(empty - using relative URLs)')
+// Enable debug logging in development OR when VITE_DEBUG is set to 'true'
+const isDev = import.meta.env.DEV
+const debugEnabled = isDev || import.meta.env.VITE_DEBUG === 'true'
+
+if (debugEnabled) {
+  console.log('[ApiClient] Initializing with API_URL:', API_URL || '(empty - using relative URLs)')
+  console.log('[ApiClient] Debug mode enabled')
+}
 
 class ApiClient {
   private client: AxiosInstance
 
   constructor() {
     const baseURL = API_URL ? `${API_URL}/api` : '/api'
-    console.log('[ApiClient] baseURL:', baseURL)
+    
+    if (debugEnabled) {
+      console.log('[ApiClient] baseURL:', baseURL)
+    }
     
     this.client = axios.create({
       baseURL,
@@ -24,14 +34,18 @@ class ApiClient {
       },
     })
 
-    // Request interceptor for logging
+    // Request interceptor for logging (when debug enabled)
     this.client.interceptors.request.use(
       (config) => {
-        console.log('[ApiClient] Request:', config.method?.toUpperCase(), config.url, config.data)
+        if (debugEnabled) {
+          console.log('[ApiClient] Request:', config.method?.toUpperCase(), config.url, config.data)
+        }
         return config
       },
       (error) => {
-        console.error('[ApiClient] Request error:', error)
+        if (debugEnabled) {
+          console.error('[ApiClient] Request error:', error)
+        }
         return Promise.reject(error)
       }
     )
@@ -39,11 +53,15 @@ class ApiClient {
     // Response interceptor
     this.client.interceptors.response.use(
       (response) => {
-        console.log('[ApiClient] Response:', response.status, response.data)
+        if (debugEnabled) {
+          console.log('[ApiClient] Response:', response.status, response.data)
+        }
         return response
       },
       (error: AxiosError<ApiError>) => {
-        console.error('[ApiClient] Response error:', error.message, error.response?.status, error.response?.data)
+        if (debugEnabled) {
+          console.error('[ApiClient] Response error:', error.message, error.response?.status, error.response?.data)
+        }
         if (error.response) {
           // Server responded with error status
           throw error.response.data

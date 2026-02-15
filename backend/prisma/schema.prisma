@@ -17,6 +17,7 @@ model User {
   name                 String
   role                 String              @default("CHILD")
   points               Int                 @default(0)
+  color                String?             @default("#3B82F6") // User's calendar color
   createdAt            DateTime            @default(now())
   createdTemplates     ChoreTemplate[]     @relation("CreatedTemplates")
   assignedChores       ChoreAssignment[]   @relation("AssignedTo")

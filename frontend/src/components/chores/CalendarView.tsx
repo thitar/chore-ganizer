@@ -139,8 +139,8 @@ export default function CalendarView({ onAssignmentClick, refreshTrigger }: Cale
 
   if (error) {
     return (
-      <div className="p-4 text-red-600 bg-red-50 rounded-lg">
-        Error: {error}
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-600">{error}</p>
       </div>
     )
   }

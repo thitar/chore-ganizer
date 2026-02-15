@@ -2,6 +2,8 @@ import express from 'express'
 import cors from 'cors'
 import session from 'express-session'
 import dotenv from 'dotenv'
+import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
 import routes from './routes/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 
@@ -10,8 +12,43 @@ dotenv.config()
 
 const app = express()
 
-// Trust proxy for production (behind nginx)
+// Trust proxy for production (behind reverse proxy)
 app.set('trust proxy', 1)
+
+// Security headers with Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  xssFilter: true,
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}))
+
+// Rate limiting - General API limiter
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per window
+  message: {
+    success: false,
+    error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' }
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+// Apply general rate limiter to all API routes
+app.use('/api', generalLimiter)
 
 // CORS configuration
 const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173'
@@ -20,9 +57,9 @@ app.use(cors({
   credentials: true,
 }))
 
-// Body parsing
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+// Body parsing with size limits
+app.use(express.json({ limit: '10kb' }))
+app.use(express.urlencoded({ extended: true, limit: '10kb' }))
 
 // Session configuration
 const sessionSecret = process.env.SESSION_SECRET || 'dev-secret-not-secure'
@@ -32,15 +69,22 @@ const sessionMaxAge = Number(process.env.SESSION_MAX_AGE) || 604800000 // 7 days
 const isProduction = process.env.NODE_ENV === 'production'
 const isSecureCookie = isProduction && process.env.SECURE_COOKIES !== 'false'
 
+// Warn if using default secret in production
+if (isProduction && sessionSecret === 'dev-secret-not-secure') {
+  console.warn('WARNING: Using default SESSION_SECRET in production! Set a secure secret.')
+}
+
 app.use(session({
   secret: sessionSecret,
   resave: false,
-  saveUninitialized: true,  // Create session even if not modified
+  saveUninitialized: false,  // Don't create empty sessions
+  rolling: true,  // Reset session age on each request
   cookie: {
     secure: isSecureCookie,
     httpOnly: true,
     maxAge: sessionMaxAge,
-    sameSite: 'lax',
+    sameSite: 'lax',  // Lax allows cross-site navigation while protecting CSRF
+    path: '/',
   },
 }))
 
