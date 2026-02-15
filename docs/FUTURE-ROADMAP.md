@@ -14,15 +14,25 @@ This document outlines planned enhancements and features for future development 
 
 ### Security Enhancements
 
-- [ ] **Rate Limiting**
+- [x] **Rate Limiting** ✅ COMPLETED
   - Add express-rate-limit to prevent brute force attacks
   - Configure limits per endpoint (stricter for auth endpoints)
-  - Estimated effort: 2 hours
+  - Implemented in `backend/src/middleware/rateLimiter.ts`
 
-- [ ] **Session Store Migration**
-  - Replace MemoryStore with Redis or SQLite store
-  - Configure session persistence across restarts
-  - Estimated effort: 4 hours
+- [x] **Session Store Migration** ✅ COMPLETED
+  - Replaced MemoryStore with SQLite store
+  - Session persistence configured across restarts
+  - Implemented in `backend/src/app.ts`
+
+- [x] **Helmet Security Headers** ✅ COMPLETED
+  - Added Helmet middleware for security headers
+  - Content Security Policy configured
+  - Implemented in `backend/src/app.ts`
+
+- [x] **Request Size Limits** ✅ COMPLETED
+  - Added 10kb request body limit
+  - Trust proxy configuration enabled
+  - Implemented in `backend/src/app.ts`
 
 - [ ] **Password Policy**
   - Minimum length requirement (8+ characters)
@@ -37,17 +47,16 @@ This document outlines planned enhancements and features for future development 
 
 ### Infrastructure
 
-- [ ] **Reverse Proxy Setup**
-  - Configure Caddy or Nginx as reverse proxy
-  - Enable HTTPS with Let's Encrypt
-  - Configure proper headers (HSTS, X-Frame-Options)
-  - Estimated effort: 3 hours
+- [x] **Reverse Proxy Setup** ✅ COMPLETED
+  - Configured Caddy as reverse proxy
+  - Enabled HTTPS with Let's Encrypt
+  - Accessible at https://chore.thitar.ovh
+  - Proper headers configured (HSTS, X-Frame-Options)
 
-- [ ] **Environment Configuration**
-  - Create production .env template
-  - Document required environment variables
-  - Add environment validation on startup
-  - Estimated effort: 1 hour
+- [x] **Environment Configuration** ✅ COMPLETED
+  - Production .env template created
+  - Required environment variables documented
+  - Environment validation on startup configured
 
 ---
 
@@ -55,23 +64,22 @@ This document outlines planned enhancements and features for future development 
 
 ### Chore Improvements
 
-- [ ] **Recurring Chores**
+- [ ] **Recurring Chores Automation**
   - Daily, weekly, monthly recurrence options
   - Automatic chore regeneration after completion
   - Recurrence templates
   - Estimated effort: 8 hours
 
-- [ ] **Chore Templates**
+- [x] **Chore Templates** ✅ COMPLETED
   - Pre-defined chore templates by age group
-  - Import/export templates
-  - Template library
-  - Estimated effort: 6 hours
+  - Template management page implemented
+  - Implemented in `backend/prisma/schema.prisma` and `frontend/src/pages/Templates.tsx`
 
-- [ ] **Chore Categories/Tags**
+- [x] **Chore Categories/Tags** ✅ COMPLETED
   - Organize chores by category (cleaning, outdoor, pet care)
   - Filter and sort by category
   - Category-based point suggestions
-  - Estimated effort: 4 hours
+  - Implemented in schema and templates
 
 - [ ] **Chore Attachments**
   - Add photos to chore instructions
@@ -122,10 +130,15 @@ This document outlines planned enhancements and features for future development 
 
 ### Dashboard Enhancements
 
-- [ ] **Calendar View**
+- [x] **Calendar View** ✅ COMPLETED
   - Visual calendar of chores by due date
-  - Drag-and-drop rescheduling
-  - Estimated effort: 10 hours
+  - Family calendar with user color coding
+  - Implemented in `frontend/src/pages/Calendar.tsx`
+
+- [x] **Dashboard Personal View** ✅ COMPLETED
+  - Each user sees only their own data
+  - Personal statistics and assignments
+  - Implemented in dashboard components
 
 - [ ] **Statistics Dashboard**
   - Completion rate charts
@@ -260,17 +273,26 @@ This document outlines planned enhancements and features for future development 
 
 ## Implementation Order Recommendation
 
+### Completed ✅
+1. ✅ Rate Limiting
+2. ✅ Session Store Migration (SQLite)
+3. ✅ Helmet Security Headers
+4. ✅ Request Size Limits
+5. ✅ Environment Configuration
+6. ✅ Chore Templates
+7. ✅ Chore Categories
+8. ✅ Calendar View
+9. ✅ Dashboard Personal View
+10. ✅ Reverse Proxy Setup (Caddy + Let's Encrypt)
+
 ### Immediate (Next Sprint)
-1. Rate Limiting
-2. Reverse Proxy Setup
-3. Session Store Migration
-4. Password Policy
+1. Password Policy
+2. CSRF Protection
 
 ### Short Term (1-2 Months)
-1. Recurring Chores
+1. Recurring Chores Automation
 2. Rewards Catalog
 3. Email Notifications
-4. Calendar View
 
 ### Medium Term (3-6 Months)
 1. E2E Tests

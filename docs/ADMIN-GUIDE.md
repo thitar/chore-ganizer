@@ -61,16 +61,32 @@ The UI currently supports **viewing users only**. The following operations requi
 
 ## Chore Management
 
-### Creating Chores
+### Creating Chores from Templates
 
 1. Go to **Chores** page
 2. Click **Create Chore** button
-3. Fill in the details:
+3. Select a **Template** from the dropdown (optional)
+4. Fill in the details:
    - **Title:** Short, descriptive name
    - **Description:** Detailed instructions
    - **Points:** Point value for completion
+   - **Category:** Organize by type
    - **Assigned To:** Select family member
-4. Click **Create**
+   - **Due Date:** When the chore should be completed
+5. Click **Create**
+
+### Managing Templates
+
+As a parent, you can create and manage chore templates:
+
+1. Go to **Templates** page (parents only)
+2. Click **Create Template** to add a new reusable chore definition
+3. Set template details:
+   - **Title:** Name of the chore
+   - **Description:** Instructions
+   - **Points:** Default point value
+   - **Category:** Organize templates by type
+4. Templates can be selected when creating new chore assignments
 
 ### Editing Chores
 
@@ -85,12 +101,31 @@ The UI currently supports **viewing users only**. The following operations requi
 2. Click **Delete**
 3. Confirm the deletion
 
+### Partial Chore Completion
+
+Parents can mark chores as partially complete:
+
+1. Find the chore in the list
+2. Click **Mark Partial** or use the completion action
+3. Enter custom points (less than full value)
+4. Add notes explaining partial completion
+5. The chore status changes to `PARTIALLY_COMPLETE`
+
 ### Chore Statuses
 
 | Status | Description |
 |--------|-------------|
 | **PENDING** | Chore needs to be done |
-| **COMPLETED** | Finished, points awarded |
+| **IN_PROGRESS** | Chore is being worked on |
+| **COMPLETED** | Finished, full points awarded |
+| **PARTIALLY_COMPLETE** | Partially done, custom points awarded |
+
+### Viewing Family Calendar
+
+1. Go to **Calendar** page
+2. View all family members' chore assignments
+3. Each family member has their own color
+4. Click on a chore to see details
 
 ---
 
@@ -165,18 +200,25 @@ UPDATE User SET role = 'CHILD' WHERE email = 'user@home';
 
 ```sql
 -- First unassign their chores
-UPDATE Chore SET assignedToId = NULL WHERE assignedToId = (SELECT id FROM User WHERE email = 'user@home');
+UPDATE ChoreAssignment SET assignedToId = NULL WHERE assignedToId = (SELECT id FROM User WHERE email = 'user@home');
 
 -- Then delete the user
 DELETE FROM User WHERE email = 'user@home';
 ```
 
-#### View All Chores
+#### View All Chore Assignments
 
 ```sql
-SELECT c.id, c.title, c.status, c.points, u.name as assigned_to 
-FROM Chore c 
-LEFT JOIN User u ON c.assignedToId = u.id;
+SELECT ca.id, ct.title, ca.status, ct.points, u.name as assigned_to, ca.dueDate
+FROM ChoreAssignment ca
+JOIN ChoreTemplate ct ON ca.choreTemplateId = ct.id
+LEFT JOIN User u ON ca.assignedToId = u.id;
+```
+
+#### View All Chore Templates
+
+```sql
+SELECT id, title, description, points, category FROM ChoreTemplate;
 ```
 
 #### View Notifications
@@ -271,18 +313,24 @@ docker cp chore-ganizer-backend:/app/data/backup.db ./chore-ganizer-backup-$(dat
 |---------|----|----|----------|
 | Login/Logout | ✅ | ✅ | ✅ |
 | View Dashboard | ✅ | ✅ | ✅ |
+| Personal Dashboard | ✅ | ✅ | ✅ |
 | View Chores | ✅ | ✅ | ✅ |
 | Create Chore | ✅ (Parents) | ✅ | ✅ |
 | Edit Chore | ✅ (Parents) | ✅ | ✅ |
 | Delete Chore | ✅ (Parents) | ✅ | ✅ |
 | Complete Chore | ✅ (Children) | ✅ | ✅ |
+| Partial Completion | ✅ (Parents) | ✅ | ✅ |
+| Chore Templates | ✅ (Parents) | ✅ | ✅ |
+| Chore Categories | ✅ | ✅ | ✅ |
+| Calendar View | ✅ | ✅ | ✅ |
+| User Color Customization | ✅ | ✅ | ✅ |
 | View Profile | ✅ | ✅ | ✅ |
 | View Users | ✅ (Parents) | ✅ | ✅ |
 | Create User | ❌ | ✅ | ✅ |
 | Edit User | ❌ | ❌ | ✅ |
 | Reset Password | ❌ | ❌ | ✅ |
 | Adjust Points | ❌ | ❌ | ✅ |
-| Notifications | ❌ (UI only) | ✅ | ✅ |
+| Notifications | ✅ | ✅ | ✅ |
 
 ---
 

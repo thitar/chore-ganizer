@@ -18,12 +18,14 @@ Chore-Ganizer is a family-friendly chore management app that helps families orga
 
 ## Using the Dashboard
 
-The dashboard shows an overview of your chore activity:
+The dashboard shows an overview of **your** chore activity (personal view):
 
-- **Total Chores:** Total number of chores in the system
-- **Pending:** Chores waiting to be done
-- **Completed:** Chores that have been completed
+- **My Pending Chores:** Chores assigned to you that need to be done
+- **My Completed Chores:** Chores you've finished
 - **My Points:** Your current point total
+- **Recent Activity:** Your latest chore completions
+
+> **Personal Dashboard:** Each family member sees only their own data on the dashboard. Parents can view all family members' information on the Family Members page.
 
 Parents also see a **Family Members** section showing all users and their point totals.
 
@@ -76,6 +78,38 @@ Parents also see a **Family Members** section showing all users and their point 
 2. Click **Edit** to modify the chore details
 3. Click **Delete** to remove the chore
 
+### For Parents: Partial Chore Completion
+
+Sometimes a chore is only partially done. Parents can mark chores as partially complete:
+
+1. Find the chore in the list
+2. Click **Mark Partial** or use the completion menu
+3. Enter the custom points to award (less than full value)
+4. Optionally add notes explaining why it's partial
+5. The chore status changes to **Partially Complete**
+
+## Family Calendar
+
+The Calendar page shows all family chore assignments in a visual calendar format:
+
+1. Click **Calendar** in the sidebar menu
+2. View chores organized by due date
+3. Each family member has their own color for easy identification
+4. Click on a chore to see details
+5. Use the navigation arrows to move between months
+
+> **User Colors:** Each family member is assigned a unique color that appears on the calendar. This makes it easy to see who is responsible for each chore at a glance.
+
+## User Color Customization
+
+Each family member has a personalized color that appears on:
+
+- Calendar events
+- Chore assignments
+- Family member lists
+
+Your color is automatically assigned when your account is created. Parents can view all family member colors on the Family Members page.
+
 ## Profile Page
 
 View your profile information:
@@ -89,18 +123,34 @@ View your profile information:
 
 ## Family Members (Parents Only)
 
-Parents can view all family members:
+Parents can view and manage all family members:
 
 1. Click **Family Members** in the sidebar
 2. See a list of all users with their:
    - Name
-   - Role
+   - Email
+   - Role (Parent or Child)
    - Point total
+   - Personal color (shown on calendar)
+3. View each member's assigned chores and completion history
+
+> **Note:** Children do not see the Family Members or Templates pages in their navigation menu.
 
 ## Signing Out
 
 1. Click **Logout** in the navigation bar
 2. You'll be returned to the login page
+
+## Notifications
+
+Stay updated with in-app notifications:
+
+1. Click the **notification bell** icon in the navigation bar
+2. See notifications for:
+   - New chore assignments
+   - Chore completions (for parents)
+   - Point awards
+3. Click a notification to view the related chore
 
 ---
 

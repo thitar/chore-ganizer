@@ -4,19 +4,29 @@ A modern, family-friendly chore management system designed for homelab deploymen
 
 ## 📋 Features
 
-### Current (MVP)
+### Current Features
 - ✅ **User Authentication** - Secure session-based login
 - ✅ **Chore Management** - Create, edit, delete, and assign chores
+- ✅ **Chore Templates** - Reusable chore definitions with categories
+- ✅ **Chore Categories** - Organize chores by type
+- ✅ **Calendar View** - Visual calendar of all family assignments
 - ✅ **Points System** - Earn points for completing chores
+- ✅ **Partial Completion** - Parents can mark chores as partially complete with custom points
+- ✅ **Personal Dashboard** - Each user sees only their own data
+- ✅ **User Color Customization** - Each family member has their own color on the calendar
+- ✅ **Templates Management** - Manage reusable chore templates
+- ✅ **Family Members Management** - Manage family member accounts
 - ✅ **Role-Based Access** - Different capabilities for parents and children
 - ✅ **Notifications** - In-app notifications for chore events
+- ✅ **Security Hardening** - Helmet headers, rate limiting, SQLite session store
 - ✅ **Responsive Design** - Works on desktop, tablet, and mobile
 - ✅ **Docker Deployment** - Easy deployment with Docker Compose
 
 ### Planned (Future)
 - 🔜 Rewards marketplace
-- 🔜 Recurring chores (daily/weekly/monthly)
+- 🔜 Recurring chores automation
 - 🔜 Round-robin assignment rotation
+- 🔜 Email notifications
 - 🔜 Advanced analytics and charts
 
 ## 🛠️ Tech Stack
@@ -97,6 +107,46 @@ After running the seed script:
 **⚠️ Change these passwords in `backend/src/prisma/seed.ts` before deploying!**
 
 ## 🐳 Production Deployment
+
+### Deployment Options
+
+#### Option A: Direct Docker Deployment (Internal Network)
+For internal network access without HTTPS:
+
+```bash
+docker compose up -d --build
+# Access at http://YOUR_SERVER_IP:3002
+```
+
+#### Option B: Reverse Proxy Deployment (Recommended for Public Access)
+For public internet access with HTTPS, use a reverse proxy like Caddy:
+
+1. **Deploy the application**:
+   ```bash
+   docker compose up -d --build
+   ```
+
+2. **Configure Caddy** (example Caddyfile):
+   ```caddyfile
+   chore.yourdomain.com {
+       reverse_proxy localhost:3002
+   }
+   ```
+
+3. **Update environment variables**:
+   ```bash
+   # In .env file
+   CORS_ORIGIN=https://chore.yourdomain.com
+   SECURE_COOKIES=true
+   VITE_DEBUG=false
+   ```
+
+4. **Restart containers**:
+   ```bash
+   docker compose restart
+   ```
+
+The app is currently deployed at **https://chore.thitar.ovh** using Caddy with automatic Let's Encrypt HTTPS.
 
 ### 1. Initial Setup
 
@@ -330,9 +380,18 @@ For more detailed troubleshooting, see the [Development Plan](./docs/CHORE-GANIZ
 4. ✅ Set up HTTPS if exposing publicly (use reverse proxy)
 5. ✅ Regular backups configured
 6. ✅ Review CORS settings
+7. ✅ Disable debug logging (`VITE_DEBUG=false`)
+
+### Current Security Features:
+- **Helmet middleware** - Security headers including CSP
+- **Rate limiting** - 100 req/15min general, 5 req/15min for auth endpoints
+- **Secure cookies** - HttpOnly, Secure, SameSite=Lax
+- **SQLite session store** - Persistent sessions across restarts
+- **Trust proxy** - Configured for reverse proxy deployment
+- **Request size limits** - 10kb max request body
 
 ### For Public Internet Access:
-- Use a reverse proxy (Traefik, Nginx Proxy Manager)
+- Use a reverse proxy (Caddy, Traefik, Nginx Proxy Manager)
 - Enable HTTPS with Let's Encrypt
 - Consider adding rate limiting
 - Set up fail2ban for login attempts

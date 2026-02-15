@@ -57,8 +57,8 @@ docker-compose exec backend printenv SESSION_SECRET
 ```bash
 # Check firewall
 sudo ufw status
-sudo ufw allow 3000
-sudo ufw allow 3001
+sudo ufw allow 3002
+sudo ufw allow 3010
 ```
 
 ---
@@ -105,10 +105,10 @@ docker-compose up -d
 docker-compose stop backend
 
 # Backup current (safety)
-cp data/chores.db data/chores.db.pre-restore
+cp data/chore-ganizer.db data/chore-ganizer.db.pre-restore
 
 # Restore
-gunzip -c data/backups/chores_YYYYMMDD_HHMMSS.db.gz > data/chores.db
+gunzip -c data/backups/chore-ganizer_YYYYMMDD_HHMMSS.db.gz > data/chore-ganizer.db
 
 # Start backend
 docker-compose start backend
@@ -172,11 +172,11 @@ docker-compose exec backend npx prisma migrate status
 
 ```bash
 # Database size
-docker-compose exec backend ls -lh /app/data/chores.db
+docker-compose exec backend ls -lh /app/data/chore-ganizer.db
 
 # Entry counts
-docker-compose exec backend sh -c "echo 'SELECT COUNT(*) FROM User;' | sqlite3 /app/data/chores.db"
-docker-compose exec backend sh -c "echo 'SELECT COUNT(*) FROM Chore;' | sqlite3 /app/data/chores.db"
+docker-compose exec backend sh -c "echo 'SELECT COUNT(*) FROM User;' | sqlite3 /app/data/chore-ganizer.db"
+docker-compose exec backend sh -c "echo 'SELECT COUNT(*) FROM ChoreAssignment;' | sqlite3 /app/data/chore-ganizer.db"
 ```
 
 ---
@@ -204,14 +204,14 @@ docker-compose logs -f --tail=100
 ## 🌐 Access URLs
 
 **Local Access:**
-- Frontend: http://localhost:3001
-- Backend API: http://localhost:3000
-- Health Check: http://localhost:3000/health
+- Frontend: http://localhost:3002
+- Backend API: http://localhost:3010
+- Health Check: http://localhost:3010/api/health
 - Prisma Studio: http://localhost:5555
 
 **Network Access (from other devices):**
-- Frontend: http://YOUR_SERVER_IP:3001
-- Backend API: http://YOUR_SERVER_IP:3000
+- Frontend: http://YOUR_SERVER_IP:3002
+- Backend API: http://YOUR_SERVER_IP:3010
 
 **To find your server IP:**
 ```bash
@@ -231,7 +231,7 @@ hostname -I | awk '{print $1}'
 docker-compose down -v
 
 # Delete database
-rm data/chores.db
+rm data/chore-ganizer.db
 
 # Restart fresh
 docker-compose up -d --build
@@ -268,7 +268,7 @@ docker network prune -f
 ## 📞 Getting Help
 
 1. Check logs: `docker-compose logs -f`
-2. Check health: `curl http://localhost:3000/health`
+2. Check health: `curl http://localhost:3010/api/health`
 3. View database: `docker-compose exec backend npx prisma studio`
 4. Read full documentation: `CHORE-GANIZER-DEVELOPMENT-PLAN.md`
 5. Check troubleshooting section in development plan
