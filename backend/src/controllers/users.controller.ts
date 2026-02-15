@@ -68,13 +68,13 @@ export const getUserAssignments = async (req: Request, res: Response) => {
  */
 export const updateUser = async (req: Request, res: Response) => {
   const userId = Number(req.params.id)
-  const { name, role } = req.body
+  const { name, role, color, email } = req.body
 
   if (isNaN(userId)) {
     throw new AppError('Invalid user ID', 400, 'VALIDATION_ERROR')
   }
 
-  const user = await usersService.updateUser(userId, { name, role })
+  const user = await usersService.updateUser(userId, { name, role, color, email })
 
   res.json({
     success: true,

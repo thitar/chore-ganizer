@@ -28,6 +28,7 @@ export interface AssignmentWithDetails {
   assignedTo: {
     id: number
     name: string
+    color: string | null
   }
   assignedById: number
   assignedBy: {
@@ -97,6 +98,7 @@ export const getAllAssignments = async (
         select: {
           id: true,
           name: true,
+          color: true,
         },
       },
       assignedBy: {
@@ -143,6 +145,7 @@ export const getAssignmentById = async (assignmentId: number): Promise<Assignmen
         select: {
           id: true,
           name: true,
+          color: true,
         },
       },
       assignedBy: {
@@ -187,6 +190,7 @@ export const createAssignment = async (
         select: {
           id: true,
           name: true,
+          color: true,
         },
       },
       assignedBy: {
@@ -233,6 +237,7 @@ export const updateAssignment = async (
         select: {
           id: true,
           name: true,
+          color: true,
         },
       },
       assignedBy: {
@@ -320,6 +325,7 @@ export const completeAssignment = async (
           select: {
             id: true,
             name: true,
+            color: true,
           },
         },
         assignedBy: {
@@ -380,6 +386,7 @@ export const getOverdueAssignments = async (): Promise<AssignmentWithDetails[]> 
         select: {
           id: true,
           name: true,
+          color: true,
         },
       },
       assignedBy: {
@@ -437,6 +444,7 @@ export const getUpcomingAssignments = async (
         select: {
           id: true,
           name: true,
+          color: true,
         },
       },
       assignedBy: {
@@ -495,6 +503,7 @@ export const getAssignmentsByDate = async (
         select: {
           id: true,
           name: true,
+          color: true,
         },
       },
       assignedBy: {
@@ -551,6 +560,7 @@ export const getAssignmentsForMonth = async (
         select: {
           id: true,
           name: true,
+          color: true,
         },
       },
       assignedBy: {

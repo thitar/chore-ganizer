@@ -1,22 +1,67 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import CalendarView from '../components/chores/CalendarView'
 import { Modal, Button } from '../components/common'
-import { useAuth, useAssignments } from '../hooks'
+import { useAuth, useAssignments, useTemplates, useUsers } from '../hooks'
 import type { ChoreAssignment } from '../types'
 
 export const Calendar: React.FC = () => {
   const { user, isParent } = useAuth()
-  const { completeAssignment } = useAssignments()
+  const { completeAssignment, createAssignment } = useAssignments()
+  const { templates, fetchTemplates } = useTemplates()
+  const { users, refresh: refreshUsers } = useUsers()
   const [selectedAssignment, setSelectedAssignment] = useState<ChoreAssignment | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isNewChoreModalOpen, setIsNewChoreModalOpen] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [customPoints, setCustomPoints] = useState<number | ''>('')
+  
+  // New chore form state
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [newChoreTemplateId, setNewChoreTemplateId] = useState<number | ''>('')
+  const [newChoreUserId, setNewChoreUserId] = useState<number | ''>('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Fetch templates and users on mount
+  useEffect(() => {
+    fetchTemplates()
+    refreshUsers()
+  }, [])
 
   const handleAssignmentClick = (assignment: ChoreAssignment) => {
     setSelectedAssignment(assignment)
     setCustomPoints('')
     setIsModalOpen(true)
+  }
+
+  const handleDateClick = (date: Date) => {
+    if (!isParent) return // Only parents can create assignments
+    setSelectedDate(date)
+    setNewChoreTemplateId('')
+    setNewChoreUserId('')
+    setIsNewChoreModalOpen(true)
+  }
+
+  const handleCreateAssignment = async () => {
+    if (!newChoreTemplateId || !newChoreUserId || !selectedDate) return
+    
+    setIsSubmitting(true)
+    try {
+      const result = await createAssignment({
+        templateId: Number(newChoreTemplateId),
+        assignedToId: Number(newChoreUserId),
+        dueDate: selectedDate.toISOString(),
+      })
+      
+      if (result.success) {
+        setSuccessMessage('Assignment created successfully!')
+        setIsNewChoreModalOpen(false)
+        setRefreshTrigger(prev => prev + 1)
+        setTimeout(() => setSuccessMessage(null), 3000)
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleComplete = async (status: 'COMPLETED' | 'PARTIALLY_COMPLETE' = 'COMPLETED') => {
@@ -52,9 +97,14 @@ export const Calendar: React.FC = () => {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
         <p className="text-gray-600">View your chore assignments by date</p>
+        {isParent && <p className="text-sm text-gray-500 mt-1">Click on an empty date to add a chore</p>}
       </div>
 
-      <CalendarView onAssignmentClick={handleAssignmentClick} refreshTrigger={refreshTrigger} />
+      <CalendarView 
+        onAssignmentClick={handleAssignmentClick} 
+        onDateClick={handleDateClick}
+        refreshTrigger={refreshTrigger} 
+      />
 
       {/* Assignment Details Modal */}
       <Modal
@@ -151,6 +201,75 @@ export const Calendar: React.FC = () => {
             )}
           </div>
         )}
+      </Modal>
+
+      {/* New Chore Assignment Modal */}
+      <Modal
+        isOpen={isNewChoreModalOpen}
+        onClose={() => setIsNewChoreModalOpen(false)}
+        title="Add Chore Assignment"
+      >
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm text-gray-500">Date</p>
+            <p className="font-medium">
+              {selectedDate?.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-500 mb-1">Chore Template</label>
+            <select
+              value={newChoreTemplateId}
+              onChange={(e) => setNewChoreTemplateId(e.target.value ? Number(e.target.value) : '')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Select a chore...</option>
+              {templates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.title} ({template.points} pts)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-500 mb-1">Assign to</label>
+            <select
+              value={newChoreUserId}
+              onChange={(e) => setNewChoreUserId(e.target.value ? Number(e.target.value) : '')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Select a family member...</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} ({u.role})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <button
+              onClick={() => setIsNewChoreModalOpen(false)}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreateAssignment}
+              disabled={!newChoreTemplateId || !newChoreUserId || isSubmitting}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Creating...' : 'Create Assignment'}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

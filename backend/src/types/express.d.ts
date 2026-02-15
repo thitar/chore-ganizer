@@ -9,6 +9,7 @@ declare global {
         name: string
         role: 'PARENT' | 'CHILD'
         points: number
+        color: string | null
       }
     }
   }

@@ -4,6 +4,7 @@ export interface User {
   name: string
   role: 'PARENT' | 'CHILD'
   points: number
+  color: string | null
   createdAt: string
 }
 
@@ -52,6 +53,7 @@ export interface ChoreAssignment {
   assignedTo: {
     id: number
     name: string
+    color: string | null
   }
   dueDate: string
   status: 'PENDING' | 'COMPLETED' | 'PARTIALLY_COMPLETE'
@@ -161,6 +163,8 @@ export interface CreateUserData {
 export interface UpdateUserData {
   name?: string
   role?: 'PARENT' | 'CHILD'
+  color?: string
+  email?: string
 }
 
 export interface ApiResponse<T> {

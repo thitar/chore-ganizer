@@ -5,6 +5,7 @@ import { Loading } from '../common/Loading'
 
 interface CalendarDay {
   day: number
+  date: Date
   assignments: ChoreAssignment[]
   isToday: boolean
   isCurrentMonth: boolean
@@ -12,10 +13,46 @@ interface CalendarDay {
 
 interface CalendarViewProps {
   onAssignmentClick?: (assignment: ChoreAssignment) => void
+  onDateClick?: (date: Date) => void
   refreshTrigger?: number
 }
 
-export default function CalendarView({ onAssignmentClick, refreshTrigger }: CalendarViewProps) {
+/**
+ * Get contrasting text color (black or white) based on background color
+ */
+function getContrastColor(hexColor: string | null): string {
+  const defaultColor = '#3B82F6'
+  const hex = hexColor || defaultColor
+  
+  // Remove # if present
+  const hexValue = hex.replace('#', '')
+  
+  // Parse RGB values
+  const r = parseInt(hexValue.substring(0, 2), 16)
+  const g = parseInt(hexValue.substring(2, 4), 16)
+  const b = parseInt(hexValue.substring(4, 6), 16)
+  
+  // Calculate relative luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  
+  // Return black for light backgrounds, white for dark backgrounds
+  return luminance > 0.5 ? '#000000' : '#FFFFFF'
+}
+
+/**
+ * Get border color based on assignment status
+ */
+function getStatusBorderColor(status: string, isOverdue: boolean): string {
+  if (isOverdue) return '#EF4444' // red-500
+  switch (status) {
+    case 'COMPLETED': return '#22C55E' // green-500
+    case 'PARTIALLY_COMPLETE': return '#F97316' // orange-500
+    case 'PENDING':
+    default: return '#EAB308' // yellow-500
+  }
+}
+
+export default function CalendarView({ onAssignmentClick, onDateClick, refreshTrigger }: CalendarViewProps) {
   const [year, setYear] = useState(new Date().getFullYear())
   const [month, setMonth] = useState(new Date().getMonth() + 1)
   const [calendarData, setCalendarData] = useState<{
@@ -72,6 +109,7 @@ export default function CalendarView({ onAssignmentClick, refreshTrigger }: Cale
       const dayNum = daysInPrevMonth - i
       days.push({
         day: dayNum,
+        date: new Date(prevYear, prevMonth - 1, dayNum),
         assignments: [],
         isToday: false,
         isCurrentMonth: false,
@@ -82,6 +120,7 @@ export default function CalendarView({ onAssignmentClick, refreshTrigger }: Cale
     for (let day = 1; day <= daysInMonth; day++) {
       days.push({
         day,
+        date: new Date(year, month - 1, day),
         assignments: calendarData.days[day] || [],
         isToday: year === currentYear && month === currentMonth && day === currentDay,
         isCurrentMonth: true,
@@ -90,9 +129,12 @@ export default function CalendarView({ onAssignmentClick, refreshTrigger }: Cale
 
     // Next month days to fill the grid (6 rows x 7 days = 42)
     const remainingDays = 42 - days.length
+    const nextMonth = month === 12 ? 1 : month + 1
+    const nextYear = month === 12 ? year + 1 : year
     for (let day = 1; day <= remainingDays; day++) {
       days.push({
         day,
+        date: new Date(nextYear, nextMonth - 1, day),
         assignments: [],
         isToday: false,
         isCurrentMonth: false,
@@ -124,6 +166,12 @@ export default function CalendarView({ onAssignmentClick, refreshTrigger }: Cale
     const today = new Date()
     setYear(today.getFullYear())
     setMonth(today.getMonth() + 1)
+  }
+
+  const handleDateClick = (calendarDay: CalendarDay) => {
+    if (calendarDay.isCurrentMonth && calendarDay.assignments.length === 0 && onDateClick) {
+      onDateClick(calendarDay.date)
+    }
   }
 
   const monthNames = [
@@ -196,10 +244,12 @@ export default function CalendarView({ onAssignmentClick, refreshTrigger }: Cale
         {calendarDays.map((calendarDay, index) => (
           <div
             key={index}
+            onClick={() => handleDateClick(calendarDay)}
             className={`
               min-h-[80px] p-1 border rounded-lg
               ${calendarDay.isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
               ${calendarDay.isToday ? 'border-blue-500 border-2' : 'border-gray-200'}
+              ${calendarDay.isCurrentMonth && calendarDay.assignments.length === 0 && onDateClick ? 'cursor-pointer hover:bg-gray-50' : ''}
             `}
           >
             <div className={`
@@ -210,21 +260,30 @@ export default function CalendarView({ onAssignmentClick, refreshTrigger }: Cale
               {calendarDay.day}
             </div>
             <div className="space-y-1">
-              {calendarDay.assignments.slice(0, 2).map((assignment) => (
-                <button
-                  key={assignment.id}
-                  onClick={() => onAssignmentClick?.(assignment)}
-                  className={`
-                    w-full text-xs p-1 rounded truncate text-left
-                    ${assignment.isOverdue ? 'bg-red-100 text-red-800' : ''}
-                    ${assignment.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : ''}
-                    ${assignment.status === 'PENDING' && !assignment.isOverdue ? 'bg-yellow-100 text-yellow-800' : ''}
-                  `}
-                  title={`${assignment.choreTemplate.title} - ${assignment.assignedTo.name}`}
-                >
-                  {assignment.choreTemplate.title}
-                </button>
-              ))}
+              {calendarDay.assignments.slice(0, 2).map((assignment) => {
+                const bgColor = assignment.assignedTo.color || '#3B82F6'
+                const textColor = getContrastColor(assignment.assignedTo.color)
+                const borderColor = getStatusBorderColor(assignment.status, assignment.isOverdue)
+                
+                return (
+                  <button
+                    key={assignment.id}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAssignmentClick?.(assignment)
+                    }}
+                    className="w-full text-xs py-1.5 px-2 rounded truncate text-left font-medium border-l-8"
+                    style={{
+                      backgroundColor: bgColor,
+                      color: textColor,
+                      borderLeftColor: borderColor,
+                    }}
+                    title={`${assignment.choreTemplate.title} - ${assignment.assignedTo.name}`}
+                  >
+                    {assignment.choreTemplate.title}
+                  </button>
+                )
+              })}
               {calendarDay.assignments.length > 2 && (
                 <div className="text-xs text-gray-500 text-center">
                   +{calendarDay.assignments.length - 2} more
@@ -236,17 +295,21 @@ export default function CalendarView({ onAssignmentClick, refreshTrigger }: Cale
       </div>
 
       {/* Legend */}
-      <div className="mt-4 flex items-center gap-4 text-sm">
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 bg-yellow-100 border border-yellow-300 rounded"></span>
+          <span className="w-3 h-3 bg-yellow-500 rounded"></span>
           <span>Pending</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 bg-red-100 border border-red-300 rounded"></span>
+          <span className="w-3 h-3 bg-red-500 rounded"></span>
           <span>Overdue</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 bg-green-100 border border-green-300 rounded"></span>
+          <span className="w-3 h-3 bg-orange-500 rounded"></span>
+          <span>Partial</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-3 h-3 bg-green-500 rounded"></span>
           <span>Completed</span>
         </div>
       </div>

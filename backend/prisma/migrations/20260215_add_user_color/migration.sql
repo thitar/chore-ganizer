@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN "color" TEXT DEFAULT '#3B82F6';

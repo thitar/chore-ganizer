@@ -41,6 +41,7 @@ export const authenticate = async (
         name: true,
         role: true,
         points: true,
+        color: true,
       },
     })
 
@@ -64,6 +65,7 @@ export const authenticate = async (
       name: user.name,
       role: user.role as 'PARENT' | 'CHILD',
       points: user.points,
+      color: user.color,
     }
     next()
   } catch (error) {
