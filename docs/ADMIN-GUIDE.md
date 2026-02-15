@@ -7,10 +7,11 @@ This guide is for parents and administrators who manage the Chore-Ganizer applic
 ## Table of Contents
 
 1. [Initial Setup](#initial-setup)
-2. [User Management](#user-management)
-3. [Chore Management](#chore-management)
-4. [Database Administration](#database-administration)
-5. [Troubleshooting](#troubleshooting)
+2. [Navigation & Routing](#navigation--routing)
+3. [User Management](#user-management)
+4. [Chore Management](#chore-management)
+5. [Database Administration](#database-administration)
+6. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -36,6 +37,36 @@ The application comes with demo users pre-seeded in the database:
 2. Enter your email address
 3. Enter your password
 4. Click **Sign In**
+
+---
+
+## Navigation & Routing
+
+The application uses **React Router v6** for URL-based navigation. All routes are proper browser URLs, not state-based navigation.
+
+### Available Routes
+
+| Route | Description | Access |
+|-------|-------------|--------|
+| `/dashboard` | Main dashboard (personal view) | All users |
+| `/chores` | Chore assignments list | All users |
+| `/profile` | User profile page | All users |
+| `/users` | Family members management | Parents only |
+| `/templates` | Chore templates management | Parents only |
+| `/calendar` | Family calendar view | Parents only |
+
+### Protected Routes
+
+The following routes are **protected** and only accessible to users with the `PARENT` role:
+
+- **`/templates`** - Chore templates management
+- **`/calendar`** - Family calendar view
+
+Children attempting to access these routes will be redirected to the dashboard.
+
+### Profile Access
+
+The Profile page is accessed by clicking the **username** in the top-right corner of the navigation bar. There is no Profile link in the sidebar.
 
 ---
 

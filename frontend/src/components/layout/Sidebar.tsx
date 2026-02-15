@@ -1,13 +1,10 @@
 import React from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks'
 
-interface SidebarProps {
-  currentPage: string
-  onPageChange: (page: string) => void
-}
-
-export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) => {
+export const Sidebar: React.FC = () => {
   const { isParent } = useAuth()
+  const location = useLocation()
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -16,7 +13,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) =
     ...(isParent ? [{ id: 'calendar', label: 'Family Calendar', icon: '📅' }] : []),
     // Templates is parents-only - only parents can create/manage chore templates
     ...(isParent ? [{ id: 'templates', label: 'Templates', icon: '📝' }] : []),
-    { id: 'profile', label: 'Profile', icon: '👤' },
   ]
 
   if (isParent) {
@@ -28,14 +24,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) =
       <div className="p-4">
         <nav className="space-y-1">
           {menuItems.map((item) => (
-            <button
+            <Link
               key={item.id}
-              onClick={() => onPageChange(item.id)}
+              to={`/${item.id}`}
               className={`
                 w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left
                 transition-all duration-200 font-medium
                 ${
-                  currentPage === item.id
+                  location.pathname === `/${item.id}`
                     ? 'bg-blue-600 text-white shadow-md'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                 }
@@ -43,7 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) =
             >
               <span className="text-xl">{item.icon}</span>
               <span>{item.label}</span>
-            </button>
+            </Link>
           ))}
         </nav>
       </div>

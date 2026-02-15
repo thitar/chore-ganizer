@@ -114,12 +114,14 @@ Your color is automatically assigned when your account is created. Parents can v
 
 View your profile information:
 
-1. Click **Profile** in the sidebar
+1. Click your **username** in the top-right corner of the navigation bar
 2. See your:
    - Name and email
    - Role (PARENT or CHILD)
    - Total points
    - Member since date
+
+> **Note:** The Profile page is accessed through the username link in the navbar, not from the sidebar.
 
 ## Family Members (Parents Only)
 
@@ -134,7 +136,7 @@ Parents can view and manage all family members:
    - Personal color (shown on calendar)
 3. View each member's assigned chores and completion history
 
-> **Note:** Children do not see the Family Members or Templates pages in their navigation menu.
+> **Note:** Children do not see the Family Members, Templates, or Calendar pages in their navigation menu. These pages are protected and only accessible to parents.
 
 ## Signing Out
 

@@ -1,13 +1,22 @@
-import { useState } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth, useNotifications, AuthProvider } from './hooks'
 import { ErrorBoundary } from './components/common'
 import { Navbar, Sidebar, Footer } from './components/layout'
 import { Login, Dashboard, Chores, Templates, Profile, NotFound, Users, Calendar } from './pages'
 
+// Protected route wrapper for parent-only pages
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isParent } = useAuth()
+  
+  if (!isParent) {
+    return <Navigate to="/dashboard" replace />
+  }
+  
+  return <>{children}</>
+}
+
 function AppContent() {
-  const { isAuthenticated, loading, isParent } = useAuth()
-  const { notifications, markAsRead, markAllAsRead } = useNotifications()
-  const [currentPage, setCurrentPage] = useState('dashboard')
+  const { isAuthenticated, loading } = useAuth()
 
   if (loading) {
     return (
@@ -24,42 +33,38 @@ function AppContent() {
     return <Login />
   }
 
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'dashboard':
-        return <Dashboard />
-      case 'chores':
-        return <Chores />
-      case 'templates':
-        // Templates is parents-only - redirect children to dashboard
-        if (!isParent) {
-          return <Dashboard />
-        }
-        return <Templates />
-      case 'profile':
-        return <Profile />
-      case 'calendar':
-        // Family Calendar is parents-only - redirect children to dashboard
-        if (!isParent) {
-          return <Dashboard />
-        }
-        return <Calendar />
-      case 'users':
-        return <Users />
-      default:
-        return <NotFound />
-    }
-  }
-
   return (
     <ErrorBoundary>
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Navbar />
         <div className="flex flex-1">
-          <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+          <Sidebar />
           <main className="flex-1 p-6 overflow-y-auto">
             <div className="max-w-7xl mx-auto">
-              {renderPage()}
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/chores" element={<Chores />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/users" element={<Users />} />
+                <Route 
+                  path="/templates" 
+                  element={
+                    <ProtectedRoute>
+                      <Templates />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/calendar" 
+                  element={
+                    <ProtectedRoute>
+                      <Calendar />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
             </div>
           </main>
         </div>

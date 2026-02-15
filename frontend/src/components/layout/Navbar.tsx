@@ -1,9 +1,11 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks'
 import { Button } from '../common'
 
 export const Navbar: React.FC = () => {
   const { user, logout, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
 
   if (!isAuthenticated) {
     return null
@@ -17,11 +19,14 @@ export const Navbar: React.FC = () => {
             <h1 className="text-xl font-bold text-gray-900">Chore-Ganizer</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
+            <div
+              className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => navigate('/profile')}
+            >
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
                 {user?.name.charAt(0).toUpperCase()}
               </div>
-              <span className="text-sm font-medium text-gray-700">{user?.name}</span>
+              <span className="text-sm font-medium text-gray-700 hover:text-blue-600">{user?.name}</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-600">Points:</span>

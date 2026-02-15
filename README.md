@@ -5,22 +5,23 @@ A modern, family-friendly chore management system designed for homelab deploymen
 ## 📋 Features
 
 ### Current Features
-- ✅ **User Authentication** - Secure session-based login
-- ✅ **Chore Management** - Create, edit, delete, and assign chores
-- ✅ **Chore Templates** - Reusable chore definitions with categories
-- ✅ **Chore Categories** - Organize chores by type
-- ✅ **Calendar View** - Visual calendar of all family assignments
-- ✅ **Points System** - Earn points for completing chores
-- ✅ **Partial Completion** - Parents can mark chores as partially complete with custom points
-- ✅ **Personal Dashboard** - Each user sees only their own data
-- ✅ **User Color Customization** - Each family member has their own color on the calendar
-- ✅ **Templates Management** - Manage reusable chore templates
-- ✅ **Family Members Management** - Manage family member accounts
-- ✅ **Role-Based Access** - Different capabilities for parents and children
-- ✅ **Notifications** - In-app notifications for chore events
-- ✅ **Security Hardening** - Helmet headers, rate limiting, SQLite session store
-- ✅ **Responsive Design** - Works on desktop, tablet, and mobile
-- ✅ **Docker Deployment** - Easy deployment with Docker Compose
+ - ✅ **User Authentication** - Secure session-based login
+ - ✅ **Chore Management** - Create, edit, delete, and assign chores
+ - ✅ **Chore Templates** - Reusable chore definitions with categories
+ - ✅ **Chore Categories** - Organize chores by type
+ - ✅ **Calendar View** - Visual calendar of all family assignments
+ - ✅ **Points System** - Earn points for completing chores
+ - ✅ **Partial Completion** - Parents can mark chores as partially complete with custom points
+ - ✅ **Personal Dashboard** - Each user sees only their own data
+ - ✅ **User Color Customization** - Each family member has their own color on the calendar
+ - ✅ **Templates Management** - Manage reusable chore templates
+ - ✅ **Family Members Management** - Manage family member accounts
+ - ✅ **Role-Based Access** - Different capabilities for parents and children
+ - ✅ **Protected Routes** - Templates and Calendar pages restricted to parents
+ - ✅ **Notifications** - In-app notifications for chore events
+ - ✅ **Security Hardening** - Helmet headers, rate limiting, SQLite session store
+ - ✅ **Responsive Design** - Works on desktop, tablet, and mobile
+ - ✅ **Docker Deployment** - Easy deployment with Docker Compose
 
 ### Planned (Future)
 - 🔜 Rewards marketplace
@@ -50,6 +51,29 @@ A modern, family-friendly chore management system designed for homelab deploymen
 **Deployment:**
 - Docker + Docker Compose
 - Nginx (frontend server)
+
+## 🧭 Navigation & Routes
+
+The application uses **React Router v6** for proper URL-based navigation. All pages have dedicated routes that can be bookmarked and shared.
+
+### Available Routes
+
+| Route | Description | Access |
+|-------|-------------|--------|
+| `/dashboard` | Main dashboard (personal view) | All users |
+| `/chores` | Chore assignments list | All users |
+| `/profile` | User profile page | All users |
+| `/users` | Family members management | Parents only |
+| `/templates` | Chore templates management | Parents only |
+| `/calendar` | Family calendar view | Parents only |
+
+### Profile Access
+
+The Profile page is accessed by clicking the **username** in the top-right corner of the navigation bar (not from the sidebar).
+
+### Protected Routes
+
+The `/templates` and `/calendar` routes are protected and only accessible to parent accounts. Children attempting to access these routes are redirected to the dashboard.
 
 ## 🚀 Quick Start
 

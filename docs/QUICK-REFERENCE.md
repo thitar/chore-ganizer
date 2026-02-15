@@ -220,6 +220,23 @@ hostname -I | awk '{print $1}'
 
 ---
 
+## 🛤️ Application Routes
+
+The application uses **React Router v6** for URL-based navigation.
+
+| Route | Description | Access |
+|-------|-------------|--------|
+| `/dashboard` | Main dashboard | All users |
+| `/chores` | Chore assignments | All users |
+| `/profile` | User profile (via username click) | All users |
+| `/users` | Family members | Parents only |
+| `/templates` | Chore templates | Parents only |
+| `/calendar` | Family calendar | Parents only |
+
+> **Protected Routes:** `/templates` and `/calendar` are only accessible to parent accounts. Children are redirected to dashboard.
+
+---
+
 ## 🆘 Emergency Commands
 
 ### Complete Reset (DANGER!)
