@@ -4,6 +4,7 @@ import session from 'express-session'
 import dotenv from 'dotenv'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
+import SQLiteStore from 'connect-sqlite3'
 import routes from './routes/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 
@@ -74,7 +75,16 @@ if (isProduction && sessionSecret === 'dev-secret-not-secure') {
   console.warn('WARNING: Using default SESSION_SECRET in production! Set a secure secret.')
 }
 
+// Create SQLite session store
+const SQLiteStoreFactory = SQLiteStore(session)
+const sessionStore = new SQLiteStoreFactory({
+  db: 'sessions.db',
+  dir: './data',
+  table: 'sessions',
+})
+
 app.use(session({
+  store: sessionStore,
   secret: sessionSecret,
   resave: false,
   saveUninitialized: false,  // Don't create empty sessions
