@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import * as assignmentsService from '../services/chore-assignments.service.js'
 import * as templatesService from '../services/chore-templates.service.js'
 import * as notificationsService from '../services/notifications.service.js'
+import * as notificationSettingsService from '../services/notification-settings.service.js'
 import { AppError } from '../middleware/errorHandler.js'
 
 /**
@@ -136,6 +137,16 @@ export const createAssignment = async (req: Request, res: Response) => {
     message: `You have been assigned: ${template.title}`,
   })
 
+  // Send push notification
+  await notificationSettingsService.sendPushNotification(
+    assignedToId,
+    'CHORE_ASSIGNED',
+    {
+      choreTitle: template.title,
+      dueDate: new Date(dueDate).toLocaleDateString(),
+    }
+  )
+
   res.status(201).json({
     success: true,
     data: { assignment },
@@ -219,6 +230,16 @@ export const completeAssignment = async (req: Request, res: Response) => {
     title: status === 'PARTIALLY_COMPLETE' ? 'Partial Points Earned!' : 'Points Earned!',
     message: `You earned ${pointsAwarded} points for completing: ${existing.choreTemplate.title}`,
   })
+
+  // Send push notification for points earned
+  await notificationSettingsService.sendPushNotification(
+    existing.assignedToId,
+    'POINTS_EARNED',
+    {
+      choreTitle: existing.choreTemplate.title,
+      points: pointsAwarded,
+    }
+  )
 
   res.json({
     success: true,

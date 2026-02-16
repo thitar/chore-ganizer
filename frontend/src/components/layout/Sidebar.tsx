@@ -8,9 +8,9 @@ export const Sidebar: React.FC = () => {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'chores', label: 'Chores', icon: '📋' },
     // Global Calendar is parents-only - children see their personal calendar on Dashboard
     ...(isParent ? [{ id: 'calendar', label: 'Family Calendar', icon: '📅' }] : []),
+    { id: 'chores', label: 'Chores', icon: '📋' },
     // Templates is parents-only - only parents can create/manage chore templates
     ...(isParent ? [{ id: 'templates', label: 'Templates', icon: '📝' }] : []),
   ]

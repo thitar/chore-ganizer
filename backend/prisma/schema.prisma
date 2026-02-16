@@ -11,18 +11,19 @@ datasource db {
 }
 
 model User {
-  id                   Int                 @id @default(autoincrement())
-  email                String              @unique
+  id                   Int                      @id @default(autoincrement())
+  email                String                   @unique
   password             String
   name                 String
-  role                 String              @default("CHILD")
-  points               Int                 @default(0)
-  color                String?             @default("#3B82F6") // User's calendar color
-  createdAt            DateTime            @default(now())
-  createdTemplates     ChoreTemplate[]     @relation("CreatedTemplates")
-  assignedChores       ChoreAssignment[]   @relation("AssignedTo")
-  assignedByChores     ChoreAssignment[]   @relation("AssignedBy")
+  role                 String                   @default("CHILD")
+  points               Int                      @default(0)
+  color                String?                  @default("#3B82F6") // User's calendar color
+  createdAt            DateTime                 @default(now())
+  createdTemplates     ChoreTemplate[]          @relation("CreatedTemplates")
+  assignedChores       ChoreAssignment[]        @relation("AssignedTo")
+  assignedByChores     ChoreAssignment[]        @relation("AssignedBy")
   notifications        Notification[]
+  notificationSettings UserNotificationSettings?
 }
 
 model ChoreCategory {
@@ -70,10 +71,13 @@ model ChoreAssignment {
   notes           String?
   createdAt       DateTime     @default(now())
   completedAt     DateTime?
+  penaltyApplied  Boolean      @default(false) // Whether overdue penalty has been applied
+  penaltyPoints   Int?         // Points deducted if penalty was applied
 
   @@index([assignedToId])
   @@index([dueDate])
   @@index([status])
+  @@index([penaltyApplied])
 }
 
 model Notification {
@@ -85,6 +89,32 @@ model Notification {
   message   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model UserNotificationSettings {
+  id                       Int      @id @default(autoincrement())
+  userId                   Int      @unique
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ntfyTopic                String?  // User's ntfy topic for push notifications
+  ntfyServerUrl            String?  @default("https://ntfy.sh") // ntfy server URL
+  ntfyUsername             String?  // Optional username for ntfy authentication
+  ntfyPassword             String?  // Optional password for ntfy authentication
+  notifyChoreAssigned      Boolean  @default(true)
+  notifyChoreDueSoon       Boolean  @default(true)
+  notifyChoreCompleted     Boolean  @default(true)
+  notifyChoreOverdue       Boolean  @default(true)
+  notifyPointsEarned       Boolean  @default(true)
+  reminderHoursBefore      Int      @default(2) // Hours before due date to send reminder
+  quietHoursStart          Int?     // Hour of day (0-23) to start quiet hours
+  quietHoursEnd            Int?     // Hour of day (0-23) to end quiet hours
+  // Overdue penalty settings (parent configurable)
+  overduePenaltyEnabled    Boolean  @default(true) // Whether to apply penalties for overdue chores
+  overduePenaltyMultiplier Int      @default(2) // Multiplier for penalty (penalty = -multiplier * chore points)
+  notifyParentOnOverdue    Boolean  @default(true) // Notify parent when child's chore is overdue
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
   @@index([userId])
 }

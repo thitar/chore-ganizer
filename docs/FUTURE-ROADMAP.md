@@ -118,6 +118,12 @@ This document outlines planned enhancements and features for future development 
 
 ### Notifications
 
+- [x] **ntfy Push Notifications** ✅ COMPLETED
+  - ntfy integration for push notifications
+  - User notification preferences
+  - Quiet hours configuration
+  - Implemented in `backend/src/services/ntfy.service.ts` and `frontend/src/pages/Profile.tsx`
+
 - [ ] **Email Notifications**
   - Configure SMTP settings
   - Email templates
@@ -129,10 +135,18 @@ This document outlines planned enhancements and features for future development 
   - Notification preferences per user
   - Estimated effort: 8 hours
 
-- [ ] **Reminder System**
-  - Customizable reminder times
-  - Escalating reminders for overdue chores
-  - Estimated effort: 4 hours
+- [x] **Reminder System** ✅ COMPLETED
+  - Customizable reminder times (hours before due)
+  - Push notifications for due soon chores
+  - Implemented in `backend/src/services/notification-settings.service.ts`
+
+### Penalties
+
+- [x] **Overdue Penalty System** ✅ COMPLETED
+  - Automatic point deduction for overdue chores
+  - Configurable penalty multiplier (1-5x)
+  - Parent notifications for overdue chores
+  - Implemented in `backend/src/services/overdue-penalty.service.ts`
 
 ---
 
@@ -298,9 +312,15 @@ This document outlines planned enhancements and features for future development 
 12. ✅ CSRF Protection (Phase 6)
 13. ✅ Input Validation Middleware (Phase 6)
 14. ✅ Session sameSite Configuration (Phase 6)
+15. ✅ ntfy Push Notifications
+16. ✅ Reminder System
+17. ✅ Overdue Penalty System
 
 ### Phase 6 Complete ✅
 All Phase 6 security hardening tasks have been completed. The application is now production-ready with comprehensive security measures in place.
+
+### Phase 7 In Progress
+Push notifications and penalty system have been implemented. Remaining Phase 7 features include recurring chores automation, rewards catalog, and email notifications.
 
 ### Short Term (1-2 Months)
 1. Recurring Chores Automation

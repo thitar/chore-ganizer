@@ -50,6 +50,14 @@
     {
       "name": "Chore Categories",
       "description": "Chore category management (Parent-only: create, update, delete)"
+    },
+    {
+      "name": "Notification Settings",
+      "description": "User notification preferences and ntfy push notification configuration"
+    },
+    {
+      "name": "Overdue Penalty",
+      "description": "Overdue chore penalty management (Parent-only: configure settings, process penalties)"
     }
   ],
   "paths": {
@@ -2035,6 +2043,352 @@
           }
         }
       }
+    },
+    "/notification-settings": {
+      "get": {
+        "tags": ["Notification Settings"],
+        "summary": "Get notification settings",
+        "description": "Get the current user's notification settings including ntfy configuration",
+        "operationId": "getNotificationSettings",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Notification Settings"],
+        "summary": "Update notification settings",
+        "description": "Update the current user's notification settings",
+        "operationId": "updateNotificationSettings",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Notification settings updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notification-settings/test": {
+      "post": {
+        "tags": ["Notification Settings"],
+        "summary": "Send test notification",
+        "description": "Send a test notification to verify ntfy configuration",
+        "operationId": "sendTestNotification",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test notification sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestNotificationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ntfy not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/overdue-penalty/settings": {
+      "get": {
+        "tags": ["Overdue Penalty"],
+        "summary": "Get penalty settings",
+        "description": "Get family overdue penalty settings (Parents only)",
+        "operationId": "getPenaltySettings",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "Penalty settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PenaltySettingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Overdue Penalty"],
+        "summary": "Update penalty settings",
+        "description": "Update family overdue penalty settings (Parents only)",
+        "operationId": "updatePenaltySettings",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePenaltySettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Penalty settings updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PenaltySettingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/overdue-penalty/process": {
+      "post": {
+        "tags": ["Overdue Penalty"],
+        "summary": "Process overdue chores",
+        "description": "Manually trigger processing of overdue chores and apply penalties (Parents only)",
+        "operationId": "processOverdueChores",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "Overdue chores processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessOverdueResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/overdue-penalty/chores": {
+      "get": {
+        "tags": ["Overdue Penalty"],
+        "summary": "Get overdue chores",
+        "description": "Get list of overdue chores (Parents see all, children see their own)",
+        "operationId": "getOverdueChores",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of overdue chores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OverdueChore"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/overdue-penalty/history": {
+      "get": {
+        "tags": ["Overdue Penalty"],
+        "summary": "Get penalty history",
+        "description": "Get history of applied penalties (Parents see all, children see their own)",
+        "operationId": "getPenaltyHistory",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "Penalty history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PenaltyRecord"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2866,6 +3220,312 @@
                 "items": {
                   "$ref": "#/components/schemas/ChoreCategory"
                 }
+              }
+            }
+          }
+        }
+      },
+      "NotificationSettings": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "userId": {
+            "type": "integer",
+            "example": 1
+          },
+          "ntfyTopic": {
+            "type": "string",
+            "nullable": true,
+            "example": "my-family-chores"
+          },
+          "ntfyServerUrl": {
+            "type": "string",
+            "example": "https://ntfy.sh"
+          },
+          "ntfyUsername": {
+            "type": "string",
+            "nullable": true
+          },
+          "ntfyPassword": {
+            "type": "string",
+            "nullable": true
+          },
+          "notifyChoreAssigned": {
+            "type": "boolean",
+            "example": true
+          },
+          "notifyChoreDueSoon": {
+            "type": "boolean",
+            "example": true
+          },
+          "notifyChoreCompleted": {
+            "type": "boolean",
+            "example": true
+          },
+          "notifyChoreOverdue": {
+            "type": "boolean",
+            "example": true
+          },
+          "notifyPointsEarned": {
+            "type": "boolean",
+            "example": true
+          },
+          "reminderHoursBefore": {
+            "type": "integer",
+            "example": 2
+          },
+          "quietHoursStart": {
+            "type": "integer",
+            "nullable": true,
+            "example": 22
+          },
+          "quietHoursEnd": {
+            "type": "integer",
+            "nullable": true,
+            "example": 7
+          },
+          "overduePenaltyEnabled": {
+            "type": "boolean",
+            "example": true
+          },
+          "overduePenaltyMultiplier": {
+            "type": "integer",
+            "example": 2
+          },
+          "notifyParentOnOverdue": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "NotificationSettingsResponse": {
+        "type": "object",
+        "properties": {
+          "settings": {
+            "$ref": "#/components/schemas/NotificationSettings"
+          }
+        }
+      },
+      "UpdateNotificationSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "ntfyTopic": {
+            "type": "string",
+            "nullable": true
+          },
+          "ntfyServerUrl": {
+            "type": "string"
+          },
+          "ntfyUsername": {
+            "type": "string",
+            "nullable": true
+          },
+          "ntfyPassword": {
+            "type": "string",
+            "nullable": true
+          },
+          "notifyChoreAssigned": {
+            "type": "boolean"
+          },
+          "notifyChoreDueSoon": {
+            "type": "boolean"
+          },
+          "notifyChoreCompleted": {
+            "type": "boolean"
+          },
+          "notifyChoreOverdue": {
+            "type": "boolean"
+          },
+          "notifyPointsEarned": {
+            "type": "boolean"
+          },
+          "reminderHoursBefore": {
+            "type": "integer"
+          },
+          "quietHoursStart": {
+            "type": "integer",
+            "nullable": true
+          },
+          "quietHoursEnd": {
+            "type": "integer",
+            "nullable": true
+          },
+          "overduePenaltyEnabled": {
+            "type": "boolean"
+          },
+          "overduePenaltyMultiplier": {
+            "type": "integer"
+          },
+          "notifyParentOnOverdue": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TestNotificationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Test notification sent successfully"
+          }
+        }
+      },
+      "PenaltySettingsResponse": {
+        "type": "object",
+        "properties": {
+          "overduePenaltyEnabled": {
+            "type": "boolean",
+            "example": true
+          },
+          "overduePenaltyMultiplier": {
+            "type": "integer",
+            "example": 2
+          },
+          "notifyParentOnOverdue": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "UpdatePenaltySettingsRequest": {
+        "type": "object",
+        "properties": {
+          "overduePenaltyEnabled": {
+            "type": "boolean"
+          },
+          "overduePenaltyMultiplier": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "notifyParentOnOverdue": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ProcessOverdueResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Processed 3 overdue chores"
+          },
+          "processed": {
+            "type": "integer",
+            "example": 3
+          },
+          "penalties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "assignmentId": {
+                  "type": "integer"
+                },
+                "userId": {
+                  "type": "integer"
+                },
+                "choreTitle": {
+                  "type": "string"
+                },
+                "penaltyPoints": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "assignmentId": {
+                  "type": "integer"
+                },
+                "error": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "OverdueChore": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "example": "PENDING"
+          },
+          "daysOverdue": {
+            "type": "integer",
+            "example": 2
+          },
+          "choreTemplate": {
+            "$ref": "#/components/schemas/ChoreTemplate"
+          },
+          "assignedTo": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              },
+              "color": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "PenaltyRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "penaltyApplied": {
+            "type": "boolean",
+            "example": true
+          },
+          "penaltyPoints": {
+            "type": "integer",
+            "example": -20
+          },
+          "choreTemplate": {
+            "$ref": "#/components/schemas/ChoreTemplate"
+          },
+          "assignedTo": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              },
+              "color": {
+                "type": "string"
               }
             }
           }
