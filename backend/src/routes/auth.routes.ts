@@ -3,6 +3,7 @@ import * as authController from '../controllers/auth.controller.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authenticate } from '../middleware/auth.js'
 import { authLimiter } from '../middleware/rateLimiter.js'
+import { validate, registerSchema, loginSchema } from '../middleware/validator.js'
 
 const router = Router()
 
@@ -12,7 +13,7 @@ const router = Router()
  * @access  Public
  * @rate    5 requests per 15 minutes
  */
-router.post('/register', authLimiter, asyncHandler(authController.register))
+router.post('/register', authLimiter, validate(registerSchema), asyncHandler(authController.register))
 
 /**
  * @route   POST /api/auth/login
@@ -20,7 +21,7 @@ router.post('/register', authLimiter, asyncHandler(authController.register))
  * @access  Public
  * @rate    5 requests per 15 minutes
  */
-router.post('/login', authLimiter, asyncHandler(authController.login))
+router.post('/login', authLimiter, validate(loginSchema), asyncHandler(authController.login))
 
 /**
  * @route   POST /api/auth/logout

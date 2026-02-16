@@ -10,7 +10,7 @@ This document outlines security hardening measures for deploying Chore-Ganizer b
 - ✅ Trust proxy setting enabled (`app.set('trust proxy', 1)`)
 - ✅ Secure cookies in production (when `SECURE_COOKIES=true`)
 - ✅ `httpOnly` cookies enabled (prevents XSS access to cookies)
-- ✅ `sameSite: 'lax'` (partial CSRF protection)
+- ✅ `sameSite: 'strict'` (full CSRF protection) - **Phase 6**
 - ✅ Role-based access control (PARENT/CHILD roles)
 - ✅ **Helmet middleware** - Security headers including CSP (implemented in [`app.ts`](../backend/src/app.ts))
 - ✅ **Rate limiting** - General and auth-specific rate limiting (implemented in [`rateLimiter.ts`](../backend/src/middleware/rateLimiter.ts))
@@ -20,10 +20,12 @@ This document outlines security hardening measures for deploying Chore-Ganizer b
 - ✅ `rolling: true` - Session refresh on each request
 - ✅ **Reverse Proxy (Caddy)** - HTTPS with Let's Encrypt, security headers
 - ✅ **Debug logging disabled** - `VITE_DEBUG=false` in production
+- ✅ **CSRF Protection** - Token generation and validation - **Phase 6** (implemented in [`auth.routes.ts`](../backend/src/routes/auth.routes.ts))
+- ✅ **Input Validation Middleware** - Zod schemas for all API endpoints - **Phase 6** (implemented in [`validation.schemas.ts`](../backend/src/schemas/validation.schemas.ts) and [`validator.ts`](../backend/src/middleware/validator.ts))
+- ✅ **Password Policy Enforcement** - 8+ chars, uppercase, lowercase, number, special char - **Phase 6**
+- ✅ **Password Strength Indicator** - Visual feedback on registration form - **Phase 6** (implemented in [`PasswordStrengthIndicator.tsx`](../frontend/src/components/common/PasswordStrengthIndicator.tsx))
 
-### Still Missing Security Measures
-- No CSRF token protection
-- No input validation middleware (Zod validation exists but not comprehensive)
+### All Security Measures Implemented ✅
 
 ## Required Environment Variables
 
@@ -269,13 +271,16 @@ USER node
 - [x] Set `rolling: true` for session refresh ✅
 - [x] Configure reverse proxy (Caddy) with HTTPS ✅
 - [x] Disable debug logging in production frontend (`VITE_DEBUG=false`) ✅
-- [ ] Change `sameSite` to `'strict'` (currently `'lax'`)
-- [ ] Add input validation on auth routes
-- [ ] Add CSRF token protection
+- [x] Change `sameSite` to `'strict'` ✅ **Phase 6**
+- [x] Add input validation on all API routes ✅ **Phase 6**
+- [x] Add CSRF token protection ✅ **Phase 6**
+- [x] Add password policy enforcement ✅ **Phase 6**
 
 ## Quick Implementation Priority
 
-### Completed ✅
+### All Security Measures Completed ✅
+
+#### Phase 1-5 (Previously Completed)
 1. ✅ Add Helmet middleware
 2. ✅ Add rate limiting on auth endpoints
 3. ✅ Add request size limits (10kb)
@@ -286,10 +291,14 @@ USER node
 8. ✅ Set environment variables (SESSION_SECRET, CORS_ORIGIN, SECURE_COOKIES)
 9. ✅ Disable debug logging in production frontend
 
-### High Priority (Do First)
-1. Change `sameSite` to `'strict'`
+#### Phase 6 (Recently Completed)
+1. ✅ Change `sameSite` to `'strict'`
+2. ✅ Add CSRF token protection (`/api/csrf-token` endpoint)
+3. ✅ Add input validation middleware with Zod schemas
+4. ✅ Add password policy enforcement (8+ chars, uppercase, lowercase, number, special char)
+5. ✅ Add password strength indicator on registration form
 
-### Low Priority
+### Optional Future Enhancements
 1. Fine-tune CSP headers
 2. Add request logging for audit
 3. Add IP-based blocking for repeated offenses

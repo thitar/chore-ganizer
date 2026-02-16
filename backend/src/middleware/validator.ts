@@ -9,7 +9,9 @@ import { ZodError, ZodSchema } from 'zod'
 export const validate = (schema: ZodSchema, property: 'body' | 'query' | 'params' = 'body') => {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
-      schema.parse(req[property])
+      const result = schema.parse(req[property])
+      // Replace the property with the parsed result (includes transformations)
+      req[property] = result
       next()
     } catch (error) {
       if (error instanceof ZodError) {
@@ -30,3 +32,6 @@ export const validate = (schema: ZodSchema, property: 'body' | 'query' | 'params
     }
   }
 }
+
+// Re-export schemas for convenience
+export * from '../schemas/validation.schemas.js'

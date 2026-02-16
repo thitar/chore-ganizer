@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosError } from 'axios'
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios'
 import type { ApiResponse, ApiError } from '../types'
 
 // Use VITE_API_URL if set, otherwise use empty string for relative URLs (proxied by nginx)
@@ -13,8 +13,15 @@ if (debugEnabled) {
   console.log('[ApiClient] Debug mode enabled')
 }
 
+interface CsrfTokenResponse {
+  csrfToken: string
+}
+
 class ApiClient {
   private client: AxiosInstance
+  private csrfToken: string | null = null
+  private csrfInitialized: boolean = false
+  private csrfPromise: Promise<void> | null = null
 
   constructor() {
     const baseURL = API_URL ? `${API_URL}/api` : '/api'
@@ -34,12 +41,22 @@ class ApiClient {
       },
     })
 
-    // Request interceptor for logging (when debug enabled)
+    // Request interceptor for logging and CSRF token
     this.client.interceptors.request.use(
-      (config) => {
+      (config: InternalAxiosRequestConfig) => {
         if (debugEnabled) {
           console.log('[ApiClient] Request:', config.method?.toUpperCase(), config.url, config.data)
         }
+        
+        // Add CSRF token to state-changing requests
+        const method = config.method?.toUpperCase()
+        if (this.csrfToken && method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+          config.headers['X-CSRF-Token'] = this.csrfToken
+          if (debugEnabled) {
+            console.log('[ApiClient] Added CSRF token to request')
+          }
+        }
+        
         return config
       },
       (error) => {
@@ -58,10 +75,32 @@ class ApiClient {
         }
         return response
       },
-      (error: AxiosError<ApiError>) => {
+      async (error: AxiosError<ApiError>) => {
         if (debugEnabled) {
           console.error('[ApiClient] Response error:', error.message, error.response?.status, error.response?.data)
         }
+        
+        // Handle CSRF token errors - try to refresh token and retry
+        if (error.response?.status === 403) {
+          const errorData = error.response.data as any
+          if (errorData?.error?.code === 'CSRF_TOKEN_INVALID' || errorData?.error?.code === 'CSRF_TOKEN_MISSING') {
+            if (debugEnabled) {
+              console.log('[ApiClient] CSRF token error, refreshing token...')
+            }
+            // Reset and re-fetch CSRF token
+            this.csrfToken = null
+            this.csrfInitialized = false
+            await this.initCsrfToken()
+            
+            // Retry the original request once
+            const originalRequest = error.config
+            if (originalRequest) {
+              originalRequest.headers['X-CSRF-Token'] = this.csrfToken
+              return this.client.request(originalRequest)
+            }
+          }
+        }
+        
         if (error.response) {
           // Server responded with error status
           throw error.response.data
@@ -86,6 +125,50 @@ class ApiClient {
         }
       }
     )
+  }
+
+  /**
+   * Initialize CSRF token from the server
+   * Should be called when the app starts
+   */
+  async initCsrfToken(): Promise<void> {
+    // Prevent multiple simultaneous CSRF token requests
+    if (this.csrfPromise) {
+      return this.csrfPromise
+    }
+    
+    if (this.csrfInitialized && this.csrfToken) {
+      return
+    }
+
+    this.csrfPromise = (async () => {
+      try {
+        if (debugEnabled) {
+          console.log('[ApiClient] Fetching CSRF token...')
+        }
+        const response = await this.client.get<ApiResponse<CsrfTokenResponse>>('/csrf-token')
+        this.csrfToken = response.data.data.csrfToken
+        this.csrfInitialized = true
+        if (debugEnabled) {
+          console.log('[ApiClient] CSRF token initialized')
+        }
+      } catch (error) {
+        console.error('[ApiClient] Failed to fetch CSRF token:', error)
+        // Don't throw - allow the app to continue, requests will fail with CSRF error
+      } finally {
+        this.csrfPromise = null
+      }
+    })()
+
+    return this.csrfPromise
+  }
+
+  /**
+   * Reset CSRF token (useful after login/logout)
+   */
+  resetCsrfToken(): void {
+    this.csrfToken = null
+    this.csrfInitialized = false
   }
 
   async get<T>(url: string, config?: any): Promise<ApiResponse<T>> {

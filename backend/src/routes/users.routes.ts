@@ -2,6 +2,7 @@ import { Router } from 'express'
 import * as usersController from '../controllers/users.controller.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authenticate, authorize, requireParent } from '../middleware/auth.js'
+import { validate, updateUserSchema, idParamSchema } from '../middleware/validator.js'
 
 const router = Router()
 
@@ -26,6 +27,7 @@ router.get(
   '/:id',
   authenticate,
   authorize('PARENT'),
+  validate(idParamSchema, 'params'),
   asyncHandler(usersController.getUserById)
 )
 
@@ -37,6 +39,7 @@ router.get(
 router.get(
   '/:id/assignments',
   authenticate,
+  validate(idParamSchema, 'params'),
   asyncHandler(usersController.getUserAssignments)
 )
 
@@ -49,6 +52,8 @@ router.put(
   '/:id',
   authenticate,
   requireParent,
+  validate(idParamSchema, 'params'),
+  validate(updateUserSchema),
   asyncHandler(usersController.updateUser)
 )
 

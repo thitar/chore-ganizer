@@ -11,7 +11,8 @@ This guide is for parents and administrators who manage the Chore-Ganizer applic
 3. [User Management](#user-management)
 4. [Chore Management](#chore-management)
 5. [Database Administration](#database-administration)
-6. [Troubleshooting](#troubleshooting)
+6. [API Security Features](#api-security-features)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -274,6 +275,74 @@ curl -X POST http://localhost:3010/api/auth/register \
 
 ---
 
+## API Security Features
+
+### CSRF Protection
+
+The API uses CSRF (Cross-Site Request Forgery) tokens to protect against unauthorized requests. The frontend automatically handles CSRF tokens, but if you're making direct API calls, you'll need to:
+
+1. **Get a CSRF token:**
+   ```bash
+   curl -X GET http://localhost:3010/api/csrf-token \
+     -H "Content-Type: application/json"
+   ```
+
+2. **Include the token in subsequent requests:**
+   ```bash
+   curl -X POST http://localhost:3010/api/auth/register \
+     -H "Content-Type: application/json" \
+     -H "X-CSRF-Token: YOUR_CSRF_TOKEN" \
+     -d '{"email":"newuser@home","password":"SecurePass123!","name":"New User","role":"CHILD"}'
+   ```
+
+### Password Requirements
+
+All new passwords must meet the following requirements:
+- **Minimum 8 characters**
+- **At least one uppercase letter** (A-Z)
+- **At least one lowercase letter** (a-z)
+- **At least one number** (0-9)
+- **At least one special character** (!@#$%^&* etc.)
+
+### Input Validation
+
+All API endpoints use Zod schema validation. Invalid inputs will return a `400 Bad Request` with details:
+
+```json
+{
+  "success": false,
+  "error": {
+    "message": "Validation failed",
+    "code": "VALIDATION_ERROR",
+    "details": [
+      {
+        "field": "password",
+        "message": "Password must contain at least one uppercase letter"
+      }
+    ]
+  }
+}
+```
+
+### Validation Endpoints
+
+The following validation schemas are applied:
+
+| Endpoint | Validation Schema |
+|----------|-------------------|
+| `POST /api/auth/register` | Email, password strength, name |
+| `POST /api/auth/login` | Email, password |
+| `POST /api/users` | Email, password, name, role |
+| `PUT /api/users/:id` | Name, email, role |
+| `POST /api/templates` | Title, description, points |
+| `PUT /api/templates/:id` | Title, description, points |
+| `POST /api/assignments` | Template ID, assigned user, due date |
+| `PUT /api/assignments/:id` | Status, points |
+| `POST /api/categories` | Name, color |
+| `PUT /api/categories/:id` | Name, color |
+
+---
+
 ## Troubleshooting
 
 ### Common Issues
@@ -331,10 +400,12 @@ docker cp chore-ganizer-backend:/app/data/backup.db ./chore-ganizer-backup-$(dat
 ## Security Recommendations
 
 1. **Change default passwords** after initial setup
-2. **Use strong passwords** for parent accounts
+2. **Use strong passwords** for parent accounts (8+ chars, uppercase, lowercase, number, special char)
 3. **Limit parent role** to actual parents only
 4. **Regular backups** of the database
 5. **Run on secure network** (home network recommended)
+6. **CSRF protection** is enabled - tokens required for API calls
+7. **Input validation** enforced on all endpoints - invalid data returns 400 errors
 
 ---
 
@@ -362,6 +433,9 @@ docker cp chore-ganizer-backend:/app/data/backup.db ./chore-ganizer-backup-$(dat
 | Reset Password | ❌ | ❌ | ✅ |
 | Adjust Points | ❌ | ❌ | ✅ |
 | Notifications | ✅ | ✅ | ✅ |
+| Password Strength Indicator | ✅ | ✅ | N/A |
+| CSRF Protection | N/A | ✅ | N/A |
+| Input Validation | N/A | ✅ | N/A |
 
 ---
 

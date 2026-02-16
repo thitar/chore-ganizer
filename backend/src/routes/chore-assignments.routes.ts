@@ -2,6 +2,7 @@ import { Router } from 'express'
 import * as assignmentsController from '../controllers/chore-assignments.controller.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authenticate, requireParent } from '../middleware/auth.js'
+import { validate, createChoreAssignmentSchema, updateChoreAssignmentSchema, idParamSchema } from '../middleware/validator.js'
 
 const router = Router()
 
@@ -38,34 +39,34 @@ router.get('/calendar', authenticate, asyncHandler(assignmentsController.getCale
  * @desc    Get a single chore assignment
  * @access  Private
  */
-router.get('/:id', authenticate, asyncHandler(assignmentsController.getAssignment))
+router.get('/:id', authenticate, validate(idParamSchema, 'params'), asyncHandler(assignmentsController.getAssignment))
 
 /**
  * @route   POST /api/chore-assignments
  * @desc    Create a new chore assignment
  * @access  Private (Parents only)
  */
-router.post('/', authenticate, requireParent, asyncHandler(assignmentsController.createAssignment))
+router.post('/', authenticate, requireParent, validate(createChoreAssignmentSchema), asyncHandler(assignmentsController.createAssignment))
 
 /**
  * @route   PUT /api/chore-assignments/:id
  * @desc    Update a chore assignment (reschedule, reassign)
  * @access  Private (Parents only)
  */
-router.put('/:id', authenticate, requireParent, asyncHandler(assignmentsController.updateAssignment))
+router.put('/:id', authenticate, requireParent, validate(idParamSchema, 'params'), validate(updateChoreAssignmentSchema), asyncHandler(assignmentsController.updateAssignment))
 
 /**
  * @route   POST /api/chore-assignments/:id/complete
  * @desc    Complete a chore assignment (awards points)
  * @access  Private
  */
-router.post('/:id/complete', authenticate, asyncHandler(assignmentsController.completeAssignment))
+router.post('/:id/complete', authenticate, validate(idParamSchema, 'params'), asyncHandler(assignmentsController.completeAssignment))
 
 /**
  * @route   DELETE /api/chore-assignments/:id
  * @desc    Delete a chore assignment
  * @access  Private (Parents only)
  */
-router.delete('/:id', authenticate, requireParent, asyncHandler(assignmentsController.deleteAssignment))
+router.delete('/:id', authenticate, requireParent, validate(idParamSchema, 'params'), asyncHandler(assignmentsController.deleteAssignment))
 
 export default router

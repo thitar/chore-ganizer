@@ -20,6 +20,9 @@ A modern, family-friendly chore management system designed for homelab deploymen
  - ✅ **Protected Routes** - Templates and Calendar pages restricted to parents
  - ✅ **Notifications** - In-app notifications for chore events
  - ✅ **Security Hardening** - Helmet headers, rate limiting, SQLite session store
+ - ✅ **Password Policy** - Strong password requirements with strength indicator
+ - ✅ **CSRF Protection** - Token-based cross-site request forgery protection
+ - ✅ **Input Validation** - Zod schema validation on all API endpoints
  - ✅ **Responsive Design** - Works on desktop, tablet, and mobile
  - ✅ **Docker Deployment** - Easy deployment with Docker Compose
 
@@ -409,10 +412,14 @@ For more detailed troubleshooting, see the [Development Plan](./docs/CHORE-GANIZ
 ### Current Security Features:
 - **Helmet middleware** - Security headers including CSP
 - **Rate limiting** - 100 req/15min general, 5 req/15min for auth endpoints
-- **Secure cookies** - HttpOnly, Secure, SameSite=Lax
+- **Secure cookies** - HttpOnly, Secure, SameSite=Strict
 - **SQLite session store** - Persistent sessions across restarts
 - **Trust proxy** - Configured for reverse proxy deployment
 - **Request size limits** - 10kb max request body
+- **Password Policy** - 8+ chars, uppercase, lowercase, number, special char required
+- **Password Strength Indicator** - Visual feedback during registration
+- **CSRF Protection** - Token-based protection with `/api/csrf-token` endpoint
+- **Input Validation** - Zod schema validation on all API endpoints
 
 ### For Public Internet Access:
 - Use a reverse proxy (Caddy, Traefik, Nginx Proxy Manager)

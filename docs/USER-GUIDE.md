@@ -16,6 +16,18 @@ Chore-Ganizer is a family-friendly chore management app that helps families orga
 
 > **Note:** Accounts are created by a parent. If you don't have an account, ask a parent to create one for you.
 
+### Password Requirements
+
+When creating a new account, passwords must meet the following requirements:
+
+- **Minimum 8 characters**
+- **At least one uppercase letter** (A-Z)
+- **At least one lowercase letter** (a-z)
+- **At least one number** (0-9)
+- **At least one special character** (!@#$%^&* etc.)
+
+A **password strength indicator** will show you how strong your password is as you type. Aim for a "Strong" rating for the best security.
+
 ## Using the Dashboard
 
 The dashboard shows an overview of **your** chore activity (personal view):

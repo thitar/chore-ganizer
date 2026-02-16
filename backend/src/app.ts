@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit'
 import SQLiteStore from 'connect-sqlite3'
 import routes from './routes/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
+import { csrfMiddleware, getCsrfToken } from './middleware/csrf.js'
 
 // Load environment variables
 dotenv.config()
@@ -93,10 +94,16 @@ app.use(session({
     secure: isSecureCookie,
     httpOnly: true,
     maxAge: sessionMaxAge,
-    sameSite: 'lax',  // Lax allows cross-site navigation while protecting CSRF
+    sameSite: 'strict',  // Strict provides better CSRF protection
     path: '/',
   },
 }))
+
+// CSRF protection middleware
+app.use(csrfMiddleware)
+
+// CSRF token endpoint - must be before routes
+app.get('/api/csrf-token', getCsrfToken)
 
 // API routes
 app.use('/api', routes)

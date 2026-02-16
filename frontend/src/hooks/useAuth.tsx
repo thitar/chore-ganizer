@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { authApi } from '../api'
 import type { User, LoginCredentials } from '../types'
+import type { RegisterCredentials } from '../api/auth.api'
 
 interface AuthContextType {
   user: User | null
   loading: boolean
   error: string | null
   login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string }>
+  register: (credentials: RegisterCredentials) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
   isAuthenticated: boolean
   isParent: boolean
@@ -54,6 +56,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const register = async (credentials: RegisterCredentials) => {
+    try {
+      console.log('[AuthProvider] register called with:', credentials)
+      setError(null)
+      const response = await authApi.register(credentials)
+      console.log('[AuthProvider] register response:', response)
+      setUser(response.data.user)
+      return { success: true }
+    } catch (err: any) {
+      console.error('[AuthProvider] register error:', err)
+      const errorMessage = err.error?.message || err.message || 'Registration failed'
+      setError(errorMessage)
+      return { success: false, error: errorMessage }
+    }
+  }
+
   const logout = async () => {
     try {
       await authApi.logout()
@@ -69,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     error,
     login,
+    register,
     logout,
     isAuthenticated: !!user,
     isParent: user?.role === 'PARENT',

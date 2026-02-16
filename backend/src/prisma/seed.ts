@@ -11,10 +11,10 @@ async function main() {
 
   // Create parent users
   const dad = await prisma.user.upsert({
-    where: { email: 'dad@home' },
+    where: { email: 'dad@home.local' },
     update: {},
     create: {
-      email: 'dad@home',
+      email: 'dad@home.local',
       password: passwordHash,
       name: 'Dad',
       role: 'PARENT',
@@ -23,10 +23,10 @@ async function main() {
   })
 
   const mom = await prisma.user.upsert({
-    where: { email: 'mom@home' },
+    where: { email: 'mom@home.local' },
     update: {},
     create: {
-      email: 'mom@home',
+      email: 'mom@home.local',
       password: passwordHash,
       name: 'Mom',
       role: 'PARENT',
@@ -36,10 +36,10 @@ async function main() {
 
   // Create child users
   const alice = await prisma.user.upsert({
-    where: { email: 'alice@home' },
+    where: { email: 'alice@home.local' },
     update: {},
     create: {
-      email: 'alice@home',
+      email: 'alice@home.local',
       password: passwordHash,
       name: 'Alice',
       role: 'CHILD',
@@ -48,10 +48,10 @@ async function main() {
   })
 
   const bob = await prisma.user.upsert({
-    where: { email: 'bob@home' },
+    where: { email: 'bob@home.local' },
     update: {},
     create: {
-      email: 'bob@home',
+      email: 'bob@home.local',
       password: passwordHash,
       name: 'Bob',
       role: 'CHILD',
