@@ -1,5 +1,8 @@
 # Frontend Dockerfile for Chore-Ganizer
 # Multi-stage build for optimized production image
+#
+# Runtime configuration is injected via docker-entrypoint.sh
+# Changes to .env take effect on container restart (no rebuild needed)
 
 # Stage 1: Build
 FROM node:20-alpine AS builder
@@ -15,15 +18,12 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build arguments for environment variables
-ARG VITE_API_URL=/api
-ENV VITE_API_URL=$VITE_API_URL
-
 # Build argument for version (passed from docker-compose)
-ARG VITE_APP_VERSION=1.1.1
+ARG VITE_APP_VERSION=1.2.3
 ENV VITE_APP_VERSION=$VITE_APP_VERSION
 
 # Build the application
+# Note: VITE_API_URL is now runtime-configured, so we use a placeholder
 RUN npm run build
 
 # Stage 2: Production
@@ -31,6 +31,10 @@ FROM nginx:alpine AS production
 
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy entrypoint script for runtime config generation
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 # Copy built files from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
@@ -42,5 +46,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Use custom entrypoint to generate runtime config
+ENTRYPOINT ["/docker-entrypoint.sh"]

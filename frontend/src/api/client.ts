@@ -1,16 +1,29 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios'
 import type { ApiResponse, ApiError } from '../types'
 
-// Use VITE_API_URL if set, otherwise use empty string for relative URLs (proxied by nginx)
-const API_URL = import.meta.env.VITE_API_URL || ''
+// Declare window.APP_CONFIG type for runtime configuration
+declare global {
+  interface Window {
+    APP_CONFIG?: {
+      apiUrl?: string;
+      debug?: boolean;
+      appVersion?: string;
+    };
+  }
+}
 
-// Enable debug logging in development OR when VITE_DEBUG is set to 'true'
+// Use runtime config (window.APP_CONFIG) if available, otherwise fall back to build-time env
+// This allows configuration changes without rebuilding the container
+const API_URL = window.APP_CONFIG?.apiUrl ?? import.meta.env.VITE_API_URL ?? ''
+
+// Enable debug logging in development OR when debug is enabled in config
 const isDev = import.meta.env.DEV
-const debugEnabled = isDev || import.meta.env.VITE_DEBUG === 'true'
+const debugEnabled = isDev || window.APP_CONFIG?.debug === true || import.meta.env.VITE_DEBUG === 'true'
 
 if (debugEnabled) {
   console.log('[ApiClient] Initializing with API_URL:', API_URL || '(empty - using relative URLs)')
   console.log('[ApiClient] Debug mode enabled')
+  console.log('[ApiClient] Config source:', window.APP_CONFIG ? 'runtime' : 'build-time')
 }
 
 interface CsrfTokenResponse {
