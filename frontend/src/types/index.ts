@@ -142,7 +142,7 @@ export interface UpdateTemplateData {
 }
 
 export interface CreateAssignmentData {
-  templateId: number
+  choreTemplateId: number
   assignedToId: number
   dueDate: string
 }
@@ -183,3 +183,6 @@ export interface ApiError {
     }>
   }
 }
+
+// Recurring Chores types
+export * from './recurring-chores'

@@ -24,6 +24,13 @@ model User {
   assignedByChores     ChoreAssignment[]        @relation("AssignedBy")
   notifications        Notification[]
   notificationSettings UserNotificationSettings?
+  
+  // Recurring chore relations
+  createdRecurringChores  RecurringChore[]           @relation("CreatedRecurringChores")
+  fixedRecurringChores    RecurringChoreFixedAssignee[]
+  roundRobinChores        RecurringChoreRoundRobinPool[]
+  completedOccurrences    ChoreOccurrence[]          @relation("CompletedOccurrences")
+  skippedOccurrences      ChoreOccurrence[]          @relation("SkippedOccurrences")
 }
 
 model ChoreCategory {
@@ -33,6 +40,7 @@ model ChoreCategory {
   icon        String?
   color       String?
   templates   ChoreTemplate[]
+  recurringChores RecurringChore[] @relation("RecurringChoreCategory")
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
@@ -117,4 +125,122 @@ model UserNotificationSettings {
   updatedAt                DateTime @updatedAt
 
   @@index([userId])
+}
+
+// ============================================
+// Recurring Chores System
+// ============================================
+
+// Recurring Chore - stores the definition of a recurring chore
+model RecurringChore {
+  id              Int                 @id @default(autoincrement())
+  title           String
+  description     String?
+  points          Int                 @default(1)
+  icon            String?
+  color           String?
+  categoryId      Int?
+  category        ChoreCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull, name: "RecurringChoreCategory")
+  createdById     Int
+  createdBy       User                @relation("CreatedRecurringChores", fields: [createdById], references: [id], onDelete: Cascade)
+  
+  // Start date for the recurring chore
+  startDate       DateTime            @default(now())
+  
+  // Recurrence pattern stored as JSON string
+  // Structure: { frequency: 'DAILY'|'WEEKLY'|'MONTHLY'|'YEARLY', interval: number, byDayOfWeek?: number[], byDayOfMonth?: number, byNthWeekday?: { weekday: number, nth: number } }
+  recurrenceRule  String              // JSON string
+  
+  // Assignment configuration
+  assignmentMode  String              // "FIXED", "ROUND_ROBIN", "MIXED"
+  
+  // Track if recurring chore is active (can be deactivated to stop future occurrences)
+  isActive        Boolean             @default(true)
+  
+  // Timestamps
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  
+  // Relations
+  fixedAssignees  RecurringChoreFixedAssignee[]
+  roundRobinPool  RecurringChoreRoundRobinPool[]
+  occurrences     ChoreOccurrence[]
+  
+  @@index([createdById])
+  @@index([categoryId])
+  @@index([isActive])
+}
+
+// Junction table for fixed assignees (children who are always assigned to this chore)
+model RecurringChoreFixedAssignee {
+  id              Int           @id @default(autoincrement())
+  recurringChoreId Int
+  recurringChore  RecurringChore @relation(fields: [recurringChoreId], references: [id], onDelete: Cascade)
+  userId          Int
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([recurringChoreId, userId])
+  @@index([recurringChoreId])
+  @@index([userId])
+}
+
+// Junction table for round-robin pool members with rotation order
+model RecurringChoreRoundRobinPool {
+  id              Int           @id @default(autoincrement())
+  recurringChoreId Int
+  recurringChore  RecurringChore @relation(fields: [recurringChoreId], references: [id], onDelete: Cascade)
+  userId          Int
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order           Int           // Order in the rotation (0-indexed)
+  
+  @@unique([recurringChoreId, userId])
+  @@index([recurringChoreId])
+  @@index([userId])
+}
+
+// Chore Occurrence - stores individual occurrences of recurring chores within the 30-day window
+model ChoreOccurrence {
+  id              Int           @id @default(autoincrement())
+  recurringChoreId Int
+  recurringChore  RecurringChore @relation(fields: [recurringChoreId], references: [id], onDelete: Cascade)
+  
+  // The specific date this occurrence is due
+  dueDate         DateTime
+  
+  // Current status: "PENDING", "COMPLETED", "SKIPPED"
+  status          String        @default("PENDING")
+  
+  // Assignment snapshot at generation time
+  // For FIXED: same as recurring chore fixed assignees
+  // For ROUND_ROBIN: current person in rotation
+  // For MIXED: both fixed and current round-robin person
+  assignedUserIds String        // JSON string: Array of user IDs assigned to this occurrence
+  
+  // Round-robin state tracking
+  roundRobinIndex Int?          // Current index in rotation (for tracking)
+  
+  // Completion tracking
+  completedAt     DateTime?
+  completedById   Int?          // User who marked as complete (could be parent or the child)
+  completedBy     User?         @relation("CompletedOccurrences", fields: [completedById], references: [id], onDelete: SetNull)
+  
+  // Skip tracking
+  skippedAt       DateTime?
+  skippedById     Int?
+  skippedBy       User?         @relation("SkippedOccurrences", fields: [skippedById], references: [id], onDelete: SetNull)
+  skipReason      String?
+  
+  // Points awarded (snapshot from recurring chore at completion time)
+  pointsAwarded   Int?
+  
+  // Notes for this specific occurrence
+  notes           String?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@unique([recurringChoreId, dueDate]) // One occurrence per recurring chore per date
+  @@index([recurringChoreId])
+  @@index([dueDate])
+  @@index([status])
 }

@@ -42,7 +42,7 @@ export const ChoreForm: React.FC<ChoreFormProps> = ({
     if (!templateId || !assignedToId || !dueDate) return
 
     const data: CreateAssignmentData | UpdateAssignmentData = {
-      templateId,
+      choreTemplateId: templateId,
       assignedToId,
       dueDate,
     }
@@ -55,14 +55,14 @@ export const ChoreForm: React.FC<ChoreFormProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title={assignment ? 'Edit Assignment' : 'Create Assignment'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Chore Template</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Chore Definition</label>
           <select
             value={templateId || ''}
             onChange={(e) => setTemplateId(parseInt(e.target.value) || null)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           >
-            <option value="">Select a chore template</option>
+            <option value="">Select a chore definition</option>
             {templates.map((template) => (
               <option key={template.id} value={template.id}>
                 {template.title} ({template.points} pts)

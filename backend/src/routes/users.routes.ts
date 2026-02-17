@@ -9,12 +9,11 @@ const router = Router()
 /**
  * @route   GET /api/users
  * @desc    Get all users
- * @access  Private (Parents only)
+ * @access  Private (All authenticated users - needed for child users to see family members)
  */
 router.get(
   '/',
   authenticate,
-  authorize('PARENT'),
   asyncHandler(usersController.getAllUsers)
 )
 

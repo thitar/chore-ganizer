@@ -3,7 +3,11 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import apiClient from './api/client'
+import { FULL_VERSION } from './version'
 import './index.css'
+
+// Log frontend version on startup
+console.log(`Chore-Ganizer Frontend v${FULL_VERSION}`)
 
 // Initialize CSRF token on app load
 apiClient.initCsrfToken().catch(console.error)

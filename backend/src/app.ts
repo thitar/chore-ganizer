@@ -8,9 +8,18 @@ import SQLiteStore from 'connect-sqlite3'
 import routes from './routes/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 import { csrfMiddleware, getCsrfToken } from './middleware/csrf.js'
+import { FULL_VERSION } from './version.js'
 
 // Load environment variables
 dotenv.config()
+
+// Log server startup banner
+console.log(`
+╔═══════════════════════════════════════╗
+║     Chore-Ganizer API Server          ║
+║     Version: ${FULL_VERSION}            ║
+╚═══════════════════════════════════════╝
+`)
 
 const app = express()
 

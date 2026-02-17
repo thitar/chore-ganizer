@@ -72,13 +72,7 @@ export const assignmentsApi = {
   },
 
   create: async (data: CreateAssignmentData): Promise<ChoreAssignment> => {
-    // Map frontend field names to backend expected names
-    const payload = {
-      choreTemplateId: data.templateId,
-      assignedToId: data.assignedToId,
-      dueDate: data.dueDate,
-    }
-    const response = await client.post<{ assignment: ChoreAssignment }>('/chore-assignments', payload)
+    const response = await client.post<{ assignment: ChoreAssignment }>('/chore-assignments', data)
     return response.data?.assignment
   },
 

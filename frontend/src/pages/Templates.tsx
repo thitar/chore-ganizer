@@ -3,7 +3,7 @@ import { useAuth, useTemplates, useCategories, useUsers } from '../hooks'
 import { Button } from '../components/common'
 import type { ChoreTemplate, CreateTemplateData, UpdateTemplateData } from '../types'
 
-// Template Card Component
+// Chore Definition Card Component
 const TemplateCard: React.FC<{
   template: ChoreTemplate
   onEdit: (template: ChoreTemplate) => void
@@ -47,7 +47,7 @@ const TemplateCard: React.FC<{
   )
 }
 
-// Template Form Component
+// Chore Definition Form Component
 const TemplateForm: React.FC<{
   isOpen: boolean
   onClose: () => void
@@ -100,7 +100,7 @@ const TemplateForm: React.FC<{
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <h2 className="text-xl font-bold mb-4">
-          {template ? 'Edit Template' : 'Create Template'}
+          {template ? 'Edit Chore Definition' : 'Create Chore Definition'}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -202,7 +202,7 @@ export const Templates: React.FC = () => {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this template?')) return
+    if (!confirm('Are you sure you want to delete this chore definition?')) return
     await deleteTemplate(id)
   }
 
@@ -214,7 +214,7 @@ export const Templates: React.FC = () => {
   if (!isParent) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">You don't have permission to manage templates.</p>
+        <p className="text-gray-600">You don't have permission to manage chore definitions.</p>
       </div>
     )
   }
@@ -223,11 +223,11 @@ export const Templates: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Chore Templates</h1>
-          <p className="text-gray-600">Manage reusable chore templates</p>
+          <h1 className="text-2xl font-bold text-gray-900">Chore Definitions</h1>
+          <p className="text-gray-600">Manage reusable chore definitions</p>
         </div>
         <Button variant="primary" onClick={() => setIsFormOpen(true)}>
-          Create Template
+          Create Chore Definition
         </Button>
       </div>
 
@@ -240,11 +240,11 @@ export const Templates: React.FC = () => {
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-600">Loading templates...</p>
+          <p className="mt-2 text-gray-600">Loading chore definitions...</p>
         </div>
       ) : templates.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-gray-600">No templates yet. Create your first template!</p>
+          <p className="text-gray-600">No chore definitions yet. Create your first chore definition!</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

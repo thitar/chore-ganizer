@@ -1,8 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth, useNotifications, AuthProvider } from './hooks'
+import { useAuth, AuthProvider } from './hooks'
 import { ErrorBoundary } from './components/common'
 import { Navbar, Sidebar, Footer } from './components/layout'
-import { Login, Dashboard, Chores, Templates, Profile, NotFound, Users, Calendar } from './pages'
+import { Login, Dashboard, Chores, Templates, Profile, NotFound, Users, Calendar, RecurringChoresPage } from './pages'
 
 // Protected route wrapper for parent-only pages
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -63,6 +63,7 @@ function AppContent() {
                     </ProtectedRoute>
                   } 
                 />
+                <Route path="/recurring-chores" element={<RecurringChoresPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>
@@ -74,10 +75,23 @@ function AppContent() {
   )
 }
 
+// Wrapper component that uses key to force remount on auth state change
+// This prevents React DOM reconciliation issues during login/logout transitions
+// caused by React StrictMode's double-rendering in development
+function AppContentWithKey() {
+  const { isAuthenticated, loading } = useAuth()
+  
+  // Use a key based on auth state to force React to create a new component tree
+  // when authentication state changes, preventing insertBefore errors
+  const authKey = loading ? 'loading' : (isAuthenticated ? 'authenticated' : 'unauthenticated')
+  
+  return <AppContent key={authKey} />
+}
+
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <AppContentWithKey />
     </AuthProvider>
   )
 }

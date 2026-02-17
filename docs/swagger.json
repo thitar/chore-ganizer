@@ -58,6 +58,10 @@
     {
       "name": "Overdue Penalty",
       "description": "Overdue chore penalty management (Parent-only: configure settings, process penalties)"
+    },
+    {
+      "name": "Recurring Chores",
+      "description": "Recurring chore management with flexible recurrence patterns and occurrence tracking"
     }
   ],
   "paths": {
@@ -2389,6 +2393,587 @@
           }
         }
       }
+    },
+    "/recurring-chores": {
+      "post": {
+        "tags": ["Recurring Chores"],
+        "summary": "Create a recurring chore",
+        "description": "Create a new recurring chore with flexible recurrence pattern (Parents only)",
+        "operationId": "createRecurringChore",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecurringChoreRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Recurring chore created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringChoreResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Recurring Chores"],
+        "summary": "List all recurring chores",
+        "description": "Get all recurring chores for the family",
+        "operationId": "listRecurringChores",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "includeInactive",
+            "in": "query",
+            "required": false,
+            "description": "Include soft-deleted (inactive) recurring chores",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of recurring chores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringChoreListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recurring-chores/occurrences": {
+      "get": {
+        "tags": ["Recurring Chores"],
+        "summary": "List chore occurrences",
+        "description": "Get chore occurrences for the next 30 days",
+        "operationId": "listOccurrences",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Filter by occurrence status",
+            "schema": {
+              "type": "string",
+              "enum": ["PENDING", "COMPLETED", "SKIPPED"]
+            }
+          },
+          {
+            "name": "assignedToMe",
+            "in": "query",
+            "required": false,
+            "description": "Show only occurrences assigned to current user",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of chore occurrences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreOccurrenceListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recurring-chores/{id}": {
+      "get": {
+        "tags": ["Recurring Chores"],
+        "summary": "Get a recurring chore",
+        "description": "Get a specific recurring chore by ID",
+        "operationId": "getRecurringChore",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Recurring chore ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recurring chore details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringChoreResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurring chore not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Recurring Chores"],
+        "summary": "Update a recurring chore",
+        "description": "Update a recurring chore (affects all future occurrences, Parents only)",
+        "operationId": "updateRecurringChore",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Recurring chore ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRecurringChoreRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recurring chore updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringChoreResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurring chore not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Recurring Chores"],
+        "summary": "Delete a recurring chore",
+        "description": "Soft delete a recurring chore by setting isActive=false (Parents only)",
+        "operationId": "deleteRecurringChore",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Recurring chore ID",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "deleteFutureOccurrences",
+            "in": "query",
+            "required": false,
+            "description": "Also delete future pending occurrences",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recurring chore deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurring chore not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recurring-chores/occurrences/{id}/complete": {
+      "patch": {
+        "tags": ["Recurring Chores"],
+        "summary": "Complete an occurrence",
+        "description": "Mark a chore occurrence as completed",
+        "operationId": "completeOccurrence",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore occurrence ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteOccurrenceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Occurrence completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteOccurrenceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or occurrence already completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Occurrence not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recurring-chores/occurrences/{id}/skip": {
+      "patch": {
+        "tags": ["Recurring Chores"],
+        "summary": "Skip an occurrence",
+        "description": "Skip a chore occurrence",
+        "operationId": "skipOccurrence",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore occurrence ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkipOccurrenceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Occurrence skipped successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreOccurrenceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or occurrence already completed/skipped",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Occurrence not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recurring-chores/occurrences/{id}/unskip": {
+      "patch": {
+        "tags": ["Recurring Chores"],
+        "summary": "Unskip an occurrence",
+        "description": "Unskip a previously skipped chore occurrence",
+        "operationId": "unskipOccurrence",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Chore occurrence ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Occurrence unskipped successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreOccurrenceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Occurrence is not skipped",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Occurrence not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3526,6 +4111,474 @@
               },
               "color": {
                 "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "RecurrenceRule": {
+        "type": "object",
+        "required": ["frequency", "interval", "startDate"],
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": ["DAILY", "WEEKLY", "MONTHLY", "YEARLY"],
+            "description": "Base frequency of recurrence",
+            "example": "WEEKLY"
+          },
+          "interval": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Repeat every N intervals (e.g., every 2 weeks)",
+            "example": 1
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Start date for the recurrence",
+            "example": "2026-02-16"
+          },
+          "byDayOfWeek": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6
+            },
+            "description": "Days of week (0=Sunday, 1=Monday, ..., 6=Saturday) for weekly patterns",
+            "example": [1, 3, 5]
+          },
+          "byDayOfMonth": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 31,
+            "description": "Day of month (1-31) for monthly patterns",
+            "example": 15
+          },
+          "byNthWeekday": {
+            "type": "object",
+            "description": "Nth weekday of month (e.g., 2nd Tuesday)",
+            "properties": {
+              "week": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5,
+                "description": "Which week (1=first, 2=second, ..., 5=last)",
+                "example": 2
+              },
+              "day": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6,
+                "description": "Day of week (0=Sunday, 6=Saturday)",
+                "example": 2
+              }
+            }
+          }
+        }
+      },
+      "RecurringChore": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "example": "Weekly Room Cleaning"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Clean your room every week"
+          },
+          "points": {
+            "type": "integer",
+            "example": 10
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true,
+            "example": "broom"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true,
+            "example": "#4CAF50"
+          },
+          "categoryId": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1
+          },
+          "category": {
+            "$ref": "#/components/schemas/ChoreCategory",
+            "nullable": true
+          },
+          "recurrenceRule": {
+            "$ref": "#/components/schemas/RecurrenceRule"
+          },
+          "assignmentMode": {
+            "type": "string",
+            "enum": ["FIXED", "ROUND_ROBIN", "MIXED"],
+            "description": "FIXED: always same assignees, ROUND_ROBIN: rotate through pool, MIXED: both",
+            "example": "ROUND_ROBIN"
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fixedAssignees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "roundRobinPool": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoundRobinPoolMember"
+            }
+          }
+        }
+      },
+      "RoundRobinPoolMember": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "recurringChoreId": {
+            "type": "integer",
+            "example": 1
+          },
+          "userId": {
+            "type": "integer",
+            "example": 2
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "order": {
+            "type": "integer",
+            "description": "Order in the rotation (0-indexed)",
+            "example": 0
+          }
+        }
+      },
+      "ChoreOccurrence": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "recurringChoreId": {
+            "type": "integer",
+            "example": 1
+          },
+          "recurringChore": {
+            "$ref": "#/components/schemas/RecurringChore"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-02-23T00:00:00.000Z"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "COMPLETED", "SKIPPED"],
+            "example": "PENDING"
+          },
+          "assignedUserIds": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "User IDs assigned to this occurrence",
+            "example": [2, 3]
+          },
+          "assignedUsers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "completedById": {
+            "type": "integer",
+            "nullable": true,
+            "example": 2
+          },
+          "completedBy": {
+            "$ref": "#/components/schemas/User",
+            "nullable": true
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "skippedById": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1
+          },
+          "skippedBy": {
+            "$ref": "#/components/schemas/User",
+            "nullable": true
+          },
+          "skippedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "pointsAwarded": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Points awarded when completed",
+            "example": 10
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateRecurringChoreRequest": {
+        "type": "object",
+        "required": ["title", "recurrenceRule", "assignmentMode"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Weekly Room Cleaning"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Clean your room every week"
+          },
+          "points": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 1,
+            "example": 10
+          },
+          "categoryId": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1
+          },
+          "recurrenceRule": {
+            "$ref": "#/components/schemas/RecurrenceRule"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Start date for generating occurrences",
+            "example": "2026-02-16"
+          },
+          "assignmentMode": {
+            "type": "string",
+            "enum": ["FIXED", "ROUND_ROBIN", "MIXED"],
+            "example": "ROUND_ROBIN"
+          },
+          "fixedAssigneeIds": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "User IDs for fixed assignees (required for FIXED or MIXED mode)",
+            "example": [2, 3]
+          },
+          "roundRobinPoolIds": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "User IDs for round-robin pool (required for ROUND_ROBIN or MIXED mode)",
+            "example": [2, 3, 4]
+          }
+        }
+      },
+      "UpdateRecurringChoreRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Weekly Room Cleaning"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Clean your room thoroughly every week"
+          },
+          "points": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 15
+          },
+          "categoryId": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1
+          },
+          "recurrenceRule": {
+            "$ref": "#/components/schemas/RecurrenceRule"
+          },
+          "assignmentMode": {
+            "type": "string",
+            "enum": ["FIXED", "ROUND_ROBIN", "MIXED"],
+            "example": "FIXED"
+          },
+          "fixedAssigneeIds": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "User IDs for fixed assignees",
+            "example": [2, 3]
+          },
+          "roundRobinPoolIds": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "User IDs for round-robin pool",
+            "example": [2, 3, 4]
+          }
+        }
+      },
+      "RecurringChoreResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "recurringChore": {
+                "$ref": "#/components/schemas/RecurringChore"
+              }
+            }
+          }
+        }
+      },
+      "RecurringChoreListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "recurringChores": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RecurringChore"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ChoreOccurrenceResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "occurrence": {
+                "$ref": "#/components/schemas/ChoreOccurrence"
+              }
+            }
+          }
+        }
+      },
+      "ChoreOccurrenceListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "occurrences": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ChoreOccurrence"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CompleteOccurrenceRequest": {
+        "type": "object",
+        "required": ["completedById"],
+        "properties": {
+          "completedById": {
+            "type": "integer",
+            "description": "ID of the user who completed the chore",
+            "example": 2
+          }
+        }
+      },
+      "SkipOccurrenceRequest": {
+        "type": "object",
+        "required": ["skippedById"],
+        "properties": {
+          "skippedById": {
+            "type": "integer",
+            "description": "ID of the user who is skipping the chore",
+            "example": 2
+          }
+        }
+      },
+      "CompleteOccurrenceResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "occurrence": {
+                "$ref": "#/components/schemas/ChoreOccurrence"
+              },
+              "pointsAwarded": {
+                "type": "integer",
+                "description": "Points earned for completing this occurrence",
+                "example": 10
               }
             }
           }

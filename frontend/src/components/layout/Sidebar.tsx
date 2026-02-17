@@ -6,18 +6,18 @@ export const Sidebar: React.FC = () => {
   const { isParent } = useAuth()
   const location = useLocation()
 
+  // Build menu items immutably (no push mutation)
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     // Global Calendar is parents-only - children see their personal calendar on Dashboard
     ...(isParent ? [{ id: 'calendar', label: 'Family Calendar', icon: '📅' }] : []),
     { id: 'chores', label: 'Chores', icon: '📋' },
-    // Templates is parents-only - only parents can create/manage chore templates
-    ...(isParent ? [{ id: 'templates', label: 'Templates', icon: '📝' }] : []),
+    { id: 'recurring-chores', label: 'Recurring Chores', icon: '🔄' },
+    // Chore Definitions is parents-only - only parents can create/manage chore definitions
+    ...(isParent ? [{ id: 'templates', label: 'Chore Definitions', icon: '📝' }] : []),
+    // Family Members is parents-only
+    ...(isParent ? [{ id: 'users', label: 'Family Members', icon: '👨‍👩‍👧‍👦' }] : []),
   ]
-
-  if (isParent) {
-    menuItems.push({ id: 'users', label: 'Family Members', icon: '👨‍👩‍👧‍👦' })
-  }
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 min-h-screen shadow-sm">

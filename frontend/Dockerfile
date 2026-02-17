@@ -19,6 +19,10 @@ COPY . .
 ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
 
+# Build argument for version (passed from docker-compose)
+ARG VITE_APP_VERSION=1.1.1
+ENV VITE_APP_VERSION=$VITE_APP_VERSION
+
 # Build the application
 RUN npm run build
 

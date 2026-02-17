@@ -1,18 +1,41 @@
 import { useState, useEffect } from 'react'
 import { assignmentsApi } from '../../api/assignments.api'
+import { recurringChoresApi } from '../../api/recurring-chores.api'
 import type { ChoreAssignment } from '../../types'
+import type { ChoreOccurrence } from '../../types/recurring-chores'
 import { Loading } from '../common/Loading'
+
+// Unified calendar event type for both assignments and occurrences
+export interface CalendarEvent {
+  id: number
+  type: 'assignment' | 'occurrence'
+  title: string
+  dueDate: string
+  status: string
+  isOverdue: boolean
+  assignedTo: {
+    id: number
+    name: string
+    color: string | null
+  }
+  points: number
+  // Original data for reference
+  assignment?: ChoreAssignment
+  occurrence?: ChoreOccurrence
+}
 
 interface CalendarDay {
   day: number
   date: Date
-  assignments: ChoreAssignment[]
+  events: CalendarEvent[]
   isToday: boolean
   isCurrentMonth: boolean
 }
 
 interface CalendarViewProps {
   onAssignmentClick?: (assignment: ChoreAssignment) => void
+  onOccurrenceClick?: (occurrence: ChoreOccurrence) => void
+  onEventClick?: (event: CalendarEvent) => void
   onDateClick?: (date: Date) => void
   refreshTrigger?: number
 }
@@ -40,27 +63,79 @@ function getContrastColor(hexColor: string | null): string {
 }
 
 /**
- * Get border color based on assignment status
+ * Get border color based on event status
  */
 function getStatusBorderColor(status: string, isOverdue: boolean): string {
   if (isOverdue) return '#EF4444' // red-500
   switch (status) {
     case 'COMPLETED': return '#22C55E' // green-500
     case 'PARTIALLY_COMPLETE': return '#F97316' // orange-500
+    case 'SKIPPED': return '#9CA3AF' // gray-400
     case 'PENDING':
     default: return '#EAB308' // yellow-500
   }
 }
 
-export default function CalendarView({ onAssignmentClick, onDateClick, refreshTrigger }: CalendarViewProps) {
+/**
+ * Convert a ChoreAssignment to a CalendarEvent
+ */
+function assignmentToEvent(assignment: ChoreAssignment): CalendarEvent {
+  return {
+    id: assignment.id,
+    type: 'assignment',
+    title: assignment.choreTemplate.title,
+    dueDate: assignment.dueDate,
+    status: assignment.status,
+    isOverdue: assignment.isOverdue,
+    assignedTo: {
+      id: assignment.assignedTo.id,
+      name: assignment.assignedTo.name,
+      color: assignment.assignedTo.color,
+    },
+    points: assignment.choreTemplate.points,
+    assignment,
+  }
+}
+
+/**
+ * Convert a ChoreOccurrence to a CalendarEvent
+ */
+function occurrenceToEvent(occurrence: ChoreOccurrence): CalendarEvent {
+  // For occurrences, use the first assigned user's color or a default
+  const firstAssignedUser = occurrence.assignedUsers[0]
+  const isOverdue = occurrence.status === 'PENDING' && new Date(occurrence.dueDate) < new Date()
+  
+  return {
+    id: occurrence.id,
+    type: 'occurrence',
+    title: occurrence.recurringChore.title,
+    dueDate: occurrence.dueDate,
+    status: occurrence.status,
+    isOverdue,
+    assignedTo: firstAssignedUser ? {
+      id: firstAssignedUser.id,
+      name: firstAssignedUser.name,
+      color: firstAssignedUser.color,
+    } : {
+      id: 0,
+      name: 'Unassigned',
+      color: '#6B7280', // gray-500
+    },
+    points: occurrence.recurringChore.points,
+    occurrence,
+  }
+}
+
+export default function CalendarView({ 
+  onAssignmentClick, 
+  onOccurrenceClick,
+  onEventClick,
+  onDateClick, 
+  refreshTrigger 
+}: CalendarViewProps) {
   const [year, setYear] = useState(new Date().getFullYear())
   const [month, setMonth] = useState(new Date().getMonth() + 1)
-  const [calendarData, setCalendarData] = useState<{
-    year: number
-    month: number
-    assignments: ChoreAssignment[]
-    days: Record<number, ChoreAssignment[]>
-  } | null>(null)
+  const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -72,8 +147,30 @@ export default function CalendarView({ onAssignmentClick, onDateClick, refreshTr
     try {
       setLoading(true)
       setError(null)
-      const data = await assignmentsApi.getCalendar(year, month)
-      setCalendarData(data)
+      
+      // Fetch both assignments and occurrences in parallel
+      const [assignmentsData, occurrences] = await Promise.all([
+        assignmentsApi.getCalendar(year, month),
+        recurringChoresApi.listOccurrences(),
+      ])
+      
+      // Convert assignments to events
+      const assignmentEvents = (assignmentsData.assignments || []).map(assignmentToEvent)
+      
+      // Filter occurrences to only those in the current month and convert to events
+      const monthStart = new Date(year, month - 1, 1)
+      const monthEnd = new Date(year, month, 0)
+      monthEnd.setHours(23, 59, 59, 999)
+      
+      const occurrenceEvents = occurrences
+        .filter(occ => {
+          const dueDate = new Date(occ.dueDate)
+          return dueDate >= monthStart && dueDate <= monthEnd
+        })
+        .map(occurrenceToEvent)
+      
+      // Combine all events
+      setEvents([...assignmentEvents, ...occurrenceEvents])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load calendar')
     } finally {
@@ -89,9 +186,16 @@ export default function CalendarView({ onAssignmentClick, onDateClick, refreshTr
     return new Date(year, month - 1, 1).getDay()
   }
 
-  const generateCalendarDays = (): CalendarDay[] => {
-    if (!calendarData) return []
+  const getEventsForDay = (day: number): CalendarEvent[] => {
+    return events.filter(event => {
+      const eventDate = new Date(event.dueDate)
+      return eventDate.getFullYear() === year && 
+             eventDate.getMonth() + 1 === month && 
+             eventDate.getDate() === day
+    })
+  }
 
+  const generateCalendarDays = (): CalendarDay[] => {
     const daysInMonth = getDaysInMonth(year, month)
     const firstDay = getFirstDayOfMonth(year, month)
     const days: CalendarDay[] = []
@@ -110,7 +214,7 @@ export default function CalendarView({ onAssignmentClick, onDateClick, refreshTr
       days.push({
         day: dayNum,
         date: new Date(prevYear, prevMonth - 1, dayNum),
-        assignments: [],
+        events: [],
         isToday: false,
         isCurrentMonth: false,
       })
@@ -121,7 +225,7 @@ export default function CalendarView({ onAssignmentClick, onDateClick, refreshTr
       days.push({
         day,
         date: new Date(year, month - 1, day),
-        assignments: calendarData.days[day] || [],
+        events: getEventsForDay(day),
         isToday: year === currentYear && month === currentMonth && day === currentDay,
         isCurrentMonth: true,
       })
@@ -135,7 +239,7 @@ export default function CalendarView({ onAssignmentClick, onDateClick, refreshTr
       days.push({
         day,
         date: new Date(nextYear, nextMonth - 1, day),
-        assignments: [],
+        events: [],
         isToday: false,
         isCurrentMonth: false,
       })
@@ -169,8 +273,19 @@ export default function CalendarView({ onAssignmentClick, onDateClick, refreshTr
   }
 
   const handleDateClick = (calendarDay: CalendarDay) => {
-    if (calendarDay.isCurrentMonth && calendarDay.assignments.length === 0 && onDateClick) {
+    if (calendarDay.isCurrentMonth && calendarDay.events.length === 0 && onDateClick) {
       onDateClick(calendarDay.date)
+    }
+  }
+
+  const handleEventClick = (event: CalendarEvent) => {
+    // Prefer the unified onEventClick, but fall back to specific handlers
+    if (onEventClick) {
+      onEventClick(event)
+    } else if (event.type === 'assignment' && onAssignmentClick && event.assignment) {
+      onAssignmentClick(event.assignment)
+    } else if (event.type === 'occurrence' && onOccurrenceClick && event.occurrence) {
+      onOccurrenceClick(event.occurrence)
     }
   }
 
@@ -249,7 +364,7 @@ export default function CalendarView({ onAssignmentClick, onDateClick, refreshTr
               min-h-[80px] p-1 border rounded-lg
               ${calendarDay.isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
               ${calendarDay.isToday ? 'border-blue-500 border-2' : 'border-gray-200'}
-              ${calendarDay.isCurrentMonth && calendarDay.assignments.length === 0 && onDateClick ? 'cursor-pointer hover:bg-gray-50' : ''}
+              ${calendarDay.isCurrentMonth && calendarDay.events.length === 0 && onDateClick ? 'cursor-pointer hover:bg-gray-50' : ''}
             `}
           >
             <div className={`
@@ -260,17 +375,17 @@ export default function CalendarView({ onAssignmentClick, onDateClick, refreshTr
               {calendarDay.day}
             </div>
             <div className="space-y-1">
-              {calendarDay.assignments.slice(0, 2).map((assignment) => {
-                const bgColor = assignment.assignedTo.color || '#3B82F6'
-                const textColor = getContrastColor(assignment.assignedTo.color)
-                const borderColor = getStatusBorderColor(assignment.status, assignment.isOverdue)
+              {calendarDay.events.slice(0, 2).map((event) => {
+                const bgColor = event.assignedTo.color || '#3B82F6'
+                const textColor = getContrastColor(event.assignedTo.color)
+                const borderColor = getStatusBorderColor(event.status, event.isOverdue)
                 
                 return (
                   <button
-                    key={assignment.id}
+                    key={`${event.type}-${event.id}`}
                     onClick={(e) => {
                       e.stopPropagation()
-                      onAssignmentClick?.(assignment)
+                      handleEventClick(event)
                     }}
                     className="w-full text-xs py-1.5 px-2 rounded truncate text-left font-medium border-l-8"
                     style={{
@@ -278,15 +393,18 @@ export default function CalendarView({ onAssignmentClick, onDateClick, refreshTr
                       color: textColor,
                       borderLeftColor: borderColor,
                     }}
-                    title={`${assignment.choreTemplate.title} - ${assignment.assignedTo.name}`}
+                    title={`${event.title} - ${event.assignedTo.name}${event.type === 'occurrence' ? ' (Recurring)' : ''}`}
                   >
-                    {assignment.choreTemplate.title}
+                    {event.title}
+                    {event.type === 'occurrence' && (
+                      <span className="ml-1 opacity-75"> recurring</span>
+                    )}
                   </button>
                 )
               })}
-              {calendarDay.assignments.length > 2 && (
+              {calendarDay.events.length > 2 && (
                 <div className="text-xs text-gray-500 text-center">
-                  +{calendarDay.assignments.length - 2} more
+                  +{calendarDay.events.length - 2} more
                 </div>
               )}
             </div>
@@ -311,6 +429,10 @@ export default function CalendarView({ onAssignmentClick, onDateClick, refreshTr
         <div className="flex items-center gap-1">
           <span className="w-3 h-3 bg-green-500 rounded"></span>
           <span>Completed</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-3 h-3 bg-gray-400 rounded"></span>
+          <span>Skipped</span>
         </div>
       </div>
     </div>

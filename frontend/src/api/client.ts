@@ -190,6 +190,11 @@ class ApiClient {
     const response = await this.client.delete<ApiResponse<T>>(url, config)
     return response.data
   }
+
+  async patch<T>(url: string, data?: any, config?: any): Promise<ApiResponse<T>> {
+    const response = await this.client.patch<ApiResponse<T>>(url, data, config)
+    return response.data
+  }
 }
 
 export const apiClient = new ApiClient()

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import CalendarView from '../components/chores/CalendarView'
+import CalendarView, { CalendarEvent } from '../components/chores/CalendarView'
 import { Modal, Button } from '../components/common'
 import { useAuth, useAssignments, useTemplates, useUsers } from '../hooks'
+import { recurringChoresApi } from '../api/recurring-chores.api'
 import type { ChoreAssignment } from '../types'
+import type { ChoreOccurrence } from '../types/recurring-chores'
 
 export const Calendar: React.FC = () => {
   const { user, isParent } = useAuth()
@@ -10,6 +12,7 @@ export const Calendar: React.FC = () => {
   const { templates, fetchTemplates } = useTemplates()
   const { users, refresh: refreshUsers } = useUsers()
   const [selectedAssignment, setSelectedAssignment] = useState<ChoreAssignment | null>(null)
+  const [selectedOccurrence, setSelectedOccurrence] = useState<ChoreOccurrence | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isNewChoreModalOpen, setIsNewChoreModalOpen] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
@@ -28,8 +31,14 @@ export const Calendar: React.FC = () => {
     refreshUsers()
   }, [])
 
-  const handleAssignmentClick = (assignment: ChoreAssignment) => {
-    setSelectedAssignment(assignment)
+  const handleEventClick = (event: CalendarEvent) => {
+    if (event.type === 'assignment' && event.assignment) {
+      setSelectedAssignment(event.assignment)
+      setSelectedOccurrence(null)
+    } else if (event.type === 'occurrence' && event.occurrence) {
+      setSelectedOccurrence(event.occurrence)
+      setSelectedAssignment(null)
+    }
     setCustomPoints('')
     setIsModalOpen(true)
   }
@@ -48,7 +57,7 @@ export const Calendar: React.FC = () => {
     setIsSubmitting(true)
     try {
       const result = await createAssignment({
-        templateId: Number(newChoreTemplateId),
+        choreTemplateId: Number(newChoreTemplateId),
         assignedToId: Number(newChoreUserId),
         dueDate: selectedDate.toISOString(),
       })
@@ -64,7 +73,7 @@ export const Calendar: React.FC = () => {
     }
   }
 
-  const handleComplete = async (status: 'COMPLETED' | 'PARTIALLY_COMPLETE' = 'COMPLETED') => {
+  const handleCompleteAssignment = async (status: 'COMPLETED' | 'PARTIALLY_COMPLETE' = 'COMPLETED') => {
     if (!selectedAssignment) return
     const points = customPoints !== '' ? Number(customPoints) : undefined
     const result = await completeAssignment(selectedAssignment.id, { status, customPoints: points })
@@ -79,9 +88,46 @@ export const Calendar: React.FC = () => {
     }
   }
 
-  const canComplete = (assignment: ChoreAssignment) => {
+  const handleCompleteOccurrence = async () => {
+    if (!selectedOccurrence) return
+    try {
+      const result = await recurringChoresApi.completeOccurrence(selectedOccurrence.id, {
+        completedById: user!.id,
+      })
+      if (result) {
+        setSuccessMessage(`Recurring chore completed! You earned ${result.pointsAwarded} points!`)
+        setIsModalOpen(false)
+        setRefreshTrigger(prev => prev + 1)
+        setTimeout(() => setSuccessMessage(null), 3000)
+      }
+    } catch (error) {
+      console.error('Failed to complete occurrence:', error)
+    }
+  }
+
+  const handleSkipOccurrence = async () => {
+    if (!selectedOccurrence) return
+    try {
+      await recurringChoresApi.skipOccurrence(selectedOccurrence.id, {
+        skippedById: user!.id,
+      })
+      setSuccessMessage('Occurrence skipped!')
+      setIsModalOpen(false)
+      setRefreshTrigger(prev => prev + 1)
+      setTimeout(() => setSuccessMessage(null), 3000)
+    } catch (error) {
+      console.error('Failed to skip occurrence:', error)
+    }
+  }
+
+  const canCompleteAssignment = (assignment: ChoreAssignment) => {
     if (isParent) return true
     return assignment.assignedToId === user?.id
+  }
+
+  const canCompleteOccurrence = (occurrence: ChoreOccurrence) => {
+    if (isParent) return true
+    return occurrence.assignedUsers.some(u => u.id === user?.id)
   }
 
   return (
@@ -101,7 +147,7 @@ export const Calendar: React.FC = () => {
       </div>
 
       <CalendarView 
-        onAssignmentClick={handleAssignmentClick} 
+        onEventClick={handleEventClick} 
         onDateClick={handleDateClick}
         refreshTrigger={refreshTrigger} 
       />
@@ -109,11 +155,20 @@ export const Calendar: React.FC = () => {
       {/* Assignment Details Modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={selectedAssignment?.choreTemplate?.title || 'Assignment Details'}
+        onClose={() => {
+          setIsModalOpen(false)
+          setSelectedAssignment(null)
+          setSelectedOccurrence(null)
+        }}
+        title={selectedAssignment?.choreTemplate?.title || selectedOccurrence?.recurringChore?.title || 'Details'}
       >
         {selectedAssignment && (
           <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-500">Type</p>
+              <p className="font-medium">One-time Assignment</p>
+            </div>
+            
             <div>
               <p className="text-sm text-gray-500">Assigned to</p>
               <p className="font-medium">{selectedAssignment.assignedTo.name}</p>
@@ -158,7 +213,7 @@ export const Calendar: React.FC = () => {
               </span>
             </div>
 
-            {selectedAssignment.status === 'PENDING' && canComplete(selectedAssignment) && (
+            {selectedAssignment.status === 'PENDING' && canCompleteAssignment(selectedAssignment) && (
               <div className="space-y-3">
                 {/* Custom points input for parents */}
                 {isParent && (
@@ -179,13 +234,13 @@ export const Calendar: React.FC = () => {
                 {/* Completion buttons - always show both buttons */}
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handleComplete('COMPLETED')}
+                    onClick={() => handleCompleteAssignment('COMPLETED')}
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
                     Mark Complete
                   </button>
                   <button
-                    onClick={() => handleComplete('PARTIALLY_COMPLETE')}
+                    onClick={() => handleCompleteAssignment('PARTIALLY_COMPLETE')}
                     className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                   >
                     Partial
@@ -196,7 +251,93 @@ export const Calendar: React.FC = () => {
 
             {selectedAssignment.status === 'COMPLETED' && (
               <p className="text-green-600 font-medium text-center">
-                ✓ Completed on {new Date(selectedAssignment.completedAt!).toLocaleDateString()}
+                Completed on {new Date(selectedAssignment.completedAt!).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+        )}
+
+        {selectedOccurrence && (
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-500">Type</p>
+              <p className="font-medium text-purple-600">Recurring Chore</p>
+            </div>
+            
+            <div>
+              <p className="text-sm text-gray-500">Assigned to</p>
+              <p className="font-medium">
+                {selectedOccurrence.assignedUsers.map(u => u.name).join(', ') || 'Unassigned'}
+              </p>
+            </div>
+            
+            {selectedOccurrence.recurringChore?.description && (
+              <div>
+                <p className="text-sm text-gray-500">Description</p>
+                <p>{selectedOccurrence.recurringChore.description}</p>
+              </div>
+            )}
+            
+            <div>
+              <p className="text-sm text-gray-500">Due Date</p>
+              <p className="font-medium">
+                {new Date(selectedOccurrence.dueDate).toLocaleDateString()}
+                {selectedOccurrence.status === 'PENDING' && new Date(selectedOccurrence.dueDate) < new Date() && (
+                  <span className="ml-2 text-red-600 font-bold">Overdue!</span>
+                )}
+              </p>
+            </div>
+            
+            <div>
+              <p className="text-sm text-gray-500">Points</p>
+              <p className="font-medium">{selectedOccurrence.recurringChore?.points || 0} points</p>
+            </div>
+            
+            <div>
+              <p className="text-sm text-gray-500">Status</p>
+              <span
+                className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                  selectedOccurrence.status === 'COMPLETED'
+                    ? 'bg-green-100 text-green-800'
+                    : selectedOccurrence.status === 'SKIPPED'
+                    ? 'bg-gray-100 text-gray-800'
+                    : new Date(selectedOccurrence.dueDate) < new Date()
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}
+              >
+                {selectedOccurrence.status}
+              </span>
+            </div>
+
+            {selectedOccurrence.status === 'PENDING' && canCompleteOccurrence(selectedOccurrence) && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCompleteOccurrence}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Mark Complete
+                </button>
+                <button
+                  onClick={handleSkipOccurrence}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  Skip
+                </button>
+              </div>
+            )}
+
+            {selectedOccurrence.status === 'COMPLETED' && selectedOccurrence.completedAt && (
+              <p className="text-green-600 font-medium text-center">
+                Completed on {new Date(selectedOccurrence.completedAt).toLocaleDateString()}
+                {selectedOccurrence.completedBy && ` by ${selectedOccurrence.completedBy.name}`}
+              </p>
+            )}
+
+            {selectedOccurrence.status === 'SKIPPED' && selectedOccurrence.skippedAt && (
+              <p className="text-gray-600 font-medium text-center">
+                Skipped on {new Date(selectedOccurrence.skippedAt).toLocaleDateString()}
+                {selectedOccurrence.skipReason && ` - ${selectedOccurrence.skipReason}`}
               </p>
             )}
           </div>
@@ -223,7 +364,7 @@ export const Calendar: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-500 mb-1">Chore Template</label>
+            <label className="block text-sm text-gray-500 mb-1">Chore Definition</label>
             <select
               value={newChoreTemplateId}
               onChange={(e) => setNewChoreTemplateId(e.target.value ? Number(e.target.value) : '')}

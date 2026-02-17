@@ -237,6 +237,60 @@ The application uses **React Router v6** for URL-based navigation.
 
 ---
 
+## 🔄 Recurring Chores
+
+### API Endpoints
+
+```
+# Recurring Chores
+POST   /api/recurring-chores                           # Create recurring chore (parents)
+GET    /api/recurring-chores                           # List recurring chores
+GET    /api/recurring-chores/:id                       # Get single recurring chore
+PUT    /api/recurring-chores/:id                       # Update recurring chore (parents)
+DELETE /api/recurring-chores/:id                       # Delete recurring chore (parents)
+GET    /api/recurring-chores/occurrences               # List occurrences (30 days)
+PATCH  /api/recurring-chores/occurrences/:id/complete  # Complete occurrence
+PATCH  /api/recurring-chores/occurrences/:id/skip      # Skip occurrence
+PATCH  /api/recurring-chores/occurrences/:id/unskip    # Unskip occurrence
+```
+
+### Database Models
+
+```
+RecurringChore          - Main recurring chore definition
+RecurringChoreFixedAssignee    - Fixed assignees junction
+RecurringChoreRoundRobinPool   - Round-robin pool junction
+ChoreOccurrence         - Individual chore occurrences
+ChoreOccurrenceStatus   - Enum: PENDING, COMPLETED, SKIPPED
+```
+
+### Key Types
+
+```typescript
+RecurrenceRule {
+  frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+  interval: number;
+  byDayOfWeek?: number[];
+  byDayOfMonth?: number;
+  byNthWeekday?: { week: number; day: number };
+}
+
+AssignmentMode: 'FIXED' | 'ROUND_ROBIN' | 'MIXED'
+```
+
+### Frontend Components
+
+```
+RecurrenceRuleEditor    - Configure recurrence patterns
+AssignmentModeSelector  - Select fixed/round-robin/mixed assignments
+OccurrenceList          - Display and filter occurrences
+OccurrenceCard          - Individual occurrence display
+RecurringChoresList     - Manage recurring chores
+RecurringChoreFormModal - Create/edit modal
+```
+
+---
+
 ## 🆘 Emergency Commands
 
 ### Complete Reset (DANGER!)

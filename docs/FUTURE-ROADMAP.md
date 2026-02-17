@@ -74,11 +74,12 @@ This document outlines planned enhancements and features for future development 
 
 ### Chore Improvements
 
-- [ ] **Recurring Chores Automation**
-  - Daily, weekly, monthly recurrence options
-  - Automatic chore regeneration after completion
-  - Recurrence templates
-  - Estimated effort: 8 hours
+- [x] **Recurring Chores Automation** ✅ COMPLETED
+  - Daily, weekly, monthly, yearly recurrence options
+  - Automatic chore occurrence generation
+  - Fixed, round-robin, and mixed assignment modes
+  - Occurrence completion, skip, and unskip functionality
+  - Implemented in `backend/src/services/recurrence.service.ts` and related routes
 
 - [x] **Chore Templates** ✅ COMPLETED
   - Pre-defined chore templates by age group
@@ -315,18 +316,24 @@ This document outlines planned enhancements and features for future development 
 15. ✅ ntfy Push Notifications
 16. ✅ Reminder System
 17. ✅ Overdue Penalty System
+18. ✅ Recurring Chores Automation
 
 ### Phase 6 Complete ✅
 All Phase 6 security hardening tasks have been completed. The application is now production-ready with comprehensive security measures in place.
 
 ### Phase 7 In Progress
-Push notifications and penalty system have been implemented. Remaining Phase 7 features include recurring chores automation, rewards catalog, and email notifications.
+Recurring chores automation, push notifications, and penalty system have been implemented. Remaining Phase 7 features include rewards catalog and email notifications.
+
+### Recurring Chores Follow-up Tasks
+1. Background job for automatic occurrence generation (cron-based)
+2. Notification integration for recurring chore reminders
+3. Occurrence analytics and reporting
 
 ### Short Term (1-2 Months)
-1. Recurring Chores Automation
-2. Rewards Catalog
-3. Email Notifications
-4. E2E Tests
+1. Rewards Catalog
+2. Email Notifications
+3. E2E Tests
+4. Background job for occurrence generation
 
 ### Medium Term (3-6 Months)
 1. CI/CD Pipeline

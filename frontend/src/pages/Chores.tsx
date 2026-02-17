@@ -114,10 +114,28 @@ export const Chores: React.FC = () => {
           <p className="text-gray-600">Manage your family chores</p>
         </div>
         {isParent && (
-          <Button variant="primary" onClick={() => setIsFormOpen(true)}>
-            Create Chore
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button variant="primary" onClick={() => setIsFormOpen(true)}>
+              Create Chore
+            </Button>
+          </div>
         )}
+      </div>
+
+      {/* Info box about recurring chores */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+        <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+        </svg>
+        <div>
+          <p className="text-sm text-blue-800">
+            <strong>One-time chores only.</strong> This page is for creating individual chore assignments. 
+            For recurring chores (e.g., weekly tasks) or round-robin assignment, use the{' '}
+            <a href="/recurring-chores" className="underline font-medium hover:text-blue-900">
+              Recurring Chores
+            </a> page.
+          </p>
+        </div>
       </div>
 
       <ChoreFilters currentFilter={filter} onFilterChange={setFilter} />
