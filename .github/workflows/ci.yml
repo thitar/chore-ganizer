@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: dev/chore-ganizer/backend/package-lock.json
+          cache-dependency-path: backend/package-lock.json
       
       # Step 3: Install backend dependencies
       - name: Install dependencies
@@ -42,17 +42,17 @@ jobs:
       
       # Step 4: Generate Prisma client
       - name: Generate Prisma Client
-        working-directory: dev/chore-ganizer/backend
+        working-directory: backend
         run: npm run prisma:generate
       
       # Step 5: Run backend tests
       - name: Run tests
-        working-directory: dev/chore-ganizer/backend
+        working-directory: backend
         run: npm test
       
       # Step 6: Build backend
       - name: Build backend
-        working-directory: dev/chore-ganizer/backend
+        working-directory: backend
         run: npm run build
       
       # Step 7: Upload backend build artifacts
@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: backend-build
-          path: dev/chore-ganizer/backend/dist
+          path: backend/dist
           retention-days: 1
 
   # Job 2: Test and Build Frontend
@@ -79,7 +79,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: dev/chore-ganizer/frontend/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
       
       # Step 3: Install frontend dependencies
       - name: Install dependencies
@@ -88,12 +88,12 @@ jobs:
       
       # Step 4: Run frontend tests
       - name: Run tests
-        working-directory: dev/chore-ganizer/frontend
+        working-directory: frontend
         run: npm test
       
       # Step 5: Build frontend
       - name: Build frontend
-        working-directory: dev/chore-ganizer/frontend
+        working-directory: frontend
         run: npm run build
       
       # Step 6: Upload frontend build artifacts
@@ -101,5 +101,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: dev/chore-ganizer/frontend/dist
+          path: frontend/dist
           retention-days: 1
