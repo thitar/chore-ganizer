@@ -1,5 +1,8 @@
 # Docker Compose configuration for Chore-Ganizer
 # Family-friendly chore management system for homelab deployment
+#
+# Configuration is read from the .env file in the same directory.
+# Changes to .env take effect on container restart (no rebuild needed).
 
 services:
   # Frontend service
@@ -8,12 +11,14 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
+        # Build-time args (only for initial build)
         - VITE_APP_VERSION=${APP_VERSION:-1.2.3}
     container_name: chore-ganizer-frontend
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-3002}:80"
     environment:
+      # Runtime configuration (injected at container start)
       - VITE_API_URL=${VITE_API_URL:-}
       - VITE_DEBUG=${VITE_DEBUG:-false}
       - VITE_APP_VERSION=${APP_VERSION:-1.2.3}
@@ -38,6 +43,7 @@ services:
     ports:
       - "${PORT:-3010}:3010"
     environment:
+      # Core configuration
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3010
       - APP_VERSION=${APP_VERSION:-1.2.3}
@@ -47,6 +53,7 @@ services:
       - SECURE_COOKIES=${SECURE_COOKIES:-false}
       - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      # Ntfy notification defaults
       - NTFY_DEFAULT_SERVER_URL=${NTFY_DEFAULT_SERVER_URL:-https://ntfy.sh}
       - NTFY_DEFAULT_TOPIC=${NTFY_DEFAULT_TOPIC:-}
       - NTFY_DEFAULT_NOTIFY_CHORE_ASSIGNED=${NTFY_DEFAULT_NOTIFY_CHORE_ASSIGNED:-true}
@@ -57,6 +64,7 @@ services:
       - NTFY_DEFAULT_REMINDER_HOURS=${NTFY_DEFAULT_REMINDER_HOURS:-2}
       - NTFY_DEFAULT_QUIET_HOURS_START=${NTFY_DEFAULT_QUIET_HOURS_START:-}
       - NTFY_DEFAULT_QUIET_HOURS_END=${NTFY_DEFAULT_QUIET_HOURS_END:-}
+      # Overdue penalty settings
       - OVERDUE_PENALTY_ENABLED=${OVERDUE_PENALTY_ENABLED:-true}
       - OVERDUE_PENALTY_MULTIPLIER=${OVERDUE_PENALTY_MULTIPLIER:-2}
       - NOTIFY_PARENT_ON_OVERDUE=${NOTIFY_PARENT_ON_OVERDUE:-true}
@@ -82,6 +90,7 @@ services:
     ports:
       - "${PORT:-3010}:3010"
     environment:
+      # Core configuration
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3010
       - APP_VERSION=${APP_VERSION:-1.2.3}
@@ -91,6 +100,7 @@ services:
       - SECURE_COOKIES=${SECURE_COOKIES:-false}
       - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      # Ntfy notification defaults
       - NTFY_DEFAULT_SERVER_URL=${NTFY_DEFAULT_SERVER_URL:-https://ntfy.sh}
       - NTFY_DEFAULT_TOPIC=${NTFY_DEFAULT_TOPIC:-}
       - NTFY_DEFAULT_NOTIFY_CHORE_ASSIGNED=${NTFY_DEFAULT_NOTIFY_CHORE_ASSIGNED:-true}
@@ -101,9 +111,11 @@ services:
       - NTFY_DEFAULT_REMINDER_HOURS=${NTFY_DEFAULT_REMINDER_HOURS:-2}
       - NTFY_DEFAULT_QUIET_HOURS_START=${NTFY_DEFAULT_QUIET_HOURS_START:-}
       - NTFY_DEFAULT_QUIET_HOURS_END=${NTFY_DEFAULT_QUIET_HOURS_END:-}
+      # Overdue penalty settings
       - OVERDUE_PENALTY_ENABLED=${OVERDUE_PENALTY_ENABLED:-true}
       - OVERDUE_PENALTY_MULTIPLIER=${OVERDUE_PENALTY_MULTIPLIER:-2}
       - NOTIFY_PARENT_ON_OVERDUE=${NOTIFY_PARENT_ON_OVERDUE:-true}
+      # Backup configuration
       - BACKUP_DIR=/backups
       - RETENTION_DAYS=7
     volumes:
@@ -123,11 +135,13 @@ services:
       - with-backup
     command: ["/app/cron-entrypoint.sh"]
 
+# Named volumes for persistent data
 volumes:
   backend-data:
     driver: local
     name: chore-ganizer-data
 
+# Network configuration
 networks:
   chore-ganizer-network:
     driver: bridge
