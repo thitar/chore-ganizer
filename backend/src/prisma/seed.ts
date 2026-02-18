@@ -9,53 +9,69 @@ async function main() {
   // Hash passwords
   const passwordHash = await bcrypt.hash('password123', 10)
 
-  // Create parent users
+  // Create or get the default family
+  const family = await prisma.family.upsert({
+    where: { id: 'default-family' },
+    update: {},
+    create: {
+      id: 'default-family',
+      name: 'The Family',
+    },
+  })
+
+  console.log('✅ Family created:', { family: family.id, name: family.name })
+
+  // Create parent users (assigned to family)
   const dad = await prisma.user.upsert({
     where: { email: 'dad@home.local' },
-    update: {},
+    update: { familyId: family.id },
     create: {
       email: 'dad@home.local',
       password: passwordHash,
       name: 'Dad',
       role: 'PARENT',
       points: 0,
+      familyId: family.id,
     },
   })
 
   const mom = await prisma.user.upsert({
     where: { email: 'mom@home.local' },
-    update: {},
+    update: { familyId: family.id },
     create: {
       email: 'mom@home.local',
       password: passwordHash,
       name: 'Mom',
       role: 'PARENT',
       points: 0,
+      familyId: family.id,
     },
   })
 
-  // Create child users
+  // Create child users (assigned to family)
   const alice = await prisma.user.upsert({
     where: { email: 'alice@home.local' },
-    update: {},
+    update: { familyId: family.id },
     create: {
       email: 'alice@home.local',
       password: passwordHash,
       name: 'Alice',
       role: 'CHILD',
       points: 0,
+      familyId: family.id,
     },
   })
 
   const bob = await prisma.user.upsert({
     where: { email: 'bob@home.local' },
-    update: {},
+    update: { familyId: family.id },
     create: {
       email: 'bob@home.local',
       password: passwordHash,
       name: 'Bob',
       role: 'CHILD',
       points: 0,
+      familyId: family.id,
     },
   })
 

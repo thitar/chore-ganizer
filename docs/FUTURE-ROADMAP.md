@@ -149,6 +149,16 @@ This document outlines planned enhancements and features for future development 
   - Parent notifications for overdue chores
   - Implemented in `backend/src/services/overdue-penalty.service.ts`
 
+- [x] **Pocket Money System** ✅ COMPLETED
+  - Points-to-currency conversion with configurable rate
+  - Base amount per child - Each child can have their own base amount (in euros) added to their monthly payout
+  - Transaction tracking (earned, bonus, deductions, payouts)
+  - Weekly/Monthly payout periods
+  - Advance payment support
+  - Projected earnings
+  - Parent dashboard
+  - Child self-service view
+
 ---
 
 ## Phase 8: User Experience 🟡
@@ -317,6 +327,7 @@ This document outlines planned enhancements and features for future development 
 16. ✅ Reminder System
 17. ✅ Overdue Penalty System
 18. ✅ Recurring Chores Automation
+19. ✅ Pocket Money System
 
 ### Phase 6 Complete ✅
 All Phase 6 security hardening tasks have been completed. The application is now production-ready with comprehensive security measures in place.

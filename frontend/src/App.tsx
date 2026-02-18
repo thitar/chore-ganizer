@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth, AuthProvider } from './hooks'
 import { ErrorBoundary } from './components/common'
 import { Navbar, Sidebar, Footer } from './components/layout'
-import { Login, Dashboard, Chores, Templates, Profile, NotFound, Users, Calendar, RecurringChoresPage } from './pages'
+import { Login, Dashboard, Chores, Templates, Profile, NotFound, Users, Calendar, RecurringChoresPage, PocketMoney } from './pages'
 
 // Protected route wrapper for parent-only pages
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -64,6 +64,7 @@ function AppContent() {
                   } 
                 />
                 <Route path="/recurring-chores" element={<RecurringChoresPage />} />
+                <Route path="/pocket-money" element={<PocketMoney />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>

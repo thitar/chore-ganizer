@@ -17,6 +17,7 @@ export const Sidebar: React.FC = () => {
     ...(isParent ? [{ id: 'templates', label: 'Chore Definitions', icon: '📝' }] : []),
     // Family Members is parents-only
     ...(isParent ? [{ id: 'users', label: 'Family Members', icon: '👨‍👩‍👧‍👦' }] : []),
+    { id: 'pocket-money', label: 'Pocket Money', icon: '💰' },
   ]
 
   return (

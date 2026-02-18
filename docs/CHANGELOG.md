@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Templates menu hidden from children (only parents can manage templates)
   - Route protection: children redirected to Dashboard when accessing restricted pages
 
+- **Base pocket money for children** (2026-02-17)
+  - Each child can have their own base pocket money amount (in euros) that is added to their payout
+  - Configurable per-child base amount in addition to points-based earnings
+  - Parent can set base amount in the Pocket Money settings
+
 ### Changed
 
 - **Dashboard Personal Data Loading** (2026-02-14)

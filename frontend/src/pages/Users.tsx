@@ -10,6 +10,7 @@ export const Users: React.FC = () => {
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
   const [editColor, setEditColor] = useState('')
+  const [editBasePocketMoney, setEditBasePocketMoney] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -33,6 +34,7 @@ export const Users: React.FC = () => {
     setEditName(user.name)
     setEditEmail(user.email)
     setEditColor(user.color || '#3B82F6')
+    setEditBasePocketMoney(user.basePocketMoney?.toString() || '0')
   }
 
   const handleEditSubmit = async () => {
@@ -52,6 +54,7 @@ export const Users: React.FC = () => {
         name: editName.trim(),
         email: editEmail.trim(),
         color: editColor,
+        basePocketMoney: editingUser.role === 'CHILD' ? parseFloat(editBasePocketMoney) || 0 : undefined,
       })
       if (result.success) {
         setSuccessMessage('User updated successfully')
@@ -144,6 +147,9 @@ export const Users: React.FC = () => {
               <p className="text-gray-600 text-sm mb-2">{user.email}</p>
               <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
                 <span>Points: {user.points}</span>
+                {user.role === 'CHILD' && user.basePocketMoney > 0 && (
+                  <span className="text-green-600">Base: €{user.basePocketMoney.toFixed(2)}</span>
+                )}
                 <div className="flex items-center gap-1">
                   <span className="w-3 h-3 rounded-full" style={{ backgroundColor: user.color || '#3B82F6' }}></span>
                   <span className="text-xs">Color</span>
@@ -223,6 +229,22 @@ export const Users: React.FC = () => {
                 {editName || 'User Name'}
               </div>
             </div>
+
+            {editingUser.role === 'CHILD' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Base Pocket Money (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editBasePocketMoney}
+                  onChange={(e) => setEditBasePocketMoney(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-gray-500 mt-1">Base amount added to pocket money each payout period</p>
+              </div>
+            )}
 
             <div className="flex gap-2 pt-2">
               <button

@@ -17,6 +17,7 @@ model User {
   name                 String
   role                 String                   @default("CHILD")
   points               Int                      @default(0)
+  basePocketMoney      Float                    @default(0) // Base pocket money amount in euros
   color                String?                  @default("#3B82F6") // User's calendar color
   createdAt            DateTime                 @default(now())
   createdTemplates     ChoreTemplate[]          @relation("CreatedTemplates")
@@ -31,6 +32,15 @@ model User {
   roundRobinChores        RecurringChoreRoundRobinPool[]
   completedOccurrences    ChoreOccurrence[]          @relation("CompletedOccurrences")
   skippedOccurrences      ChoreOccurrence[]          @relation("SkippedOccurrences")
+  
+  // Pocket Money System relations
+  pointTransactions  PointTransaction[] @relation("UserTransactions")
+  payouts            Payout[]
+  givenTransactions  PointTransaction[] @relation("RelatedUserTransactions")
+  
+  // Family relation
+  familyId           String?
+  family             Family?            @relation(fields: [familyId], references: [id], onDelete: SetNull)
 }
 
 model ChoreCategory {
@@ -125,6 +135,88 @@ model UserNotificationSettings {
   updatedAt                DateTime @updatedAt
 
   @@index([userId])
+}
+
+// ============================================
+// Family Model
+// ============================================
+
+model Family {
+  id              String   @id @default(uuid())
+  name            String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  pocketMoneyConfig PocketMoneyConfig?
+  members         User[]
+}
+
+// ============================================
+// Pocket Money System
+// ============================================
+// Note: Using String instead of enums because SQLite doesn't support enums
+
+model PocketMoneyConfig {
+  id              Int      @id @default(autoincrement())
+  familyId        String   @unique
+  pointValue      Int      @default(10)  // cents per point (10 = €0.10)
+  currency        String   @default("EUR")
+  payoutPeriod    String   @default("MONTHLY") // WEEKLY or MONTHLY
+  payoutDay       Int      @default(15)   // 1-28 for monthly, 0-6 for weekly (0=Sunday)
+  allowAdvance    Boolean  @default(true)
+  maxAdvancePoints Int     @default(50)   // max points that can be advanced
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  family          Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+}
+
+// Transaction types as strings (not enums for SQLite compatibility)
+// EARNED - from completing chores
+// BONUS - parent-added bonus
+// DEDUCTION - parent-added deduction
+// PENALTY - automatic penalty (overdue)
+// PAYOUT - points paid out
+// ADVANCE - advance payment
+// ADJUSTMENT - manual adjustment
+
+model PointTransaction {
+  id                Int              @id @default(autoincrement())
+  userId            Int
+  type              String           // TransactionType as string
+  amount            Int              // positive for earned/bonus, negative for deductions
+  description       String?
+  choreAssignmentId Int?             // optional link to chore that generated points (no relation)
+  relatedUserId     Int?             // for bonus/deduction: who gave it
+  createdAt        DateTime         @default(now())
+  
+  user              User             @relation("UserTransactions", fields: [userId], references: [id], onDelete: Cascade)
+  relatedUser       User?            @relation("RelatedUserTransactions", fields: [relatedUserId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// Payout status as string (not enum for SQLite compatibility)
+// PENDING, PAID, CANCELLED
+
+model Payout {
+  id              Int         @id @default(autoincrement())
+  userId          Int
+  periodStart     DateTime
+  periodEnd       DateTime
+  points          Int
+  amount          Int         // in cents
+  status          String      @default("PENDING") // PayoutStatus as string
+  paidAt          DateTime?
+  createdAt       DateTime   @default(now())
+  
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
 }
 
 // ============================================

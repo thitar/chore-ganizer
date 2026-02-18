@@ -4,6 +4,7 @@ export interface User {
   name: string
   role: 'PARENT' | 'CHILD'
   points: number
+  basePocketMoney: number // Base pocket money in euros
   color: string | null
   createdAt: string
 }
@@ -165,6 +166,7 @@ export interface UpdateUserData {
   role?: 'PARENT' | 'CHILD'
   color?: string
   email?: string
+  basePocketMoney?: number
 }
 
 export interface ApiResponse<T> {
@@ -186,3 +188,6 @@ export interface ApiError {
 
 // Recurring Chores types
 export * from './recurring-chores'
+
+// Pocket Money types
+export * from './pocket-money'

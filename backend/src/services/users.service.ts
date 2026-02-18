@@ -6,7 +6,9 @@ export interface User {
   name: string
   role: string
   points: number
+  basePocketMoney: number
   color: string | null
+  familyId: string | null
   createdAt: Date
 }
 
@@ -21,7 +23,9 @@ export const getAllUsers = async (): Promise<User[]> => {
       name: true,
       role: true,
       points: true,
+      basePocketMoney: true,
       color: true,
+      familyId: true,
       createdAt: true,
     },
     orderBy: {
@@ -44,7 +48,9 @@ export const getUserById = async (userId: number): Promise<User> => {
       name: true,
       role: true,
       points: true,
+      basePocketMoney: true,
       color: true,
+      familyId: true,
       createdAt: true,
     },
   })
@@ -114,7 +120,7 @@ export const getUserAssignments = async (
 /**
  * Update user
  */
-export const updateUser = async (userId: number, data: { name?: string; role?: string; color?: string; email?: string }) => {
+export const updateUser = async (userId: number, data: { name?: string; role?: string; color?: string; email?: string; basePocketMoney?: number }) => {
   // If email is being updated, check if it's already taken
   if (data.email) {
     const existingUser = await prisma.user.findFirst({
@@ -137,7 +143,9 @@ export const updateUser = async (userId: number, data: { name?: string; role?: s
       name: true,
       role: true,
       points: true,
+      basePocketMoney: true,
       color: true,
+      familyId: true,
       createdAt: true,
     },
   })
