@@ -1,5 +1,6 @@
 import * as bcrypt from 'bcrypt'
 import prisma from '../config/database.js'
+import { checkEmailLockout, recordFailedAttempt, resetFailedAttempts } from '../utils/lockout.js'
 
 export interface LoginCredentials {
   email: string
@@ -71,7 +72,7 @@ export const register = async (credentials: RegisterCredentials): Promise<AuthRe
 export const login = async (credentials: LoginCredentials): Promise<AuthResult> => {
   const { email, password } = credentials
 
-  // Find user by email
+  // Check if user exists
   const user = await prisma.user.findUnique({
     where: { email },
   })
@@ -80,12 +81,26 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResult> 
     throw new Error('Invalid credentials')
   }
 
+  // Check if account is locked before attempting password verification
+  const lockoutCheck = await checkEmailLockout(email)
+  if (lockoutCheck.isLocked) {
+    throw new Error(lockoutCheck.message)
+  }
+
   // Verify password
   const isPasswordValid = await bcrypt.compare(password, user.password)
 
   if (!isPasswordValid) {
+    // Record failed attempt
+    const lockoutStatus = await recordFailedAttempt(user.id)
+    if (lockoutStatus.isLocked) {
+      throw new Error(`Account locked due to too many failed attempts. Try again in ${Math.ceil((lockoutStatus.lockoutUntil!.getTime() - Date.now()) / 60000)} minutes.`)
+    }
     throw new Error('Invalid credentials')
   }
+
+  // Reset failed attempts on successful login
+  await resetFailedAttempts(user.id)
 
   return {
     user: {

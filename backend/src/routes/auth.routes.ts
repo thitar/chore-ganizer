@@ -37,4 +37,18 @@ router.post('/logout', authenticate, asyncHandler(authController.logout))
  */
 router.get('/me', authenticate, asyncHandler(authController.getCurrentUser))
 
+/**
+ * @route   POST /api/auth/unlock/:userId
+ * @desc    Unlock a user account
+ * @access  Private (Parent only)
+ */
+router.post('/unlock/:userId', authenticate, asyncHandler(authController.unlock))
+
+/**
+ * @route   GET /api/auth/lockout-status/:userId
+ * @desc    Get lockout status for a user
+ * @access  Private (Parent only)
+ */
+router.get('/lockout-status/:userId', authenticate, asyncHandler(authController.getLockoutStatus))
+
 export default router

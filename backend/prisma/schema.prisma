@@ -41,6 +41,11 @@ model User {
   // Family relation
   familyId           String?
   family             Family?            @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  
+  // Account lockout fields
+  failedLoginAttempts Int                      @default(0)
+  lockoutUntil        DateTime?
+  lockedAt            DateTime?
 }
 
 model ChoreCategory {

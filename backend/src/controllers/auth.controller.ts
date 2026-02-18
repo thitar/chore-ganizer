@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import * as authService from '../services/auth.service.js'
+import { unlockAccount, isLocked } from '../utils/lockout.js'
 import { AppError } from '../middleware/errorHandler.js'
 
 /**
@@ -93,5 +94,91 @@ export const getCurrentUser = async (req: Request, res: Response) => {
     data: {
       user: req.user,
     },
+  })
+}
+
+/**
+ * POST /api/auth/unlock/:userId
+ * Unlock a user account (parent/admin only)
+ */
+export const unlock = async (req: Request, res: Response) => {
+  const { userId } = req.params
+
+  if (!userId) {
+    throw new AppError('User ID is required', 400, 'VALIDATION_ERROR')
+  }
+
+  const parsedUserId = parseInt(userId, 10)
+  if (isNaN(parsedUserId)) {
+    throw new AppError('Invalid user ID', 400, 'VALIDATION_ERROR')
+  }
+
+  // Get current user to check if they're a parent
+  if (!req.user) {
+    throw new AppError('User not authenticated', 401, 'UNAUTHORIZED')
+  }
+
+  // Only parents can unlock accounts
+  if (req.user.role !== 'PARENT') {
+    throw new AppError('Only parents can unlock accounts', 403, 'FORBIDDEN')
+  }
+
+  // Check lockout status before unlocking
+  const lockoutStatus = await isLocked(parsedUserId)
+
+  if (!lockoutStatus.isLocked) {
+    res.json({
+      success: true,
+      data: {
+        message: 'Account is not locked',
+        userId: parsedUserId,
+      },
+    })
+    return
+  }
+
+  // Unlock the account
+  await unlockAccount(parsedUserId)
+
+  res.json({
+    success: true,
+    data: {
+      message: 'Account unlocked successfully',
+      userId: parsedUserId,
+    },
+  })
+}
+
+/**
+ * GET /api/auth/lockout-status/:userId
+ * Get lockout status for a user (parent only)
+ */
+export const getLockoutStatus = async (req: Request, res: Response) => {
+  const { userId } = req.params
+
+  if (!userId) {
+    throw new AppError('User ID is required', 400, 'VALIDATION_ERROR')
+  }
+
+  const parsedUserId = parseInt(userId, 10)
+  if (isNaN(parsedUserId)) {
+    throw new AppError('Invalid user ID', 400, 'VALIDATION_ERROR')
+  }
+
+  // Get current user to check if they're a parent
+  if (!req.user) {
+    throw new AppError('User not authenticated', 401, 'UNAUTHORIZED')
+  }
+
+  // Only parents can view lockout status
+  if (req.user.role !== 'PARENT') {
+    throw new AppError('Only parents can view lockout status', 403, 'FORBIDDEN')
+  }
+
+  const lockoutStatus = await isLocked(parsedUserId)
+
+  res.json({
+    success: true,
+    data: lockoutStatus,
   })
 }
