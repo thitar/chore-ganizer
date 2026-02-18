@@ -30,8 +30,8 @@ FROM node:20-slim AS production
 
 WORKDIR /app
 
-# Install OpenSSL for Prisma and sqlite3 for seed check
-RUN apt-get update && apt-get install -y openssl sqlite3 && rm -rf /var/lib/apt/lists/*
+# Install OpenSSL for Prisma, sqlite3 for backup/restore, and cron
+RUN apt-get update && apt-get install -y openssl sqlite3 cron && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
@@ -49,6 +49,14 @@ COPY --from=builder /app/dist ./dist
 # Copy entrypoint script
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
+
+# Copy cron entrypoint and crontab
+COPY cron-entrypoint.sh /app/cron-entrypoint.sh
+COPY crontab /crontab
+RUN chmod +x /app/cron-entrypoint.sh
+
+# Create directory for backup scripts (will be populated at runtime)
+RUN mkdir -p /backup-scripts
 
 # Create directory for SQLite database
 RUN mkdir -p /app/data

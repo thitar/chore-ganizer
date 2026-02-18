@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import { logger } from '../utils/logger.js'
 
 export class AppError extends Error {
   statusCode: number
@@ -18,14 +19,18 @@ export class AppError extends Error {
  */
 export const errorHandler = (
   err: Error | AppError,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ): void => {
   // Log error for debugging
-  if (process.env.NODE_ENV === 'development') {
-    console.error('Error:', err)
-  }
+  logger.error({
+    type: 'ERROR',
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method
+  });
 
   // Handle known AppError
   if (err instanceof AppError) {

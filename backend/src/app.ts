@@ -8,18 +8,18 @@ import SQLiteStore from 'connect-sqlite3'
 import routes from './routes/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 import { csrfMiddleware, getCsrfToken } from './middleware/csrf.js'
+import { requestLogger } from './middleware/requestLogger.js'
+import { metricsMiddleware } from './middleware/metricsMiddleware.js'
+import { shutdownMiddleware } from './middleware/shutdownMiddleware.js'
+import metricsRoutes from './routes/metrics.routes.js'
 import { FULL_VERSION } from './version.js'
+import { logger } from './utils/logger.js'
 
 // Load environment variables
 dotenv.config()
 
 // Log server startup banner
-console.log(`
-╔═══════════════════════════════════════╗
-║     Chore-Ganizer API Server          ║
-║     Version: ${FULL_VERSION}            ║
-╚═══════════════════════════════════════╝
-`)
+logger.info(`Chore-Ganizer API Server - Version: ${FULL_VERSION}`)
 
 const app = express()
 
@@ -72,6 +72,9 @@ app.use(cors({
 app.use(express.json({ limit: '10kb' }))
 app.use(express.urlencoded({ extended: true, limit: '10kb' }))
 
+// Shutdown middleware - tracks in-flight requests and rejects new requests during shutdown
+app.use(shutdownMiddleware)
+
 // Session configuration
 const sessionSecret = process.env.SESSION_SECRET || 'dev-secret-not-secure'
 const sessionMaxAge = Number(process.env.SESSION_MAX_AGE) || 604800000 // 7 days
@@ -111,11 +114,20 @@ app.use(session({
 // CSRF protection middleware
 app.use(csrfMiddleware)
 
+// Request logging middleware
+app.use(requestLogger)
+
+// Metrics middleware
+app.use(metricsMiddleware)
+
 // CSRF token endpoint - must be before routes
 app.get('/api/csrf-token', getCsrfToken)
 
 // API routes
 app.use('/api', routes)
+
+// Metrics routes
+app.use('/api', metricsRoutes)
 
 // 404 handler
 app.use(notFoundHandler)
