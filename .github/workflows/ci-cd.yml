@@ -1,70 +1,133 @@
-# CD Workflow for Chore-Ganizer
-# This workflow runs only on push to main branch
+# CI/CD Workflow for Chore-Ganizer
+# Runs CI on every push, CD on push to main (after CI passes)
 
-name: CD (Continuous Deployment)
+name: CI/CD
 
-# Triggers the workflow only on push to main branch
+# Triggers
 on:
   push:
+    branches: ['**']
+  pull_request:
     branches: ['main']
-  # Allow manual triggering
-  workflow_dispatch:
-    inputs:
-      deploy_to_server:
-        description: 'Deploy to production server?'
-        required: true
-        default: 'yes'
-        type: choice
-        options:
-          - 'yes'
-          - 'no'
 
 # Set up the environment
 env:
   NODE_VERSION: '20'
-  REGISTRY: ghcr.io
-  # Will be set dynamically from github context
-  IMAGE_NAME: ''
 
-# Define the jobs to run
+# Define the jobs
 jobs:
-  # Job 1: Build and Push Docker Images
+  # ==================== CI JOBS ====================
+  
+  # Job 1: Test and Build Backend
+  backend:
+    name: Backend Tests & Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+      
+      - name: Generate Prisma Client
+        working-directory: backend
+        run: npm run prisma:generate
+      
+      - name: Run tests
+        working-directory: backend
+        run: npm test
+      
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+      
+      - name: Upload backend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build
+          path: backend/dist
+          retention-days: 1
+
+  # Job 2: Test and Build Frontend
+  frontend:
+    name: Frontend Tests & Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      
+      - name: Run tests
+        working-directory: frontend
+        run: npm test
+      
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+      
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist
+          retention-days: 1
+
+  # ==================== CD JOBS ====================
+  
+  # Job 3: Build and Push Docker Images (only on main branch, after CI)
   build-and-push:
     name: Build & Push Docker Images
     runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: read
       packages: write
     
     steps:
-      # Step 1: Checkout the code from GitHub
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      # Step 2: Set up Docker Buildx
+       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
-      # Step 3: Log in to GitHub Container Registry
+       
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
-      # Step 4: Extract metadata for Docker images
+       
       - name: Extract metadata for backend
         id: meta-backend
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}/chore-ganizer-backend
+          images: ghcr.io/${{ github.repository }}/chore-ganizer-backend
           tags: |
             type=ref,event=branch
             type=sha,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
-      
-      # Step 5: Build and push backend Docker image
+       
       - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
@@ -74,19 +137,17 @@ jobs:
           labels: ${{ steps.meta-backend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      
-      # Step 6: Extract metadata for frontend
+       
       - name: Extract metadata for frontend
         id: meta-frontend
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}/chore-ganizer-frontend
+          images: ghcr.io/${{ github.repository }}/chore-ganizer-frontend
           tags: |
             type=ref,event=branch
             type=sha,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
-      
-      # Step 7: Build and push frontend Docker image
+       
       - name: Build and push frontend
         uses: docker/build-push-action@v5
         with:
@@ -96,8 +157,7 @@ jobs:
           labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      
-      # Step 8: Create deployment summary
+       
       - name: Create Deployment Summary
         run: |
           echo "## Deployment Complete! 🚀" >> $GITHUB_STEP_SUMMARY
@@ -108,38 +168,14 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "To deploy manually, update your server's docker-compose.yml to use these images." >> $GITHUB_STEP_SUMMARY
 
-  # Job 2: Deploy to Server (Optional - requires SSH or webhook configuration)
+  # Job 4: Deploy to Server (Optional - requires additional configuration)
   deploy-to-server:
     name: Deploy to Server
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_to_server == 'yes'
+    if: false  # Disabled by default - enable in GitHub settings
     
     steps:
-      # Step 1: Checkout repository for deployment scripts
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      # Step 2: Deploy via SSH (Example - customize for your server)
-      # Uncomment and configure if you have SSH access to your server
-      # - name: Deploy via SSH
-      #   uses: appleboy/ssh-action@v1.0.0
-      #   with:
-      #     host: ${{ secrets.SSH_HOST }}
-      #     username: ${{ secrets.SSH_USERNAME }}
-      #     key: ${{ secrets.SSH_PRIVATE_KEY }}
-      #     script: |
-      #       cd /path/to/chore-ganizer
-      #       docker-compose pull
-      #       docker-compose up -d
-      
-      # Step 3: OR Deploy via Webhook (Example)
-      # Uncomment and configure if you have a deployment webhook
-      # - name: Trigger Deployment Webhook
-      #   run: |
-      #     curl -X POST ${{ secrets.DEPLOY_WEBHOOK_URL }}
-      
-      # Step 4: Show deployment instructions
       - name: Show Deployment Instructions
         run: |
           echo "## Deployment Instructions 📋" >> $GITHUB_STEP_SUMMARY
@@ -148,5 +184,3 @@ jobs:
           echo "1. Update docker-compose.yml with new image tags" >> $GITHUB_STEP_SUMMARY
           echo "2. Run: `docker-compose pull`" >> $GITHUB_STEP_SUMMARY
           echo "3. Run: `docker-compose up -d`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Or configure SSH/webhook deployment in the workflow." >> $GITHUB_STEP_SUMMARY
