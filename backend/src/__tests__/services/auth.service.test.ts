@@ -8,6 +8,7 @@ jest.mock('../../config/database', () => ({
     user: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     },
   },
 }))

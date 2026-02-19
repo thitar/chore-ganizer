@@ -116,6 +116,7 @@ describe('Authentication Middleware', () => {
         name: 'Test User',
         role: 'CHILD',
         points: 100,
+        color: '#FF5733',
       }
       const middleware = authorize('PARENT')
       middleware(mockReq as Request, mockRes as Response, mockNext)
@@ -138,6 +139,7 @@ describe('Authentication Middleware', () => {
         name: 'Test User',
         role: 'PARENT',
         points: 100,
+        color: '#FF5733',
       }
       const middleware = authorize('PARENT')
       middleware(mockReq as Request, mockRes as Response, mockNext)
@@ -152,6 +154,7 @@ describe('Authentication Middleware', () => {
         name: 'Test User',
         role: 'CHILD',
         points: 100,
+        color: '#FF5733',
       }
       const middleware = authorize('PARENT', 'CHILD')
       middleware(mockReq as Request, mockRes as Response, mockNext)
