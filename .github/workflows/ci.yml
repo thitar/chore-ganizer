@@ -37,7 +37,7 @@ jobs:
       
       # Step 3: Install backend dependencies
       - name: Install dependencies
-        working-directory: dev/chore-ganizer/backend
+        working-directory: backend
         run: npm ci
       
       # Step 4: Generate Prisma client
@@ -83,7 +83,7 @@ jobs:
       
       # Step 3: Install frontend dependencies
       - name: Install dependencies
-        working-directory: dev/chore-ganizer/frontend
+        working-directory: frontend
         run: npm ci
       
       # Step 4: Run frontend tests
