@@ -83,72 +83,199 @@ GitHub Actions is a **workflow automation tool** built into GitHub. It lets you:
 ### Visual Flow
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        CI/CD Pipeline Overview                          │
-└─────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      CI/CD Pipeline Overview                                 │
+│                      (Merged Workflow: ci-cd.yml)                           │
+└─────────────────────────────────────────────────────────────────────────────┘
 
-    ┌──────────┐     ┌─────────────────┐     ┌────────────────────────┐
-    │  Developer│     │  GitHub Actions │     │    Production Server   │
-    │   Pushes  │────▶│    (The Robot)   │     │    (Live App)          │
-    │    Code   │     │                 │     │                        │
-    └──────────┘     └─────────────────┘     └────────────────────────┘
-                            │                            ▲
-                            ▼                            │
-                    ┌─────────────────┐                  │
-                    │  CI Workflow    │                  │
-                    │  (ci.yml)       │                  │
-                    │                 │                  │
-                    │  1. Checkout    │                  │
-                    │  2. Setup Node  │                  │
-                    │  3. Install deps│                  │
-                    │  4. Run tests   │                  │
-                    │  5. Build       │                  │
-                    └─────────────────┘                  │
-                            │                            │
-                            ▼                            │
-                    ┌─────────────────┐                  │
-                    │  CD Workflow    │                  │
-                    │  (deploy.yml)   │──────────────────┘
-                    │                 │     (Optional)
-                    │  1. Build Docker│
-                    │  2. Push to    │
-                    │     Container  │
-                    │     Registry   │
-                    │  3. Deploy     │
-                    └─────────────────┘
+    ┌──────────┐     ┌─────────────────────────────────────────────────────┐
+    │ Developer │     │              GitHub Actions                          │
+    │  Pushes  │────▶│              (ci-cd.yml)                              │
+    │   Code   │     │                                                     │
+    └──────────┘     └─────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+                    ┌───────────────────────────────────┐
+                    │      CI Jobs (Parallel)           │
+                    │                                   │
+                    │  ┌─────────────┐  ┌────────────┐  │
+                    │  │   Backend   │  │  Frontend  │  │
+                    │  │ Tests &     │  │ Tests &    │  │
+                    │  │ Build       │  │ Build      │  │
+                    │  │             │  │            │  │
+                    │  │ • npm ci    │  │ • npm ci   │  │
+                    │  │ • prisma    │  │ • vitest   │  │
+                    │  │ • jest      │  │ • build    │  │
+                    │  │ • tsc       │  │            │  │
+                    │  └─────────────┘  └────────────┘  │
+                    └───────────────────────────────────┘
+                                    │
+                           needs: [backend, frontend]
+                                    │
+                                    ▼ (only on main branch push)
+                    ┌───────────────────────────────────┐
+                    │      CD Jobs (Sequential)          │
+                    │                                   │
+                    │  ┌─────────────────────────────┐   │
+                    │  │   Build & Push Docker      │   │
+                    │  │   Images to ghcr.io        │   │
+                    │  │                            │   │
+                    │  │ • backend → ghcr.io/...   │   │
+                    │  │ • frontend → ghcr.io/...   │   │
+                    │  └─────────────────────────────┘   │
+                    │              │                      │
+                    │              ▼                      │
+                    │  ┌─────────────────────────────┐   │
+                    │  │   Deploy to Server (opt)   │   │
+                    │  │   (disabled by default)    │   │
+                    │  └─────────────────────────────┘   │
+                    └───────────────────────────────────┘
 ```
 
 ### What Happens Step by Step
 
-#### When You Push Code (Any Branch)
+#### When You Push Code (Any Branch or PR)
 
 1. **GitHub detects the push** 🚀
-2. **CI workflow starts automatically**
-3. **Backend job runs:**
+2. **CI jobs run in parallel:**
+   
+   **Backend job:**
    - Checkout code
-   - Install Node.js
-   - Install backend dependencies
-   - Generate Prisma client
+   - Setup Node.js 20 with npm caching
+   - Install dependencies (`npm ci`)
+   - Generate Prisma client (`npm run prisma:generate`)
    - Run backend tests (Jest)
-   - Build backend
-4. **Frontend job runs:**
+   - Build backend (TypeScript compilation)
+   - Upload build artifacts
+   
+   **Frontend job (runs in parallel with backend):**
    - Checkout code
-   - Install Node.js
-   - Install frontend dependencies
+   - Setup Node.js 20 with npm caching
+   - Install dependencies (`npm ci`)
    - Run frontend tests (Vitest)
-   - Build frontend
-5. **If all tests pass:** ✅ Success!
-6. **If tests fail:** ❌ GitHub notifies you
+   - Build frontend (Vite production build)
+   - Upload build artifacts
+   
+3. **If CI passes:** ✅ Success!
+4. **If CI fails:** ❌ GitHub notifies you, CD is skipped
 
 #### When You Push to Main Branch
 
-1. **CI workflow runs first** (same as above)
-2. **If CI passes, CD workflow starts:**
+After CI passes:
+1. **CD job starts** (depends on both backend and frontend jobs completing)
    - Build backend Docker image
-   - Push to GitHub Container Registry
+   - Push to GitHub Container Registry (ghcr.io)
    - Build frontend Docker image
-   - Push to GitHub Container Registry
-3. **Optionally deploy to server**
+   - Push to GitHub Container Registry (ghcr.io)
+2. **Deployment job** (optional, disabled by default)
+   - Shows deployment instructions
+
+#### Job Dependencies
+
+The merged workflow uses GitHub Actions `needs` syntax to ensure proper execution order:
+
+```yaml
+build-and-push:
+  needs: [backend, frontend]  # Waits for both CI jobs to complete
+  if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+```
+
+This ensures Docker images are only built and pushed after all tests pass.
+
+---
+
+## Path Structure 📁
+
+The Chore-Ganizer project uses a flat directory structure at the root level:
+
+```
+chore-ganizer/                  # Project root
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml          # Merged CI/CD workflow
+├── backend/                    # Node.js/Express API
+│   ├── src/
+│   │   ├── __tests__/         # Jest test files
+│   │   └── ...
+│   ├── package.json
+│   ├── jest.config.js
+│   ├── Dockerfile
+│   └── prisma/
+├── frontend/                   # React/Vite frontend
+│   ├── src/
+│   │   ├── __tests__/        # Vitest test files
+│   │   ├── test/             # Test setup files
+│   │   └── ...
+│   ├── package.json
+│   ├── vitest.config.ts
+│   ├── Dockerfile
+│   └── nginx.conf
+└── docs/                       # Documentation
+```
+
+> **Note:** The workflow files reference `backend/` and `frontend/` directly (not `dev/chore-ganizer/backend/`).
+
+---
+
+## CI/CD Architecture 🏗️
+
+### Workflow Structure
+
+The CI/CD pipeline is implemented as a single merged workflow file (`.github/workflows/ci-cd.yml`) that contains both CI and CD jobs.
+
+#### Job Overview
+
+| Job | Type | Triggers | Description |
+|-----|------|----------|-------------|
+| `backend` | CI | Every push/PR | Runs backend tests and build |
+| `frontend` | CI | Every push/PR | Runs frontend tests and build |
+| `build-and-push` | CD | Push to main | Builds and pushes Docker images |
+| `deploy-to-server` | CD | Push to main | Shows deployment instructions (disabled) |
+
+#### Job Dependencies
+
+```yaml
+# CD job waits for both CI jobs to complete
+build-and-push:
+  needs: [backend, frontend]
+  if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+```
+
+This ensures:
+1. Both CI jobs run in parallel for faster execution
+2. CD only starts after both CI jobs succeed
+3. CD is skipped for non-main-branch pushes
+
+#### Artifact Sharing
+
+The CI jobs upload build artifacts that can be used by subsequent jobs:
+- Backend: `backend-build` → Contains compiled TypeScript
+- Frontend: `frontend-build` → Contains production build
+
+#### Docker Build Cache
+
+The workflow uses GitHub Actions cache (`type=gha`) for Docker builds:
+```yaml
+cache-from: type=gha
+cache-to: type=gha,mode=max
+```
+
+This significantly speeds up subsequent builds by caching Docker layers.
+
+Before setting up CI/CD, make sure you have:
+
+### For Developers
+
+- [ ] A GitHub account
+- [ ] Push access to the Chore-Ganizer repository
+- [ ] Node.js 20+ installed locally (for testing)
+- [ ] Basic understanding of terminal/command line
+
+### Optional (for deployment)
+
+- [ ] GitHub Container Registry access (comes with GitHub)
+- [ ] SSH access to production server (for auto-deploy)
+- [ ] Deployment webhook URL (for manual deploy)
 
 ---
 
@@ -181,8 +308,7 @@ The workflow files are already created in your repository:
 chore-ganizer/
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml         # Runs on every push
-│       └── deploy.yml     # Runs on push to main
+│       └── ci-cd.yml         # Merged CI/CD workflow (single file)
 ├── backend/
 │   ├── package.json       # Has "test" script
 │   ├── jest.config.js    # Jest testing config
@@ -225,11 +351,36 @@ When the workflow completes:
 
 The CD workflow pushes Docker images to GitHub Container Registry (ghcr.io).
 
-1. By default, GitHub provides access to ghcr.io with your GITHUB_TOKEN
-2. No additional setup needed!
-3. Images will be named:
-   - `ghcr.io/YOUR_USERNAME/chore-ganizer-backend:latest`
-   - `ghcr.io/YOUR_USERNAME/chore-ganizer-frontend:latest`
+#### How It Works
+
+1. **Automatic Authentication**: The workflow uses `GITHUB_TOKEN` for authentication - no additional secrets needed!
+2. **Image Naming**:
+   - Backend: `ghcr.io/YOUR_USERNAME/chore-ganizer/chore-ganizer-backend:latest`
+   - Frontend: `ghcr.io/YOUR_USERNAME/chore-ganizer/chore-ganizer-frontend:latest`
+3. **Tagging Strategy**:
+   - `latest` - Always points to main branch
+   - `sha-abc1234` - SHA-based tags for each commit
+   - Branch tags - For feature branches
+
+#### Accessing Your Images
+
+1. Go to your repository on GitHub
+2. Click on the **Packages** tab
+3. You'll see chore-ganizer-backend and chore-ganizer-frontend packages
+4. Click on a package to see available tags
+
+#### Pulling Images
+
+```bash
+# Login to ghcr.io
+echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+
+# Pull backend
+docker pull ghcr.io/YOUR_USERNAME/chore-ganizer/chore-ganizer-backend:latest
+
+# Pull frontend
+docker pull ghcr.io/YOUR_USERNAME/chore-ganizer/chore-ganizer-frontend:latest
+```
 
 ### Step 6: Configure Deployment (Optional)
 
@@ -314,7 +465,7 @@ jobs:
 
 ```yaml
       - name: Install dependencies
-        working-directory: dev/chore-ganizer/backend
+        working-directory: backend
         run: npm ci
 ```
 
@@ -322,7 +473,7 @@ jobs:
 
 ```yaml
       - name: Run tests
-        working-directory: dev/chore-ganizer/backend
+        working-directory: backend
         run: npm test
 ```
 
@@ -330,15 +481,19 @@ jobs:
 
 ```yaml
       - name: Build backend
-        working-directory: dev/chore-ganizer/backend
+        working-directory: backend
         run: npm run build
 ```
 
 **What it means:** Compile the TypeScript code to JavaScript.
 
-### CD Workflow (deploy.yml)
+### CI/CD Workflow (ci-cd.yml)
 
-Key differences from CI:
+The CI and CD pipelines have been merged into a single workflow file for simplicity. This consolidated approach ensures CI passes before CD runs.
+
+#### CI Jobs (Always Run)
+
+The CI portion runs on every push and pull request:
 
 ```yaml
 on:
@@ -380,7 +535,7 @@ on:
       - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
-          context: dev/chore-ganizer/backend
+          context: backend
           push: true
 ```
 
@@ -395,29 +550,40 @@ Before pushing to GitHub, you can test locally!
 ### Test Backend
 
 ```bash
-cd dev/chore-ganizer/backend
+cd backend
 npm install
 npm run prisma:generate
 npm test
 ```
 
+**Backend Test Configuration:**
+- Framework: Jest with ts-jest preset
+- Config: `backend/jest.config.js`
+- Test location: `backend/src/__tests__/`
+
 ### Test Frontend
 
 ```bash
-cd dev/chore-ganizer/frontend
+cd frontend
 npm install
 npm test
 ```
+
+**Frontend Test Configuration:**
+- Framework: Vitest with jsdom environment
+- Config: `frontend/vitest.config.ts`
+- Setup: `frontend/src/test/setup.ts`
+- Test location: `frontend/src/` (components, hooks)
 
 ### Test Build
 
 ```bash
 # Backend
-cd dev/chore-ganizer/backend
+cd backend
 npm run build
 
 # Frontend
-cd dev/chore-ganizer/frontend
+cd frontend
 npm run build
 ```
 
@@ -453,15 +619,27 @@ You can run GitHub Actions on your local machine using [act](https://github.com/
 - Make sure package-lock.json is committed
 - Check for syntax errors in package.json
 - Try deleting node_modules and pushing again
+- Verify the Node.js version matches (currently 20)
 
 #### ❌ "Test failed"
 
 **Problem:** One or more tests are failing.
 
 **Solution:**
-- Run tests locally to see the error
+- Run tests locally to see the error: `npm test`
 - Fix the failing test or code
 - Commit and push the fix
+- For backend: Uses Jest with ts-jest preset
+- For frontend: Uses Vitest with jsdom environment
+
+#### ❌ "Prisma generate failed"
+
+**Problem:** Prisma client can't be generated.
+
+**Solution:**
+- Check that prisma/schema.prisma is valid
+- Ensure all referenced types exist
+- Run `npm run prisma:generate` locally to debug
 
 #### ❌ "Build failed"
 
@@ -480,6 +658,7 @@ You can run GitHub Actions on your local machine using [act](https://github.com/
 - Check the Dockerfile for errors
 - Make sure all files referenced exist
 - Check that base images are accessible
+- Verify working-directory paths match the actual folder structure
 
 #### ❌ "Permission denied to push to container registry"
 
@@ -488,6 +667,7 @@ You can run GitHub Actions on your local machine using [act](https://github.com/
 **Solution:**
 - Make sure the workflow has `packages: write` permission
 - Check that you're not using a fork (for public repos)
+- Ensure the repository has packages enabled in settings
 
 #### ❌ "Workflow not running"
 
@@ -497,6 +677,37 @@ You can run GitHub Actions on your local machine using [act](https://github.com/
 - Check that workflow file is in `.github/workflows/`
 - Verify the YAML syntax
 - Check that you're not on an ignored branch
+- Ensure the file is named `.yml` not `.yaml`
+
+#### ❌ "Artifact upload/download failed"
+
+**Problem:** Build artifacts can't be transferred between jobs.
+
+**Solution:**
+- Ensure artifact names are unique within a workflow run
+- Check retention period (default: 1 day in our config)
+- Verify the path globs match actual output directories
+
+### CI/CD-Specific Issues
+
+#### Job Dependencies Not Working
+
+**Problem:** CD job runs before CI completes.
+
+**Solution:**
+- Verify the `needs` keyword is correctly set
+- Ensure all required jobs are listed: `needs: [backend, frontend]`
+- Check that the condition `if: github.ref == 'refs/heads/main'` is correct
+
+#### Images Not Pushing to ghcr.io
+
+**Problem:** Docker push fails.
+
+**Solution:**
+1. Check repository visibility (private repos need proper permissions)
+2. Verify image naming: must use lowercase
+3. Check that login-action completed successfully
+4. Ensure GITHUB_TOKEN has correct scopes
 
 ### Getting Help
 
@@ -525,14 +736,20 @@ You can run GitHub Actions on your local machine using [act](https://github.com/
 **Q: What versions of Node.js are supported?**
 > A: We use Node.js 20 in the workflows. You can change this in the `NODE_VERSION` env variable.
 
+**Q: What test frameworks are used?**
+> A: Backend uses Jest with ts-jest preset. Frontend uses Vitest with jsdom environment.
+
 **Q: Can I skip CI/CD for a commit?**
 > A: Yes! Add `[skip ci]` or `[ci skip]` to your commit message.
 
 **Q: How do I add more test steps?**
-> A: Edit the `ci.yml` file and add more `run:` steps under the appropriate job.
+> A: Edit the `ci-cd.yml` file and add more `run:` steps under the appropriate job.
 
 **Q: Can I run only frontend or backend tests?**
-> A: The workflows run both. You can modify the workflow to run jobs conditionally using `if` statements.
+> A: Yes! The jobs run independently. You can trigger them separately or modify the workflow to run jobs conditionally.
+
+**Q: Why is CI/CD in a single file?**
+> A: The merged `ci-cd.yml` simplifies maintenance and ensures CD only runs after CI passes using the `needs` keyword.
 
 ### Deployment Questions
 
@@ -543,7 +760,10 @@ You can run GitHub Actions on your local machine using [act](https://github.com/
 > A: Edit docker-compose.yml to use the previous image tag, then redeploy.
 
 **Q: Can I deploy to multiple environments?**
-> A: Yes! You can modify deploy.yml to add staging/production jobs with different triggers.
+> A: Yes! You can modify ci-cd.yml to add staging/production jobs with different triggers.
+
+**Q: How do I enable automatic server deployment?**
+> A: Edit the `deploy-to-server` job in ci-cd.yml and remove `if: false`. You'll need to add SSH secrets or webhook configuration.
 
 ---
 
@@ -578,10 +798,9 @@ npm run prisma:generate
 
 | File | Path |
 |------|------|
-| CI Workflow | `.github/workflows/ci.yml` |
-| CD Workflow | `.github/workflows/deploy.yml` |
-| Backend Tests | `dev/chore-ganizer/backend/` |
-| Frontend Tests | `dev/chore-ganizer/frontend/` |
+| CI/CD Workflow | `.github/workflows/ci-cd.yml` |
+| Backend Tests | `backend/` |
+| Frontend Tests | `frontend/` |
 
 ---
 
