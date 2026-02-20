@@ -80,7 +80,7 @@ export function RecurringChoresPage() {
 
     try {
       setIsLoadingChores(true)
-      const data = await recurringChoresApi.list({ includeInactive: true })
+      const data = await recurringChoresApi.list()
       setRecurringChores(data)
     } catch (error) {
       console.error('Failed to fetch recurring chores:', error)

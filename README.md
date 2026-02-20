@@ -2,34 +2,61 @@
 
 A modern, family-friendly chore management system designed for homelab deployment. Built with React, TypeScript, Express, and SQLite.
 
+**Current Version: 1.6.1**
+
 ## 📋 Features
 
-### Current Features
- - ✅ **User Authentication** - Secure session-based login
- - ✅ **Chore Management** - Create, edit, delete, and assign chores
- - ✅ **Chore Templates** - Reusable chore definitions with categories
- - ✅ **Chore Categories** - Organize chores by type
- - ✅ **Calendar View** - Visual calendar of all family assignments
- - ✅ **Points System** - Earn points for completing chores
- - ✅ **Partial Completion** - Parents can mark chores as partially complete with custom points
- - ✅ **Personal Dashboard** - Each user sees only their own data
- - ✅ **User Color Customization** - Each family member has their own color on the calendar
- - ✅ **Templates Management** - Manage reusable chore templates
- - ✅ **Family Members Management** - Manage family member accounts
- - ✅ **Role-Based Access** - Different capabilities for parents and children
- - ✅ **Protected Routes** - Templates and Calendar pages restricted to parents
- - ✅ **Notifications** - In-app notifications for chore events
- - ✅ **Security Hardening** - Helmet headers, rate limiting, SQLite session store
- - ✅ **Password Policy** - Strong password requirements with strength indicator
- - ✅ **CSRF Protection** - Token-based cross-site request forgery protection
- - ✅ **Input Validation** - Zod schema validation on all API endpoints
- - ✅ **Responsive Design** - Works on desktop, tablet, and mobile
- - ✅ **Docker Deployment** - Easy deployment with Docker Compose
+### Core Features
+- ✅ **User Authentication** - Secure session-based login with account lockout protection
+- ✅ **Chore Management** - Create, edit, delete, and assign chores
+- ✅ **Chore Templates** - Reusable chore definitions with categories
+- ✅ **Chore Categories** - Organize chores by type
+- ✅ **Calendar View** - Visual calendar of all family assignments
+- ✅ **Points System** - Earn points for completing chores
+- ✅ **Partial Completion** - Parents can mark chores as partially complete with custom points
+- ✅ **Personal Dashboard** - Each user sees only their own data
+- ✅ **User Color Customization** - Each family member has their own color on the calendar
+- ✅ **Role-Based Access** - Different capabilities for parents and children
+- ✅ **Responsive Design** - Works on desktop, tablet, and mobile
+
+### Recurring Chores
+- ✅ **Flexible Recurrence** - Daily, weekly, monthly, yearly patterns
+- ✅ **Custom Intervals** - Every N days/weeks/months (e.g., every 3 days, every 2 weeks)
+- ✅ **Specific Days** - Every Wednesday, every Monday and Friday
+- ✅ **Nth Weekday** - 2nd Tuesday of month, last Friday of month
+- ✅ **Round-Robin Assignment** - Rotate chores among family members
+- ✅ **Fixed Assignment** - Assign to specific family members
+- ✅ **Skip/Complete Occurrences** - Handle individual chore instances
+
+### Notifications
+- ✅ **In-App Notifications** - Real-time notification system
+- ✅ **ntfy.sh Integration** - Push notifications to mobile devices
+- ✅ **Configurable Alerts** - Chore assigned, due soon, completed, overdue
+- ✅ **Quiet Hours** - Suppress notifications during specified hours
+
+### Pocket Money
+- ✅ **Points to Currency** - Convert points to monetary value
+- ✅ **Transaction History** - Track earnings and withdrawals
+- ✅ **Parent Management** - Parents can add/deduct balance
+
+### Security & Monitoring
+- ✅ **Account Lockout** - Auto-lock after 5 failed login attempts
+- ✅ **Audit Logging** - Track all user actions with IP and user agent
+- ✅ **CSRF Protection** - Token-based cross-site request forgery protection
+- ✅ **Password Policy** - Strong password requirements with strength indicator
+- ✅ **Helmet Headers** - Security headers including CSP
+- ✅ **Rate Limiting** - Protection against brute force attacks
+- ✅ **Input Validation** - Zod schema validation on all API endpoints
+
+### Operations
+- ✅ **Prometheus Metrics** - Built-in metrics endpoint for monitoring
+- ✅ **Structured Logging** - Winston-based JSON logging
+- ✅ **Automated Backups** - Scheduled database backups with cron
+- ✅ **Graceful Shutdown** - Clean container shutdown handling
+- ✅ **CI/CD Pipeline** - GitHub Actions workflow for automated builds
 
 ### Planned (Future)
 - 🔜 Rewards marketplace
-- 🔜 Recurring chores automation
-- 🔜 Round-robin assignment rotation
 - 🔜 Email notifications
 - 🔜 Advanced analytics and charts
 
@@ -50,6 +77,7 @@ A modern, family-friendly chore management system designed for homelab deploymen
 - Express Session (authentication)
 - Bcrypt (password hashing)
 - Zod (validation)
+- Winston (logging)
 
 **Deployment:**
 - Docker + Docker Compose
@@ -65,6 +93,8 @@ The application uses **React Router v6** for proper URL-based navigation. All pa
 |-------|-------------|--------|
 | `/dashboard` | Main dashboard (personal view) | All users |
 | `/chores` | Chore assignments list | All users |
+| `/recurring-chores` | Recurring chores management | All users |
+| `/pocket-money` | Points/balance management | All users |
 | `/profile` | User profile page | All users |
 | `/users` | Family members management | Parents only |
 | `/templates` | Chore templates management | Parents only |
@@ -131,7 +161,7 @@ After running the seed script:
 - alice@home / password123
 - bob@home / password123
 
-**⚠️ Change these passwords in `backend/src/prisma/seed.ts` before deploying!**
+**⚠️ Change these passwords in `backend/prisma/seed.ts` before deploying!**
 
 ## 🐳 Production Deployment
 
@@ -173,8 +203,6 @@ For public internet access with HTTPS, use a reverse proxy like Caddy:
    docker compose restart
    ```
 
-The app is currently deployed at **https://chore.thitar.ovh** using Caddy with automatic Let's Encrypt HTTPS.
-
 ### 1. Initial Setup
 
 ```bash
@@ -208,7 +236,7 @@ docker compose logs -f
 ### 3. Verify Deployment
 
 ```bash
-# Check backend health
+# Check backend health (includes version)
 curl http://localhost:3002/api/health
 
 # Check frontend
@@ -218,18 +246,16 @@ curl http://localhost:3002/
 # Navigate to: http://YOUR_SERVER_IP:3002
 ```
 
-### 4. Set Up Backups
+### 4. Backups
+
+Backups are automatically scheduled via cron inside the Docker container. The default schedule runs daily at 2 AM.
 
 ```bash
-# Make backup script executable
-chmod +x backup.sh
+# Manual backup
+docker compose exec backend /backup-scripts/backup.sh
 
-# Test backup
-./backup.sh
-
-# Add to crontab for daily backups at 2 AM
-crontab -e
-# Add: 0 2 * * * /path/to/chore-ganizer/backup.sh >> /path/to/chore-ganizer/data/backups/backup.log 2>&1
+# View backup logs
+docker compose exec backend cat /var/log/backup.log
 ```
 
 ## 📁 Project Structure
@@ -279,22 +305,35 @@ chore-ganizer/
 
 ### Environment Variables
 
-**Backend (.env):**
+The application uses a single `.env` file at the project root for all configuration:
+
 ```bash
+# Application Version
+APP_VERSION=1.6.1
+
+# Backend Configuration
 NODE_ENV=production
+PORT=3010
 DATABASE_URL=file:/app/data/chore-ganizer.db
 SESSION_SECRET=your-secret-here
-PORT=3010
-CORS_ORIGIN=http://localhost:3002
+CORS_ORIGIN=https://chore.yourdomain.com
+SECURE_COOKIES=true
 LOG_LEVEL=info
+
+# Frontend Configuration
+VITE_API_URL=
+VITE_DEBUG=false
+
+# Account Lockout
+MAX_LOGIN_ATTEMPTS=5
+ACCOUNT_LOCKOUT_MINUTES=15
+
+# ntfy Notifications
+NTFY_DEFAULT_SERVER_URL=https://ntfy.sh
+NTFY_DEFAULT_TOPIC=your-family-topic
 ```
 
-**Frontend (.env):**
-```bash
-VITE_API_URL=http://localhost:3002
-```
-
-See `.env.example` files for complete configuration options.
+See `.env.example` for complete configuration options.
 
 ## 📊 Common Tasks
 
@@ -402,7 +441,7 @@ For more detailed troubleshooting, see the [Development Plan](./docs/CHORE-GANIZ
 
 ### Before Deploying:
 1. ✅ Change `SESSION_SECRET` to a strong random value
-2. ✅ Update default passwords in `src/prisma/seed.ts`
+2. ✅ Update default passwords in `prisma/seed.ts`
 3. ✅ Configure firewall rules
 4. ✅ Set up HTTPS if exposing publicly (use reverse proxy)
 5. ✅ Regular backups configured
@@ -420,6 +459,8 @@ For more detailed troubleshooting, see the [Development Plan](./docs/CHORE-GANIZ
 - **Password Strength Indicator** - Visual feedback during registration
 - **CSRF Protection** - Token-based protection with `/api/csrf-token` endpoint
 - **Input Validation** - Zod schema validation on all API endpoints
+- **Account Lockout** - Auto-lock after 5 failed login attempts
+- **Audit Logging** - Track all user actions with IP and user agent
 
 ### For Public Internet Access:
 - Use a reverse proxy (Caddy, Traefik, Nginx Proxy Manager)
@@ -450,6 +491,8 @@ npm test
 - [ ] Can edit chore
 - [ ] Can delete chore
 - [ ] Can assign chore to family member
+- [ ] Can create recurring chore
+- [ ] Can manage pocket money
 - [ ] Notifications appear correctly
 
 **As Child:**
@@ -488,6 +531,7 @@ npm test
 ### Operations
 - **[Post-Deployment Guide](./docs/POST-DEPLOYMENT-GUIDE.md)** - User management, updates, rollbacks, and monitoring
 - **[Backup & Restore Guide](./docs/BACKUP-RESTORE-GUIDE.md)** - Backup procedures, automated backups, and disaster recovery
+- **[CI/CD Guide](./docs/CICD-GUIDE.md)** - GitHub Actions workflow documentation
 
 ### Implementation Logs
 - **[Phase 1 Log](./docs/PHASE-1-IMPLEMENTATION-LOG.md)** - Project setup

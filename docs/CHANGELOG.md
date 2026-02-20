@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2026-02-20
+
+### Changed
+- **README Update** - Comprehensive update to reflect current project state
+  - Added all new features: Recurring Chores, Pocket Money, ntfy Notifications
+  - Added Security & Monitoring features: Audit Logging, Account Lockout, Prometheus Metrics
+  - Updated routes table with new pages
+  - Updated environment configuration section
+  - Added CI/CD Guide reference
+
+---
+
+## [1.6.1] - 2026-02-20
+
+### Fixed
+- **Recurring Chores Deletion** - Deleted recurring chores no longer reappear after page refresh
+  - Frontend was incorrectly requesting inactive chores in the list view
+  - Now properly filters to only show active recurring chores
+
+---
+
 ## [1.6.0] - 2026-02-20
 
 ### Added
