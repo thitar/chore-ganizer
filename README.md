@@ -2,7 +2,7 @@
 
 A modern, family-friendly chore management system designed for homelab deployment. Built with React, TypeScript, Express, and SQLite.
 
-**Current Version: 1.6.1**
+**Current Version: 1.8.0**
 
 ## 📋 Features
 
@@ -49,11 +49,15 @@ A modern, family-friendly chore management system designed for homelab deploymen
 - ✅ **Input Validation** - Zod schema validation on all API endpoints
 
 ### Operations
+- ✅ **Enhanced Health Checks** - Database, memory, and disk metrics with liveness/readiness probes
+- ✅ **Error Webhook Alerts** - Real-time error notifications via ntfy
+- ✅ **Backup Verification** - Automatic integrity check after each backup
 - ✅ **Prometheus Metrics** - Built-in metrics endpoint for monitoring
 - ✅ **Structured Logging** - Winston-based JSON logging
 - ✅ **Automated Backups** - Scheduled database backups with cron
 - ✅ **Graceful Shutdown** - Clean container shutdown handling
 - ✅ **CI/CD Pipeline** - GitHub Actions workflow for automated builds
+- ✅ **Unit Tests** - Comprehensive test suite with coverage reporting
 
 ### Planned (Future)
 - 🔜 Rewards marketplace

@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-02-20
+
+### Added
+- **Enhanced Health Check** - Production-ready health monitoring
+  - `/api/health` - Full health check with database, memory, and disk metrics
+  - `/api/health/live` - Liveness probe (server running check)
+  - `/api/health/ready` - Readiness probe (database connectivity check)
+  - Memory usage monitoring with warning/critical thresholds
+  - Disk usage monitoring for data directory
+  - Database latency measurement
+
+- **Backup Verification** - Automated backup integrity verification
+  - Backup script now runs integrity check after each backup
+  - Restore test runs automatically after backup completion
+  - SQLite `PRAGMA integrity_check` validation
+
+- **Error Monitoring with ntfy Webhook** - Real-time error alerts
+  - New `error-webhook.ts` utility for sending error notifications
+  - Automatic webhook notifications for 500 errors
+  - Configurable via environment variables
+  - Support for ntfy authentication
+
+### Changed
+- **Cron Schedule** - Backup now includes automatic verification
+  - Single cron job runs backup and verification together
+  - Removed separate weekly restore test (now runs after each backup)
+
+### Configuration
+- New environment variables for error webhook:
+  - `ERROR_WEBHOOK_ENABLED` - Enable/disable error notifications
+  - `ERROR_WEBHOOK_URL` - ntfy webhook URL
+  - `ERROR_WEBHOOK_USERNAME` / `ERROR_WEBHOOK_PASSWORD` - Optional auth
+  - `ERROR_WEBHOOK_MIN_PRIORITY` - Minimum priority to send (default: 4)
+
+---
+
 ## [1.7.0] - 2026-02-20
 
 ### Added

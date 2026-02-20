@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { logger } from '../utils/logger.js'
+import { notifyServerError } from '../utils/error-webhook.js'
 
 export class AppError extends Error {
   statusCode: number
@@ -69,7 +70,12 @@ export const errorHandler = (
     }
   }
 
-  // Handle unknown errors
+  // Handle unknown errors (500)
+  // Send error notification to webhook for server errors
+  notifyServerError(err, { path: req.path, method: req.method }).catch(webhookErr => {
+    logger.error('[ErrorHandler] Failed to send error webhook:', webhookErr)
+  })
+
   res.status(500).json({
     success: false,
     error: {

@@ -3,7 +3,7 @@
   "info": {
     "title": "Chore-Ganizer API",
     "description": "Family-friendly chore management system API",
-    "version": "1.0.0",
+    "version": "1.8.0",
     "contact": {
       "name": "Chore-Ganizer"
     }
@@ -72,8 +72,8 @@
     "/health": {
       "get": {
         "tags": ["Health"],
-        "summary": "Health check",
-        "description": "Check if the API is running",
+        "summary": "Full health check",
+        "description": "Check API health including database, memory, and disk metrics. Returns 503 if status is error or degraded.",
         "operationId": "healthCheck",
         "responses": {
           "200": {
@@ -81,7 +81,67 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HealthResponse"
+                  "$ref": "#/components/schemas/EnhancedHealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "API is degraded or unhealthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnhancedHealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Liveness probe",
+        "description": "Kubernetes-style liveness probe - checks if the server is running",
+        "operationId": "livenessCheck",
+        "responses": {
+          "200": {
+            "description": "Server is alive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivenessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Readiness probe",
+        "description": "Kubernetes-style readiness probe - checks if the server is ready to accept requests (database connectivity)",
+        "operationId": "readinessCheck",
+        "responses": {
+          "200": {
+            "description": "Server is ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Server is not ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
                 }
               }
             }
@@ -3106,6 +3166,141 @@
                 "format": "date-time"
               }
             }
+          }
+        }
+      },
+      "EnhancedHealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok", "degraded", "error"],
+            "example": "ok"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "string",
+            "example": "1.8.0"
+          },
+          "uptime": {
+            "type": "integer",
+            "description": "Server uptime in seconds",
+            "example": 3600
+          },
+          "checks": {
+            "type": "object",
+            "properties": {
+              "database": {
+                "$ref": "#/components/schemas/DatabaseCheck"
+              },
+              "memory": {
+                "$ref": "#/components/schemas/MemoryCheck"
+              },
+              "disk": {
+                "$ref": "#/components/schemas/DiskCheck"
+              }
+            }
+          }
+        }
+      },
+      "DatabaseCheck": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["connected", "error"],
+            "example": "connected"
+          },
+          "latency": {
+            "type": "integer",
+            "description": "Database query latency in milliseconds",
+            "example": 1
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Error message if status is error"
+          }
+        }
+      },
+      "MemoryCheck": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok", "warning", "critical"],
+            "example": "ok"
+          },
+          "used": {
+            "type": "integer",
+            "description": "Used memory in MB",
+            "example": 4600
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total memory in MB",
+            "example": 11955
+          },
+          "percentage": {
+            "type": "number",
+            "description": "Memory usage percentage",
+            "example": 38.49
+          }
+        }
+      },
+      "DiskCheck": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok", "warning", "critical"],
+            "example": "ok"
+          },
+          "used": {
+            "type": "integer",
+            "description": "Used disk space in MB",
+            "example": 0
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total disk space in MB",
+            "example": 10240
+          },
+          "percentage": {
+            "type": "number",
+            "description": "Disk usage percentage",
+            "example": 0
+          },
+          "path": {
+            "type": "string",
+            "description": "Data directory path",
+            "example": "/app/data"
+          }
+        }
+      },
+      "LivenessResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "alive"
+          }
+        }
+      },
+      "ReadinessResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ready"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Error message if not ready"
           }
         }
       },

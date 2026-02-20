@@ -16,8 +16,10 @@ import { VERSION, BUILD_DATE, FULL_VERSION } from '../version.js'
 
 const router = Router()
 
-// Health check (no authentication required)
+// Health check endpoints (no authentication required)
 router.get('/health', asyncHandler(healthController.healthCheck))
+router.get('/health/live', healthController.livenessCheck)
+router.get('/health/ready', asyncHandler(healthController.readinessCheck))
 
 // Version endpoint (no authentication required)
 router.get('/version', (_req: Request, res: Response) => {

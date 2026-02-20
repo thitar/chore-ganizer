@@ -2,10 +2,7 @@
 # ============================================
 # Cron jobs for automated backup tasks
 
-# Run backup daily at 2 AM
-0 2 * * * root /app/backup.sh >> /var/log/backup.log 2>&1
-
-# Test restore weekly on Sunday at 3 AM
-0 3 * * 0 root /app/restore-test.sh >> /var/log/backup-restore-test.log 2>&1
+# Run backup daily at 2 AM, then verify the backup
+0 2 * * * root /app/backup.sh && /app/restore-test.sh >> /var/log/backup.log 2>&1
 
 # Leave this line at the end - required for cron
