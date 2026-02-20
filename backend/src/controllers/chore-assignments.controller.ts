@@ -4,6 +4,8 @@ import * as templatesService from '../services/chore-templates.service.js'
 import * as notificationsService from '../services/notifications.service.js'
 import * as notificationSettingsService from '../services/notification-settings.service.js'
 import { AppError } from '../middleware/errorHandler.js'
+import * as auditService from '../services/audit.service.js'
+import { AUDIT_ACTIONS } from '../constants/audit-actions.js'
 
 /**
  * GET /api/chore-assignments
@@ -147,6 +149,18 @@ export const createAssignment = async (req: Request, res: Response) => {
     }
   )
 
+  // Log chore assignment
+  const context = auditService.getAuditContext(req)
+  await auditService.createAuditLog({
+    userId: req.user!.id,
+    action: AUDIT_ACTIONS.CHORE_ASSIGNED,
+    entityType: 'ChoreAssignment',
+    entityId: assignment.id,
+    newValue: { choreTemplateId, assignedToId, dueDate },
+    ipAddress: context.ipAddress,
+    userAgent: context.userAgent,
+  })
+
   res.status(201).json({
     success: true,
     data: { assignment },
@@ -178,6 +192,19 @@ export const updateAssignment = async (req: Request, res: Response) => {
   if (assignedToId) updateData.assignedToId = assignedToId
 
   const assignment = await assignmentsService.updateAssignment(assignmentId, updateData)
+
+  // Log chore update
+  const context = auditService.getAuditContext(req)
+  await auditService.createAuditLog({
+    userId: req.user!.id,
+    action: AUDIT_ACTIONS.CHORE_UPDATED,
+    entityType: 'ChoreAssignment',
+    entityId: assignmentId,
+    oldValue: { dueDate: existing.dueDate, notes: existing.notes, assignedToId: existing.assignedToId },
+    newValue: { dueDate, notes, assignedToId },
+    ipAddress: context.ipAddress,
+    userAgent: context.userAgent,
+  })
 
   res.json({
     success: true,

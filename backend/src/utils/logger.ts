@@ -17,7 +17,7 @@ export const logger = winston.createLogger({
   ),
   defaultMeta: { 
     service: 'chore-ganizer-backend',
-    version: process.env.APP_VERSION || '1.4.0'
+    version: process.env.APP_VERSION || '1.5.0'
   },
   transports: [
     new winston.transports.Console({

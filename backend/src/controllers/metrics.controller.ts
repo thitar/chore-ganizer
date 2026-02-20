@@ -15,6 +15,6 @@ export const getHealth = async (_req: Request, res: Response) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    version: process.env.APP_VERSION || '1.4.0'
+    version: process.env.APP_VERSION || '1.5.0'
   });
 };

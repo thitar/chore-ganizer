@@ -341,3 +341,25 @@ model ChoreOccurrence {
   @@index([dueDate])
   @@index([status])
 }
+
+// ============================================
+// Audit Logging
+// ============================================
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int      // User who performed the action
+  action      String   // Action type (e.g., USER_LOGIN, CHORE_CREATED)
+  entityType  String   // Type of entity affected (e.g., User, ChoreAssignment, Payout)
+  entityId    Int?     // ID of the affected entity
+  oldValue    String?  // JSON string of previous value
+  newValue    String?  // JSON string of new value
+  ipAddress   String?  // Client IP address
+  userAgent   String?  // Client user agent
+  timestamp   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([timestamp])
+}

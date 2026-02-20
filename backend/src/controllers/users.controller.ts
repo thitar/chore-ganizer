@@ -1,6 +1,8 @@
 import { Request, Response } from 'express'
 import * as usersService from '../services/users.service.js'
 import { AppError } from '../middleware/errorHandler.js'
+import * as auditService from '../services/audit.service.js'
+import { AUDIT_ACTIONS } from '../constants/audit-actions.js'
 
 /**
  * GET /api/users
@@ -83,6 +85,18 @@ export const updateUser = async (req: Request, res: Response) => {
   }
 
   const user = await usersService.updateUser(userId, { name, role, color, email, basePocketMoney })
+
+  // Log user update
+  const context = auditService.getAuditContext(req)
+  await auditService.createAuditLog({
+    userId: req.user!.id,
+    action: AUDIT_ACTIONS.USER_UPDATED,
+    entityType: 'User',
+    entityId: userId,
+    newValue: { name, role, color, email, basePocketMoney },
+    ipAddress: context.ipAddress,
+    userAgent: context.userAgent,
+  })
 
   // Debug logging for response
   console.log('[UsersController] Update user response:', {

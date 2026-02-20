@@ -16,7 +16,7 @@ window.APP_CONFIG = {
   // Debug mode - enable console logging
   debug: ${VITE_DEBUG:-false},
   // Application version
-  appVersion: '${VITE_APP_VERSION:-1.2.3}'
+  appVersion: '${VITE_APP_VERSION:-1.5.0}'
 };
 EOF
 

@@ -2,6 +2,9 @@ import { Request, Response } from 'express'
 import * as authService from '../services/auth.service.js'
 import { unlockAccount, isLocked } from '../utils/lockout.js'
 import { AppError } from '../middleware/errorHandler.js'
+import * as auditService from '../services/audit.service.js'
+import { AUDIT_ACTIONS } from '../constants/audit-actions.js'
+import prisma from '../config/database.js'
 
 /**
  * POST /api/auth/register
@@ -41,23 +44,41 @@ export const login = async (req: Request, res: Response) => {
     throw new AppError('Email and password are required', 400, 'VALIDATION_ERROR')
   }
 
-  const result = await authService.login({ email, password })
+  try {
+    const result = await authService.login({ email, password })
 
-  // Set session
-  req.session.userId = result.user.id
+    // Set session
+    req.session.userId = result.user.id
 
-  // Debug logging
-  if (process.env.LOG_LEVEL === 'debug') {
-    console.log('[Login] Session set for user:', result.user.id)
-    console.log('[Login] Session ID:', req.sessionID)
-    console.log('[Login] X-Forwarded-Proto:', req.headers['x-forwarded-proto'])
-    console.log('[Login] Secure cookies enabled:', process.env.SECURE_COOKIES)
+    // Log successful login
+    auditService.logLogin(req, result.user.id, true)
+
+    // Debug logging
+    if (process.env.LOG_LEVEL === 'debug') {
+      console.log('[Login] Session set for user:', result.user.id)
+      console.log('[Login] Session ID:', req.sessionID)
+      console.log('[Login] X-Forwarded-Proto:', req.headers['x-forwarded-proto'])
+      console.log('[Login] Secure cookies enabled:', process.env.SECURE_COOKIES)
+    }
+
+    res.json({
+      success: true,
+      data: result,
+    })
+  } catch (error: any) {
+    // Log failed login attempt
+    if (error instanceof AppError && error.statusCode === 401) {
+      try {
+        const user = await prisma.user.findUnique({ where: { email } })
+        if (user) {
+          auditService.logLogin(req, user.id, false)
+        }
+      } catch {
+        // Ignore errors when looking up user for audit
+      }
+    }
+    throw error
   }
-
-  res.json({
-    success: true,
-    data: result,
-  })
 }
 
 /**
@@ -65,9 +86,16 @@ export const login = async (req: Request, res: Response) => {
  * Logout user and destroy session
  */
 export const logout = async (req: Request, res: Response) => {
+  const userId = req.user?.id
+
   req.session.destroy((err) => {
     if (err) {
       throw new AppError('Failed to logout', 500, 'INTERNAL_ERROR')
+    }
+
+    // Log successful logout
+    if (userId) {
+      auditService.logLogout(req, userId)
     }
 
     res.clearCookie('connect.sid')
@@ -139,6 +167,17 @@ export const unlock = async (req: Request, res: Response) => {
 
   // Unlock the account
   await unlockAccount(parsedUserId)
+
+  // Log account unlock
+  const context = auditService.getAuditContext(req)
+  await auditService.createAuditLog({
+    userId: req.user.id,
+    action: AUDIT_ACTIONS.ACCOUNT_UNLOCKED_BY_ADMIN,
+    entityType: 'User',
+    entityId: parsedUserId,
+    ipAddress: context.ipAddress,
+    userAgent: context.userAgent,
+  })
 
   res.json({
     success: true,

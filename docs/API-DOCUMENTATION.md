@@ -17,6 +17,7 @@ Complete REST API reference for Chore-Ganizer backend.
    - [Chore Assignments](#chore-assignments-endpoints)
    - [Chore Categories](#chore-categories-endpoints)
    - [Notifications](#notifications-endpoints)
+   - [Audit Logs](#audit-logs-endpoints)
    - [Health](#health-endpoints)
 
 ---
@@ -646,6 +647,61 @@ Mark all notifications as read for the current user.
   }
 }
 ```
+
+---
+
+### Audit Logs Endpoints
+
+#### GET `/api/audit`
+
+Get audit logs (parents only).
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `userId` | number | Filter by user ID |
+| `action` | string | Filter by action type (e.g., USER_LOGIN, CHORE_COMPLETED) |
+| `entityType` | string | Filter by entity type (e.g., User, ChoreAssignment) |
+| `startDate` | string | Filter by start date (ISO 8601) |
+| `endDate` | string | Filter by end date (ISO 8601) |
+| `page` | number | Page number (default: 1) |
+| `limit` | number | Items per page (default: 50) |
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "logs": [
+      {
+        "id": 1,
+        "userId": 2,
+        "action": "USER_LOGIN",
+        "entityType": "User",
+        "entityId": 2,
+        "oldValue": null,
+        "newValue": null,
+        "ipAddress": "192.168.1.1",
+        "userAgent": "Mozilla/5.0...",
+        "timestamp": "2026-02-19T12:00:00.000Z"
+      }
+    ],
+    "total": 100,
+    "page": 1,
+    "limit": 50,
+    "totalPages": 2
+  }
+}
+```
+
+**Action Types:**
+- `USER_LOGIN`, `USER_LOGOUT`, `USER_LOGIN_FAILED`
+- `USER_CREATED`, `USER_UPDATED`, `USER_DELETED`
+- `CHORE_ASSIGNED`, `CHORE_COMPLETED`, `CHORE_UPDATED`, `CHORE_DELETED`
+- `RECURRING_CHORE_CREATED`, `RECURRING_CHORE_UPDATED`, `RECURRING_CHORE_DELETED`
+- `PAYOUT_CREATED`, `PAYOUT_UPDATED`, `PAYOUT_CANCELLED`
+- `POINTS_BONUS_ADDED`, `POINTS_DEDUCTION_ADDED`
+- `ACCOUNT_LOCKED`, `ACCOUNT_UNLOCKED`, `ACCOUNT_UNLOCKED_BY_ADMIN`
 
 ---
 

@@ -12,7 +12,7 @@ services:
       dockerfile: Dockerfile
       args:
         # Build-time args (only for initial build)
-        - VITE_APP_VERSION=${APP_VERSION:-1.2.3}
+        - VITE_APP_VERSION=${APP_VERSION:-1.5.0}
     container_name: chore-ganizer-frontend
     restart: unless-stopped
     ports:
@@ -21,7 +21,7 @@ services:
       # Runtime configuration (injected at container start)
       - VITE_API_URL=${VITE_API_URL:-}
       - VITE_DEBUG=${VITE_DEBUG:-false}
-      - VITE_APP_VERSION=${APP_VERSION:-1.2.3}
+      - VITE_APP_VERSION=${APP_VERSION:-1.5.0}
     depends_on:
       - backend
     networks:

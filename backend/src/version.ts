@@ -9,6 +9,6 @@
  * Version is read from APP_VERSION environment variable (single source of truth)
  */
 
-export const VERSION = process.env.APP_VERSION || '1.1.1';
+export const VERSION = process.env.APP_VERSION || '1.5.0';
 export const BUILD_DATE = new Date().toISOString().split('T')[0];
 export const FULL_VERSION = `${VERSION}+${BUILD_DATE.replace(/-/g, '')}`;
