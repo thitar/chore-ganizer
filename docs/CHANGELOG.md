@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-02-20
+
+### Added
+- **Backend Unit Tests** - Comprehensive test suite for services and middleware
+  - Tests for auth.service.ts (login, getUserById)
+  - Tests for users.service.ts (getAllUsers, getUserById, getUserAssignments, updateUser)
+  - Tests for chore-assignments.service.ts (CRUD operations, completion, filtering)
+  - Tests for notification-settings.service.ts (getOrCreate, updateSettings)
+  - Tests for auth middleware (authenticate, authorize)
+  - Test helpers with mock data fixtures
+
+### Changed
+- **CI/CD Pipeline** - Enhanced with test coverage reporting
+  - Coverage reports uploaded as artifacts
+  - Tests run with coverage on every push
+
+### Documentation
+- **Testing Guide** - New comprehensive testing documentation
+  - Test structure and organization
+  - Writing tests guide
+  - Best practices
+  - Troubleshooting
+
+---
+
 ## [1.6.2] - 2026-02-20
 
 ### Changed
