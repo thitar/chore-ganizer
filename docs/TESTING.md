@@ -4,7 +4,10 @@ This document describes the testing strategy, structure, and best practices for 
 
 ## Overview
 
-The Chore-Ganizer backend uses **Jest** as the testing framework with **ts-jest** for TypeScript support. Tests are organized by type (services, middleware, controllers) and use mocking to isolate units of code.
+The Chore-Ganizer backend uses **Jest** as the testing framework with **ts-jest** for TypeScript support. We have two types of tests:
+
+1. **Unit Tests** - Test individual functions/services in isolation using mocks
+2. **Integration Tests** - Test full API endpoints with a real test database
 
 ## Test Structure
 
@@ -12,17 +15,29 @@ The Chore-Ganizer backend uses **Jest** as the testing framework with **ts-jest*
 backend/
 ├── src/
 │   ├── __tests__/
-│   │   ├── test-helpers.ts           # Shared test utilities and fixtures
+│   │   ├── utils/
+│   │   │   └── test-utils.ts           # Shared test utilities and fixtures
 │   │   ├── services/
-│   │   │   ├── auth.service.test.ts
 │   │   │   ├── users.service.test.ts
 │   │   │   ├── chore-assignments.service.test.ts
 │   │   │   └── notification-settings.service.test.ts
-│   │   └── middleware/
-│   │       └── auth.test.ts
+│   │   ├── middleware/
+│   │   │   └── auth.test.ts
+│   │   └── integration/
+│   │       ├── db-setup.ts             # Test database setup/teardown
+│   │       ├── api-helpers.ts          # API client helpers
+│   │       ├── jest-setup.ts           # Jest configuration for integration tests
+│   │       ├── global-setup.ts         # Runs once before all tests
+│   │       ├── global-teardown.ts      # Runs once after all tests
+│   │       ├── chore-templates.integration.test.ts
+│   │       ├── chore-assignments.integration.test.ts
+│   │       ├── users.integration.test.ts
+│   │       ├── recurring-chores.integration.test.ts
+│   │       └── pocket-money.integration.test.ts
 │   ├── services/
 │   ├── controllers/
 │   └── middleware/
+├── test-db/                            # Integration test database (gitignored)
 ├── jest.config.js
 └── package.json
 ```
@@ -30,14 +45,20 @@ backend/
 ## Running Tests
 
 ```bash
-# Run all tests
+# Run all unit tests
 npm test
 
-# Run tests in watch mode
+# Run unit tests in watch mode
 npm run test:watch
 
-# Run tests with coverage report
+# Run unit tests with coverage report
 npm run test:coverage
+
+# Run integration tests only
+npm run test:integration
+
+# Run all tests (unit + integration)
+npm run test:all
 
 # Run specific test file
 npm test -- --testPathPattern=users.service
@@ -204,6 +225,56 @@ describe('Users Controller', () => {
 })
 ```
 
+### 4. Integration Tests
+
+Integration tests use a real test database and make actual HTTP requests via supertest:
+
+```typescript
+import { setupTestDatabase, seedTestDatabase, teardownTestDatabase, TestData } from './db-setup.js'
+import { createApiClient, ApiClient } from './api-helpers.js'
+
+describe('Chore Templates API Integration Tests', () => {
+  let testData: TestData
+  let api: ApiClient
+
+  beforeAll(async () => {
+    await setupTestDatabase()
+    testData = await seedTestDatabase()
+  })
+
+  afterAll(async () => {
+    await teardownTestDatabase()
+  })
+
+  beforeEach(() => {
+    api = createApiClient()
+  })
+
+  describe('GET /api/chore-templates', () => {
+    it('should return all templates', async () => {
+      await api.login(testData.users.parent)
+      const response = await api.getTemplates()
+      expect(response.status).toBe(200)
+    })
+  })
+})
+```
+
+#### Integration Test Infrastructure
+
+- **db-setup.ts** - Creates test database, runs migrations, seeds test data
+- **api-helpers.ts** - `ApiClient` class with methods for all API endpoints
+- **global-setup.ts** - Runs once before all tests (creates test-db directory)
+- **global-teardown.ts** - Runs once after all tests (cleans up test database)
+- **jest-setup.ts** - Runs before each test file (sets timeouts, suppresses logs)
+
+#### Test Database
+
+Integration tests use a separate SQLite database at `test-db/integration-test.db`:
+- Created fresh for each test run
+- Seeded with consistent test data (family, users, categories, templates)
+- Automatically cleaned up after tests
+
 ## Best Practices
 
 ### 1. Isolate Units
@@ -253,13 +324,21 @@ Tests are automatically run in GitHub Actions:
 1. On every push to any branch
 2. On pull requests to main
 3. Coverage reports are uploaded as artifacts
+4. Integration tests run after unit tests
 
 ### Workflow Configuration
 
 ```yaml
-- name: Run tests with coverage
+- name: Run unit tests with coverage
   working-directory: backend
   run: npm run test:coverage
+
+- name: Run integration tests
+  working-directory: backend
+  run: npm run test:integration
+  env:
+    NODE_ENV: test
+    SESSION_SECRET: test-session-secret-for-ci
 
 - name: Upload coverage report
   uses: actions/upload-artifact@v4
@@ -302,7 +381,29 @@ Tests should never connect to a real database. Ensure:
 | Services | 80% | ~60% |
 | Middleware | 90% | 85% |
 | Controllers | 70% | 0% |
+| Integration Tests | 100% endpoints | ~150 test cases |
 | Overall | 75% | ~50% |
+
+## Integration Test Coverage
+
+The integration test suite covers:
+
+| API Area | Test File | Test Count |
+|----------|-----------|------------|
+| Chore Templates | `chore-templates.integration.test.ts` | ~30 tests |
+| Chore Assignments | `chore-assignments.integration.test.ts` | ~35 tests |
+| Users | `users.integration.test.ts` | ~30 tests |
+| Recurring Chores | `recurring-chores.integration.test.ts` | ~40 tests |
+| Pocket Money | `pocket-money.integration.test.ts` | ~25 tests |
+
+### Test Scenarios Covered
+
+- **Authentication & Authorization** - Session-based auth, role-based access
+- **CRUD Operations** - Create, Read, Update, Delete for all entities
+- **Validation** - Required fields, type validation, business rules
+- **Edge Cases** - Empty data, large values, special characters
+- **Business Logic** - Points awarding, round-robin assignment, recurrence generation
+- **Error Handling** - 404, 403, 400, 500 responses
 
 ---
 
