@@ -5,6 +5,16 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-02-21
+
+### Fixed
+- CI/CD pipeline coverage test failures
+  - Separated Jest configurations for unit tests and integration tests
+  - Created `jest.integration.config.js` for integration tests with proper setup/teardown
+  - Modified `jest.config.js` to exclude integration tests from unit test runs
+  - Updated npm scripts to use correct configuration for each test type
+  - Integration tests now run serially with `--runInBand` to avoid database conflicts
+
 ## [1.4.0] - 2026-02-17
 
 ### Added

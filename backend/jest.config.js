@@ -1,8 +1,20 @@
+/**
+ * Jest Configuration for Unit Tests
+ * 
+ * This configuration is for unit tests only. Integration tests use a separate
+ * configuration (jest.integration.config.js) to avoid conflicts with database
+ * setup and to allow parallel execution of unit tests.
+ * 
+ * For integration tests, use: npm run test:integration
+ */
+
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.test.ts', '**/?(*.)+(spec|test).ts'],
+  // Exclude integration tests from unit test runs
+  testPathIgnorePatterns: ['/integration/'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.test.ts',
@@ -19,11 +31,6 @@ module.exports = {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
-  // Integration tests need longer timeouts
-  testTimeout: 30000,
-  // Setup files for integration tests
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/integration/jest-setup.ts'],
-  // Global setup/teardown for integration tests
-  globalSetup: '<rootDir>/src/__tests__/integration/global-setup.ts',
-  globalTeardown: '<rootDir>/src/__tests__/integration/global-teardown.ts',
+  // Standard timeout for unit tests
+  testTimeout: 10000,
 };

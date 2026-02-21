@@ -9,6 +9,10 @@ The Chore-Ganizer backend uses **Jest** as the testing framework with **ts-jest*
 1. **Unit Tests** - Test individual functions/services in isolation using mocks
 2. **Integration Tests** - Test full API endpoints with a real test database
 
+**Important:** Unit tests and integration tests use separate Jest configurations to avoid conflicts:
+- Unit tests: `jest.config.js` (excludes integration tests)
+- Integration tests: `jest.integration.config.js` (includes global setup/teardown)
+
 ## Test Structure
 
 ```
@@ -38,7 +42,8 @@ backend/
 │   ├── controllers/
 │   └── middleware/
 ├── test-db/                            # Integration test database (gitignored)
-├── jest.config.js
+├── jest.config.js                      # Unit test configuration
+├── jest.integration.config.js          # Integration test configuration
 └── package.json
 ```
 
@@ -54,7 +59,7 @@ npm run test:watch
 # Run unit tests with coverage report
 npm run test:coverage
 
-# Run integration tests only
+# Run integration tests only (runs serially to avoid database conflicts)
 npm run test:integration
 
 # Run all tests (unit + integration)
