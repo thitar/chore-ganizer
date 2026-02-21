@@ -5,6 +5,23 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-02-21
+
+### Fixed
+- Version number synchronization across all project files
+  - Aligned backend/package.json version with .env APP_VERSION
+  - Aligned frontend/package.json version with .env APP_VERSION
+  - Updated version.ts fallback value to match current version
+  - CHANGELOG now reflects the actual application version (1.8.0)
+
+## [1.0.2] - 2026-02-21
+
+### Fixed
+- CI/CD pipeline frontend test failures
+  - Changed frontend test script from `vitest` (watch mode) to `vitest run` (single run mode)
+  - Vitest was running in watch mode by default, causing CI pipeline to hang indefinitely
+  - Tests now complete and exit properly in CI environment
+
 ## [1.0.1] - 2026-02-21
 
 ### Fixed
@@ -14,6 +31,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Modified `jest.config.js` to exclude integration tests from unit test runs
   - Updated npm scripts to use correct configuration for each test type
   - Integration tests now run serially with `--runInBand` to avoid database conflicts
+
+### Added
+- Dependabot configuration for automated dependency scanning
+  - Weekly checks for npm dependencies (backend and frontend)
+  - Monthly checks for GitHub Actions and Docker base images
+  - Automatic grouping of minor and patch updates
+  - Proper labeling and reviewer assignment for PRs
 
 ## [1.4.0] - 2026-02-17
 
