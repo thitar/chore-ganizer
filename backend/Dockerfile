@@ -2,7 +2,7 @@
 # Multi-stage build for optimized production image
 
 # Stage 1: Build
-FROM node:20-slim AS builder
+FROM node:25-slim AS builder
 
 WORKDIR /app
 
@@ -26,7 +26,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Stage 2: Production
-FROM node:20-slim AS production
+FROM node:25-slim AS production
 
 WORKDIR /app
 
