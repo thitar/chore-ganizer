@@ -1,4 +1,5 @@
 import prisma from '../config/database.js'
+import { getFromCache, setInCache, removeFromCache, CACHE_KEYS, CACHE_TTL } from '../utils/cache.js'
 
 export interface CreateTemplateData {
   title: string
@@ -46,6 +47,12 @@ export interface TemplateWithCreator {
  * Get all chore templates
  */
 export const getAllTemplates = async (): Promise<TemplateWithCreator[]> => {
+  // Check cache first
+  const cachedTemplates = getFromCache<TemplateWithCreator[]>(CACHE_KEYS.CHORE_TEMPLATES)
+  if (cachedTemplates) {
+    return cachedTemplates
+  }
+
   const templates = await prisma.choreTemplate.findMany({
     include: {
       createdBy: {
@@ -71,7 +78,12 @@ export const getAllTemplates = async (): Promise<TemplateWithCreator[]> => {
     },
   })
 
-  return templates as TemplateWithCreator[]
+  const result = templates as TemplateWithCreator[]
+  
+  // Cache the results
+  setInCache(CACHE_KEYS.CHORE_TEMPLATES, result, CACHE_TTL.MEDIUM)
+
+  return result
 }
 
 /**
@@ -137,6 +149,9 @@ export const createTemplate = async (
     },
   })
 
+  // Invalidate cache after creating a new template
+  removeFromCache(CACHE_KEYS.CHORE_TEMPLATES)
+
   return template as TemplateWithCreator
 }
 
@@ -175,6 +190,9 @@ export const updateTemplate = async (
     },
   })
 
+  // Invalidate cache after updating a template
+  removeFromCache(CACHE_KEYS.CHORE_TEMPLATES)
+
   return template as TemplateWithCreator
 }
 
@@ -185,4 +203,7 @@ export const deleteTemplate = async (templateId: number): Promise<void> => {
   await prisma.choreTemplate.delete({
     where: { id: templateId },
   })
+
+  // Invalidate cache after deleting a template
+  removeFromCache(CACHE_KEYS.CHORE_TEMPLATES)
 }

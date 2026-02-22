@@ -11,96 +11,99 @@ datasource db {
 }
 
 model User {
-  id                   Int                      @id @default(autoincrement())
-  email                String                   @unique
+  id                   Int                       @id @default(autoincrement())
+  email                String                    @unique
   password             String
   name                 String
-  role                 String                   @default("CHILD")
-  points               Int                      @default(0)
-  basePocketMoney      Float                    @default(0) // Base pocket money amount in euros
-  color                String?                  @default("#3B82F6") // User's calendar color
-  createdAt            DateTime                 @default(now())
-  createdTemplates     ChoreTemplate[]          @relation("CreatedTemplates")
-  assignedChores       ChoreAssignment[]        @relation("AssignedTo")
-  assignedByChores     ChoreAssignment[]        @relation("AssignedBy")
+  role                 String                    @default("CHILD")
+  points               Int                       @default(0)
+  basePocketMoney      Float                     @default(0) // Base pocket money amount in euros
+  color                String?                   @default("#3B82F6") // User's calendar color
+  createdAt            DateTime                  @default(now())
+  createdTemplates     ChoreTemplate[]           @relation("CreatedTemplates")
+  assignedChores       ChoreAssignment[]         @relation("AssignedTo")
+  assignedByChores     ChoreAssignment[]         @relation("AssignedBy")
   notifications        Notification[]
   notificationSettings UserNotificationSettings?
-  
+
   // Recurring chore relations
-  createdRecurringChores  RecurringChore[]           @relation("CreatedRecurringChores")
-  fixedRecurringChores    RecurringChoreFixedAssignee[]
-  roundRobinChores        RecurringChoreRoundRobinPool[]
-  completedOccurrences    ChoreOccurrence[]          @relation("CompletedOccurrences")
-  skippedOccurrences      ChoreOccurrence[]          @relation("SkippedOccurrences")
-  
+  createdRecurringChores RecurringChore[]               @relation("CreatedRecurringChores")
+  fixedRecurringChores   RecurringChoreFixedAssignee[]
+  roundRobinChores       RecurringChoreRoundRobinPool[]
+  completedOccurrences   ChoreOccurrence[]              @relation("CompletedOccurrences")
+  skippedOccurrences     ChoreOccurrence[]              @relation("SkippedOccurrences")
+
   // Pocket Money System relations
-  pointTransactions  PointTransaction[] @relation("UserTransactions")
-  payouts            Payout[]
-  givenTransactions  PointTransaction[] @relation("RelatedUserTransactions")
-  
+  pointTransactions PointTransaction[] @relation("UserTransactions")
+  payouts           Payout[]
+  givenTransactions PointTransaction[] @relation("RelatedUserTransactions")
+
   // Family relation
-  familyId           String?
-  family             Family?            @relation(fields: [familyId], references: [id], onDelete: SetNull)
-  
+  familyId String?
+  family   Family? @relation(fields: [familyId], references: [id], onDelete: SetNull)
+
   // Account lockout fields
-  failedLoginAttempts Int                      @default(0)
+  failedLoginAttempts Int       @default(0)
   lockoutUntil        DateTime?
   lockedAt            DateTime?
 }
 
 model ChoreCategory {
-  id          Int              @id @default(autoincrement())
-  name        String
-  description String?
-  icon        String?
-  color       String?
-  templates   ChoreTemplate[]
+  id              Int              @id @default(autoincrement())
+  name            String
+  description     String?
+  icon            String?
+  color           String?
+  templates       ChoreTemplate[]
   recurringChores RecurringChore[] @relation("RecurringChoreCategory")
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@unique([name])
 }
 
 model ChoreTemplate {
-  id          Int              @id @default(autoincrement())
+  id          Int               @id @default(autoincrement())
   title       String
   description String?
   points      Int
   icon        String?
   color       String?
   categoryId  Int?
-  category    ChoreCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category    ChoreCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   createdById Int
-  createdBy   User             @relation("CreatedTemplates", fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy   User              @relation("CreatedTemplates", fields: [createdById], references: [id], onDelete: Cascade)
   assignments ChoreAssignment[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@index([createdById])
   @@index([categoryId])
 }
 
 model ChoreAssignment {
-  id              Int          @id @default(autoincrement())
+  id              Int           @id @default(autoincrement())
   choreTemplateId Int
   choreTemplate   ChoreTemplate @relation(fields: [choreTemplateId], references: [id], onDelete: Cascade)
   assignedToId    Int
-  assignedTo      User         @relation("AssignedTo", fields: [assignedToId], references: [id], onDelete: Cascade)
+  assignedTo      User          @relation("AssignedTo", fields: [assignedToId], references: [id], onDelete: Cascade)
   assignedById    Int
-  assignedBy      User         @relation("AssignedBy", fields: [assignedById], references: [id], onDelete: Cascade)
+  assignedBy      User          @relation("AssignedBy", fields: [assignedById], references: [id], onDelete: Cascade)
   dueDate         DateTime
-  status          String       @default("PENDING")
+  status          String        @default("PENDING")
   notes           String?
-  createdAt       DateTime     @default(now())
+  createdAt       DateTime      @default(now())
   completedAt     DateTime?
-  penaltyApplied  Boolean      @default(false) // Whether overdue penalty has been applied
-  penaltyPoints   Int?         // Points deducted if penalty was applied
+  penaltyApplied  Boolean       @default(false) // Whether overdue penalty has been applied
+  penaltyPoints   Int? // Points deducted if penalty was applied
 
   @@index([assignedToId])
   @@index([dueDate])
   @@index([status])
   @@index([penaltyApplied])
+  @@index([assignedToId, dueDate]) // For calendar views
+  @@index([assignedToId, status]) // For user dashboard
+  @@index([status, dueDate]) // For overdue detection
 }
 
 model Notification {
@@ -120,18 +123,18 @@ model UserNotificationSettings {
   id                       Int      @id @default(autoincrement())
   userId                   Int      @unique
   user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ntfyTopic                String?  // User's ntfy topic for push notifications
+  ntfyTopic                String? // User's ntfy topic for push notifications
   ntfyServerUrl            String?  @default("https://ntfy.sh") // ntfy server URL
-  ntfyUsername             String?  // Optional username for ntfy authentication
-  ntfyPassword             String?  // Optional password for ntfy authentication
+  ntfyUsername             String? // Optional username for ntfy authentication
+  ntfyPassword             String? // Optional password for ntfy authentication
   notifyChoreAssigned      Boolean  @default(true)
   notifyChoreDueSoon       Boolean  @default(true)
   notifyChoreCompleted     Boolean  @default(true)
   notifyChoreOverdue       Boolean  @default(true)
   notifyPointsEarned       Boolean  @default(true)
   reminderHoursBefore      Int      @default(2) // Hours before due date to send reminder
-  quietHoursStart          Int?     // Hour of day (0-23) to start quiet hours
-  quietHoursEnd            Int?     // Hour of day (0-23) to end quiet hours
+  quietHoursStart          Int? // Hour of day (0-23) to start quiet hours
+  quietHoursEnd            Int? // Hour of day (0-23) to end quiet hours
   // Overdue penalty settings (parent configurable)
   overduePenaltyEnabled    Boolean  @default(true) // Whether to apply penalties for overdue chores
   overduePenaltyMultiplier Int      @default(2) // Multiplier for penalty (penalty = -multiplier * chore points)
@@ -147,14 +150,14 @@ model UserNotificationSettings {
 // ============================================
 
 model Family {
-  id              String   @id @default(uuid())
-  name            String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
   pocketMoneyConfig PocketMoneyConfig?
-  members         User[]
+  members           User[]
 }
 
 // ============================================
@@ -163,18 +166,18 @@ model Family {
 // Note: Using String instead of enums because SQLite doesn't support enums
 
 model PocketMoneyConfig {
-  id              Int      @id @default(autoincrement())
-  familyId        String   @unique
-  pointValue      Int      @default(10)  // cents per point (10 = €0.10)
-  currency        String   @default("EUR")
-  payoutPeriod    String   @default("MONTHLY") // WEEKLY or MONTHLY
-  payoutDay       Int      @default(15)   // 1-28 for monthly, 0-6 for weekly (0=Sunday)
-  allowAdvance    Boolean  @default(true)
-  maxAdvancePoints Int     @default(50)   // max points that can be advanced
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  family          Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  id               Int      @id @default(autoincrement())
+  familyId         String   @unique
+  pointValue       Int      @default(10) // cents per point (10 = €0.10)
+  currency         String   @default("EUR")
+  payoutPeriod     String   @default("MONTHLY") // WEEKLY or MONTHLY
+  payoutDay        Int      @default(15) // 1-28 for monthly, 0-6 for weekly (0=Sunday)
+  allowAdvance     Boolean  @default(true)
+  maxAdvancePoints Int      @default(50) // max points that can be advanced
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
 }
 
 // Transaction types as strings (not enums for SQLite compatibility)
@@ -187,39 +190,40 @@ model PocketMoneyConfig {
 // ADJUSTMENT - manual adjustment
 
 model PointTransaction {
-  id                Int              @id @default(autoincrement())
+  id                Int      @id @default(autoincrement())
   userId            Int
-  type              String           // TransactionType as string
-  amount            Int              // positive for earned/bonus, negative for deductions
+  type              String // TransactionType as string
+  amount            Int // positive for earned/bonus, negative for deductions
   description       String?
-  choreAssignmentId Int?             // optional link to chore that generated points (no relation)
-  relatedUserId     Int?             // for bonus/deduction: who gave it
-  createdAt        DateTime         @default(now())
-  
-  user              User             @relation("UserTransactions", fields: [userId], references: [id], onDelete: Cascade)
-  relatedUser       User?            @relation("RelatedUserTransactions", fields: [relatedUserId], references: [id], onDelete: SetNull)
-  
+  choreAssignmentId Int? // optional link to chore that generated points (no relation)
+  relatedUserId     Int? // for bonus/deduction: who gave it
+  createdAt         DateTime @default(now())
+
+  user        User  @relation("UserTransactions", fields: [userId], references: [id], onDelete: Cascade)
+  relatedUser User? @relation("RelatedUserTransactions", fields: [relatedUserId], references: [id], onDelete: SetNull)
+
   @@index([userId])
   @@index([type])
   @@index([createdAt])
+  @@index([userId, createdAt]) // For transaction history queries
 }
 
 // Payout status as string (not enum for SQLite compatibility)
 // PENDING, PAID, CANCELLED
 
 model Payout {
-  id              Int         @id @default(autoincrement())
-  userId          Int
-  periodStart     DateTime
-  periodEnd       DateTime
-  points          Int
-  amount          Int         // in cents
-  status          String      @default("PENDING") // PayoutStatus as string
-  paidAt          DateTime?
-  createdAt       DateTime   @default(now())
-  
-  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  periodStart DateTime
+  periodEnd   DateTime
+  points      Int
+  amount      Int // in cents
+  status      String    @default("PENDING") // PayoutStatus as string
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([status])
 }
@@ -230,52 +234,53 @@ model Payout {
 
 // Recurring Chore - stores the definition of a recurring chore
 model RecurringChore {
-  id              Int                 @id @default(autoincrement())
-  title           String
-  description     String?
-  points          Int                 @default(1)
-  icon            String?
-  color           String?
-  categoryId      Int?
-  category        ChoreCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull, name: "RecurringChoreCategory")
-  createdById     Int
-  createdBy       User                @relation("CreatedRecurringChores", fields: [createdById], references: [id], onDelete: Cascade)
-  
+  id          Int            @id @default(autoincrement())
+  title       String
+  description String?
+  points      Int            @default(1)
+  icon        String?
+  color       String?
+  categoryId  Int?
+  category    ChoreCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull, name: "RecurringChoreCategory")
+  createdById Int
+  createdBy   User           @relation("CreatedRecurringChores", fields: [createdById], references: [id], onDelete: Cascade)
+
   // Start date for the recurring chore
-  startDate       DateTime            @default(now())
-  
+  startDate DateTime @default(now())
+
   // Recurrence pattern stored as JSON string
   // Structure: { frequency: 'DAILY'|'WEEKLY'|'MONTHLY'|'YEARLY', interval: number, byDayOfWeek?: number[], byDayOfMonth?: number, byNthWeekday?: { weekday: number, nth: number } }
-  recurrenceRule  String              // JSON string
-  
+  recurrenceRule String // JSON string
+
   // Assignment configuration
-  assignmentMode  String              // "FIXED", "ROUND_ROBIN", "MIXED"
-  
+  assignmentMode String // "FIXED", "ROUND_ROBIN", "MIXED"
+
   // Track if recurring chore is active (can be deactivated to stop future occurrences)
-  isActive        Boolean             @default(true)
-  
+  isActive Boolean @default(true)
+
   // Timestamps
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  fixedAssignees  RecurringChoreFixedAssignee[]
-  roundRobinPool  RecurringChoreRoundRobinPool[]
-  occurrences     ChoreOccurrence[]
-  
+  fixedAssignees RecurringChoreFixedAssignee[]
+  roundRobinPool RecurringChoreRoundRobinPool[]
+  occurrences    ChoreOccurrence[]
+
   @@index([createdById])
   @@index([categoryId])
   @@index([isActive])
+  @@index([createdById, isActive]) // For active recurring chores by user
 }
 
 // Junction table for fixed assignees (children who are always assigned to this chore)
 model RecurringChoreFixedAssignee {
-  id              Int           @id @default(autoincrement())
+  id               Int            @id @default(autoincrement())
   recurringChoreId Int
-  recurringChore  RecurringChore @relation(fields: [recurringChoreId], references: [id], onDelete: Cascade)
-  userId          Int
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  recurringChore   RecurringChore @relation(fields: [recurringChoreId], references: [id], onDelete: Cascade)
+  userId           Int
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([recurringChoreId, userId])
   @@index([recurringChoreId])
   @@index([userId])
@@ -283,13 +288,13 @@ model RecurringChoreFixedAssignee {
 
 // Junction table for round-robin pool members with rotation order
 model RecurringChoreRoundRobinPool {
-  id              Int           @id @default(autoincrement())
+  id               Int            @id @default(autoincrement())
   recurringChoreId Int
-  recurringChore  RecurringChore @relation(fields: [recurringChoreId], references: [id], onDelete: Cascade)
-  userId          Int
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  order           Int           // Order in the rotation (0-indexed)
-  
+  recurringChore   RecurringChore @relation(fields: [recurringChoreId], references: [id], onDelete: Cascade)
+  userId           Int
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order            Int // Order in the rotation (0-indexed)
+
   @@unique([recurringChoreId, userId])
   @@index([recurringChoreId])
   @@index([userId])
@@ -297,45 +302,45 @@ model RecurringChoreRoundRobinPool {
 
 // Chore Occurrence - stores individual occurrences of recurring chores within the 30-day window
 model ChoreOccurrence {
-  id              Int           @id @default(autoincrement())
+  id               Int            @id @default(autoincrement())
   recurringChoreId Int
-  recurringChore  RecurringChore @relation(fields: [recurringChoreId], references: [id], onDelete: Cascade)
-  
+  recurringChore   RecurringChore @relation(fields: [recurringChoreId], references: [id], onDelete: Cascade)
+
   // The specific date this occurrence is due
-  dueDate         DateTime
-  
+  dueDate DateTime
+
   // Current status: "PENDING", "COMPLETED", "SKIPPED"
-  status          String        @default("PENDING")
-  
+  status String @default("PENDING")
+
   // Assignment snapshot at generation time
   // For FIXED: same as recurring chore fixed assignees
   // For ROUND_ROBIN: current person in rotation
   // For MIXED: both fixed and current round-robin person
-  assignedUserIds String        // JSON string: Array of user IDs assigned to this occurrence
-  
+  assignedUserIds String // JSON string: Array of user IDs assigned to this occurrence
+
   // Round-robin state tracking
-  roundRobinIndex Int?          // Current index in rotation (for tracking)
-  
+  roundRobinIndex Int? // Current index in rotation (for tracking)
+
   // Completion tracking
-  completedAt     DateTime?
-  completedById   Int?          // User who marked as complete (could be parent or the child)
-  completedBy     User?         @relation("CompletedOccurrences", fields: [completedById], references: [id], onDelete: SetNull)
-  
+  completedAt   DateTime?
+  completedById Int? // User who marked as complete (could be parent or the child)
+  completedBy   User?     @relation("CompletedOccurrences", fields: [completedById], references: [id], onDelete: SetNull)
+
   // Skip tracking
-  skippedAt       DateTime?
-  skippedById     Int?
-  skippedBy       User?         @relation("SkippedOccurrences", fields: [skippedById], references: [id], onDelete: SetNull)
-  skipReason      String?
-  
+  skippedAt   DateTime?
+  skippedById Int?
+  skippedBy   User?     @relation("SkippedOccurrences", fields: [skippedById], references: [id], onDelete: SetNull)
+  skipReason  String?
+
   // Points awarded (snapshot from recurring chore at completion time)
-  pointsAwarded   Int?
-  
+  pointsAwarded Int?
+
   // Notes for this specific occurrence
-  notes           String?
-  
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([recurringChoreId, dueDate]) // One occurrence per recurring chore per date
   @@index([recurringChoreId])
   @@index([dueDate])
@@ -347,16 +352,16 @@ model ChoreOccurrence {
 // ============================================
 
 model AuditLog {
-  id          Int      @id @default(autoincrement())
-  userId      Int      // User who performed the action
-  action      String   // Action type (e.g., USER_LOGIN, CHORE_CREATED)
-  entityType  String   // Type of entity affected (e.g., User, ChoreAssignment, Payout)
-  entityId    Int?     // ID of the affected entity
-  oldValue    String?  // JSON string of previous value
-  newValue    String?  // JSON string of new value
-  ipAddress   String?  // Client IP address
-  userAgent   String?  // Client user agent
-  timestamp   DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  userId     Int // User who performed the action
+  action     String // Action type (e.g., USER_LOGIN, CHORE_CREATED)
+  entityType String // Type of entity affected (e.g., User, ChoreAssignment, Payout)
+  entityId   Int? // ID of the affected entity
+  oldValue   String? // JSON string of previous value
+  newValue   String? // JSON string of new value
+  ipAddress  String? // Client IP address
+  userAgent  String? // Client user agent
+  timestamp  DateTime @default(now())
 
   @@index([userId])
   @@index([action])

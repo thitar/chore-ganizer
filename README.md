@@ -2,7 +2,7 @@
 
 A modern, family-friendly chore management system designed for homelab deployment. Built with React, TypeScript, Express, and SQLite.
 
-**Current Version: 1.8.0**
+**Current Version: 1.9.0**
 
 ## 📋 Features
 
@@ -47,6 +47,7 @@ A modern, family-friendly chore management system designed for homelab deploymen
 - ✅ **Helmet Headers** - Security headers including CSP
 - ✅ **Rate Limiting** - Protection against brute force attacks
 - ✅ **Input Validation** - Zod schema validation on all API endpoints
+- ✅ **Security.txt** - RFC 9116 compliant security disclosure information at /.well-known/security.txt
 
 ### Operations
 - ✅ **Enhanced Health Checks** - Database, memory, and disk metrics with liveness/readiness probes
@@ -58,6 +59,7 @@ A modern, family-friendly chore management system designed for homelab deploymen
 - ✅ **Graceful Shutdown** - Clean container shutdown handling
 - ✅ **CI/CD Pipeline** - GitHub Actions workflow for automated builds
 - ✅ **Unit Tests** - Comprehensive test suite with coverage reporting
+- ✅ **Caching Layer** - node-cache for templates and categories with automatic invalidation
 
 ### Planned (Future)
 - 🔜 Rewards marketplace
@@ -486,6 +488,15 @@ npm test
 cd frontend
 npm test
 ```
+
+### Test Coverage
+- **Backend**: Unit tests with Jest, integration tests with Supertest
+- **Frontend**: 154 component tests across 14 test files using Vitest and React Testing Library
+  - Common components: Button, Input, Modal, Loading, ErrorBoundary, PasswordStrengthIndicator
+  - Chores components: ChoreCard, ChoreList, ChoreForm, ChoreFilters
+  - Layout components: Navbar, Sidebar
+  - Notification components: NotificationBell
+  - Pocket Money components: PocketMoneyCard
 
 ### Manual Testing Checklist
 

@@ -4,6 +4,7 @@ import prisma from '../config/database.js'
 import fs from 'fs'
 import path from 'path'
 import os from 'os'
+import { getCacheStats } from '../utils/cache.js'
 
 // Track server start time
 const serverStartTime = Date.now()
@@ -207,4 +208,41 @@ export const readinessCheck = async (_req: Request, res: Response) => {
       error: 'Database not available' 
     })
   }
+}
+
+/**
+ * GET /api/health/cache
+ * Get cache statistics
+ */
+export const getCacheStatsHandler = (_req: Request, res: Response) => {
+  const stats = getCacheStats()
+  res.json({
+    success: true,
+    data: {
+      keys: stats.keys,
+      hits: stats.hits,
+      misses: stats.misses,
+      ksize: stats.ksize,
+      vsize: stats.vsize,
+    },
+  })
+}
+
+// Security.txt content following RFC 9116
+const SECURITY_TXT = `Contact: security@chore-ganizer.example.com
+Expires: 2027-12-31T23:59:00.000Z
+Preferred-Languages: en
+Canonical: https://chore-ganizer.example.com/.well-known/security.txt
+Policy: https://chore-ganizer.example.com/docs/SECURITY.md
+
+# Chore-Ganizer Security
+# Please report security vulnerabilities responsibly
+`
+
+/**
+ * GET /.well-known/security.txt
+ * Returns security.txt file following RFC 9116 standard
+ */
+export const getSecurityTxt = (_req: Request, res: Response) => {
+  res.type('text/plain').send(SECURITY_TXT)
 }

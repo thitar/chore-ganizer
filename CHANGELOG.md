@@ -5,6 +5,35 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-02-22
+
+### Added
+- Compound database indexes for improved query performance
+  - ChoreAssignment: indexes for calendar views, user dashboard, overdue detection
+  - RecurringChore: index for active recurring chores by user
+  - PointTransaction: index for transaction history queries
+- Caching layer with node-cache for templates and categories
+  - 10-minute default TTL with configurable durations
+  - Cache statistics endpoint at GET /api/health/cache
+  - Automatic cache invalidation on data changes
+- Security.txt endpoint at /.well-known/security.txt (RFC 9116 compliant)
+- SECURITY.md documentation with vulnerability reporting policy
+- Frontend component tests (154 tests across 14 test files)
+  - Common components: Button, Input, Modal, Loading, ErrorBoundary, PasswordStrengthIndicator
+  - Chores components: ChoreCard, ChoreList, ChoreForm, ChoreFilters
+  - Layout components: Navbar, Sidebar
+  - Notification components: NotificationBell
+  - Pocket Money components: PocketMoneyCard
+
+### Changed
+- Improved database query performance with compound indexes
+- Enhanced template and category retrieval with caching
+
+### Technical Details
+- Added node-cache dependency
+- Added @types/node-cache dev dependency
+- Database schema updated with new indexes
+
 ## [1.8.0] - 2026-02-21
 
 ### Fixed

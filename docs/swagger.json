@@ -3,7 +3,7 @@
   "info": {
     "title": "Chore-Ganizer API",
     "description": "Family-friendly chore management system API",
-    "version": "1.8.0",
+    "version": "1.9.0",
     "contact": {
       "name": "Chore-Ganizer"
     }
@@ -66,9 +66,83 @@
     {
       "name": "Audit Logs",
       "description": "Audit log viewing (Parent-only)"
+    },
+    {
+      "name": "Security",
+      "description": "Security disclosure and vulnerability reporting endpoints"
     }
   ],
   "paths": {
+    "/health/cache": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Get cache statistics",
+        "description": "Returns statistics about the template and category cache including keys, hits, misses, and sizes",
+        "operationId": "getCacheStats",
+        "responses": {
+          "200": {
+            "description": "Cache statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "keys": {
+                          "type": "integer",
+                          "description": "Number of cached keys"
+                        },
+                        "hits": {
+                          "type": "integer",
+                          "description": "Number of cache hits"
+                        },
+                        "misses": {
+                          "type": "integer",
+                          "description": "Number of cache misses"
+                        },
+                        "ksize": {
+                          "type": "integer",
+                          "description": "Size of keys in bytes"
+                        },
+                        "vsize": {
+                          "type": "integer",
+                          "description": "Size of values in bytes"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/.well-known/security.txt": {
+      "get": {
+        "tags": ["Security"],
+        "summary": "Get security.txt file",
+        "description": "Returns security contact information following RFC 9116 format for vulnerability disclosure",
+        "operationId": "getSecurityTxt",
+        "responses": {
+          "200": {
+            "description": "Security contact information (RFC 9116)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": ["Health"],

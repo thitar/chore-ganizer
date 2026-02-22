@@ -20,6 +20,10 @@ const router = Router()
 router.get('/health', asyncHandler(healthController.healthCheck))
 router.get('/health/live', healthController.livenessCheck)
 router.get('/health/ready', asyncHandler(healthController.readinessCheck))
+router.get('/health/cache', healthController.getCacheStatsHandler)
+
+// Security.txt endpoint (RFC 9116, no authentication required)
+router.get('/.well-known/security.txt', healthController.getSecurityTxt)
 
 // Version endpoint (no authentication required)
 router.get('/version', (_req: Request, res: Response) => {

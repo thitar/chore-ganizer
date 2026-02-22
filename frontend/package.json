@@ -1,6 +1,6 @@
 {
   "name": "chore-ganizer-frontend",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Frontend for Chore-ganizer",
   "type": "module",
   "scripts": {
