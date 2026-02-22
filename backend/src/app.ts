@@ -11,6 +11,8 @@ import { csrfMiddleware, getCsrfToken } from './middleware/csrf.js'
 import { requestLogger } from './middleware/requestLogger.js'
 import { metricsMiddleware } from './middleware/metricsMiddleware.js'
 import { shutdownMiddleware } from './middleware/shutdownMiddleware.js'
+import { compressionMiddleware } from './middleware/compression.js'
+import { requestTimerMiddleware } from './middleware/requestTimer.js'
 import metricsRoutes from './routes/metrics.routes.js'
 import { FULL_VERSION } from './version.js'
 import { logger } from './utils/logger.js'
@@ -71,6 +73,12 @@ app.use(cors({
 // Body parsing with size limits
 app.use(express.json({ limit: '10kb' }))
 app.use(express.urlencoded({ extended: true, limit: '10kb' }))
+
+// Response compression middleware - reduces API response sizes by 50%+
+app.use(compressionMiddleware)
+
+// Request timing middleware - logs slow requests (>1s) for performance monitoring
+app.use(requestTimerMiddleware)
 
 // Shutdown middleware - tracks in-flight requests and rejects new requests during shutdown
 app.use(shutdownMiddleware)

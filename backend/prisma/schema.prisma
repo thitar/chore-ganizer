@@ -127,6 +127,9 @@ model UserNotificationSettings {
   ntfyServerUrl            String?  @default("https://ntfy.sh") // ntfy server URL
   ntfyUsername             String? // Optional username for ntfy authentication
   ntfyPassword             String? // Optional password for ntfy authentication
+  // Email notification settings
+  emailNotifications       Boolean  @default(false) // Enable email notifications
+  notificationEmail        String? // Email address for notifications (defaults to user's email if not set)
   notifyChoreAssigned      Boolean  @default(true)
   notifyChoreDueSoon       Boolean  @default(true)
   notifyChoreCompleted     Boolean  @default(true)

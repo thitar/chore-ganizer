@@ -6,6 +6,9 @@ export interface UserNotificationSettingsData {
   ntfyServerUrl?: string
   ntfyUsername?: string
   ntfyPassword?: string
+  // Email notification settings
+  emailNotifications?: boolean
+  notificationEmail?: string
   notifyChoreAssigned?: boolean
   notifyChoreDueSoon?: boolean
   notifyChoreCompleted?: boolean
@@ -27,6 +30,9 @@ export interface NotificationSettings {
   ntfyServerUrl: string | null
   ntfyUsername: string | null
   ntfyPassword: string | null
+  // Email notification settings
+  emailNotifications: boolean
+  notificationEmail: string | null
   notifyChoreAssigned: boolean
   notifyChoreDueSoon: boolean
   notifyChoreCompleted: boolean
@@ -49,6 +55,9 @@ export const getDefaultSettings = () => ({
   ntfyTopic: process.env.NTFY_DEFAULT_TOPIC || null,
   ntfyUsername: process.env.NTFY_DEFAULT_USERNAME || null,
   ntfyPassword: process.env.NTFY_DEFAULT_PASSWORD || null,
+  // Email notification defaults
+  emailNotifications: false,
+  notificationEmail: null as string | null,
   notifyChoreAssigned: process.env.NTFY_DEFAULT_NOTIFY_CHORE_ASSIGNED !== 'false',
   notifyChoreDueSoon: process.env.NTFY_DEFAULT_NOTIFY_CHORE_DUE_SOON !== 'false',
   notifyChoreCompleted: process.env.NTFY_DEFAULT_NOTIFY_CHORE_COMPLETED !== 'false',
@@ -86,6 +95,8 @@ export const getOrCreateSettings = async (userId: number): Promise<NotificationS
         ntfyTopic: defaults.ntfyTopic,
         ntfyUsername: defaults.ntfyUsername,
         ntfyPassword: defaults.ntfyPassword,
+        emailNotifications: defaults.emailNotifications,
+        notificationEmail: defaults.notificationEmail,
         notifyChoreAssigned: defaults.notifyChoreAssigned,
         notifyChoreDueSoon: defaults.notifyChoreDueSoon,
         notifyChoreCompleted: defaults.notifyChoreCompleted,
@@ -131,6 +142,8 @@ export const updateSettings = async (
         ntfyTopic: data.ntfyTopic ?? defaults.ntfyTopic,
         ntfyUsername: data.ntfyUsername ?? defaults.ntfyUsername,
         ntfyPassword: data.ntfyPassword ?? defaults.ntfyPassword,
+        emailNotifications: data.emailNotifications ?? defaults.emailNotifications,
+        notificationEmail: data.notificationEmail ?? defaults.notificationEmail,
         notifyChoreAssigned: data.notifyChoreAssigned ?? defaults.notifyChoreAssigned,
         notifyChoreDueSoon: data.notifyChoreDueSoon ?? defaults.notifyChoreDueSoon,
         notifyChoreCompleted: data.notifyChoreCompleted ?? defaults.notifyChoreCompleted,

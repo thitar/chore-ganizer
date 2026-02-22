@@ -996,3 +996,39 @@ export const unskipOccurrence = async (req: Request, res: Response) => {
     },
   })
 }
+
+/**
+ * POST /api/recurring-chores/trigger-occurrences
+ * Manually trigger occurrence generation (for testing/admin purposes)
+ * @access Private (Parents only)
+ */
+export const triggerOccurrenceGeneration = async (req: Request, res: Response) => {
+  // Dynamic import to avoid circular dependencies
+  const { generateDailyOccurrences } = await import('../jobs/occurrenceJob.js')
+  
+  try {
+    // Optional: Allow specifying a target date via query parameter
+    const targetDateStr = req.query.date as string | undefined
+    const targetDate = targetDateStr ? new Date(targetDateStr) : new Date()
+    
+    const count = await generateDailyOccurrences(targetDate)
+    
+    res.json({
+      success: true,
+      data: {
+        message: `Generated ${count} occurrences`,
+        count,
+        targetDate: targetDate.toISOString().split('T')[0],
+      },
+    })
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Failed to generate occurrences',
+        details: errorMessage,
+      },
+    })
+  }
+}

@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import { logger } from './utils/logger.js'
 import { PrismaClient } from '@prisma/client'
 import { getInFlightRequests, initiateShutdown } from './middleware/shutdownMiddleware.js'
+import { startOccurrenceJobWithTracking, stopAllOccurrenceJobs } from './jobs/occurrenceJob.js'
 
 // Load environment variables
 dotenv.config()
@@ -30,6 +31,9 @@ const SHUTDOWN_TIMEOUT = 30000
  */
 const gracefulShutdown = async (signal: string) => {
   logger.info({ message: `Received ${signal}, starting graceful shutdown...` })
+  
+  // Stop background jobs
+  stopAllOccurrenceJobs()
   
   // Signal the middleware to stop accepting new requests
   initiateShutdown()
@@ -83,6 +87,11 @@ server.listen(PORT, HOST, () => {
   logger.info(`Server running on http://${HOST}:${PORT}`)
   logger.info(`API documentation: http://${HOST}:${PORT}/api`)
   logger.info(`Health check: http://${HOST}:${PORT}/health`)
+  
+  // Start background jobs only in non-test environments
+  if (process.env.NODE_ENV !== 'test') {
+    startOccurrenceJobWithTracking()
+  }
 })
 
 // Graceful shutdown handlers for SIGTERM and SIGINT

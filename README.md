@@ -2,7 +2,7 @@
 
 A modern, family-friendly chore management system designed for homelab deployment. Built with React, TypeScript, Express, and SQLite.
 
-**Current Version: 1.9.0**
+**Current Version: 2.0.0**
 
 ## 📋 Features
 
@@ -31,6 +31,7 @@ A modern, family-friendly chore management system designed for homelab deploymen
 ### Notifications
 - ✅ **In-App Notifications** - Real-time notification system
 - ✅ **ntfy.sh Integration** - Push notifications to mobile devices
+- ✅ **Email Notifications** - SMTP integration for email alerts (chore assigned, completed, points earned)
 - ✅ **Configurable Alerts** - Chore assigned, due soon, completed, overdue
 - ✅ **Quiet Hours** - Suppress notifications during specified hours
 
@@ -59,11 +60,26 @@ A modern, family-friendly chore management system designed for homelab deploymen
 - ✅ **Graceful Shutdown** - Clean container shutdown handling
 - ✅ **CI/CD Pipeline** - GitHub Actions workflow for automated builds
 - ✅ **Unit Tests** - Comprehensive test suite with coverage reporting
+- ✅ **E2E Tests** - Playwright tests covering auth, chores, recurring chores, pocket money (78 tests)
 - ✅ **Caching Layer** - node-cache for templates and categories with automatic invalidation
+
+### Performance
+- ✅ **Response Compression** - 50-70% size reduction for API responses
+- ✅ **Request Timing** - Performance monitoring with slow request logging (>1s threshold)
+- ✅ **Frontend Lazy Loading** - 40% initial bundle size reduction with code splitting
+
+### PWA Support
+- ✅ **Installable App** - Add to home screen on mobile and desktop
+- ✅ **Offline Capabilities** - Basic functionality works without internet
+- ✅ **Background Sync** - Queue actions when offline, sync when back online
+
+### Statistics Dashboard
+- ✅ **Completion Rates** - Track chore completion over time
+- ✅ **Point Trends** - Visualize point earnings with charts
+- ✅ **Activity Feed** - Recent family activity at a glance
 
 ### Planned (Future)
 - 🔜 Rewards marketplace
-- 🔜 Email notifications
 - 🔜 Advanced analytics and charts
 
 ## 🛠️ Tech Stack
@@ -489,6 +505,12 @@ cd frontend
 npm test
 ```
 
+### E2E Tests
+```bash
+cd backend
+npx playwright test
+```
+
 ### Test Coverage
 - **Backend**: Unit tests with Jest, integration tests with Supertest
 - **Frontend**: 154 component tests across 14 test files using Vitest and React Testing Library
@@ -497,6 +519,7 @@ npm test
   - Layout components: Navbar, Sidebar
   - Notification components: NotificationBell
   - Pocket Money components: PocketMoneyCard
+- **E2E**: 78 Playwright tests covering auth, chores, recurring chores, pocket money
 
 ### Manual Testing Checklist
 

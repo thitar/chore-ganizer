@@ -69,4 +69,11 @@ router.patch('/occurrences/:id/skip', authenticate, validate(idParamSchema, 'par
  */
 router.patch('/occurrences/:id/unskip', authenticate, validate(idParamSchema, 'params'), asyncHandler(recurringChoresController.unskipOccurrence))
 
+/**
+ * @route   POST /api/recurring-chores/trigger-occurrences
+ * @desc    Manually trigger occurrence generation (for testing/admin purposes)
+ * @access  Private (Parents only)
+ */
+router.post('/trigger-occurrences', authenticate, requireParent, asyncHandler(recurringChoresController.triggerOccurrenceGeneration))
+
 export default router

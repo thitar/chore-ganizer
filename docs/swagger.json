@@ -3,7 +3,7 @@
   "info": {
     "title": "Chore-Ganizer API",
     "description": "Family-friendly chore management system API",
-    "version": "1.9.0",
+    "version": "2.0.0",
     "contact": {
       "name": "Chore-Ganizer"
     }
@@ -70,6 +70,10 @@
     {
       "name": "Security",
       "description": "Security disclosure and vulnerability reporting endpoints"
+    },
+    {
+      "name": "Statistics",
+      "description": "Family and child statistics endpoints"
     }
   ],
   "paths": {
@@ -3113,6 +3117,198 @@
         }
       }
     },
+    "/recurring-chores/trigger-occurrences": {
+      "post": {
+        "tags": ["Recurring Chores"],
+        "summary": "Trigger occurrence generation",
+        "description": "Manually trigger the background job to generate occurrences for recurring chores (Parent-only)",
+        "operationId": "triggerOccurrences",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "Occurrence generation triggered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Occurrence generation completed"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "occurrencesCreated": {
+                          "type": "integer",
+                          "description": "Number of new occurrences created",
+                          "example": 15
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statistics/family": {
+      "get": {
+        "tags": ["Statistics"],
+        "summary": "Get family statistics",
+        "description": "Retrieve overall family statistics including completion rates, point trends, and activity feed (Parent-only)",
+        "operationId": "getFamilyStatistics",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "description": "Number of days to include in statistics (default: 30)",
+            "schema": {
+              "type": "integer",
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Family statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FamilyStatisticsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statistics/child/{childId}": {
+      "get": {
+        "tags": ["Statistics"],
+        "summary": "Get child statistics",
+        "description": "Retrieve statistics for a specific child including completion rates, point trends, and recent activity",
+        "operationId": "getChildStatistics",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "childId",
+            "in": "path",
+            "required": true,
+            "description": "Child user ID",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "description": "Number of days to include in statistics (default: 30)",
+            "schema": {
+              "type": "integer",
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Child statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChildStatisticsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Child not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/audit": {
       "get": {
         "tags": ["Audit Logs"],
@@ -5032,6 +5228,177 @@
               "totalPages": {
                 "type": "integer",
                 "description": "Total number of pages"
+              }
+            }
+          }
+        }
+      },
+      "FamilyStatisticsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "completionRate": {
+                "type": "number",
+                "description": "Overall completion rate percentage",
+                "example": 85.5
+              },
+              "totalPointsEarned": {
+                "type": "integer",
+                "description": "Total points earned by family",
+                "example": 1250
+              },
+              "totalChoresCompleted": {
+                "type": "integer",
+                "description": "Total chores completed",
+                "example": 150
+              },
+              "pointTrends": {
+                "type": "array",
+                "description": "Daily point totals for the period",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "points": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "childStats": {
+                "type": "array",
+                "description": "Statistics per child",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "childId": {
+                      "type": "integer"
+                    },
+                    "childName": {
+                      "type": "string"
+                    },
+                    "completionRate": {
+                      "type": "number"
+                    },
+                    "pointsEarned": {
+                      "type": "integer"
+                    },
+                    "choresCompleted": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "recentActivity": {
+                "type": "array",
+                "description": "Recent family activity",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": ["chore_completed", "points_earned", "chore_assigned"]
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "userName": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ChildStatisticsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "childId": {
+                "type": "integer",
+                "example": 2
+              },
+              "childName": {
+                "type": "string",
+                "example": "Alice"
+              },
+              "completionRate": {
+                "type": "number",
+                "description": "Completion rate percentage",
+                "example": 92.5
+              },
+              "totalPointsEarned": {
+                "type": "integer",
+                "description": "Total points earned in period",
+                "example": 450
+              },
+              "totalChoresCompleted": {
+                "type": "integer",
+                "description": "Total chores completed",
+                "example": 45
+              },
+              "pointTrends": {
+                "type": "array",
+                "description": "Daily point totals for the period",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "points": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "recentActivity": {
+                "type": "array",
+                "description": "Recent activity for this child",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": ["chore_completed", "points_earned", "chore_assigned"]
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
               }
             }
           }

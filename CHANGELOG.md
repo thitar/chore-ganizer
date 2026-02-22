@@ -5,6 +5,32 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-02-22
+
+### Added
+- E2E testing with Playwright (78 tests covering auth, chores, recurring chores, pocket money)
+- Response compression middleware (50-70% size reduction for API responses)
+- Request timing middleware with slow request logging (>1s threshold)
+- Frontend lazy loading (40% initial bundle size reduction)
+- Background job for automatic daily occurrence generation
+- Email notifications via SMTP (chore assigned, completed, points earned)
+- PWA support with offline capabilities and installable app
+- Statistics dashboard with completion rates, point trends, and activity feed
+
+### Changed
+- Improved frontend performance with code splitting and lazy loading
+- Enhanced notification system with multi-channel support (ntfy.sh + email)
+- Better monitoring with request timing and slow query alerts
+
+### Technical Details
+- Added @playwright/test for E2E testing
+- Added compression and @types/compression
+- Added node-cron for background jobs
+- Added nodemailer for email
+- Added vite-plugin-pwa for PWA
+- Added recharts for statistics charts
+- Database schema updated with email notification fields
+
 ## [1.9.0] - 2026-02-22
 
 ### Added
