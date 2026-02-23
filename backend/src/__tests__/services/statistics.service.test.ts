@@ -20,6 +20,7 @@ jest.mock('../../config/database', () => ({
     choreAssignment: {
       count: jest.fn(),
       findMany: jest.fn(),
+      groupBy: jest.fn(),
     },
     pointTransaction: {
       findMany: jest.fn(),
@@ -40,11 +41,11 @@ describe('Statistics Service', () => {
 
     it('should return family statistics with default date range', async () => {
       ;(prisma.user.findMany as jest.Mock).mockResolvedValue(mockFamilyMembers)
-      ;(prisma.choreAssignment.count as jest.Mock)
-        .mockResolvedValueOnce(10) // totalAssigned
-        .mockResolvedValueOnce(7) // completed
-        .mockResolvedValueOnce(3) // pending
-        .mockResolvedValueOnce(1) // overdue
+      ;(prisma.choreAssignment.groupBy as jest.Mock).mockResolvedValue([
+        { status: 'COMPLETED', _count: 7 },
+        { status: 'PENDING', _count: 3 },
+      ])
+      ;(prisma.choreAssignment.count as jest.Mock).mockResolvedValueOnce(1) // overdue
       ;(prisma.pointTransaction.findMany as jest.Mock).mockResolvedValue([
         { amount: 10, createdAt: new Date('2024-01-15'), userId: 2 },
         { amount: 5, createdAt: new Date('2024-01-15'), userId: 2 },
@@ -75,7 +76,11 @@ describe('Statistics Service', () => {
       const endDate = new Date('2024-01-31')
 
       ;(prisma.user.findMany as jest.Mock).mockResolvedValue(mockFamilyMembers)
-      ;(prisma.choreAssignment.count as jest.Mock).mockResolvedValue(5)
+      ;(prisma.choreAssignment.groupBy as jest.Mock).mockResolvedValue([
+        { status: 'COMPLETED', _count: 3 },
+        { status: 'PENDING', _count: 2 },
+      ])
+      ;(prisma.choreAssignment.count as jest.Mock).mockResolvedValueOnce(0) // overdue
       ;(prisma.pointTransaction.findMany as jest.Mock).mockResolvedValue([])
       ;(prisma.choreAssignment.findMany as jest.Mock).mockResolvedValue([])
 
@@ -90,7 +95,8 @@ describe('Statistics Service', () => {
 
     it('should handle zero assignments correctly', async () => {
       ;(prisma.user.findMany as jest.Mock).mockResolvedValue(mockFamilyMembers)
-      ;(prisma.choreAssignment.count as jest.Mock).mockResolvedValue(0)
+      ;(prisma.choreAssignment.groupBy as jest.Mock).mockResolvedValue([])
+      ;(prisma.choreAssignment.count as jest.Mock).mockResolvedValueOnce(0) // overdue
       ;(prisma.pointTransaction.findMany as jest.Mock).mockResolvedValue([])
       ;(prisma.choreAssignment.findMany as jest.Mock).mockResolvedValue([])
 
@@ -102,7 +108,8 @@ describe('Statistics Service', () => {
 
     it('should group point trends by date', async () => {
       ;(prisma.user.findMany as jest.Mock).mockResolvedValue(mockFamilyMembers)
-      ;(prisma.choreAssignment.count as jest.Mock).mockResolvedValue(0)
+      ;(prisma.choreAssignment.groupBy as jest.Mock).mockResolvedValue([])
+      ;(prisma.choreAssignment.count as jest.Mock).mockResolvedValueOnce(0) // overdue
       ;(prisma.pointTransaction.findMany as jest.Mock).mockResolvedValue([
         { amount: 10, createdAt: new Date('2024-01-15T10:00:00Z'), userId: 2 },
         { amount: 5, createdAt: new Date('2024-01-15T14:00:00Z'), userId: 2 },
