@@ -1104,4 +1104,4 @@ curl -X POST http://localhost:3002/api/chore-assignments/1/complete \
 ---
 
 **Last Updated:** February 2026  
-**API Version:** 1.0.0
+**API Version:** 2.0.0

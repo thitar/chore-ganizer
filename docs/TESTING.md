@@ -1,17 +1,21 @@
 # Chore-Ganizer Testing Guide
 
-This document describes the testing strategy, structure, and best practices for the Chore-Ganizer backend.
+## Version 2.0.0
+
+This document describes the testing strategy, structure, and best practices for the Chore-Ganizer application.
 
 ## Overview
 
-The Chore-Ganizer backend uses **Jest** as the testing framework with **ts-jest** for TypeScript support. We have two types of tests:
+Chore-Ganizer uses a comprehensive testing strategy with three levels of testing:
 
 1. **Unit Tests** - Test individual functions/services in isolation using mocks
 2. **Integration Tests** - Test full API endpoints with a real test database
+3. **E2E Tests** - Test complete user flows through the UI with Playwright
 
-**Important:** Unit tests and integration tests use separate Jest configurations to avoid conflicts:
+**Important:** Each test type uses separate Jest/Playwright configurations to avoid conflicts:
 - Unit tests: `jest.config.js` (excludes integration tests)
 - Integration tests: `jest.integration.config.js` (includes global setup/teardown)
+- E2E tests: `playwright.config.ts` (runs against running application)
 
 ## Test Structure
 
@@ -45,9 +49,28 @@ backend/
 ├── jest.config.js                      # Unit test configuration
 ├── jest.integration.config.js          # Integration test configuration
 └── package.json
+
+frontend/
+├── e2e/
+│   ├── fixtures/
+│   │   └── test-helpers.ts             # E2E test fixtures and helpers
+│   ├── auth.spec.ts                    # Authentication E2E tests
+│   ├── dashboard.spec.ts               # Dashboard E2E tests
+│   ├── chores.spec.ts                  # Chores management E2E tests
+│   ├── templates.spec.ts               # Templates E2E tests
+│   ├── calendar.spec.ts                # Calendar E2E tests
+│   ├── notifications.spec.ts           # Notifications E2E tests
+│   ├── recurring-chores.spec.ts        # Recurring chores E2E tests
+│   ├── pocket-money.spec.ts            # Pocket money E2E tests
+│   ├── pwa.spec.ts                     # PWA functionality E2E tests
+│   └── statistics.spec.ts              # Statistics dashboard E2E tests
+├── playwright.config.ts                # Playwright configuration
+└── package.json
 ```
 
 ## Running Tests
+
+### Unit and Integration Tests
 
 ```bash
 # Run all unit tests
@@ -72,6 +95,33 @@ npm test -- --testPathPattern=users.service
 npm test -- --testNamePattern="getAllUsers"
 ```
 
+### E2E Tests
+
+```bash
+# Run E2E tests (requires running application)
+npm run test:e2e
+
+# Run E2E tests with UI (interactive mode)
+npm run test:e2e:ui
+
+# Run specific E2E test file
+npx playwright test e2e/auth.spec.ts
+
+# Run E2E tests in specific browser
+npx playwright test --project=chromium
+npx playwright test --project=firefox
+npx playwright test --project=webkit
+
+# Run E2E tests in headed mode (see browser)
+npx playwright test --headed
+
+# Debug E2E tests
+npx playwright test --debug
+
+# Generate E2E test code
+npx playwright codegen http://localhost:3002
+```
+
 ## Test Coverage
 
 The project aims for **80% code coverage** for services and middleware. Coverage reports are generated in the `coverage/` directory:
@@ -91,8 +141,10 @@ The following are excluded from coverage:
 ### Test File Naming
 
 Test files should:
-- Be placed in `src/__tests__/` mirroring the source structure
-- Use `.test.ts` suffix
+- Be placed in `src/__tests__/` mirroring the source structure (unit/integration)
+- Be placed in `e2e/` for E2E tests
+- Use `.test.ts` suffix for unit/integration tests
+- Use `.spec.ts` suffix for E2E tests
 - Match the source file name (e.g., `users.service.ts` → `users.service.test.ts`)
 
 ### Test Structure
@@ -280,6 +332,119 @@ Integration tests use a separate SQLite database at `test-db/integration-test.db
 - Seeded with consistent test data (family, users, categories, templates)
 - Automatically cleaned up after tests
 
+### 5. E2E Tests
+
+E2E tests use Playwright to test complete user flows through the UI:
+
+```typescript
+import { test, expect } from '@playwright/test'
+import { TestUtils } from './fixtures/test-helpers'
+
+test.describe('Authentication', () => {
+  let utils: TestUtils
+
+  test.beforeEach(async ({ page }) => {
+    utils = new TestUtils(page)
+    await page.goto('/')
+  })
+
+  test('should login successfully with valid credentials', async ({ page }) => {
+    await utils.login('dad@home', 'password123')
+    
+    await expect(page).toHaveURL(/.*dashboard/)
+    await expect(page.locator('[data-testid="user-name"]')).toContainText('Dad')
+  })
+
+  test('should show error with invalid credentials', async ({ page }) => {
+    await page.fill('[name="email"]', 'dad@home')
+    await page.fill('[name="password"]', 'wrongpassword')
+    await page.click('button[type="submit"]')
+    
+    await expect(page.locator('.error-message')).toBeVisible()
+  })
+})
+```
+
+#### E2E Test Fixtures
+
+Create reusable test fixtures in `e2e/fixtures/test-helpers.ts`:
+
+```typescript
+import { Page } from '@playwright/test'
+
+export class TestUtils {
+  constructor(private page: Page) {}
+
+  async login(email: string, password: string) {
+    await this.page.fill('[name="email"]', email)
+    await this.page.fill('[name="password"]', password)
+    await this.page.click('button[type="submit"]')
+    await this.page.waitForURL(/.*dashboard/)
+  }
+
+  async createChoreTemplate(title: string, points: number) {
+    await this.page.click('[data-testid="templates-link"]')
+    await this.page.click('[data-testid="create-template"]')
+    await this.page.fill('[name="title"]', title)
+    await this.page.fill('[name="points"]', points.toString())
+    await this.page.click('button[type="submit"]')
+  }
+
+  async assignChore(templateId: string, userId: string) {
+    // Implementation
+  }
+}
+```
+
+#### E2E Test Scenarios
+
+| Test File | Description | Test Count |
+|-----------|-------------|------------|
+| `auth.spec.ts` | Login, logout, session handling | ~8 tests |
+| `dashboard.spec.ts` | Dashboard display, personal view | ~6 tests |
+| `chores.spec.ts` | CRUD operations, completion, filtering | ~12 tests |
+| `templates.spec.ts` | Template management | ~8 tests |
+| `calendar.spec.ts` | Calendar view, navigation | ~6 tests |
+| `notifications.spec.ts` | Notification bell, marking read | ~5 tests |
+| `recurring-chores.spec.ts` | Recurring chore management | ~10 tests |
+| `pocket-money.spec.ts` | Pocket money system | ~8 tests |
+| `pwa.spec.ts` | PWA installation, offline mode | ~7 tests |
+| `statistics.spec.ts` | Statistics dashboard | ~8 tests |
+
+**Total: 78 E2E tests**
+
+#### E2E Test Best Practices
+
+1. **Use data-testid attributes** for reliable selectors:
+   ```typescript
+   await page.click('[data-testid="create-chore-button"]')
+   ```
+
+2. **Wait for navigation/state changes:**
+   ```typescript
+   await page.waitForURL(/.*dashboard/)
+   await page.waitForSelector('[data-testid="loading"]', { state: 'hidden' })
+   ```
+
+3. **Use Page Object Model for complex flows:**
+   ```typescript
+   const chorePage = new ChorePage(page)
+   await chorePage.createChore({ title: 'Test', points: 10 })
+   ```
+
+4. **Test accessibility:**
+   ```typescript
+   await expect(page).toBeAccessible()
+   ```
+
+5. **Test responsive design:**
+   ```typescript
+   test('mobile view', async ({ page }) => {
+     await page.setViewportSize({ width: 375, height: 667 })
+     // Test mobile-specific behavior
+   })
+   ```
+
 ## Best Practices
 
 ### 1. Isolate Units
@@ -330,6 +495,7 @@ Tests are automatically run in GitHub Actions:
 2. On pull requests to main
 3. Coverage reports are uploaded as artifacts
 4. Integration tests run after unit tests
+5. E2E tests run against a test environment
 
 ### Workflow Configuration
 
@@ -345,11 +511,28 @@ Tests are automatically run in GitHub Actions:
     NODE_ENV: test
     SESSION_SECRET: test-session-secret-for-ci
 
+- name: Install Playwright browsers
+  working-directory: frontend
+  run: npx playwright install --with-deps
+
+- name: Run E2E tests
+  working-directory: frontend
+  run: npm run test:e2e
+  env:
+    CI: true
+
 - name: Upload coverage report
   uses: actions/upload-artifact@v4
   with:
     name: backend-coverage
     path: backend/coverage
+
+- name: Upload Playwright report
+  uses: actions/upload-artifact@v4
+  if: always()
+  with:
+    name: playwright-report
+    path: frontend/playwright-report/
 ```
 
 ## Troubleshooting
@@ -371,9 +554,31 @@ Tests should never connect to a real database. Ensure:
 - No actual database calls are made
 - Use `jest.mock()` at the top of the file
 
+### Playwright Tests Flaky
+
+1. Use proper wait strategies:
+   ```typescript
+   // Wait for element to be visible
+   await expect(page.locator('.item')).toBeVisible()
+   
+   // Wait for network idle
+   await page.waitForLoadState('networkidle')
+   ```
+
+2. Avoid fixed timeouts:
+   ```typescript
+   // Bad
+   await page.waitForTimeout(1000)
+   
+   // Good
+   await page.waitForSelector('.loaded')
+   ```
+
+3. Use test isolation - each test should be independent
+
 ## Adding New Tests
 
-1. Create test file in appropriate `__tests__` subdirectory
+1. Create test file in appropriate directory
 2. Import the module to test
 3. Mock dependencies
 4. Write test cases following the structure above
@@ -387,6 +592,7 @@ Tests should never connect to a real database. Ensure:
 | Middleware | 90% | 85% |
 | Controllers | 70% | 0% |
 | Integration Tests | 100% endpoints | ~150 test cases |
+| E2E Tests | All user flows | 78 tests |
 | Overall | 75% | ~50% |
 
 ## Integration Test Coverage
@@ -410,6 +616,38 @@ The integration test suite covers:
 - **Business Logic** - Points awarding, round-robin assignment, recurrence generation
 - **Error Handling** - 404, 403, 400, 500 responses
 
+## E2E Test Coverage
+
+The E2E test suite covers:
+
+| Feature Area | Test File | Test Count |
+|--------------|-----------|------------|
+| Authentication | `auth.spec.ts` | ~8 tests |
+| Dashboard | `dashboard.spec.ts` | ~6 tests |
+| Chores Management | `chores.spec.ts` | ~12 tests |
+| Templates | `templates.spec.ts` | ~8 tests |
+| Calendar | `calendar.spec.ts` | ~6 tests |
+| Notifications | `notifications.spec.ts` | ~5 tests |
+| Recurring Chores | `recurring-chores.spec.ts` | ~10 tests |
+| Pocket Money | `pocket-money.spec.ts` | ~8 tests |
+| PWA Features | `pwa.spec.ts` | ~7 tests |
+| Statistics Dashboard | `statistics.spec.ts` | ~8 tests |
+
+**Total: 78 E2E tests**
+
+### E2E Test Scenarios Covered
+
+- **User Authentication** - Login, logout, session persistence
+- **Chore Lifecycle** - Create, assign, complete, partial completion
+- **Template Management** - CRUD operations for templates
+- **Calendar Navigation** - Month navigation, event display
+- **Recurring Chores** - Create, edit, occurrence management
+- **Pocket Money** - Balance tracking, transactions
+- **PWA Features** - Installation, offline mode, caching
+- **Statistics** - Dashboard display, charts, activity feed
+- **Responsive Design** - Mobile, tablet, desktop views
+- **Accessibility** - Keyboard navigation, screen reader support
+
 ---
 
-*Last updated: February 2026*
+*Last updated: February 2026 - Version 2.0.0*

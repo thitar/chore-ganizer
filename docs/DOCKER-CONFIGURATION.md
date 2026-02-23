@@ -841,4 +841,4 @@ services:
 ---
 
 **Last Updated:** February 2026  
-**Version:** 1.0.0
+**Version:** 2.0.0

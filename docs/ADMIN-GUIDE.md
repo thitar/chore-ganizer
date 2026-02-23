@@ -1,6 +1,6 @@
 # Chore-Ganizer Admin Guide
 
-## Overview
+## Version 2.0.0
 
 This guide is for parents and administrators who manage the Chore-Ganizer application. As an admin (Parent role), you have access to manage chores and view family member information.
 
@@ -10,9 +10,12 @@ This guide is for parents and administrators who manage the Chore-Ganizer applic
 2. [Navigation & Routing](#navigation--routing)
 3. [User Management](#user-management)
 4. [Chore Management](#chore-management)
-5. [Database Administration](#database-administration)
-6. [API Security Features](#api-security-features)
-7. [Troubleshooting](#troubleshooting)
+5. [Email Notifications](#email-notifications)
+6. [Progressive Web App (PWA)](#progressive-web-app-pwa)
+7. [Statistics Dashboard](#statistics-dashboard)
+8. [Database Administration](#database-administration)
+9. [API Security Features](#api-security-features)
+10. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -55,6 +58,7 @@ The application uses **React Router v6** for URL-based navigation. All routes ar
 | `/users` | Family members management | Parents only |
 | `/templates` | Chore templates management | Parents only |
 | `/calendar` | Family calendar view | Parents only |
+| `/statistics` | Statistics dashboard | Parents only |
 
 ### Protected Routes
 
@@ -62,6 +66,7 @@ The following routes are **protected** and only accessible to users with the `PA
 
 - **`/templates`** - Chore templates management
 - **`/calendar`** - Family calendar view
+- **`/statistics`** - Statistics dashboard
 
 Children attempting to access these routes will be redirected to the dashboard.
 
@@ -158,6 +163,187 @@ Parents can mark chores as partially complete:
 2. View all family members' chore assignments
 3. Each family member has their own color
 4. Click on a chore to see details
+
+---
+
+## Email Notifications
+
+Chore-Ganizer v2.0.0 includes email notifications via SMTP. Family members receive email alerts for important chore events.
+
+### Configuration
+
+Configure email notifications through environment variables:
+
+```bash
+# Enable/disable email notifications
+SMTP_ENABLED=true
+
+# SMTP server settings
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false          # Use true for port 465
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+
+# Sender information
+SMTP_FROM_NAME=Chore-Ganizer
+SMTP_FROM_ADDRESS=noreply@yourdomain.com
+```
+
+### Notification Types
+
+| Event | Recipient | Description |
+|-------|-----------|-------------|
+| **Chore Assigned** | Assigned user | New chore has been assigned to you |
+| **Chore Completed** | Parents | A child has completed their chore |
+| **Points Earned** | User who earned | You earned X points for completing a chore |
+
+### Setting Up Gmail SMTP
+
+1. Enable 2-factor authentication on your Google account
+2. Go to Google Account Settings → Security → App passwords
+3. Generate a new app password for "Mail"
+4. Use the generated password as `SMTP_PASS`
+
+```bash
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-16-char-app-password
+```
+
+### Setting Up Other SMTP Providers
+
+**Outlook/Office 365:**
+```bash
+SMTP_HOST=smtp.office365.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@outlook.com
+SMTP_PASS=your-password
+```
+
+**Custom SMTP Server:**
+```bash
+SMTP_HOST=mail.yourdomain.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=your-username
+SMTP_PASS=your-password
+```
+
+### Testing Email Configuration
+
+Test your email setup by viewing the backend logs:
+
+```bash
+docker logs chore-ganizer-backend | grep -i email
+```
+
+When a notification is sent, you'll see log entries indicating success or failure.
+
+---
+
+## Progressive Web App (PWA)
+
+Chore-Ganizer v2.0.0 is a Progressive Web App, meaning it can be installed on devices and works offline.
+
+### Installing the App
+
+**On Desktop (Chrome/Edge):**
+1. Navigate to the application URL
+2. Look for the install icon in the address bar (⊕ or download icon)
+3. Click "Install" when prompted
+4. The app will be added to your desktop/start menu
+
+**On Mobile (iOS/Safari):**
+1. Open the app in Safari
+2. Tap the Share button (square with arrow)
+3. Scroll down and tap "Add to Home Screen"
+4. Name the app and tap "Add"
+
+**On Mobile (Android/Chrome):**
+1. Open the app in Chrome
+2. Tap the menu (three dots)
+3. Tap "Add to Home screen" or "Install app"
+4. Confirm the installation
+
+### Offline Capabilities
+
+The app works offline with the following features:
+- View cached chore assignments
+- View cached templates and user data
+- Complete chores while offline (synced when back online)
+- Basic navigation works without internet
+
+### PWA Benefits
+
+- **Fast Loading:** Cached resources load instantly
+- **Offline Access:** Core features work without internet
+- **Home Screen Icon:** Quick access like a native app
+- **Full Screen:** Runs without browser UI
+- **Push Notifications:** (Future feature)
+
+### Managing PWA Cache
+
+To clear the PWA cache and refresh:
+
+1. Open browser developer tools (F12)
+2. Go to Application → Storage
+3. Click "Clear site data"
+4. Refresh the page
+
+---
+
+## Statistics Dashboard
+
+The Statistics Dashboard provides insights into family chore activity and trends. Access it at `/statistics` (parents only).
+
+### Features
+
+#### Completion Rates
+- Overall completion percentage
+- Completion rates by family member
+- Completion rates by chore category
+- Weekly and monthly trends
+
+#### Point Trends
+- Point accumulation over time
+- Point distribution by family member
+- Average points per day/week/month
+- Historical comparisons
+
+#### Activity Feed
+- Recent chore completions
+- New assignments
+- Point awards
+- Chronological activity log
+
+### Accessing Statistics
+
+1. Log in as a parent
+2. Click **Statistics** in the sidebar
+3. View the dashboard with:
+   - Summary cards with key metrics
+   - Charts showing trends
+   - Activity feed with recent events
+
+### Using Statistics
+
+**Track Progress:**
+- See which family members are most active
+- Identify chores that are frequently skipped
+- Monitor point accumulation trends
+
+**Make Decisions:**
+- Adjust point values based on completion rates
+- Reassign chores if certain ones are consistently late
+- Reward family members with high completion rates
+
+**Export Data:**
+- Statistics are calculated in real-time from the database
+- Use the API endpoints for custom reporting
 
 ---
 
@@ -361,6 +547,22 @@ The following validation schemas are applied:
 - Points are awarded when chore is marked complete
 - Check the database: `SELECT points FROM User WHERE email = 'user@home'`
 
+**Email notifications not sending:**
+- Check SMTP configuration in environment variables
+- Verify SMTP credentials are correct
+- Check backend logs for error messages
+- Test SMTP connection manually
+
+**PWA not installing:**
+- Ensure you're using HTTPS (required for PWA)
+- Check browser compatibility (Chrome, Edge, Safari)
+- Clear browser cache and try again
+
+**Offline mode not working:**
+- Service worker may need to be registered
+- Clear site data and refresh
+- Check browser developer tools → Application → Service Workers
+
 ### Application Logs
 
 ```bash
@@ -406,6 +608,8 @@ docker cp chore-ganizer-backend:/app/data/backup.db ./chore-ganizer-backup-$(dat
 5. **Run on secure network** (home network recommended)
 6. **CSRF protection** is enabled - tokens required for API calls
 7. **Input validation** enforced on all endpoints - invalid data returns 400 errors
+8. **Use HTTPS** for production deployments (required for PWA features)
+9. **Secure SMTP credentials** - use app passwords when possible
 
 ---
 
@@ -436,6 +640,10 @@ docker cp chore-ganizer-backend:/app/data/backup.db ./chore-ganizer-backup-$(dat
 | Password Strength Indicator | ✅ | ✅ | N/A |
 | CSRF Protection | N/A | ✅ | N/A |
 | Input Validation | N/A | ✅ | N/A |
+| Email Notifications | ✅ | ✅ | ✅ |
+| PWA Support | ✅ | N/A | N/A |
+| Statistics Dashboard | ✅ (Parents) | ✅ | ✅ |
+| Offline Support | ✅ | N/A | N/A |
 
 ---
 

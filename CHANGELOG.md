@@ -16,11 +16,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email notifications via SMTP (chore assigned, completed, points earned)
 - PWA support with offline capabilities and installable app
 - Statistics dashboard with completion rates, point trends, and activity feed
+- Parent-only authorization for statistics routes with `requireParent` middleware
 
 ### Changed
 - Improved frontend performance with code splitting and lazy loading
 - Enhanced notification system with multi-channel support (ntfy.sh + email)
 - Better monitoring with request timing and slow query alerts
+- Refactored occurrence job `getAssignedUserIds()` to accept `lastOccurrence` as parameter, eliminating duplicate database queries
+
+### Fixed
+- N+1 query pattern in statistics service - replaced 4 separate count queries with single groupBy aggregation
+- Duplicate database queries in occurrence job - refactored to pass `lastOccurrence` as parameter
+
+### Security
+- Fixed XSS vulnerability in email templates - added `escapeHtml()` function to sanitize user-controlled data
+
+### Documentation
+- Updated ADMIN-GUIDE.md with email notifications, PWA features, and statistics dashboard sections
+- Updated USER-GUIDE.md with PWA installation and offline usage instructions
+- Updated TESTING.md with E2E testing section
+- Updated QUICK-REFERENCE.md with new features
+- Updated version references in all documentation files to 2.0.0
+- Created MANUAL-TESTING.md with 78 test cases (60 parent, 18 child)
+- Created PRODUCTION-INSTALLATION.md with complete Docker deployment guide
 
 ### Technical Details
 - Added @playwright/test for E2E testing

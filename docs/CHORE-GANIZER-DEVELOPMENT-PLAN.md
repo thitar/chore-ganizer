@@ -488,7 +488,7 @@ VITE_API_URL=http://localhost:3000
 ```json
 {
   "name": "chore-ganizer-backend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Backend API for Chore-ganizer",
   "main": "dist/server.js",
   "scripts": {
@@ -580,7 +580,7 @@ VITE_API_URL=http://localhost:3000
 ```json
 {
   "name": "chore-ganizer-frontend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

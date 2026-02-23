@@ -1,5 +1,7 @@
 # 🚀 Chore-Ganizer Quick Reference
 
+## Version 2.0.0
+
 ## 📱 Daily Operations
 
 ### Starting/Stopping the App
@@ -59,6 +61,12 @@ docker-compose exec backend printenv SESSION_SECRET
 sudo ufw status
 sudo ufw allow 3002
 sudo ufw allow 3010
+```
+
+**Email notifications not working:**
+```bash
+# Check SMTP configuration
+docker-compose exec backend printenv | grep SMTP
 ```
 
 ---
@@ -232,8 +240,60 @@ The application uses **React Router v6** for URL-based navigation.
 | `/users` | Family members | Parents only |
 | `/templates` | Chore templates | Parents only |
 | `/calendar` | Family calendar | Parents only |
+| `/statistics` | Statistics dashboard | Parents only |
 
-> **Protected Routes:** `/templates` and `/calendar` are only accessible to parent accounts. Children are redirected to dashboard.
+> **Protected Routes:** `/templates`, `/calendar`, and `/statistics` are only accessible to parent accounts. Children are redirected to dashboard.
+
+---
+
+## 📧 Email Notifications (v2.0.0)
+
+### Configuration
+
+```bash
+# Enable email notifications
+SMTP_ENABLED=true
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM_NAME=Chore-Ganizer
+```
+
+### Gmail Setup
+
+1. Enable 2FA on your Google account
+2. Go to Account Settings → Security → App passwords
+3. Generate a new app password for "Mail"
+4. Use the 16-character password as `SMTP_PASS`
+
+### Testing
+
+```bash
+# Check email logs
+docker-compose logs backend | grep -i email
+```
+
+---
+
+## 📱 PWA Installation (v2.0.0)
+
+### Desktop (Chrome/Edge)
+1. Navigate to the app URL
+2. Click the install icon in address bar
+3. Click "Install"
+
+### iOS (Safari)
+1. Open app in Safari
+2. Tap Share button
+3. Tap "Add to Home Screen"
+4. Tap "Add"
+
+### Android (Chrome)
+1. Open app in Chrome
+2. Tap menu (three dots)
+3. Tap "Add to Home screen"
+4. Confirm installation
 
 ---
 
@@ -288,6 +348,50 @@ OccurrenceCard          - Individual occurrence display
 RecurringChoresList     - Manage recurring chores
 RecurringChoreFormModal - Create/edit modal
 ```
+
+---
+
+## 📊 Statistics Dashboard (v2.0.0)
+
+### Access
+- URL: `/statistics`
+- Parents only
+
+### Features
+- Completion rates by family member
+- Point trends over time
+- Activity feed
+- Category breakdown
+
+### API Endpoint
+```
+GET /api/statistics - Get family statistics
+```
+
+---
+
+## 🧪 Testing (v2.0.0)
+
+### Run Tests
+
+```bash
+# Unit tests
+cd backend && npm test
+
+# Integration tests
+cd backend && npm run test:integration
+
+# E2E tests
+cd frontend && npm run test:e2e
+
+# E2E tests with UI
+cd frontend && npm run test:e2e:ui
+```
+
+### Test Counts
+- Unit tests: ~60 tests
+- Integration tests: ~160 tests
+- E2E tests: 78 tests
 
 ---
 
@@ -358,6 +462,21 @@ du -sh data/
 # Number of backups
 ls data/backups/ | wc -l
 ```
+
+---
+
+## 🆕 What's New in v2.0.0
+
+| Feature | Description |
+|---------|-------------|
+| E2E Testing | 78 Playwright tests covering all user flows |
+| Response Compression | 50-70% size reduction |
+| Request Timing | Performance monitoring middleware |
+| Lazy Loading | 40% smaller initial bundle |
+| Background Jobs | Auto occurrence generation |
+| Email Notifications | SMTP-based email alerts |
+| PWA Support | Installable app with offline mode |
+| Statistics Dashboard | Completion rates and trends |
 
 ---
 
