@@ -1,0 +1,147 @@
+# Docker Compose configuration for Chore-Ganizer (Production)
+# This file uses pre-built Docker images from the registry.
+# Use this for production deployments where you don't need to build from source.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Or with a symbolic link:
+#   ln -s docker-compose.prod.yml docker-compose.yml
+#   docker compose up -d
+#
+# Configuration is read from the .env file in the same directory.
+# Changes to .env take effect on container restart (no rebuild needed).
+
+services:
+  # Frontend service
+  frontend:
+    image: ghcr.io/thitar/chore-ganizer-frontend:${APP_VERSION:-latest}
+    container_name: chore-ganizer-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3002}:80"
+    environment:
+      # Runtime configuration (injected at container start)
+      - VITE_API_URL=${VITE_API_URL:-}
+      - VITE_DEBUG=${VITE_DEBUG:-false}
+      - VITE_APP_VERSION=${APP_VERSION:-1.5.0}
+    depends_on:
+      - backend
+    networks:
+      - chore-ganizer-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Backend service (standard - without cron)
+  backend:
+    image: ghcr.io/thitar/chore-ganizer-backend:${APP_VERSION:-latest}
+    container_name: chore-ganizer-backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3010}:3010"
+    environment:
+      # Core configuration
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3010
+      - APP_VERSION=${APP_VERSION:-1.2.3}
+      - DATABASE_URL=${DATABASE_URL:-file:/app/data/chore-ganizer.db}
+      - SESSION_SECRET=${SESSION_SECRET:-your-super-secret-session-key-change-in-production}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}
+      - SECURE_COOKIES=${SECURE_COOKIES:-false}
+      - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      # Ntfy notification defaults
+      - NTFY_DEFAULT_SERVER_URL=${NTFY_DEFAULT_SERVER_URL:-https://ntfy.sh}
+      - NTFY_DEFAULT_TOPIC=${NTFY_DEFAULT_TOPIC:-}
+      - NTFY_DEFAULT_NOTIFY_CHORE_ASSIGNED=${NTFY_DEFAULT_NOTIFY_CHORE_ASSIGNED:-true}
+      - NTFY_DEFAULT_NOTIFY_CHORE_DUE_SOON=${NTFY_DEFAULT_NOTIFY_CHORE_DUE_SOON:-true}
+      - NTFY_DEFAULT_NOTIFY_CHORE_COMPLETED=${NTFY_DEFAULT_NOTIFY_CHORE_COMPLETED:-true}
+      - NTFY_DEFAULT_NOTIFY_CHORE_OVERDUE=${NTFY_DEFAULT_NOTIFY_CHORE_OVERDUE:-true}
+      - NTFY_DEFAULT_NOTIFY_POINTS_EARNED=${NTFY_DEFAULT_NOTIFY_POINTS_EARNED:-true}
+      - NTFY_DEFAULT_REMINDER_HOURS=${NTFY_DEFAULT_REMINDER_HOURS:-2}
+      - NTFY_DEFAULT_QUIET_HOURS_START=${NTFY_DEFAULT_QUIET_HOURS_START:-}
+      - NTFY_DEFAULT_QUIET_HOURS_END=${NTFY_DEFAULT_QUIET_HOURS_END:-}
+      # Overdue penalty settings
+      - OVERDUE_PENALTY_ENABLED=${OVERDUE_PENALTY_ENABLED:-true}
+      - OVERDUE_PENALTY_MULTIPLIER=${OVERDUE_PENALTY_MULTIPLIER:-2}
+      - NOTIFY_PARENT_ON_OVERDUE=${NOTIFY_PARENT_ON_OVERDUE:-true}
+    volumes:
+      - backend-data:/app/data
+    networks:
+      - chore-ganizer-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3010/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # Backend service with cron for automated backups
+  # Use: docker compose -f docker-compose.prod.yml --profile with-backup up
+  backend-with-backup:
+    image: ghcr.io/thitar/chore-ganizer-backend:${APP_VERSION:-latest}
+    container_name: chore-ganizer-backend-with-backup
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3010}:3010"
+    environment:
+      # Core configuration
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3010
+      - APP_VERSION=${APP_VERSION:-1.2.3}
+      - DATABASE_URL=${DATABASE_URL:-file:/app/data/chore-ganizer.db}
+      - SESSION_SECRET=${SESSION_SECRET:-your-super-secret-session-key-change-in-production}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}
+      - SECURE_COOKIES=${SECURE_COOKIES:-false}
+      - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      # Ntfy notification defaults
+      - NTFY_DEFAULT_SERVER_URL=${NTFY_DEFAULT_SERVER_URL:-https://ntfy.sh}
+      - NTFY_DEFAULT_TOPIC=${NTFY_DEFAULT_TOPIC:-}
+      - NTFY_DEFAULT_NOTIFY_CHORE_ASSIGNED=${NTFY_DEFAULT_NOTIFY_CHORE_ASSIGNED:-true}
+      - NTFY_DEFAULT_NOTIFY_CHORE_DUE_SOON=${NTFY_DEFAULT_NOTIFY_CHORE_DUE_SOON:-true}
+      - NTFY_DEFAULT_NOTIFY_CHORE_COMPLETED=${NTFY_DEFAULT_NOTIFY_CHORE_COMPLETED:-true}
+      - NTFY_DEFAULT_NOTIFY_CHORE_OVERDUE=${NTFY_DEFAULT_NOTIFY_CHORE_OVERDUE:-true}
+      - NTFY_DEFAULT_NOTIFY_POINTS_EARNED=${NTFY_DEFAULT_NOTIFY_POINTS_EARNED:-true}
+      - NTFY_DEFAULT_REMINDER_HOURS=${NTFY_DEFAULT_REMINDER_HOURS:-2}
+      - NTFY_DEFAULT_QUIET_HOURS_START=${NTFY_DEFAULT_QUIET_HOURS_START:-}
+      - NTFY_DEFAULT_QUIET_HOURS_END=${NTFY_DEFAULT_QUIET_HOURS_END:-}
+      # Overdue penalty settings
+      - OVERDUE_PENALTY_ENABLED=${OVERDUE_PENALTY_ENABLED:-true}
+      - OVERDUE_PENALTY_MULTIPLIER=${OVERDUE_PENALTY_MULTIPLIER:-2}
+      - NOTIFY_PARENT_ON_OVERDUE=${NOTIFY_PARENT_ON_OVERDUE:-true}
+      # Backup configuration
+      - BACKUP_DIR=/backups
+      - RETENTION_DAYS=7
+    volumes:
+      - backend-data:/app/data
+      - ./backups:/backups
+      - ./backup.sh:/backup-scripts/backup.sh:ro
+      - ./restore-test.sh:/backup-scripts/restore-test.sh:ro
+    networks:
+      - chore-ganizer-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3010/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    profiles:
+      - with-backup
+    command: ["/app/cron-entrypoint.sh"]
+
+# Named volumes for persistent data
+volumes:
+  backend-data:
+    driver: local
+    name: chore-ganizer-data
+
+# Network configuration
+networks:
+  chore-ganizer-network:
+    driver: bridge
+    name: chore-ganizer-network

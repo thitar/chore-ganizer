@@ -60,34 +60,38 @@ docker compose version
 
 ### Option 1: Using Pre-built Images (Recommended)
 
+This option downloads pre-built Docker images from the registry. No source code or build process required.
+
 ```bash
 # Create application directory
 mkdir -p ~/chore-ganizer
 cd ~/chore-ganizer
 
-# Download docker-compose.yml
-curl -O https://raw.githubusercontent.com/your-repo/chore-ganizer/main/docker-compose.yml
+# Download docker-compose.prod.yml (for pre-built images)
+curl -O https://raw.githubusercontent.com/thitar/chore-ganizer/main/docker-compose.prod.yml
 
 # Download environment template
-curl -O https://raw.githubusercontent.com/your-repo/chore-ganizer/main/.env.example
+curl -O https://raw.githubusercontent.com/thitar/chore-ganizer/main/.env.example
 mv .env.example .env
 
 # Edit configuration (IMPORTANT!)
 nano .env
 # At minimum, change SESSION_SECRET to a random 32+ character string
 
-# Start the application
-docker compose up -d
+# Pull and start the application
+docker compose -f docker-compose.prod.yml up -d
 
 # Check status
-docker compose ps
+docker compose -f docker-compose.prod.yml ps
 ```
 
 ### Option 2: Building from Source
 
+This option clones the repository and builds the Docker images locally. Use this if you want to customize the code or don't have access to the image registry.
+
 ```bash
 # Clone the repository
-git clone https://github.com/your-repo/chore-ganizer.git
+git clone https://github.com/thitar/chore-ganizer.git
 cd chore-ganizer
 
 # Copy environment template
@@ -96,12 +100,19 @@ cp .env.example .env
 # Edit configuration
 nano .env
 
-# Build and start
+# Build and start (uses docker-compose.yml which builds from source)
 docker compose up -d --build
 
 # Check status
 docker compose ps
 ```
+
+### Docker Compose Files Explained
+
+| File | Purpose | Use Case |
+|------|---------|----------|
+| `docker-compose.yml` | Builds from source | Development, customization, offline builds |
+| `docker-compose.prod.yml` | Pre-built images | Production, quick deployment, no build required |
 
 ### Access the Application
 
@@ -414,23 +425,41 @@ rsync -avz ~/chore-ganizer/backups/ user@backup-server:/backups/chore-ganizer/
 
 ## 🔄 Upgrading
 
-### Standard Upgrade
+### Standard Upgrade (Pre-built Images)
+
+If using `docker-compose.prod.yml` with pre-built images:
 
 ```bash
 # Navigate to application directory
 cd ~/chore-ganizer
 
-# Pull latest changes (if using git)
-git pull origin main
-
 # Pull new Docker images
-docker compose pull
+docker compose -f docker-compose.prod.yml pull
 
 # Stop current containers
-docker compose down
+docker compose -f docker-compose.prod.yml down
 
 # Start with new images
-docker compose up -d
+docker compose -f docker-compose.prod.yml up -d
+
+# Check logs
+docker compose -f docker-compose.prod.yml logs -f
+```
+
+### Standard Upgrade (Building from Source)
+
+If using `docker-compose.yml` and building from source:
+
+```bash
+# Navigate to application directory
+cd ~/chore-ganizer
+
+# Pull latest changes
+git pull origin main
+
+# Rebuild and restart
+docker compose down
+docker compose up -d --build
 
 # Check logs
 docker compose logs -f
@@ -444,10 +473,14 @@ If the upgrade includes database schema changes:
 # Backup before upgrading
 docker compose exec backend /app/backup.sh
 
-# Upgrade
-docker compose pull
+# Upgrade (pre-built images)
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml up -d
+
+# OR Upgrade (building from source)
 docker compose down
-docker compose up -d
+docker compose up -d --build
 
 # Check migration logs
 docker compose logs backend | grep -i migration
@@ -460,12 +493,15 @@ If something goes wrong:
 ```bash
 # Stop containers
 docker compose down
+# OR if using prod file:
+# docker compose -f docker-compose.prod.yml down
 
 # Restore database from backup
 gunzip -c backups/chore-ganizer_YYYYMMDD_HHMMSS.db.gz > data/chore-ganizer.db
 
-# Start with previous version
+# Start with previous version (adjust command based on your setup)
 docker compose up -d
+# OR: docker compose -f docker-compose.prod.yml up -d
 ```
 
 ---

@@ -3526,7 +3526,7 @@ cd ~/apps/chore-ganizer
 
 ```bash
 # 1. Clone or upload your project
-git clone <your-repo-url> .
+git clone https://github.com/thitar/chore-ganizer.git .
 # OR upload files via SFTP/rsync
 
 # 2. Create necessary directories

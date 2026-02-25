@@ -367,7 +367,7 @@ If the entire system is lost (server failure, data corruption), follow these ste
 **Step 2: Clone the repository**
 
 ```bash
-git clone <your-repo-url> chore-ganizer
+git clone https://github.com/thitar/chore-ganizer.git chore-ganizer
 cd chore-ganizer
 ```
 

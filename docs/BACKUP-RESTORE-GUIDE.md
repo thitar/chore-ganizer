@@ -552,7 +552,7 @@ sudo chmod +x /usr/local/bin/docker-compose
 #### Step 2: Clone Repository
 
 ```bash
-git clone <your-repo-url> chore-ganizer
+git clone https://github.com/thitar/chore-ganizer.git chore-ganizer
 cd chore-ganizer
 ```
 

@@ -51,7 +51,7 @@ Use this checklist when deploying Chore-Ganizer to your homelab for the first ti
 - [ ] Clone or upload the repository
   ```bash
   cd ~/apps
-  git clone <your-repo-url> chore-ganizer
+  git clone https://github.com/thitar/chore-ganizer.git chore-ganizer
   cd chore-ganizer
   ```
 

@@ -142,7 +142,7 @@ The `/templates` and `/calendar` routes are protected and only accessible to par
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/thitar/chore-ganizer.git
    cd chore-ganizer
    ```
 
@@ -229,7 +229,7 @@ For public internet access with HTTPS, use a reverse proxy like Caddy:
 
 ```bash
 # On your homelab server
-git clone <your-repo-url>
+git clone https://github.com/thitar/chore-ganizer.git
 cd chore-ganizer
 
 # Create required directories
