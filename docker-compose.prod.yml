@@ -24,7 +24,7 @@ services:
       # Runtime configuration (injected at container start)
       - VITE_API_URL=${VITE_API_URL:-}
       - VITE_DEBUG=${VITE_DEBUG:-false}
-      - VITE_APP_VERSION=${APP_VERSION:-1.5.0}
+      - VITE_APP_VERSION=${APP_VERSION:-2.0.1}
     depends_on:
       - backend
     networks:
@@ -47,9 +47,10 @@ services:
       # Core configuration
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3010
-      - APP_VERSION=${APP_VERSION:-1.2.3}
+      - APP_VERSION=${APP_VERSION:-2.0.1}
       - DATABASE_URL=${DATABASE_URL:-file:/app/data/chore-ganizer.db}
-      - SESSION_SECRET=${SESSION_SECRET:-your-super-secret-session-key-change-in-production}
+      # IMPORTANT: SESSION_SECRET must be set in .env file - no default for security!
+      - SESSION_SECRET=${SESSION_SECRET}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}
       - SECURE_COOKIES=${SECURE_COOKIES:-false}
       - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}
@@ -92,9 +93,10 @@ services:
       # Core configuration
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3010
-      - APP_VERSION=${APP_VERSION:-1.2.3}
+      - APP_VERSION=${APP_VERSION:-2.0.1}
       - DATABASE_URL=${DATABASE_URL:-file:/app/data/chore-ganizer.db}
-      - SESSION_SECRET=${SESSION_SECRET:-your-super-secret-session-key-change-in-production}
+      # IMPORTANT: SESSION_SECRET must be set in .env file - no default for security!
+      - SESSION_SECRET=${SESSION_SECRET}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}
       - SECURE_COOKIES=${SECURE_COOKIES:-false}
       - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}

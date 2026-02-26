@@ -19,8 +19,8 @@ RUN npm ci
 COPY . .
 
 # Build argument for version (passed from docker-compose)
-ARG VITE_APP_VERSION=1.2.3
-ENV VITE_APP_VERSION=$VITE_APP_VERSION
+ ARG VITE_APP_VERSION=2.0.1
+ ENV VITE_APP_VERSION=$VITE_APP_VERSION
 
 # Build the application
 # Note: VITE_API_URL is now runtime-configured, so we use a placeholder
@@ -45,6 +45,16 @@ EXPOSE 80
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1
+
+# Create non-root user and set permissions
+RUN groupadd -r nginx && useradd -r -g nginx -u 1001 nginx \
+    && chown -R nginx:nginx /usr/share/nginx/html \
+    && chown -R nginx:nginx /var/cache/nginx \
+    && chown -R nginx:nginx /var/log/nginx \
+    && chown -R nginx:nginx /etc/nginx/conf.d
+
+# Switch to non-root user
+USER nginx
 
 # Use custom entrypoint to generate runtime config
 ENTRYPOINT ["/docker-entrypoint.sh"]

@@ -72,5 +72,14 @@ EXPOSE 3010
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3010/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
+# Create non-root user and set permissions
+RUN groupadd -r appuser && useradd -r -g appuser -u 1001 appuser \
+    && chown -R appuser:appuser /app \
+    && chown -R appuser:appuser /backup-scripts \
+    && chown -R appuser:appuser /app/data
+
+# Switch to non-root user
+USER appuser
+
 # Start the application
 CMD ["/app/docker-entrypoint.sh"]

@@ -5,6 +5,18 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-02-26
+
+### Security
+- Fixed Dockerfile non-root user configuration to prevent privilege escalation
+- Removed hardcoded session secret from docker-compose.prod.yml (now requires environment variable)
+- Fixed nginx H2C smuggling vulnerability by disabling HTTP/2 cleartext
+- Fixed nginx request-host validation to prevent host header injection
+
+### Changed
+- Updated all version references to 2.0.1 across the project
+- Updated GitHub Actions workflow to use correct semgrep-action input names
+
 ## [2.0.0] - 2026-02-22
 
 ### Added

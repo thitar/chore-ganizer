@@ -36,7 +36,7 @@ export function createTestApp(): express.Application {
   // This is fine for testing, not for production
   app.use(
     session({
-      secret: 'test-secret-key',
+      secret: process.env.SESSION_SECRET || 'test-secret-key',
       resave: false,
       saveUninitialized: false,
       cookie: {

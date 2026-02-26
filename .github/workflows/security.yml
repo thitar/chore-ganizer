@@ -150,7 +150,7 @@ jobs:
             p/owasp-top-ten
             p/typescript
             p/javascript
-          publish-token: ${{ secrets.SEMGREP_PUBLISH_TOKEN }}
+          publishToken: ${{ secrets.SEMGREP_PUBLISH_TOKEN }}
           sarif: true
       
       - name: Upload Semgrep SARIF
