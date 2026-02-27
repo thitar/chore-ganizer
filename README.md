@@ -2,7 +2,7 @@
 
 A modern, family-friendly chore management system designed for homelab deployment. Built with React, TypeScript, Express, and SQLite.
 
-**Current Version: 2.0.1**
+**Current Version: 2.0.2**
 
 ## 📋 Features
 

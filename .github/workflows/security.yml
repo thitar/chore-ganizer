@@ -152,6 +152,7 @@ jobs:
             p/javascript
           publishToken: ${{ secrets.SEMGREP_PUBLISH_TOKEN }}
           sarif: true
+          sarif_output: ./semgrep.sarif
       
       - name: Upload Semgrep SARIF
         uses: github/codeql-action/upload-sarif@v4

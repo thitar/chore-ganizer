@@ -145,7 +145,7 @@ CORS_ORIGIN=https://chores.yourdomain.com
 # ===========================================
 
 # Application version
-APP_VERSION=2.0.1
+APP_VERSION=2.0.2
 
 # Environment
 NODE_ENV=production

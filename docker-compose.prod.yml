@@ -24,7 +24,7 @@ services:
       # Runtime configuration (injected at container start)
       - VITE_API_URL=${VITE_API_URL:-}
       - VITE_DEBUG=${VITE_DEBUG:-false}
-      - VITE_APP_VERSION=${APP_VERSION:-2.0.1}
+      - VITE_APP_VERSION=${APP_VERSION:-2.0.2}
     depends_on:
       - backend
     networks:
@@ -47,7 +47,7 @@ services:
       # Core configuration
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3010
-      - APP_VERSION=${APP_VERSION:-2.0.1}
+      - APP_VERSION=${APP_VERSION:-2.0.2}
       - DATABASE_URL=${DATABASE_URL:-file:/app/data/chore-ganizer.db}
       # IMPORTANT: SESSION_SECRET must be set in .env file - no default for security!
       - SESSION_SECRET=${SESSION_SECRET}
@@ -93,7 +93,7 @@ services:
       # Core configuration
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3010
-      - APP_VERSION=${APP_VERSION:-2.0.1}
+      - APP_VERSION=${APP_VERSION:-2.0.2}
       - DATABASE_URL=${DATABASE_URL:-file:/app/data/chore-ganizer.db}
       # IMPORTANT: SESSION_SECRET must be set in .env file - no default for security!
       - SESSION_SECRET=${SESSION_SECRET}
