@@ -53,7 +53,7 @@ RUN groupadd -r nginx && useradd -r -g nginx -u 1001 nginx \
     && chown -R nginx:nginx /var/log/nginx \
     && chown -R nginx:nginx /etc/nginx/conf.d
 
-# Switch to non-root user
+# Switch to non-root user (must be before ENTRYPOINT for security)
 USER nginx
 
 # Use custom entrypoint to generate runtime config

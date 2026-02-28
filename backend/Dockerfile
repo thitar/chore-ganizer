@@ -78,7 +78,7 @@ RUN groupadd -r appuser && useradd -r -g appuser -u 1001 appuser \
     && chown -R appuser:appuser /backup-scripts \
     && chown -R appuser:appuser /app/data
 
-# Switch to non-root user
+# Switch to non-root user (must be before CMD for security)
 USER appuser
 
 # Start the application

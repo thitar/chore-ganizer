@@ -151,12 +151,16 @@ jobs:
             p/typescript
             p/javascript
           publishToken: ${{ secrets.SEMGREP_PUBLISH_TOKEN }}
-          sarif: true
-          sarif_output: ./semgrep.sarif
-      
+
+      - name: Check if Semgrep SARIF file exists
+        run: |
+          if [ -f "semgrep.sarif" ]; then
+            echo "SARIF_FILE_EXISTS=true" >> $GITHUB_ENV
+          fi
+
       - name: Upload Semgrep SARIF
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: env.SARIF_FILE_EXISTS == 'true'
         with:
           sarif_file: semgrep.sarif
           category: semgrep
@@ -184,9 +188,15 @@ jobs:
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
       
+      - name: Check if Trivy backend SARIF exists
+        run: |
+          if [ -f "trivy-backend.sarif" ]; then
+            echo "TRIVY_BACKEND_EXISTS=true" >> $GITHUB_ENV
+          fi
+
       - name: Upload Trivy scan results (Backend)
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: env.TRIVY_BACKEND_EXISTS == 'true'
         with:
           sarif_file: 'trivy-backend.sarif'
           category: 'trivy-backend'
@@ -201,9 +211,15 @@ jobs:
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
       
+      - name: Check if Trivy frontend SARIF exists
+        run: |
+          if [ -f "trivy-frontend.sarif" ]; then
+            echo "TRIVY_FRONTEND_EXISTS=true" >> $GITHUB_ENV
+          fi
+
       - name: Upload Trivy scan results (Frontend)
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: env.TRIVY_FRONTEND_EXISTS == 'true'
         with:
           sarif_file: 'trivy-frontend.sarif'
           category: 'trivy-frontend'
