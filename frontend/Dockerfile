@@ -5,7 +5,7 @@
 # Changes to .env take effect on container restart (no rebuild needed)
 
 # Stage 1: Build
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /app
 
