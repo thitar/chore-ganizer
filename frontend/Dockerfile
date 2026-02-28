@@ -19,7 +19,7 @@ RUN npm ci
 COPY . .
 
 # Build argument for version (passed from docker-compose)
- ARG VITE_APP_VERSION=2.0.1
+ ARG VITE_APP_VERSION=2.0.3
  ENV VITE_APP_VERSION=$VITE_APP_VERSION
 
 # Build the application

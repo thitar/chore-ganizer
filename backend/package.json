@@ -1,6 +1,6 @@
 {
   "name": "chore-ganizer-backend",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Backend API for Chore-ganizer",
   "main": "dist/server.js",
   "scripts": {
