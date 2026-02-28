@@ -19,7 +19,7 @@ RUN npm ci
 COPY . .
 
 # Build argument for version (passed from docker-compose)
- ARG VITE_APP_VERSION=2.0.3
+ ARG VITE_APP_VERSION=2.0.5
  ENV VITE_APP_VERSION=$VITE_APP_VERSION
 
 # Build the application
@@ -39,13 +39,6 @@ RUN chmod +x /docker-entrypoint.sh
 # Copy built files from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose port
-EXPOSE 80
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1
-
 # Create non-root user and set permissions
 RUN groupadd -r nginx && useradd -r -g nginx -u 1001 nginx \
     && chown -R nginx:nginx /usr/share/nginx/html \
@@ -53,8 +46,15 @@ RUN groupadd -r nginx && useradd -r -g nginx -u 1001 nginx \
     && chown -R nginx:nginx /var/log/nginx \
     && chown -R nginx:nginx /etc/nginx/conf.d
 
-# Switch to non-root user (must be before ENTRYPOINT for security)
+# Switch to non-root user BEFORE health check and entrypoint
 USER nginx
+
+# Expose port
+EXPOSE 80
+
+# Health check (runs as nginx user)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1
 
 # Use custom entrypoint to generate runtime config
 ENTRYPOINT ["/docker-entrypoint.sh"]

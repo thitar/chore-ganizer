@@ -5,6 +5,13 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.5] - 2026-02-28
+
+### Security
+- Fixed H2C smuggling vulnerability in nginx.conf by explicitly setting websocket Upgrade header only when client requests it
+- Fixed Host header validation issue in nginx.conf by using validated host map that defaults to server_name
+- Fixed Dockerfile instruction ordering so USER directive comes before HEALTHCHECK (resolves Semgrep missing-user warning)
+
 ## [2.0.3] - 2026-02-28
 
 ### Security
