@@ -142,7 +142,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Run Semgrep CI
-        uses: returntocorp/semgrep-action@latest
+        uses: returntocorp/semgrep-action@v1
         with:
           config: >-
             p/security-audit
