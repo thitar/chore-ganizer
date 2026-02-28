@@ -8,8 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.5] - 2026-02-28
 
 ### Security
-- Fixed H2C smuggling vulnerability in nginx.conf by explicitly setting websocket Upgrade header only when client requests it
-- Fixed Host header validation issue in nginx.conf by using validated host map that defaults to server_name
+- Fixed H2C smuggling vulnerability in nginx.conf - use $http_upgrade for Upgrade header instead of $connection_upgrade
+- Fixed Host header validation issue in nginx.conf - use literal backend:3010 instead of $server_name to prevent host header injection
 - Fixed Dockerfile instruction ordering so USER directive comes before HEALTHCHECK (resolves Semgrep missing-user warning)
 
 ## [2.0.3] - 2026-02-28
