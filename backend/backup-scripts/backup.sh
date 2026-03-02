@@ -8,7 +8,12 @@ set -e
 # to create automated backups of the SQLite database
 
 # Configuration - can be overridden by environment variables
-BACKUP_DIR="${BACKUP_DIR:-/backups}"
+# Check for marker file created by docker-entrypoint.sh for backup directory override
+if [ -f "/app/.backup_dir" ]; then
+    BACKUP_DIR=$(cat /app/.backup_dir)
+else
+    BACKUP_DIR="${BACKUP_DIR:-/backups}"
+fi
 DB_PATH="${DB_PATH:-/app/data/chore-ganizer.db}"
 RETENTION_DAYS="${RETENTION_DAYS:-7}"
 DATE=$(date +%Y%m%d_%H%M%S)
@@ -23,7 +28,10 @@ echo "Retention: ${RETENTION_DAYS} days"
 echo "=========================================="
 
 # Create backup directory if it doesn't exist
-mkdir -p "${BACKUP_DIR}"
+if ! mkdir -p "${BACKUP_DIR}"; then
+    echo "ERROR: Failed to create backup directory: ${BACKUP_DIR}"
+    exit 1
+fi
 
 # Verify database file exists
 if [ ! -f "${DB_PATH}" ]; then
@@ -31,8 +39,13 @@ if [ ! -f "${DB_PATH}" ]; then
     exit 1
 fi
 
-# Copy database file (preserves file locks if any)
-cp "${DB_PATH}" "${BACKUP_PATH}"
+# Copy database file using SQLite's .backup command for transactionally consistent backup
+# This ensures a consistent snapshot even if the database is being written to
+# Using .backup with proper quoting is cleaner and more reliable than the SQL backup command
+if ! sqlite3 "${DB_PATH}" ".backup \"${BACKUP_PATH}\"" 2>&1; then
+    echo "ERROR: Failed to create database backup"
+    exit 1
+fi
 
 # Verify backup was created and has content
 if [ -f "${BACKUP_PATH}" ] && [ -s "${BACKUP_PATH}" ]; then
@@ -41,7 +54,7 @@ if [ -f "${BACKUP_PATH}" ] && [ -s "${BACKUP_PATH}" ]; then
     # Create integrity check
     INTEGRITY=$(sqlite3 "${BACKUP_PATH}" "PRAGMA integrity_check;" 2>&1 || echo "error")
     echo "Integrity check: ${INTEGRITY}"
-    echo "${INTEGRITY}" > "${BACKUP_DIR}/${BACKUP_NAME}.integrity"
+    echo "${INTEGRITY}" > "${BACKUP_PATH}.gz.integrity"
     
     # Compress backup
     gzip "${BACKUP_PATH}"
@@ -53,7 +66,7 @@ fi
 
 # Clean up old backups
 OLD_COUNT=$(find "${BACKUP_DIR}" -name "chore-ganizer_*.db.gz" -mtime +${RETENTION_DAYS} -delete -print 2>/dev/null | wc -l)
-find "${BACKUP_DIR}" -name "chore-ganizer_*.integrity" -mtime +${RETENTION_DAYS} -delete 2>/dev/null
+find "${BACKUP_DIR}" -name "chore-ganizer_*.db.gz.integrity" -mtime +${RETENTION_DAYS} -delete 2>/dev/null
 echo "Cleaned up ${OLD_COUNT} old backup(s)"
 
 # Summary

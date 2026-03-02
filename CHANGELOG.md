@@ -5,6 +5,34 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-03-01
+
+### Fixed
+- Critical error masking in supercronic.conf that caused silent backup failures
+- Backup directory ownership issue when mounted from host with different permissions
+- Missing DATABASE_URL parsing validation in docker-entrypoint.sh
+- Improved health monitor process group handling for cleaner shutdown
+
+## [2.1.0] - 2026-03-01
+
+### Added
+- Containerized backup system with supercronic for automated daily backups
+- Backup script with SQLite integrity verification and automatic old backup cleanup
+- Restore test script to verify backup integrity after each backup
+- Health monitoring for supercronic with automatic restart detection
+- Non-root user (appuser) for running application inside containers
+
+### Changed
+- Refactored Dockerfile to use node:20-alpine as base image
+- Updated docker-entrypoint.sh to handle migrations as root then switch to appuser
+- Backup scripts now bundled inside container instead of mounted volumes
+- Supercronic now runs inside container with proper health monitoring
+- Backup runs at 2 AM, restore test runs at 3 AM (separated for better visibility)
+
+### Fixed
+- Silent failure when supercronic dies - now exits with error to trigger container restart
+- Restore test failures now properly visible in logs (separated from backup command)
+
 ## [2.0.5] - 2026-02-28
 
 ### Security

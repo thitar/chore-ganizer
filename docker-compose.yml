@@ -121,8 +121,6 @@ services:
     volumes:
       - backend-data:/app/data
       - ./backups:/backups
-      - ./backup.sh:/backup-scripts/backup.sh:ro
-      - ./restore-test.sh:/backup-scripts/restore-test.sh:ro
     networks:
       - chore-ganizer-network
     healthcheck:
@@ -133,7 +131,11 @@ services:
       start_period: 15s
     profiles:
       - with-backup
-    command: ["/app/cron-entrypoint.sh"]
+    # Uses docker-entrypoint.sh from Dockerfile which handles:
+    # 1. Database migrations (as root)
+    # 2. Switching to appuser
+    # 3. Starting supercronic for backup cron jobs
+    # 4. Starting the Node.js server
 
 # Named volumes for persistent data
 volumes:

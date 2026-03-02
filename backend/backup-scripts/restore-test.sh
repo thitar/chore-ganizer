@@ -8,6 +8,10 @@ set -e
 # decompressing it and running integrity checks
 
 BACKUP_DIR="${BACKUP_DIR:-/backups}"
+# Check for marker file created by docker-entrypoint.sh for backup directory override
+if [ -f "/app/.backup_dir" ]; then
+    BACKUP_DIR=$(cat /app/.backup_dir)
+fi
 TEST_DB_PATH="/tmp/test_restore_$$.db"
 
 echo "=========================================="
@@ -19,8 +23,10 @@ echo "=========================================="
 LATEST_BACKUP=$(ls -t "${BACKUP_DIR}"/chore-ganizer_*.db.gz 2>/dev/null | head -1)
 
 if [ -z "${LATEST_BACKUP}" ]; then
-    echo "ERROR: No backup found to test"
-    exit 1
+    echo "INFO: No backup found to test - this is expected on first day of deployment"
+    echo "Backup system will be tested after first backup is created (runs at 2 AM)"
+    # Exit with success - no backup to test is not an error
+    exit 0
 fi
 
 echo "Using backup: ${LATEST_BACKUP}"
@@ -29,7 +35,11 @@ echo "Backup size: ${BACKUP_SIZE}"
 
 # Decompress to temp location
 echo "Decompressing backup..."
-gunzip -c "${LATEST_BACKUP}" > "${TEST_DB_PATH}"
+if ! gunzip -c "${LATEST_BACKUP}" > "${TEST_DB_PATH}"; then
+    echo "ERROR: Decompression failed"
+    rm -f "${TEST_DB_PATH}"
+    exit 1
+fi
 
 # Verify decompressed file
 if [ ! -s "${TEST_DB_PATH}" ]; then

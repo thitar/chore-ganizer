@@ -3,7 +3,7 @@
   "info": {
     "title": "Chore-Ganizer API",
     "description": "Family-friendly chore management system API",
-    "version": "2.0.5",
+    "version": "2.1.1",
     "contact": {
       "name": "Chore-Ganizer"
     }
@@ -74,6 +74,10 @@
     {
       "name": "Statistics",
       "description": "Family and child statistics endpoints"
+    },
+    {
+      "name": "Backup",
+      "description": "Backup system endpoints for automated database backups"
     }
   ],
   "paths": {
