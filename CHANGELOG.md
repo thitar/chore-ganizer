@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.1.1] - 2026-03-01
 
+### Security
+- Patched minimatch ReDoS vulnerability (CVE-2024-4067) via npm overrides
+
 ### Fixed
 - Critical error masking in supercronic.conf that caused silent backup failures
 - Backup directory ownership issue when mounted from host with different permissions
