@@ -5,6 +5,11 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.4] - 2026-03-03
+
+### Fixed
+- Fixed potential NaN error when parsing userId in auth controller by adding defensive array check for route parameters
+
 ## [2.1.3] - 2026-03-02
 
 ### Added

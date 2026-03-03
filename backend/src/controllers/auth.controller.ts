@@ -136,7 +136,7 @@ export const unlock = async (req: Request, res: Response) => {
     throw new AppError('User ID is required', 400, 'VALIDATION_ERROR')
   }
 
-  const parsedUserId = parseInt(userId, 10)
+  const parsedUserId = parseInt(Array.isArray(userId) ? userId[0] : userId, 10)
   if (isNaN(parsedUserId)) {
     throw new AppError('Invalid user ID', 400, 'VALIDATION_ERROR')
   }
@@ -199,7 +199,7 @@ export const getLockoutStatus = async (req: Request, res: Response) => {
     throw new AppError('User ID is required', 400, 'VALIDATION_ERROR')
   }
 
-  const parsedUserId = parseInt(userId, 10)
+  const parsedUserId = parseInt(Array.isArray(userId) ? userId[0] : userId, 10)
   if (isNaN(parsedUserId)) {
     throw new AppError('Invalid user ID', 400, 'VALIDATION_ERROR')
   }
