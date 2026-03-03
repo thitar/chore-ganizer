@@ -5,6 +5,12 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.5] - 2026-03-03
+
+### Fixed
+- Fixed Docker build failure in CI/CD by adding build steps (Node.js setup, npm install, Prisma generate, npm build) before Docker build-push action in the workflow
+- Removed `dist` from .dockerignore in both backend and frontend to allow copying built artifacts to Docker images
+
 ## [2.1.4] - 2026-03-03
 
 ### Fixed

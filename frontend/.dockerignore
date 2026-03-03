@@ -5,8 +5,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # Build output
-dist
-build
+# dist  # Now built in CI before Docker
+# build
 
 # Environment files
 .env
