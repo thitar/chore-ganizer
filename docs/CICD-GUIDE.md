@@ -589,21 +589,45 @@ npm run build
 
 ### Using act (Run GitHub Actions Locally)
 
-You can run GitHub Actions on your local machine using [act](https://github.com/nektos/act):
+You can run GitHub Actions on your local machine using [act](https://github.com/nektos/act). This allows you to test your CI/CD pipeline before pushing to GitHub.
 
-1. Install act:
+1. **Install act:**
    ```bash
    # On macOS
    brew install act
 
-   # On Linux
-   curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+   # On Linux (using npm)
+   npm install -g act
+   
+   # Or download binary directly
+   mkdir -p ~/.local/bin
+   curl -L https://github.com/nektos/act/releases/download/v0.2.84/act_Linux_x86_64.tar.gz -o /tmp/act.tar.gz
+   tar -xzf /tmp/act.tar.gz -C ~/.local/bin
+   chmod +x ~/.local/bin/act
    ```
 
-2. Run CI workflow locally:
+2. **Configure act (first time only):**
    ```bash
-   act push
+   mkdir -p ~/.config/act
+   echo "-P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest" > ~/.config/act/actrc
    ```
+
+3. **Run CI workflow locally:**
+   ```bash
+   # From the project root (dev/chore-ganizer directory)
+   cd ~/dev/chore-ganizer
+   
+   # Run only CI jobs (backend + frontend tests):
+   ~/.local/bin/act push -j backend -j frontend
+   
+   # Run full CI/CD workflow:
+   ~/.local/bin/act push
+   
+   # Run security workflow:
+   ~/.local/bin/act push -W .github/workflows/security.yml
+   ```
+
+**Note:** Running `act` requires Docker to be installed and running on your machine.
 
 ---
 
