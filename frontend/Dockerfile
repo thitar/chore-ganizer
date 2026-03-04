@@ -39,12 +39,13 @@ RUN chmod +x /docker-entrypoint.sh
 # Copy built files from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Create non-root user and set permissions
-RUN groupadd -r nginx && useradd -r -g nginx -u 1001 nginx \
-    && chown -R nginx:nginx /usr/share/nginx/html \
-    && chown -R nginx:nginx /var/cache/nginx \
-    && chown -R nginx:nginx /var/log/nginx \
-    && chown -R nginx:nginx /etc/nginx/conf.d
+# Create non-root user and set permissions (Alpine uses addgroup/adduser)
+RUN addgroup -g 1001 -S nginx && \
+    adduser -S nginx -u 1001 -G nginx && \
+    chown -R nginx:nginx /usr/share/nginx/html && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chown -R nginx:nginx /etc/nginx/conf.d
 
 # Switch to non-root user BEFORE health check and entrypoint
 USER nginx
