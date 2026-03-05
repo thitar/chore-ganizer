@@ -5,7 +5,22 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.7] - 2026-03-05
+
+### Changed
+- Synchronized version numbers across all files to 2.1.7
+
+## [2.1.6] - 2026-03-05
+
+### Fixed
+- Fixed critical `ERR_HTTP_HEADERS_SENT` error in requestTimer middleware that caused server crashes during E2E testing - the middleware was attempting to set response headers after the response had already been sent
+
 ## [2.1.5] - 2026-03-04
+
+### Security
+- Moved Prometheus metrics endpoint from `/api/metrics` to `/metrics` to exclude it from API rate limiting
+- Added IP-based access restriction to metrics endpoint (localhost/local network only)
+- Simplified frontend Dockerfile nginx user configuration
 
 ### Changed
 - Updated Trivy GitHub Action to pinned version 0.51.0 for better reproducibility

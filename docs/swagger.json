@@ -3,7 +3,7 @@
   "info": {
     "title": "Chore-Ganizer API",
     "description": "Family-friendly chore management system API",
-    "version": "2.1.4",
+    "version": "2.1.7",
     "contact": {
       "name": "Chore-Ganizer"
     }
@@ -3407,6 +3407,37 @@
           },
           "403": {
             "description": "Forbidden - Parent access required"
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": ["Metrics"],
+        "summary": "Prometheus metrics endpoint",
+        "description": "Returns Prometheus-compatible metrics. Access restricted to localhost only for security.",
+        "operationId": "getMetrics",
+        "responses": {
+          "200": {
+            "description": "Prometheus metrics",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "# HELP nodejs_version_info Node.js version info\n# TYPE nodejs_version_info gauge\n..."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - only available from localhost",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
