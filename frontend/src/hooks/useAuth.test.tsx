@@ -65,14 +65,17 @@ describe('useAuth', () => {
 
   describe('checkAuth', () => {
     it('should set user when auth check succeeds', async () => {
-      const mockCurrentUser = { data: { user: mockUser() } }
+      // Create a single mock user to avoid timestamp mismatch
+      const testUser = mockUser()
+      const mockCurrentUser = { data: { user: testUser } }
       mockedAuthApi.getCurrentUser.mockResolvedValue(mockCurrentUser)
 
       const { result } = renderHook(() => useAuth(), { wrapper })
 
       await waitFor(() => expect(result.current.loading).toBe(false))
 
-      expect(result.current.user).toEqual(mockUser())
+      // Use the same user object for comparison
+      expect(result.current.user).toEqual(testUser)
       expect(result.current.isAuthenticated).toBe(true)
     })
 
@@ -142,7 +145,8 @@ describe('useAuth', () => {
         password: 'wrongpassword',
       })
 
-      expect(result.current.error).toBe('Invalid credentials')
+      // Wait for the error state to be updated
+      await waitFor(() => expect(result.current.error).toBe('Invalid credentials'))
     })
   })
 
