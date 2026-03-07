@@ -27,6 +27,17 @@ module.exports = {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
+  // Transform ESM modules from node_modules (needed for uuid 13.x and other ESM packages)
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', {
+      useESM: false,
+    }],
+    '^.+\\.js$': 'babel-jest',
+  },
+  transformIgnorePatterns: [
+    // Match ESM packages that need transformation
+    'node_modules/(?!(uuid)/)',
+  ],
   // Integration tests need longer timeouts
   testTimeout: 30000,
   // Setup files for integration tests

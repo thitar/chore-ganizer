@@ -4,6 +4,11 @@ import nodemailer from 'nodemailer';
 // Mock nodemailer
 jest.mock('nodemailer');
 
+// Mock uuid to avoid ESM issues with uuid 13.x in Jest
+jest.mock('uuid', () => ({
+  v4: () => 'test-uuid-1234-5678-9012-345678901234',
+}));
+
 const mockSendMail = jest.fn();
 const mockCreateTransport = jest.fn(() => ({
   sendMail: mockSendMail,

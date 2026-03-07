@@ -5,6 +5,7 @@ import dotenv from 'dotenv'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import SQLiteStore from 'connect-sqlite3'
+import crypto from 'crypto'
 import routes from './routes/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 import { csrfMiddleware, getCsrfToken } from './middleware/csrf.js'
@@ -84,17 +85,24 @@ app.use(requestTimerMiddleware)
 app.use(shutdownMiddleware)
 
 // Session configuration
-const sessionSecret = process.env.SESSION_SECRET || 'dev-secret-not-secure'
+// Generate a secure random secret if not provided - DO NOT use in production
+const getSessionSecret = (): string => {
+  if (process.env.SESSION_SECRET) {
+    return process.env.SESSION_SECRET
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('SESSION_SECRET environment variable must be set in production')
+  }
+  // In development, generate a random secret (note: sessions won't persist across restarts)
+  return crypto.randomBytes(64).toString('hex')
+}
+
+const sessionSecret = getSessionSecret()
 const sessionMaxAge = Number(process.env.SESSION_MAX_AGE) || 604800000 // 7 days
 
 // Check if we're behind a trusted proxy
 const isProduction = process.env.NODE_ENV === 'production'
 const isSecureCookie = isProduction && process.env.SECURE_COOKIES !== 'false'
-
-// Warn if using default secret in production
-if (isProduction && sessionSecret === 'dev-secret-not-secure') {
-  console.warn('WARNING: Using default SESSION_SECRET in production! Set a secure secret.')
-}
 
 // Create SQLite session store
 const SQLiteStoreFactory = SQLiteStore(session)
