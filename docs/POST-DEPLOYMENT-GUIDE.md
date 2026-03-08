@@ -2,6 +2,10 @@
 
 Guide for managing and maintaining Chore-Ganizer after initial deployment.
 
+> **📋 For initial deployment checklist, see:** [DEPLOYMENT-CHECKLIST.md](./DEPLOYMENT-CHECKLIST.md)
+> **🔧 For Docker configuration details, see:** [DOCKER-CONFIGURATION.md](./DOCKER-CONFIGURATION.md)
+> **💾 For backup/restore procedures, see:** [BACKUP-RESTORE-GUIDE.md](./BACKUP-RESTORE-GUIDE.md)
+
 ---
 
 ## 📋 Table of Contents
@@ -38,10 +42,10 @@ docker-compose down
 docker-compose ps
 
 # Check backend health
-curl http://localhost:3000/health
+curl http://localhost:3010/health
 
 # Check frontend accessibility
-curl -I http://localhost:3001/
+curl -I http://localhost:3002/
 ```
 
 ### Viewing Logs
@@ -209,7 +213,7 @@ docker-compose exec backend npx prisma migrate deploy
 docker-compose ps
 
 # Check backend health
-curl http://localhost:3000/health
+curl http://localhost:3010/health
 
 # Check logs for errors
 docker-compose logs --tail=50
@@ -259,7 +263,7 @@ docker-compose stop backend
 ls -lht data/backups/ | head -5
 
 # Restore
-gunzip -c data/backups/chores_YYYYMMDD_HHMMSS.db.gz > data/chores.db
+gunzip -c data/backups/chore-ganizer_YYYYMMDD_HHMMSS.db.gz > data/chore-ganizer.db
 ```
 
 **Step 3: Start the backend**
@@ -272,7 +276,7 @@ docker-compose start backend
 
 ```bash
 docker-compose logs backend --tail=50
-curl http://localhost:3000/health
+curl http://localhost:3010/health
 ```
 
 ### Scenario 2: Application Update Failed
@@ -300,14 +304,14 @@ docker-compose up -d --build
 **Step 4: Restore database if needed**
 
 ```bash
-gunzip -c data/backups/chores_YYYYMMDD_HHMMSS.db.gz > data/chores.db
+gunzip -c data/backups/chore-ganizer_YYYYMMDD_HHMMSS.db.gz > data/chore-ganizer.db
 ```
 
 **Step 5: Verify**
 
 ```bash
 docker-compose ps
-curl http://localhost:3000/health
+curl http://localhost:3010/health
 ```
 
 ### Scenario 3: Complete System Failure
@@ -327,7 +331,7 @@ docker-compose rm -f
 **Step 3: Restore database from backup**
 
 ```bash
-gunzip -c data/backups/chores_YYYYMMDD_HHMMSS.db.gz > data/chores.db
+gunzip -c data/backups/chore-ganizer_YYYYMMDD_HHMMSS.db.gz > data/chore-ganizer.db
 ```
 
 **Step 4: Rebuild from scratch**
@@ -347,7 +351,7 @@ docker-compose exec backend npx prisma migrate deploy
 ```bash
 docker-compose ps
 docker-compose logs --tail=100
-curl http://localhost:3000/health
+curl http://localhost:3010/health
 ```
 
 ---
@@ -361,7 +365,7 @@ If the entire system is lost (server failure, data corruption), follow these ste
 **Step 1: Set up a new server**
 
 - Install Docker and Docker Compose
-- Configure firewall (allow ports 3000 and 3001)
+- Configure firewall (allow ports 3002 and 3010)
 - Ensure sufficient disk space
 
 **Step 2: Clone the repository**
@@ -386,10 +390,10 @@ chmod 755 data data/backups data/uploads
 
 ```bash
 # Copy your database backup
-cp /path/to/backup/chores_YYYYMMDD_HHMMSS.db.gz data/backups/
+cp /path/to/backup/chore-ganizer_YYYYMMDD_HHMMSS.db.gz data/backups/
 
 # Restore
-gunzip -c data/backups/chores_YYYYMMDD_HHMMSS.db.gz > data/chores.db
+gunzip -c data/backups/chore-ganizer_YYYYMMDD_HHMMSS.db.gz > data/chore-ganizer.db
 ```
 
 **Step 5: Start the application**
@@ -402,7 +406,7 @@ docker-compose up -d --build
 
 ```bash
 docker-compose ps
-curl http://localhost:3000/health
+curl http://localhost:3010/health
 ```
 
 **Step 7: Test with family**
@@ -462,7 +466,7 @@ df -h
 docker-compose logs --since 7d
 
 # Check database size
-ls -lh data/chores.db
+ls -lh data/chore-ganizer.db
 
 # Verify backups are running
 ls -lht data/backups/ | head -10
@@ -510,11 +514,11 @@ docker-compose logs backend | grep -i "slow"
 **Check response times:**
 
 ```bash
-# Backend health check
-time curl http://localhost:3000/health
+# Check backend health
+time curl http://localhost:3010/health
 
 # Frontend load time
-time curl -I http://localhost:3001/
+time curl -I http://localhost:3002/
 ```
 
 ---
@@ -533,7 +537,7 @@ docker-compose logs backend
 docker-compose logs frontend
 
 # Check for port conflicts
-sudo netstat -tulpn | grep -E ':(3000|3001)'
+sudo netstat -tulpn | grep -E ':(3002|3010)'
 ```
 
 **Solutions:**
@@ -580,7 +584,7 @@ docker-compose logs backend | grep -i login
 docker-compose logs backend | grep -i error
 
 # Check database write permissions
-ls -la data/chores.db
+ls -la data/chore-ganizer.db
 ```
 
 **Solutions:**
@@ -661,7 +665,7 @@ docker-compose exec backend printenv CORS_ORIGIN
 If you encounter issues not covered here:
 
 1. **Check logs:** `docker-compose logs -f`
-2. **Check health:** `curl http://localhost:3000/health`
+2. **Check health:** `curl http://localhost:3010/health`
 3. **View database:** `docker-compose exec backend npx prisma studio`
 4. **Review documentation:**
    - [README.md](./README.md)

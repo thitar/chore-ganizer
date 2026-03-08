@@ -476,6 +476,108 @@ Available options:
 - Alert types to receive
 - Quiet hours
 
+## ntfy.sh Push Notifications Setup
+
+ntfy.sh is a free push notification service that lets you receive notifications on your phone or desktop without setting up your own notification server.
+
+### What is ntfy?
+
+- **Free and open-source** push notification service
+- **No registration required** - just create your own topic
+- **Multi-platform** - works on iOS, Android, and desktop
+- **Self-host option** available if you want your own server
+
+### Setting Up ntfy for Your Family
+
+#### Step 1: Create Your ntfy Topic
+
+1. Visit https://ntfy.sh/
+2. Click **Subscribe** in the top navigation
+3. Choose a unique topic name (e.g., "chore-ganizer-family")
+4. This topic will be used for all family notifications
+5. **Save your topic name** - you'll need it for configuration
+
+> **Security Tip:** Choose a random/obscure topic name to prevent others from subscribing to your notifications.
+
+#### Step 2: Install the ntfy App
+
+**On iOS:**
+1. Open App Store and search for "ntfy"
+2. Install the ntfy app
+3. Open the app and tap **Subscribe**
+4. Enter your topic name (e.g., `chore-ganizer-family`)
+5. Tap Subscribe
+
+**On Android:**
+1. Open Play Store and search for "ntfy"
+2. Install the ntfy app
+3. Open the app and tap **Subscribe**
+4. Enter your topic name
+5. Tap Subscribe
+
+**On Desktop:**
+1. Visit https://ntfy.sh/
+2. Click your topic link
+3. Enable notifications in browser settings
+
+#### Step 3: Configure Chore-Ganizer
+
+1. Open the Chore-Ganizer .env file
+2. Add or update these variables:
+
+```bash
+# ntfy Configuration
+NTFY_ENABLED=true
+NTFY_TOPIC=chore-ganizer-family
+# Optional: Set your own ntfy server (default is ntfy.sh)
+# NTFY_SERVER=https://ntfy.sh
+```
+
+3. Restart the Chore-Ganizer containers:
+
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+#### Step 4: Configure User Notifications
+
+Each family member can enable push notifications:
+
+1. Log in as the user
+2. Go to **Profile** → **Notification Settings**
+3. Enable **Push Notifications (ntfy)**
+4. Enter the same topic name (or leave blank to use default)
+
+### Customizing Notifications
+
+You can choose which events trigger ntfy notifications:
+
+| Event | Description |
+|-------|-------------|
+| New chore assigned | When a chore is assigned to you |
+| Chore due soon | Reminder before due date |
+| Chore completed | When a chore is marked complete |
+| Chore overdue | When a chore passes its due date |
+| Points earned | When you earn points |
+
+### Troubleshooting ntfy
+
+**Not receiving notifications:**
+- Check that ntfy is enabled in your profile settings
+- Verify the topic name matches exactly
+- Check that you're subscribed to the correct topic
+- Try enabling/disabling the notification in the ntfy app
+
+**Notifications delayed:**
+- ntfy.sh is a free service and may have delays
+- Consider self-hosting ntfy for faster delivery
+- Check your internet connection
+
+**Too many notifications:**
+- Adjust quiet hours in notification settings
+- Disable specific notification types
+
 ---
 
 ## Overdue Penalty System

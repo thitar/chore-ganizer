@@ -383,6 +383,140 @@ Set times when you don't want to receive notifications:
 
 ---
 
+## Statistics Dashboard (Parents Only)
+
+Parents can view comprehensive statistics about family chore activity!
+
+### Accessing Statistics
+
+1. Click **Statistics** in the sidebar menu
+2. View overall family performance metrics
+
+### What Statistics Show
+
+| Metric | Description |
+|--------|-------------|
+| Total Chores Completed | How many chores have been finished |
+| Completion Rate | Percentage of chores completed on time |
+| Points Earned | Total points earned by the family |
+| Average Completion Time | How long it takes to complete chores |
+| Family Leaderboard | Who has earned the most points |
+
+### Filtering Statistics
+
+- **By User:** See individual family member stats
+- **By Date Range:** This week, this month, or custom range
+- **By Chore Category:** See stats for specific types of chores
+
+---
+
+## Chore Categories
+
+Chores can be organized into categories to make management easier!
+
+### Default Categories
+
+Chore-Ganizer comes with several default categories:
+
+| Category | Description |
+|----------|-------------|
+| Cleaning | General cleaning tasks |
+| Kitchen | Cooking and kitchen chores |
+| Outdoor | Garden and outside tasks |
+| Laundry | Washing, drying, folding |
+| Pets | Animal care tasks |
+| Other | Miscellaneous chores |
+
+### Viewing Categories
+
+1. Click **Categories** in the sidebar (parents only)
+2. See all available categories
+3. Each category shows how many chore templates use it
+
+### Using Categories
+
+When creating or editing a chore template:
+1. Select a category from the dropdown
+2. Categories help organize templates
+3. Filter chores by category on the Chores page
+
+---
+
+## Overdue Penalty System
+
+When chores aren't completed on time, penalties may be applied!
+
+### How Overdue Penalties Work
+
+1. A chore passes its due date without being completed
+2. Parents can configure automatic penalties
+3. Points are deducted from the assigned user
+4. The chore remains in the system until completed
+
+### Penalty Configuration (Parents)
+
+Parents can set up overdue penalties in the system:
+
+1. Go to **Overdue Penalty** settings
+2. Enable/disable automatic penalties
+3. Set the penalty amount (points deducted)
+4. Set when penalties apply (e.g., 1 day after due date)
+
+### Viewing Overdue Chores
+
+1. On the Chores page, filter by "Overdue"
+2. See all chores past their due date
+3. Complete the chore to stop additional penalties
+
+### Penalty History
+
+Parents can view penalty history:
+1. See which chores incurred penalties
+2. Track point deductions over time
+3. Adjust settings as needed
+
+---
+
+## Recurring Chore Assignment Modes
+
+When setting up recurring chores, parents can choose how chores are assigned!
+
+### Fixed Assignment
+
+The same family member is assigned every time:
+
+- Best for: Personal responsibilities (e.g., "Alice's bedroom cleanup")
+- The assigned person always gets the chore
+
+### Round-Robin Assignment
+
+Chores rotate among family members:
+
+- Best for: Shared responsibilities (e.g., "Take out the trash")
+- Each occurrence goes to the next person in rotation
+- Fair distribution of work
+
+### Mixed Assignment
+
+Some occurrences to one person, others to another:
+
+- Best for: Partial sharing (e.g., "Weekdays = Mom, Weekends = Kids")
+- Combine fixed and rotating assignments
+
+### Setting Assignment Mode
+
+When creating a recurring chore:
+
+1. Go to **Recurring Chores** page
+2. Click **Add Recurring Chore**
+3. Find the **Assignment Mode** option
+4. Choose:
+   - **Fixed:** Select one family member
+   - **Round-Robin:** Select all family members to rotate
+   - **Mixed:** Configure specific assignments for different times
+
+---
+
 ## Current Limitations
 
 The following features are documented in the API but not yet available in the UI:

@@ -25,21 +25,21 @@ Chore-Ganizer uses Docker Compose to orchestrate two main services:
 
 | Service | Description | Port |
 |---------|-------------|------|
-| `backend` | Express API with Node.js | 3000 |
-| `frontend` | React app served by Nginx | 3001 |
+| `backend` | Express API with Node.js | **3010** |
+| `frontend` | React app served by Nginx | **3002** |
 
 ### Architecture Diagram
 
 ```mermaid
 graph TB
     subgraph "Docker Network"
-        A[Frontend<br/>Nginx:3001]
-        B[Backend<br/>Express:3000]
+        A[Frontend<br/>Nginx:3002]
+        B[Backend<br/>Express:3010]
         C[SQLite Database<br/>Volume Mount]
     end
     
-    D[Family Devices<br/>Browser] -->|HTTP:3001| A
-    A -->|API Calls:3000| B
+    D[Family Devices<br/>Browser] -->|HTTP:3002| A
+    A -->|API Calls:3010| B
     B -->|Read/Write| C
     
     E[Host Server] -->|Volume Mount| C
@@ -61,8 +61,8 @@ graph TB
 
 | Service | Port | Purpose |
 |---------|------|---------|
-| Frontend (Nginx) | 3001 | Production web server |
-| Backend (Express) | 3000 | Production API |
+| Frontend (Nginx) | **3002** | Production web server |
+| Backend (Express) | **3010** | Production API |
 | Internal (not exposed) | - | Database access |
 
 ### Port Reference Table
@@ -70,7 +70,7 @@ graph TB
 | Environment | Frontend | Backend | Prisma Studio |
 |-------------|----------|---------|---------------|
 | Development | 5173 | 3000 | 5555 |
-| Production | 3001 | 3000 | 5555 (via exec) |
+| Production | 3002 | 3010 | 5555 (via exec) |
 
 ---
 
@@ -89,13 +89,13 @@ services:
     container_name: chore-backend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3010:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=file:/app/data/chores.db
+      - DATABASE_URL=file:/app/data/chore-ganizer.db
       - SESSION_SECRET=${SESSION_SECRET}
       - PORT=3000
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3001}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}
       - LOG_LEVEL=${LOG_LEVEL:-info}
     volumes:
       - ./data:/app/data
@@ -117,9 +117,9 @@ services:
     container_name: chore-frontend
     restart: unless-stopped
     ports:
-      - "3001:80"
+      - "3002:80"
     environment:
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:3010}
     depends_on:
       backend:
         condition: service_healthy
@@ -150,7 +150,7 @@ services:
     container_name: chore-backend-dev
     restart: "no"
     ports:
-      - "3000:3000"
+      - "3010:3000"
     environment:
       - NODE_ENV=development
       - DATABASE_URL=file:/app/dev.db
@@ -479,7 +479,7 @@ NODE_ENV=production
 # ============================================
 
 # Database
-DATABASE_URL="file:/app/data/chores.db"
+DATABASE_URL="file:/app/data/chore-ganizer.db"
 
 # Session Secret (CRITICAL: Generate a strong random secret)
 # Generate with: openssl rand -base64 32
@@ -539,7 +539,7 @@ LOG_LEVEL=info
 
 NODE_ENV=production
 PORT=3000
-DATABASE_URL="file:/app/data/chores.db"
+DATABASE_URL="file:/app/data/chore-ganizer.db"
 SESSION_SECRET="your-secret-here"
 CORS_ORIGIN=http://localhost:3001
 LOG_LEVEL=info
@@ -571,8 +571,8 @@ VITE_API_URL=http://localhost:3000
 ```
 chore-ganizer/
 ├── data/
-│   ├── chores.db              # SQLite database
-│   ├── chores.db-journal      # SQLite journal file
+│   ├── chore-ganizer.db              # SQLite database
+│   ├── chore-ganizer.db-journal      # SQLite journal file
 │   ├── backups/               # Database backups
 │   │   └── chores_*.db.gz     # Compressed backups
 │   └── uploads/               # User uploaded files
@@ -664,7 +664,7 @@ networks:
 | Build | On-the-fly | Pre-built |
 | Hot Reload | Yes | No |
 | Source Mounting | Yes | No |
-| Database | `dev.db` | `chores.db` |
+| Database | `dev.db` | `chore-ganizer.db` |
 | Environment | `development` | `production` |
 | Logging | Debug | Info |
 
@@ -797,7 +797,7 @@ docker top chore-backend
 docker-compose exec backend sh
 
 # Copy files from container
-docker cp chore-backend:/app/data/chores.db ./chores.db.backup
+docker cp chore-backend:/app/data/chore-ganizer.db ./chore-ganizer.db.backup
 
 # Copy files to container
 docker cp ./local-file.txt chore-backend:/app/data/

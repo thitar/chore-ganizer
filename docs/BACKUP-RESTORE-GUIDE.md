@@ -23,7 +23,7 @@ Complete guide for backing up and restoring Chore-Ganizer data.
 
 | Data | Location | Backup Method |
 |------|----------|---------------|
-| SQLite Database | `data/chores.db` | Compressed backup |
+| SQLite Database | `data/chore-ganizer.db` | Compressed backup |
 | User Uploads | `data/uploads/` | Optional rsync |
 | Configuration | `.env` | Manual (not auto-backed up) |
 
@@ -66,7 +66,7 @@ Create this file in the project root:
 
 # Configuration
 BACKUP_DIR="./data/backups"
-DB_FILE="./data/chores.db"
+DB_FILE="./data/chore-ganizer.db"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_FILE="${BACKUP_DIR}/chores_${TIMESTAMP}.db.gz"
 LOG_FILE="${BACKUP_DIR}/backup.log"
@@ -168,7 +168,7 @@ ls -lh data/backups/
 docker-compose stop backend
 
 # Create compressed backup
-gzip -c data/chores.db > data/backups/chores_manual_$(date +%Y%m%d_%H%M%S).db.gz
+gzip -c data/chore-ganizer.db > data/backups/chore-ganizer_manual_$(date +%Y%m%d_%H%M%S).db.gz
 
 # Start backend
 docker-compose start backend
@@ -181,8 +181,8 @@ docker-compose start backend
 docker-compose stop backend
 
 # 2. Create backup
-BACKUP_FILE="data/backups/chores_manual_$(date +%Y%m%d_%H%M%S).db.gz"
-gzip -c data/chores.db > "$BACKUP_FILE"
+BACKUP_FILE="data/backups/chore-ganizer_manual_$(date +%Y%m%d_%H%M%S).db.gz"
+gzip -c data/chore-ganizer.db > "$BACKUP_FILE"
 
 # 3. Verify backup
 gzip -t "$BACKUP_FILE" && echo "Backup verified" || echo "Backup corrupted"
@@ -209,7 +209,7 @@ Always backup before:
 
 # Or with a custom name
 docker-compose stop backend
-gzip -c data/chores.db > "data/backups/chores_pre_update_$(date +%Y%m%d_%H%M%S).db.gz"
+gzip -c data/chore-ganizer.db > "data/backups/chore-ganizer_pre_update_$(date +%Y%m%d_%H%M%S).db.gz"
 docker-compose start backend
 ```
 
@@ -311,7 +311,7 @@ docker-compose stop backend
 #### Step 2: Backup Current Database (Safety)
 
 ```bash
-cp data/chores.db data/chores.db.pre-restore-$(date +%Y%m%d_%H%M%S)
+cp data/chore-ganizer.db data/chore-ganizer.db.pre-restore-$(date +%Y%m%d_%H%M%S)
 ```
 
 #### Step 3: Choose Backup to Restore
@@ -327,10 +327,10 @@ ls -lht data/backups/
 
 ```bash
 # Restore from compressed backup
-gunzip -c data/backups/chores_YYYYMMDD_HHMMSS.db.gz > data/chores.db
+gunzip -c data/backups/chore-ganizer_YYYYMMDD_HHMMSS.db.gz > data/chore-ganizer.db
 
 # Or if you have an uncompressed backup
-cp data/backups/chores_YYYYMMDD_HHMMSS.db data/chores.db
+cp data/backups/chore-ganizer_YYYYMMDD_HHMMSS.db data/chore-ganizer.db
 ```
 
 #### Step 5: Start the Backend
@@ -574,7 +574,7 @@ chmod 755 data data/backups data/uploads
 scp user@backup-server:/backups/chore-ganizer/chores_YYYYMMDD_HHMMSS.db.gz data/backups/
 
 # Restore database
-gunzip -c data/backups/chores_YYYYMMDD_HHMMSS.db.gz > data/chores.db
+gunzip -c data/backups/chore-ganizer_YYYYMMDD_HHMMSS.db.gz > data/chore-ganizer.db
 ```
 
 #### Step 5: Start Application
@@ -614,7 +614,7 @@ Test your recovery procedure regularly:
 docker-compose down
 
 # 2. Restore from latest backup
-gunzip -c data/backups/chores_latest.db.gz > data/chores.db
+gunzip -c data/backups/chore-ganizer_latest.db.gz > data/chore-ganizer.db
 
 # 3. Start application
 docker-compose up -d

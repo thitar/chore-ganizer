@@ -2,6 +2,10 @@
 
 Use this checklist when deploying Chore-Ganizer to your homelab for the first time.
 
+> **📖 For ongoing operations, maintenance, and troubleshooting, see:** [POST-DEPLOYMENT-GUIDE.md](./POST-DEPLOYMENT-GUIDE.md)
+> **🔧 For Docker configuration details, see:** [DOCKER-CONFIGURATION.md](./DOCKER-CONFIGURATION.md)
+> **💾 For backup/restore procedures, see:** [BACKUP-RESTORE-GUIDE.md](./BACKUP-RESTORE-GUIDE.md)
+
 ---
 
 ## 📋 Pre-Deployment
@@ -23,9 +27,9 @@ Use this checklist when deploying Chore-Ganizer to your homelab for the first ti
   ```bash
   df -h
   ```
-- [ ] Ports 3000 and 3001 available
+- [ ] Ports 3002 and 3010 available
   ```bash
-  sudo netstat -tulpn | grep -E ':(3000|3001)'
+  sudo netstat -tulpn | grep -E ':(3002|3010)'
   ```
 
 ### Network Configuration
@@ -35,8 +39,8 @@ Use this checklist when deploying Chore-Ganizer to your homelab for the first ti
   ```
 - [ ] Firewall configured (if applicable)
   ```bash
-  sudo ufw allow 3000
-  sudo ufw allow 3001
+  sudo ufw allow 3002
+  sudo ufw allow 3010
   ```
 - [ ] Family devices can reach the server
   ```bash
@@ -91,8 +95,8 @@ Use this checklist when deploying Chore-Ganizer to your homelab for the first ti
   **Example for local network:**
   ```bash
   SESSION_SECRET=your-generated-secret-here
-  CORS_ORIGIN=http://192.168.1.100:3001
-  VITE_API_URL=http://192.168.1.100:3000
+  CORS_ORIGIN=http://192.168.1.100:3002
+  VITE_API_URL=http://192.168.1.100:3010
   ```
 
 ### 4. Customize Family Data
@@ -146,7 +150,7 @@ Use this checklist when deploying Chore-Ganizer to your homelab for the first ti
 ### 7. Verify Backend
 - [ ] Check backend health
   ```bash
-  curl http://localhost:3000/health
+  curl http://localhost:3010/health
   ```
   ✅ Should return: `{"status":"ok","timestamp":"..."}`
   
@@ -154,12 +158,12 @@ Use this checklist when deploying Chore-Ganizer to your homelab for the first ti
   ```bash
   docker-compose logs backend --tail=50
   ```
-  ✅ No errors, should see: "Server running on port 3000"
+  ✅ No errors, should see: "Server running on port 3010"
 
 ### 8. Verify Frontend
 - [ ] Check frontend is accessible
   ```bash
-  curl http://localhost:3001/
+  curl http://localhost:3002/
   ```
   ✅ Should return HTML content
   
@@ -175,7 +179,7 @@ Use this checklist when deploying Chore-Ganizer to your homelab for the first ti
 
 ### 9. Test from Server
 - [ ] Open browser on server
-- [ ] Navigate to `http://localhost:3001`
+- [ ] Navigate to `http://localhost:3002`
 - [ ] Should see login page
 - [ ] Login as parent (dad@home / your-password)
 - [ ] Should see dashboard
@@ -188,7 +192,7 @@ Use this checklist when deploying Chore-Ganizer to your homelab for the first ti
 
 ### 10. Test from Network Devices
 - [ ] Open browser on phone/tablet
-- [ ] Navigate to `http://YOUR_SERVER_IP:3001`
+- [ ] Navigate to `http://YOUR_SERVER_IP:3002`
 - [ ] Login works
 - [ ] All features work
 - [ ] Responsive design looks good
@@ -233,11 +237,11 @@ Use this checklist when deploying Chore-Ganizer to your homelab for the first ti
   ```
 - [ ] Backup current database
   ```bash
-  cp data/chores.db data/chores.db.test-backup
+  cp data/chore-ganizer.db data/chore-ganizer.db.test-backup
   ```
 - [ ] Restore from backup
   ```bash
-  gunzip -c data/backups/chores_*.db.gz | head -1 > data/chores.db
+  gunzip -c data/backups/chore-ganizer_*.db.gz | head -1 > data/chore-ganizer.db
   ```
 - [ ] Start backend
   ```bash
@@ -345,7 +349,7 @@ Use this checklist when deploying Chore-Ganizer to your homelab for the first ti
 If something doesn't work:
 - [ ] Check container status: `docker-compose ps`
 - [ ] Check logs: `docker-compose logs -f`
-- [ ] Verify health endpoint: `curl http://localhost:3000/health`
+- [ ] Verify health endpoint: `curl http://localhost:3010/health`
 - [ ] Check firewall: `sudo ufw status`
 - [ ] Verify .env configuration
 - [ ] Restart containers: `docker-compose restart`
