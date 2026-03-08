@@ -1,6 +1,6 @@
 # Chore-Ganizer User Guide
 
-## Version 2.0.0
+## Version 2.1.7
 
 ## Welcome to Chore-Ganizer! 🏠
 
@@ -274,6 +274,112 @@ Email notifications are configured by your parents/administrators. If you're not
 1. Check your spam/junk folder
 2. Make sure your email address is correct in your profile
 3. Ask a parent to verify email settings are enabled
+
+---
+
+## Recurring Chores
+
+Chore-Ganizer can automatically create chores on a repeating schedule!
+
+### How Recurring Chores Work
+
+1. A parent creates a recurring chore with a schedule (e.g., "Every Monday")
+2. The system automatically generates individual chore instances
+3. You see them just like regular chores
+
+### Viewing Your Recurring Chores
+
+1. Click **Recurring Chores** in the sidebar menu
+2. See all recurring chores assigned to your family
+3. Each shows its schedule (e.g., "Every Monday, Wednesday, Friday")
+4. View upcoming occurrences on the calendar
+
+### Completing Recurring Chore Occurrences
+
+1. Find the occurrence on your Chores page or Calendar
+2. Click **Complete** just like a regular chore
+3. Points are awarded automatically
+4. The next occurrence will be created based on the schedule
+
+### Skipping an Occurrence
+
+Sometimes you can't do a chore when it's due. You can skip it:
+
+1. Find the chore occurrence
+2. Click **Skip** 
+3. Optionally add a reason (e.g., "Sick day")
+4. The chore is marked as skipped, not completed
+
+---
+
+## Points and Pocket Money
+
+Your chore completion earns you points that can convert to pocket money!
+
+### Viewing Your Points
+
+1. Your points are shown on the dashboard
+2. Click **Pocket Money** in the sidebar for detailed view
+
+### Point Balance
+
+- **Current Points:** Points you've earned but not yet paid out
+- **Projected Earnings:** Estimated monetary value of your points
+
+### How Points Convert to Money
+
+Your family sets a point value (e.g., 10 points = €0.10).
+
+Example:
+- You earn 50 points in a week
+- Point value: €0.10 per point
+- Potential payout: €5.00
+
+### Point Transactions
+
+Your point history shows all activity:
+
+| Type | Description |
+|------|-------------|
+| Earned | Points from completing chores |
+| Bonus | Extra points from parents |
+| Deduction | Points deducted by parents |
+| Payout | Points converted to cash |
+
+---
+
+## Notification Settings
+
+You can customize how you receive notifications!
+
+### Accessing Notification Settings
+
+1. Go to your **Profile** page
+2. Find **Notification Settings** section
+3. Configure your preferences
+
+### Notification Options
+
+#### Email Notifications
+- Enable/disable email notifications
+- Set a custom email address (if different from login)
+
+#### Push Notifications (ntfy)
+- Set up push notifications to your phone
+- Configure your own ntfy topic
+
+#### Alert Types
+Choose which events trigger notifications:
+- New chore assigned
+- Chore due soon
+- Chore completed
+- Chore overdue
+- Points earned
+
+#### Quiet Hours
+Set times when you don't want to receive notifications:
+- Start hour (e.g., 22:00)
+- End hour (e.g., 07:00)
 
 ---
 

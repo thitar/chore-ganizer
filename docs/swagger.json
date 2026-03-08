@@ -76,6 +76,10 @@
       "description": "Family and child statistics endpoints"
     },
     {
+      "name": "Pocket Money",
+      "description": "Pocket money management endpoints for points-to-currency conversion, payouts, and transactions"
+    },
+    {
       "name": "Backup",
       "description": "Backup system endpoints for automated database backups"
     }
@@ -3439,6 +3443,272 @@
               }
             }
           }
+        }
+      }
+    },
+    "/pocket-money/config": {
+      "get": {
+        "tags": ["Pocket Money"],
+        "summary": "Get pocket money configuration",
+        "description": "Get the family's pocket money configuration including point value, currency, and payout settings",
+        "operationId": "getPocketMoneyConfig",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Pocket money configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PocketMoneyConfigResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Not authenticated" }
+        }
+      },
+      "put": {
+        "tags": ["Pocket Money"],
+        "summary": "Update pocket money configuration",
+        "description": "Update the family's pocket money configuration (parents only)",
+        "operationId": "updatePocketMoneyConfig",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePocketMoneyConfigRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Configuration updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PocketMoneyConfigResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Not authenticated" },
+          "403": { "description": "Not authorized (parent required)" }
+        }
+      }
+    },
+    "/pocket-money/balance/{userId}": {
+      "get": {
+        "tags": ["Pocket Money"],
+        "summary": "Get user point balance",
+        "description": "Get the current point balance for a specific user",
+        "operationId": "getPointBalance",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{
+          "name": "userId",
+          "in": "path",
+          "required": true,
+          "description": "User ID",
+          "schema": { "type": "integer" }
+        }],
+        "responses": {
+          "200": {
+            "description": "Point balance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PointBalanceResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Not authenticated" }
+        }
+      }
+    },
+    "/pocket-money/transactions/{userId}": {
+      "get": {
+        "tags": ["Pocket Money"],
+        "summary": "Get transaction history",
+        "description": "Get the point transaction history for a specific user",
+        "operationId": "getTransactionHistory",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          { "name": "userId", "in": "path", "required": true, "description": "User ID", "schema": { "type": "integer" } },
+          { "name": "page", "in": "query", "required": false, "description": "Page number", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "required": false, "description": "Items per page", "schema": { "type": "integer", "default": 50 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionHistoryResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Not authenticated" }
+        }
+      }
+    },
+    "/pocket-money/bonus": {
+      "post": {
+        "tags": ["Pocket Money"],
+        "summary": "Add bonus points",
+        "description": "Add bonus points to a user (parents only)",
+        "operationId": "addBonus",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddBonusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bonus added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Not authenticated" },
+          "403": { "description": "Not authorized (parent required)" }
+        }
+      }
+    },
+    "/pocket-money/deduction": {
+      "post": {
+        "tags": ["Pocket Money"],
+        "summary": "Add deduction",
+        "description": "Deduct points from a user (parents only)",
+        "operationId": "addDeduction",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddDeductionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deduction added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Not authenticated" },
+          "403": { "description": "Not authorized (parent required)" }
+        }
+      }
+    },
+    "/pocket-money/payouts/{userId}": {
+      "get": {
+        "tags": ["Pocket Money"],
+        "summary": "Get payout history",
+        "description": "Get the payout history for a specific user",
+        "operationId": "getPayouts",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{
+          "name": "userId",
+          "in": "path",
+          "required": true,
+          "description": "User ID",
+          "schema": { "type": "integer" }
+        }],
+        "responses": {
+          "200": {
+            "description": "Payout history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutHistoryResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Not authenticated" }
+        }
+      }
+    },
+    "/pocket-money/payout": {
+      "post": {
+        "tags": ["Pocket Money"],
+        "summary": "Create payout",
+        "description": "Mark points as paid out (parents only)",
+        "operationId": "createPayout",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePayoutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Payout created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Not authenticated" },
+          "403": { "description": "Not authorized (parent required)" }
+        }
+      }
+    },
+    "/pocket-money/projected/{userId}": {
+      "get": {
+        "tags": ["Pocket Money"],
+        "summary": "Get projected earnings",
+        "description": "Calculate projected earnings for a user based on current points and configuration",
+        "operationId": "calculateProjectedEarnings",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{
+          "name": "userId",
+          "in": "path",
+          "required": true,
+          "description": "User ID",
+          "schema": { "type": "integer" }
+        }],
+        "responses": {
+          "200": {
+            "description": "Projected earnings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectedEarningsResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Not authenticated" }
         }
       }
     }

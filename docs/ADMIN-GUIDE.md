@@ -1,6 +1,6 @@
 # Chore-Ganizer Admin Guide
 
-## Version 2.0.0
+## Version 2.1.7
 
 This guide is for parents and administrators who manage the Chore-Ganizer application. As an admin (Parent role), you have access to manage chores and view family member information.
 
@@ -54,6 +54,8 @@ The application uses **React Router v6** for URL-based navigation. All routes ar
 |-------|-------------|--------|
 | `/dashboard` | Main dashboard (personal view) | All users |
 | `/chores` | Chore assignments list | All users |
+| `/recurring-chores` | Recurring chores management | All users |
+| `/pocket-money` | Points/balance management | All users |
 | `/profile` | User profile page | All users |
 | `/users` | Family members management | Parents only |
 | `/templates` | Chore templates management | Parents only |
@@ -67,6 +69,7 @@ The following routes are **protected** and only accessible to users with the `PA
 - **`/templates`** - Chore templates management
 - **`/calendar`** - Family calendar view
 - **`/statistics`** - Statistics dashboard
+- **`/pocket-money`** - Pocket money configuration
 
 Children attempting to access these routes will be redirected to the dashboard.
 
@@ -344,6 +347,160 @@ The Statistics Dashboard provides insights into family chore activity and trends
 **Export Data:**
 - Statistics are calculated in real-time from the database
 - Use the API endpoints for custom reporting
+
+---
+
+## Recurring Chores Management
+
+Chore-Ganizer supports automated recurring chores with flexible scheduling!
+
+### Creating Recurring Chores
+
+1. Go to **Recurring Chores** page
+2. Click **Create Recurring Chore** button
+3. Fill in the details:
+   - **Title:** Name of the chore
+   - **Description:** Instructions
+   - **Points:** Point value for completion
+   - **Category:** Organize by type (optional)
+
+### Setting Recurrence Pattern
+
+Choose how often the chore repeats:
+
+| Frequency | Options |
+|-----------|---------|
+| Daily | Every day, Every N days |
+| Weekly | Specific days (Mon/Wed/Fri), Every N weeks |
+| Monthly | Day of month (15th), Nth weekday (2nd Tuesday) |
+| Yearly | Specific date each year |
+
+### Assignment Modes
+
+Choose who gets assigned:
+
+| Mode | Description |
+|------|-------------|
+| Fixed | Same person always gets assigned |
+| Round Robin | Rotates through selected family members |
+| Mixed | Fixed assignees + rotating person |
+
+### Managing Occurrences
+
+- **Complete:** Mark as done (awards points)
+- **Skip:** Mark as skipped (no points)
+- **Unskip:** Restore a skipped occurrence
+
+---
+
+## Pocket Money Management
+
+The Pocket Money system converts points to actual currency!
+
+### Configuring Pocket Money
+
+1. Go to **Pocket Money** page
+2. Click **Configuration** or **Settings**
+3. Set the following:
+
+| Setting | Description | Example |
+|---------|-------------|---------|
+| Point Value | Cents per point | 10 = €0.10 |
+| Currency | Currency code | EUR, USD |
+| Payout Period | Weekly or Monthly | MONTHLY |
+| Payout Day | Day of week/month | 15th of month |
+| Allow Advances | Allow early withdrawals | Yes/No |
+| Max Advance | Max points for advances | 50 points |
+
+### Managing Point Transactions
+
+#### Adding Bonus Points
+
+Reward children for good behavior:
+
+1. Go to **Pocket Money** page
+2. Find the child's card
+3. Click **Add Bonus**
+4. Enter points and reason
+
+#### Deducting Points
+
+Deduct points for broken items or other reasons:
+
+1. Go to **Pocket Money** page
+2. Find the child's card
+3. Click **Deduct**
+4. Enter points and reason
+
+### Processing Payouts
+
+When it's time to pay out:
+
+1. Go to **Pocket Money** page
+2. View pending points for each child
+3. Click **Pay Out** for each child
+4. Record the actual payment (cash, bank transfer, etc.)
+
+### Viewing Transaction History
+
+All point changes are tracked:
+
+1. Go to **Pocket Money** page
+2. Click on a child's card
+3. View transaction history
+4. Filter by type, date range
+
+---
+
+## Notification Settings Management
+
+Parents can configure notification settings for the family and individual users.
+
+### Configuring Global Notifications
+
+1. Go to **Settings** or **Notification Settings**
+2. Configure email SMTP settings (if enabled)
+3. Set up ntfy.sh for push notifications
+
+### User Notification Preferences
+
+Each user can customize their notifications:
+
+1. Go to **Family Members**
+2. Click on a member
+3. Edit **Notification Settings**
+
+Available options:
+- Email notifications (on/off)
+- Push notifications via ntfy
+- Alert types to receive
+- Quiet hours
+
+---
+
+## Overdue Penalty System
+
+Automatically apply penalties for overdue chores.
+
+### Enabling Overdue Penalties
+
+1. Go to **Overdue Penalty** or **Settings** page
+2. Enable penalty system
+3. Set penalty multiplier (e.g., 2x = double points deducted)
+
+### How It Works
+
+When a chore becomes overdue:
+1. System detects overdue chore
+2. Penalty points are calculated (chore points × multiplier)
+3. Points are deducted from the assigned user
+4. Parent is notified
+
+### Viewing Penalty History
+
+1. Go to **Overdue Penalty** page
+2. View history of applied penalties
+3. See which chores triggered penalties
 
 ---
 

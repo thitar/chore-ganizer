@@ -1,5 +1,7 @@
 # Chore-Ganizer Documentation Review Report
 
+> **⚠️ Status:** This report was generated in February 2026. Some issues may have been addressed since then. Last updated: March 2026.
+
 **Date:** February 15, 2026  
 **Project:** Chore-Ganizer - Family Chore Management System  
 **Reviewer:** Architect Mode

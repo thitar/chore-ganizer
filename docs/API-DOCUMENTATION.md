@@ -1,5 +1,7 @@
 # 📡 Chore-Ganizer API Documentation
 
+> **⚠️ Notice:** This API documentation may be outdated. The OpenAPI specification in [`swagger.json`](swagger.json) is the authoritative and most up-to-date API reference.
+
 Complete REST API reference for Chore-Ganizer backend.
 
 ---
@@ -17,6 +19,11 @@ Complete REST API reference for Chore-Ganizer backend.
    - [Chore Assignments](#chore-assignments-endpoints)
    - [Chore Categories](#chore-categories-endpoints)
    - [Notifications](#notifications-endpoints)
+   - [Notification Settings](#notification-settings-endpoints) *(see swagger.json)*
+   - [Overdue Penalty](#overdue-penalty-endpoints) *(see swagger.json)*
+   - [Recurring Chores](#recurring-chores-endpoints) *(see swagger.json)*
+   - [Pocket Money](#pocket-money-endpoints) *(see swagger.json)*
+   - [Statistics](#statistics-endpoints) *(see swagger.json)*
    - [Audit Logs](#audit-logs-endpoints)
    - [Health](#health-endpoints)
 
@@ -119,7 +126,7 @@ Register a new user account.
 | Field | Type | Required | Constraints |
 |-------|------|----------|-------------|
 | `email` | string | Yes | Valid email, unique |
-| `password` | string | Yes | Min 6 characters |
+| `password` | string | Yes | Min 8 characters, uppercase, lowercase, number, special character |
 | `name` | string | Yes | 1-100 characters |
 | `role` | string | No | `PARENT` or `CHILD`, defaults to `CHILD` |
 
@@ -702,6 +709,101 @@ Get audit logs (parents only).
 - `PAYOUT_CREATED`, `PAYOUT_UPDATED`, `PAYOUT_CANCELLED`
 - `POINTS_BONUS_ADDED`, `POINTS_DEDUCTION_ADDED`
 - `ACCOUNT_LOCKED`, `ACCOUNT_UNLOCKED`, `ACCOUNT_UNLOCKED_BY_ADMIN`
+
+---
+
+### Pocket Money Endpoints
+
+> **Note:** For complete and up-to-date Pocket Money API documentation, see [`swagger.json`](swagger.json).
+
+#### Overview
+
+The Pocket Money system converts earned points into monetary value, allowing parents to manage children's allowances.
+
+#### Configuration
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `pointValue` | integer | 10 | Value in cents per point (10 = €0.10) |
+| `currency` | string | "EUR" | Currency code |
+| `payoutPeriod` | string | "MONTHLY" | "WEEKLY" or "MONTHLY" |
+| `payoutDay` | integer | 15 | Day of month (1-28) or week (0-6) |
+| `allowAdvance` | boolean | true | Allow advance payments |
+| `maxAdvancePoints` | integer | 50 | Max points for advances |
+
+#### Transaction Types
+
+| Type | Description |
+|------|-------------|
+| `EARNED` | Points from completing chores |
+| `BONUS` | Parent-added bonus points |
+| `DEDUCTION` | Parent-added deduction |
+| `PENALTY` | Automatic overdue penalty |
+| `PAYOUT` | Points converted to cash |
+| `ADVANCE` | Advanced payment |
+| `ADJUSTMENT` | Manual adjustment |
+
+---
+
+### Recurring Chores Endpoints
+
+> **Note:** For complete and up-to-date Recurring Chores API documentation, see [`swagger.json`](swagger.json).
+
+#### Overview
+
+Recurring chores automate chore assignments with flexible recurrence patterns.
+
+#### Recurrence Patterns
+
+| Pattern | Example |
+|---------|---------|
+| Daily | Every day, Every 3 days |
+| Weekly | Every Monday, Mon/Wed/Fri, Every 2 weeks |
+| Monthly | 15th of month, 2nd Tuesday of month |
+| Yearly | Every year on specific date |
+
+#### Assignment Modes
+
+| Mode | Description |
+|------|-------------|
+| `FIXED` | Same person always assigned |
+| `ROUND_ROBIN` | Rotates through pool members |
+| `MIXED` | Fixed assignees + rotating person |
+
+---
+
+### Notification Settings Endpoints
+
+> **Note:** For complete API documentation, see [`swagger.json`](swagger.json).
+
+Users can configure their notification preferences including:
+- Email notifications (enable/disable, custom email address)
+- ntfy.sh push notifications (topic, server, credentials)
+- Alert types (chore assigned, due soon, completed, overdue, points earned)
+- Quiet hours (suppress notifications during specific hours)
+
+---
+
+### Overdue Penalty Endpoints
+
+> **Note:** For complete API documentation, see [`swagger.json`](swagger.json).
+
+The overdue penalty system:
+- Automatically applies penalties for overdue chores
+- Configurable penalty multiplier (e.g., 2x points deducted)
+- Parent notifications when child's chore becomes overdue
+- Penalty history tracking
+
+---
+
+### Statistics Endpoints
+
+> **Note:** For complete API documentation, see [`swagger.json`](swagger.json).
+
+Statistics endpoints provide:
+- Family overview (all members' completion rates, point trends)
+- Child-specific statistics (individual completion rates, activity)
+- Configurable time periods (days parameter)
 
 ---
 
