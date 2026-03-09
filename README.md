@@ -457,7 +457,7 @@ docker compose exec backend printenv SESSION_SECRET
 # Ensure withCredentials: true in frontend API client
 ```
 
-For more detailed troubleshooting, see the [Development Plan](./docs/CHORE-GANIZER-DEVELOPMENT-PLAN.md).
+For more detailed troubleshooting, see the [Development Plan](./docs/archive/CHORE-GANIZER-DEVELOPMENT-PLAN.md).
 
 ## 🔒 Security Considerations
 
@@ -559,8 +559,8 @@ npx playwright test
 - **[Deployment Checklist](./docs/DEPLOYMENT-CHECKLIST.md)** - Step-by-step deployment guide
 
 ### Implementation
-- **[Development Plan](./docs/CHORE-GANIZER-DEVELOPMENT-PLAN.md)** - Complete implementation guide with detailed milestones
-- **[Implementation Plan](./docs/IMPLEMENTATION-PLAN.md)** - Phase-by-phase implementation details
+- **[Development Plan](./docs/archive/CHORE-GANIZER-DEVELOPMENT-PLAN.md)** - Complete implementation guide with detailed milestones
+- **[Implementation Plan](./docs/archive/IMPLEMENTATION-PLAN.md)** - Phase-by-phase implementation details
 - **[Docker Configuration](./docs/DOCKER-CONFIGURATION.md)** - Docker setup, Dockerfiles, and docker-compose reference
 
 ### API Reference
@@ -572,12 +572,12 @@ npx playwright test
 - **[CI/CD Guide](./docs/CICD-GUIDE.md)** - GitHub Actions workflow documentation
 
 ### Implementation Logs
-- **[Phase 1 Log](./docs/PHASE-1-IMPLEMENTATION-LOG.md)** - Project setup
-- **[Phase 2 Log](./docs/PHASE-2-IMPLEMENTATION-LOG.md)** - Backend core
-- **[Phase 3 Log](./docs/PHASE-3-IMPLEMENTATION-LOG.md)** - Frontend core
-- **[Phase 4 Log](./docs/PHASE-4-IMPLEMENTATION-LOG.md)** - Docker configuration
-- **[Phase 5 Log](./docs/PHASE-5-DEPLOYMENT-LOG.md)** - Testing & deployment
-- **[Testing Log](./docs/TESTING-LOG.md)** - Test results
+- **[Phase 1 Log](./docs/archive/PHASE-1-IMPLEMENTATION-LOG.md)** - Project setup
+- **[Phase 2 Log](./docs/archive/PHASE-2-IMPLEMENTATION-LOG.md)** - Backend core
+- **[Phase 3 Log](./docs/archive/PHASE-3-IMPLEMENTATION-LOG.md)** - Frontend core
+- **[Phase 4 Log](./docs/archive/PHASE-4-IMPLEMENTATION-LOG.md)** - Docker configuration
+- **[Phase 5 Log](./docs/archive/PHASE-5-DEPLOYMENT-LOG.md)** - Testing & deployment
+- **[Testing Log](./docs/archive/TESTING-LOG.md)** - Test results
 
 ### Future
 - **[Future Roadmap](./docs/FUTURE-ROADMAP.md)** - Planned features and enhancements
@@ -607,7 +607,7 @@ See the [Future Roadmap](./docs/FUTURE-ROADMAP.md) for planned features.
 
 Having issues? Check these resources:
 
-1. **[Troubleshooting Guide](./docs/CHORE-GANIZER-DEVELOPMENT-PLAN.md#troubleshooting)** in the development plan
+1. **[Troubleshooting Guide](./docs/archive/CHORE-GANIZER-DEVELOPMENT-PLAN.md#troubleshooting)** in the development plan
 2. Review `docker compose logs` for error messages
 3. Check [Prisma documentation](https://www.prisma.io/docs)
 4. Visit [r/homelab](https://reddit.com/r/homelab) or [r/selfhosted](https://reddit.com/r/selfhosted)

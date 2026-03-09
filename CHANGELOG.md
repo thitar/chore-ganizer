@@ -139,7 +139,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 - Updated ADMIN-GUIDE.md with email notifications, PWA features, and statistics dashboard sections
 - Updated USER-GUIDE.md with PWA installation and offline usage instructions
-- Updated TESTING.md with E2E testing section
+- Updated AUTOMATED-TESTING.md with E2E testing section
 - Updated QUICK-REFERENCE.md with new features
 - Updated version references in all documentation files to 2.0.0
 - Created MANUAL-TESTING.md with 78 test cases (60 parent, 18 child)

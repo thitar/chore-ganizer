@@ -1,6 +1,6 @@
 # Chore-Ganizer Manual Testing Guide
 
-## Version 2.0.0
+## Version 2.1.7
 
 ---
 
@@ -13,11 +13,15 @@
    - [User Management Tests](#user-management-tests)
    - [Chore Template Tests](#chore-template-tests)
    - [Chore Assignment Tests](#chore-assignment-tests)
+   - [Overdue Penalty Tests](#overdue-penalty-tests)
    - [Recurring Chores Tests](#recurring-chores-tests)
    - [Pocket Money Tests](#pocket-money-tests)
    - [Statistics Dashboard Tests](#statistics-dashboard-tests)
+   - [Calendar Tests](#calendar-tests)
    - [Notification Tests](#notification-tests)
    - [PWA Tests](#pwa-tests-parent)
+   - [Personal Dashboard Tests](#personal-dashboard-tests)
+   - [Responsive Design Tests](#responsive-design-tests)
    - [Settings Tests](#settings-tests)
 4. [Child Test Cases](#child-test-cases)
    - [Authentication Tests](#child-authentication-tests)
@@ -411,6 +415,82 @@ docker-compose up -d
 
 ---
 
+#### P-105: Edit Family Member
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-105 |
+| **Test Name** | Edit Family Member Details |
+| **Prerequisites** | Parent is logged in, child account exists |
+
+**Steps:**
+
+1. Navigate to Family Members page
+2. Find a family member
+3. Click "Edit" button
+4. Change the name
+5. Change the role (if applicable)
+6. Click "Save" button
+
+**Expected Result:**
+- Family member details are updated
+- Success message is displayed
+- Changes are reflected in the family members list
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-106: Delete Family Member
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-106 |
+| **Test Name** | Delete Family Member |
+| **Prerequisites** | Parent is logged in, child account exists with no active assignments |
+
+**Steps:**
+
+1. Navigate to Family Members page
+2. Find a family member with no active chore assignments
+3. Click "Delete" button
+4. Confirm the deletion in the dialog
+
+**Expected Result:**
+- Family member is deleted
+- Member no longer appears in the list
+- Success message is displayed
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-107: Assign User Color
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-107 |
+| **Test Name** | Assign Color to Family Member |
+| **Prerequisites** | Parent is logged in |
+
+**Steps:**
+
+1. Navigate to Family Members page
+2. Click "Edit" on a family member
+3. Find color selection option
+4. Select a color
+5. Save the changes
+6. Navigate to Calendar to verify color is applied
+
+**Expected Result:**
+- Color is saved to the family member
+- Calendar shows the selected color for this member's chores
+- Color appears in family members list
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
 ### Chore Template Tests
 
 #### P-201: Create New Chore Template
@@ -780,6 +860,105 @@ docker-compose up -d
 
 ---
 
+### Overdue Penalty Tests
+
+#### P-309: View Overdue Chores
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-309 |
+| **Test Name** | View Overdue Chores |
+| **Prerequisites** | Parent is logged in, chores with past due dates exist |
+
+**Steps:**
+
+1. Navigate to Chores page
+2. Look for overdue filter or section
+3. Observe how overdue chores are displayed
+
+**Expected Result:**
+- Overdue chores are clearly marked
+- Due date shows as past
+- Visual indicator (color, badge) shows overdue status
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-310: Apply Overdue Penalty
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-310 |
+| **Test Name** | Overdue Penalty is Applied |
+| **Prerequisites** | Parent is logged in, overdue chore exists, penalty configured |
+
+**Steps:**
+
+1. Navigate to Chores page
+2. Find an overdue chore
+3. Observe the point value (may be reduced)
+4. Complete the chore
+5. Check point award
+
+**Expected Result:**
+- Overdue chore shows reduced points (if penalty configured)
+- Points awarded reflect the penalty
+- Penalty amount is documented
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-311: Configure Overdue Penalty
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-311 |
+| **Test Name** | Configure Overdue Penalty Settings |
+| **Prerequisites** | Parent is logged in |
+
+**Steps:**
+
+1. Navigate to Settings or Admin page
+2. Find Overdue Penalty settings
+3. Enable/disable overdue penalty
+4. Set penalty percentage (e.g., 10% reduction per day)
+5. Save settings
+6. Test with an overdue chore
+
+**Expected Result:**
+- Settings are saved
+- Penalty is applied correctly to overdue chores
+- Visual feedback shows penalty applied
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-312: Overdue Notification
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-312 |
+| **Test Name** | Receive Overdue Notification |
+| **Prerequisites** | Parent is logged in, notifications enabled, overdue chore exists |
+
+**Steps:**
+
+1. Have a chore become overdue (wait for due date to pass)
+2. Observe notification
+3. Check notification content
+
+**Expected Result:**
+- Notification about overdue chore is received
+- Shows which chore is overdue
+- Shows assigned family member
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
 ### Recurring Chores Tests
 
 #### P-401: Create Daily Recurring Chore
@@ -963,6 +1142,94 @@ docker-compose up -d
 - Occurrence status changes to "Skipped"
 - No points are awarded
 - Skip reason is recorded
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-408: Create Monthly Recurring Chore
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-408 |
+| **Test Name** | Create Monthly Recurring Chore |
+| **Prerequisites** | Parent is logged in |
+
+**Steps:**
+
+1. Navigate to Recurring Chores page
+2. Click "Create Recurring Chore" button
+3. Enter title: "Change Sheets"
+4. Enter points: 15
+5. Set recurrence: Monthly
+6. Set day of month: 1 (or 15)
+7. Select assignment mode: Fixed
+8. Select a child to assign
+9. Click "Create" button
+
+**Expected Result:**
+- Recurring chore is created successfully
+- Occurrences are generated for the selected day each month
+- Pattern is maintained correctly
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-409: Create Nth Weekday Recurring Chore
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-409 |
+| **Test Name** | Create Nth Weekday of Month Recurring Chore |
+| **Prerequisites** | Parent is logged in |
+
+**Steps:**
+
+1. Navigate to Recurring Chores page
+2. Click "Create Recurring Chore" button
+3. Enter title: "Garage Cleanup"
+4. Enter points: 20
+5. Set recurrence: Monthly - Nth Weekday
+6. Select week: 2nd
+7. Select day: Tuesday
+8. Select assignment mode: Fixed
+9. Select a child
+10. Click "Create" button
+
+**Expected Result:**
+- Recurring chore is created with Nth weekday pattern
+- Occurrences fall on 2nd Tuesday of each month
+- Pattern is correctly calculated
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-410: Create Last Day of Month Recurring Chore
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-410 |
+| **Test Name** | Create Last Day of Month Recurring Chore |
+| **Prerequisites** | Parent is logged in |
+
+**Steps:**
+
+1. Navigate to Recurring Chores page
+2. Click "Create Recurring Chore" button
+3. Enter title: "Pay Bills"
+4. Enter points: 10
+5. Set recurrence: Monthly
+6. Select "Last day of month"
+7. Select assignment mode: Fixed
+8. Select a child
+9. Click "Create" button
+
+**Expected Result:**
+- Recurring chore is created for last day of month
+- Occurrences fall on last day of each month
+- Handles months with different numbers of days
 
 **Pass/Fail:** [ ] Pass [ ] Fail
 
@@ -1295,13 +1562,159 @@ docker-compose up -d
 
 ---
 
-### Notification Tests
+### Calendar Tests
 
-#### P-701: View In-App Notifications
+#### P-701: View Family Calendar
 
 | Field | Value |
 |-------|-------|
 | **Test ID** | P-701 |
+| **Test Name** | View Family Calendar |
+| **Prerequisites** | Parent is logged in, chores assigned to family members |
+
+**Steps:**
+
+1. Click "Calendar" in the sidebar
+2. Observe the calendar view
+
+**Expected Result:**
+- Calendar displays in monthly view by default
+- All assigned chores are shown on their due dates
+- Each family member's chores are shown in their assigned color
+- Navigation arrows allow moving between months
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-702: Navigate Calendar Months
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-702 |
+| **Test Name** | Navigate Calendar Months |
+| **Prerequisites** | Parent is logged in |
+
+**Steps:**
+
+1. Navigate to Calendar page
+2. Click "Next Month" arrow
+3. Observe the month changes
+4. Click "Previous Month" arrow
+5. Observe the month changes back
+
+**Expected Result:**
+- Calendar navigates forward and backward
+- Chores for the displayed month are shown
+- Current month indicator updates
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-703: View Calendar Day Details
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-703 |
+| **Test Name** | View Calendar Day Details |
+| **Prerequisites** | Parent is logged in, chores with due dates exist |
+
+**Steps:**
+
+1. Navigate to Calendar page
+2. Click on a day that has chores assigned
+3. Observe the day detail view or tooltip
+
+**Expected Result:**
+- All chores for that day are displayed
+- Shows assigned family member for each chore
+- Shows chore status (pending/completed)
+- Shows point values
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-704: Filter Calendar by Family Member
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-704 |
+| **Test Name** | Filter Calendar by Family Member |
+| **Prerequisites** | Parent is logged in, multiple family members with chores exist |
+
+**Steps:**
+
+1. Navigate to Calendar page
+2. Find filter dropdown for family members
+3. Select one family member
+4. Observe the calendar updates
+5. Clear filter to show all
+
+**Expected Result:**
+- Only selected family member's chores are displayed
+- Filter indicator is visible
+- Clearing filter shows all chores again
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-705: View Calendar in Week View
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-705 |
+| **Test Name** | View Calendar in Week View |
+| **Prerequisites** | Parent is logged in |
+
+**Steps:**
+
+1. Navigate to Calendar page
+2. Find view toggle (month/week)
+3. Switch to week view
+4. Observe the calendar changes
+
+**Expected Result:**
+- Calendar displays week view
+- Shows 7 days with more detail per day
+- Can navigate between weeks
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-706: View Overdue Chores on Calendar
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-706 |
+| **Test Name** | View Overdue Chores on Calendar |
+| **Prerequisites** | Parent is logged in, overdue chores exist |
+
+**Steps:**
+
+1. Navigate to Calendar page
+2. Find a past date with overdue chores
+3. Observe how overdue chores are displayed
+
+**Expected Result:**
+- Overdue chores are visually distinguished (different color, strikethrough, or indicator)
+- Overdue status is clear from the calendar view
+- Due date shows the original due date
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+### Notification Tests
+
+#### P-707: View In-App Notifications
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-707 |
 | **Test Name** | View In-App Notifications |
 | **Prerequisites** | Parent is logged in, notifications exist |
 
@@ -1321,11 +1734,11 @@ docker-compose up -d
 
 ---
 
-#### P-702: Mark Notification as Read
+#### P-708: Mark Notification as Read
 
 | Field | Value |
 |-------|-------|
-| **Test ID** | P-702 |
+| **Test ID** | P-708 |
 | **Test Name** | Mark Notification as Read |
 | **Prerequisites** | Parent is logged in, unread notification exists |
 
@@ -1345,11 +1758,11 @@ docker-compose up -d
 
 ---
 
-#### P-703: Configure ntfy Push Notifications
+#### P-709: Configure ntfy Push Notifications
 
 | Field | Value |
 |-------|-------|
-| **Test ID** | P-703 |
+| **Test ID** | P-709 |
 | **Test Name** | Configure ntfy Push Notifications |
 | **Prerequisites** | Parent is logged in, ntfy app installed on device |
 
@@ -1371,11 +1784,11 @@ docker-compose up -d
 
 ---
 
-#### P-704: Configure Notification Type Preferences
+#### P-710: Configure Notification Type Preferences
 
 | Field | Value |
 |-------|-------|
-| **Test ID** | P-704 |
+| **Test ID** | P-710 |
 | **Test Name** | Configure Notification Type Preferences |
 | **Prerequisites** | Parent is logged in |
 
@@ -1397,11 +1810,11 @@ docker-compose up -d
 
 ---
 
-#### P-705: Configure Quiet Hours
+#### P-711: Configure Quiet Hours
 
 | Field | Value |
 |-------|-------|
-| **Test ID** | P-705 |
+| **Test ID** | P-711 |
 | **Test Name** | Configure Quiet Hours |
 | **Prerequisites** | Parent is logged in |
 
@@ -1425,11 +1838,11 @@ docker-compose up -d
 
 ---
 
-#### P-706: Email Notification Configuration
+#### P-712: Email Notification Configuration
 
 | Field | Value |
 |-------|-------|
-| **Test ID** | P-706 |
+| **Test ID** | P-712 |
 | **Test Name** | Email Notification Configuration |
 | **Prerequisites** | Parent is logged in, SMTP configured in environment |
 
@@ -1678,6 +2091,130 @@ docker-compose up -d
 - Preferences are saved
 - Success message is displayed
 - Future notifications follow new preferences
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+### Personal Dashboard Tests
+
+#### P-904: View Personal Dashboard
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-904 |
+| **Test Name** | View Personal Dashboard as Parent |
+| **Prerequisites** | Parent is logged in |
+
+**Steps:**
+
+1. Navigate to Dashboard
+2. Observe all available widgets
+3. Check for family overview
+
+**Expected Result:**
+- Dashboard shows family summary
+- Shows all family members' pending chores
+- Shows point totals for all members
+- Shows recent activity across family
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-905: Dashboard Shows Completion Trends
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-905 |
+| **Test Name** | View Completion Trends on Dashboard |
+| **Prerequisites** | Parent is logged in, completed chores exist |
+
+**Steps:**
+
+1. Navigate to Dashboard
+2. Find completion trends widget
+3. Observe the displayed data
+
+**Expected Result:**
+- Shows completion rate chart/graph
+- Displays trend over time (week/month)
+- Shows comparison between family members
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+### Responsive Design Tests
+
+#### P-906: View on Desktop Browser
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-906 |
+| **Test Name** | View Application on Desktop Browser |
+| **Prerequisites** | Desktop browser available |
+
+**Steps:**
+
+1. Open application in Chrome/Firefox/Edge at 1920x1080 resolution
+2. Navigate through all pages
+3. Check sidebar, content areas, modals
+
+**Expected Result:**
+- All elements fit properly on screen
+- Sidebar is visible and fully functional
+- No horizontal scrolling needed
+- Modals are centered and properly sized
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-907: View on Tablet Browser
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-907 |
+| **Test Name** | View Application on Tablet Browser |
+| **Prerequisites** | Tablet or tablet viewport available |
+
+**Steps:**
+
+1. Open application in browser at tablet viewport (e.g., 768x1024)
+2. Navigate through all pages
+3. Check touch targets and layout
+
+**Expected Result:**
+- Layout adapts to tablet size
+- Sidebar collapses to hamburger menu
+- Touch targets are adequately sized (44px minimum)
+- Content is readable without horizontal scroll
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-908: View on Mobile Browser
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-908 |
+| **Test Name** | View Application on Mobile Browser |
+| **Prerequisites** | Mobile device or mobile viewport available |
+
+**Steps:**
+
+1. Open application in browser at mobile viewport (e.g., 375x667)
+2. Navigate through all pages
+3. Test all interactions
+
+**Expected Result:**
+- Mobile-friendly layout
+- Hamburger menu works properly
+- All buttons and inputs are easily tappable
+- No content is cut off or inaccessible
+- Forms are usable on small screens
 
 **Pass/Fail:** [ ] Pass [ ] Fail
 
@@ -2231,14 +2768,18 @@ After completing all tests, fill in the summary below:
 | Category | Total Tests | Passed | Failed | Skipped |
 |----------|-------------|--------|--------|---------|
 | Parent Authentication | 7 | | | |
-| User Management | 4 | | | |
+| User Management | 7 | | | |
 | Chore Templates | 6 | | | |
-| Chore Assignments | 8 | | | |
-| Recurring Chores | 7 | | | |
+| Chore Assignments | 12 | | | |
+| Overdue Penalty | 4 | | | |
+| Recurring Chores | 10 | | | |
 | Pocket Money | 7 | | | |
 | Statistics Dashboard | 6 | | | |
+| Calendar | 6 | | | |
 | Notifications (Parent) | 6 | | | |
 | PWA (Parent) | 6 | | | |
+| Personal Dashboard | 2 | | | |
+| Responsive Design | 3 | | | |
 | Settings | 3 | | | |
 | Child Authentication | 4 | | | |
 | Child Chore Viewing | 4 | | | |
@@ -2246,7 +2787,7 @@ After completing all tests, fill in the summary below:
 | Child Points/Pocket Money | 4 | | | |
 | Child PWA | 3 | | | |
 | Child Notifications | 3 | | | |
-| **TOTAL** | **78** | | | |
+| **TOTAL** | **99** | | | |
 
 ### Issues Found
 
@@ -2329,6 +2870,7 @@ Before testing, verify:
 
 ---
 
-*Document Version: 1.0*
+*Document Version: 2.1.7*
 *Created: 2026-02-23*
-*For Chore-Ganizer v2.0.0*
+*Updated: 2026-03-09*
+*For Chore-Ganizer v2.1.7*
