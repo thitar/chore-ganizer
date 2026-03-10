@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { User, CreateUserData, UpdateUserData } from '../types'
+import type { User, CreateUserData, UpdateUserData, UserWithStats } from '../types'
 
 export interface UsersResponse {
   users: User[]
@@ -7,6 +7,10 @@ export interface UsersResponse {
 
 export interface UserResponse {
   user: User
+}
+
+export interface UserAssignmentsResponse {
+  assignments: any[]
 }
 
 export const usersApi = {
@@ -18,6 +22,17 @@ export const usersApi = {
   getById: async (id: number): Promise<User> => {
     const response = await apiClient.get<{ user: User }>(`/users/${id}`)
     return response.data?.user
+  },
+
+  getWithStats: async (id: number): Promise<UserWithStats> => {
+    const response = await apiClient.get<{ user: UserWithStats }>(`/users/${id}`)
+    return response.data?.user
+  },
+
+  getAssignments: async (id: number, status?: string) => {
+    const params = status ? `?status=${status}` : ''
+    const response = await apiClient.get<{ assignments: any[] }>(`/users/${id}/assignments${params}`)
+    return response.data?.assignments || []
   },
 
   create: async (data: CreateUserData): Promise<User> => {
@@ -32,5 +47,15 @@ export const usersApi = {
 
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/users/${id}`)
+  },
+
+  lock: async (id: number): Promise<User> => {
+    const response = await apiClient.post<{ user: User }>(`/users/${id}/lock`, {})
+    return response.data?.user
+  },
+
+  unlock: async (id: number): Promise<User> => {
+    const response = await apiClient.post<{ user: User }>(`/users/${id}/unlock`, {})
+    return response.data?.user
   },
 }

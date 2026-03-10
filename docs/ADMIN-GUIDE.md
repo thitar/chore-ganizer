@@ -629,7 +629,42 @@ sqlite3 /var/lib/docker/volumes/chore-ganizer-data/_data/chore-ganizer.db
 
 ### Useful SQL Queries
 
-#### View All Users
+#### Managing Users via UI
+
+The Family Members page (accessible from the sidebar) provides a user-friendly interface for managing family members:
+
+**View Family Members:**
+1. Go to **Family Members** in the sidebar
+2. View all family members in a sortable table
+3. Click column headers (Name, Email, Role, Points) to sort
+4. Each member shows their color indicator and account status
+
+**Create a New User:**
+1. Go to **Family Members** in the sidebar
+2. Click **Add User** button
+3. Fill in the form:
+   - Name, Email, Password (8+ chars with uppercase, lowercase, number, special char)
+   - Role (Parent or Child)
+   - Color (choose from presets or enter custom hex)
+   - Base Pocket Money (for children)
+4. Click **Create User**
+
+**Edit a User:**
+1. Click **Edit** next to the user
+2. Modify name, email, role, color, or pocket money
+3. Click **Save Changes**
+
+**Lock/Unlock Account:**
+- Click **Lock** to prevent a child from logging in
+- Click **Unlock** to restore access
+
+**Delete a User:**
+1. Click **Delete** (users with active assignments cannot be deleted)
+2. Confirm in the dialog
+
+---
+
+#### View All Users (Database)
 
 ```sql
 SELECT id, email, name, role, points FROM User;

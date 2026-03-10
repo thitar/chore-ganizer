@@ -491,6 +491,141 @@ docker-compose up -d
 
 ---
 
+#### P-108: Create New User via UI
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-108 |
+| **Test Name** | Create New User via UI |
+| **Prerequisites** | Parent is logged in |
+
+**Steps:**
+
+1. Navigate to Family Members page
+2. Click "Add User" button
+3. Fill in user details:
+   - Name: "Test Child"
+   - Email: "testchild@home"
+   - Password: "SecurePass123!"
+   - Role: Child
+4. Select a color
+5. Set base pocket money (optional)
+6. Click "Create User"
+
+**Expected Result:**
+- New user is created successfully
+- Success message is displayed
+- New user appears in Family Members list
+- User can log in with the new credentials
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-109: Lock User Account
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-109 |
+| **Test Name** | Lock User Account |
+| **Prerequisites** | Parent is logged in, child account exists |
+
+**Steps:**
+
+1. Navigate to Family Members page
+2. Find a child user
+3. Click "Lock" button
+4. Confirm the action in the dialog
+
+**Expected Result:**
+- User account is locked
+- Status shows "Locked" for the user
+- User cannot log in with their credentials
+- Success message is displayed
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-110: Unlock User Account
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-110 |
+| **Test Name** | Unlock User Account |
+| **Prerequisites** | Parent is logged in, locked child account exists |
+
+**Steps:**
+
+1. Navigate to Family Members page
+2. Find a locked child user
+3. Click "Unlock" button
+4. Confirm the action in the dialog
+
+**Expected Result:**
+- User account is unlocked
+- Status shows "Active" for the user
+- User can log in with their credentials again
+- Success message is displayed
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-111: User Table Sorting
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-111 |
+| **Test Name** | Sort User Table |
+| **Prerequisites** | Parent is logged in, multiple users exist |
+
+**Steps:**
+
+1. Navigate to Family Members page
+2. Click on column headers to sort:
+   - Name
+   - Email
+   - Role
+   - Points
+3. Click again to reverse sort order
+
+**Expected Result:**
+- Users are sorted by the selected column
+- Sort direction indicator shows (ascending/descending)
+- Sorting works in both directions
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
+#### P-112: Color Picker Presets
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-112 |
+| **Test Name** | Use Color Picker Presets |
+| **Prerequisites** | Parent is logged in |
+
+**Steps:**
+
+1. Navigate to Family Members page
+2. Click "Add User" or "Edit" on a user
+3. Observe the color picker section
+4. Click on any preset color
+5. Observe the preview updates
+6. Also try entering a custom hex color
+
+**Expected Result:**
+- Preset colors are displayed
+- Clicking a preset selects that color
+- Preview shows the selected color
+- Custom hex input works
+
+**Pass/Fail:** [ ] Pass [ ] Fail
+
+---
+
 ### Chore Template Tests
 
 #### P-201: Create New Chore Template

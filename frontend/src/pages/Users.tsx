@@ -1,61 +1,30 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth, useUsers } from '../hooks'
 import { Button, Modal } from '../components/common'
-import type { User } from '../types'
+import { UserTable, UserForm, ConfirmDialog } from '../components/users'
+import type { User, CreateUserData, UpdateUserData } from '../types'
 
 export const Users: React.FC = () => {
   const { isParent } = useAuth()
-  const { users, loading, error, deleteUser, updateUser, refresh } = useUsers()
+  const { users, loading, error, createUser, updateUser, deleteUser, lockUser, unlockUser, refresh } = useUsers()
   const [editingUser, setEditingUser] = useState<User | null>(null)
-  const [editName, setEditName] = useState('')
-  const [editEmail, setEditEmail] = useState('')
-  const [editColor, setEditColor] = useState('')
-  const [editBasePocketMoney, setEditBasePocketMoney] = useState('')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<User | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      return
-    }
-    const result = await deleteUser(id)
-    if (result.success) {
-      setSuccessMessage('User deleted successfully')
-      setTimeout(() => setSuccessMessage(null), 3000)
-    } else {
-      setErrorMessage(result.error || 'Failed to delete user')
-      setTimeout(() => setErrorMessage(null), 3000)
-    }
-  }
-
-  const handleEditClick = (user: User) => {
+  const handleEdit = (user: User) => {
     setEditingUser(user)
-    setEditName(user.name)
-    setEditEmail(user.email)
-    setEditColor(user.color || '#3B82F6')
-    setEditBasePocketMoney(user.basePocketMoney?.toString() || '0')
   }
 
-  const handleEditSubmit = async () => {
+  const handleEditSubmit = async (data: CreateUserData | UpdateUserData) => {
     if (!editingUser) return
-    if (!editName.trim()) {
-      setErrorMessage('Name is required')
-      return
-    }
-    if (!editEmail.trim()) {
-      setErrorMessage('Email is required')
-      return
-    }
-
     setIsSubmitting(true)
     try {
-      const result = await updateUser(editingUser.id, {
-        name: editName.trim(),
-        email: editEmail.trim(),
-        color: editColor,
-        basePocketMoney: editingUser.role === 'CHILD' ? parseFloat(editBasePocketMoney) || 0 : undefined,
-      })
+      const result = await updateUser(editingUser.id, data as UpdateUserData)
       if (result.success) {
         setSuccessMessage('User updated successfully')
         setEditingUser(null)
@@ -64,6 +33,79 @@ export const Users: React.FC = () => {
       } else {
         setErrorMessage(result.error || 'Failed to update user')
       }
+    } finally {
+      setIsSubmitting(false)
+      setTimeout(() => setErrorMessage(null), 3000)
+    }
+  }
+
+  const handleCreateSubmit = async (data: CreateUserData | UpdateUserData) => {
+    setIsSubmitting(true)
+    try {
+      const result = await createUser(data as CreateUserData)
+      if (result.success) {
+        setSuccessMessage('User created successfully')
+        setShowCreateModal(false)
+        refresh()
+        setTimeout(() => setSuccessMessage(null), 3000)
+      } else {
+        setErrorMessage(result.error || 'Failed to create user')
+      }
+    } finally {
+      setIsSubmitting(false)
+      setTimeout(() => setErrorMessage(null), 3000)
+    }
+  }
+
+  const handleDeleteClick = (user: User) => {
+    setUserToDelete(user)
+    setShowDeleteConfirm(true)
+  }
+
+  const handleDelete = async () => {
+    if (!userToDelete) return
+    setIsSubmitting(true)
+    try {
+      const result = await deleteUser(userToDelete.id)
+      if (result.success) {
+        setSuccessMessage('User deleted successfully')
+        refresh()
+        setTimeout(() => setSuccessMessage(null), 3000)
+      } else {
+        setErrorMessage(result.error || 'Failed to delete user')
+      }
+    } finally {
+      setIsSubmitting(false)
+      setShowDeleteConfirm(false)
+      setUserToDelete(null)
+      setTimeout(() => setErrorMessage(null), 3000)
+    }
+  }
+
+  const handleLock = async (user: User) => {
+    setIsSubmitting(true)
+    try {
+      await lockUser(user.id)
+      setSuccessMessage('User locked successfully')
+      refresh()
+      setTimeout(() => setSuccessMessage(null), 3000)
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to lock user')
+    } finally {
+      setIsSubmitting(false)
+      setTimeout(() => setErrorMessage(null), 3000)
+    }
+  }
+
+  const handleUnlock = async (user: User) => {
+    setIsSubmitting(true)
+    try {
+      await unlockUser(user.id)
+      setSuccessMessage('User unlocked successfully')
+      refresh()
+      setTimeout(() => setSuccessMessage(null), 3000)
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to unlock user')
     } finally {
       setIsSubmitting(false)
       setTimeout(() => setErrorMessage(null), 3000)
@@ -88,6 +130,23 @@ export const Users: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Family Members</h1>
+          <p className="text-gray-600">Manage your family members</p>
+        </div>
+        {isParent && (
+          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add User
+          </Button>
+        )}
+      </div>
+
+      {/* Messages */}
       {successMessage && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
           <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -106,73 +165,17 @@ export const Users: React.FC = () => {
         </div>
       )}
 
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Family Members</h1>
-        <p className="text-gray-600">Manage your family members</p>
-        {isParent && <p className="text-sm text-gray-500 mt-1">Click on a family member to edit their details</p>}
+      {/* Users Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <UserTable
+          users={users}
+          onEdit={isParent ? handleEdit : undefined}
+          onDelete={isParent ? handleDeleteClick : undefined}
+          onLock={isParent ? handleLock : undefined}
+          onUnlock={isParent ? handleUnlock : undefined}
+          loading={loading}
+        />
       </div>
-
-      {users.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-          <p className="text-gray-600">No family members found.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {users.map((user) => (
-            <div
-              key={user.id}
-              className={`bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow ${isParent ? 'cursor-pointer' : ''}`}
-              onClick={() => isParent && handleEditClick(user)}
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                  style={{ backgroundColor: user.color || '#3B82F6' }}
-                >
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      user.role === 'PARENT'
-                        ? 'bg-purple-100 text-purple-800'
-                        : 'bg-blue-100 text-blue-800'
-                    }`}
-                  >
-                    {user.role}
-                  </span>
-                </div>
-              </div>
-              <p className="text-gray-600 text-sm mb-2">{user.email}</p>
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                <span>Points: {user.points}</span>
-                {user.role === 'CHILD' && user.basePocketMoney > 0 && (
-                  <span className="text-green-600">Base: €{user.basePocketMoney.toFixed(2)}</span>
-                )}
-                <div className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: user.color || '#3B82F6' }}></span>
-                  <span className="text-xs">Color</span>
-                </div>
-              </div>
-              {isParent && user.role !== 'PARENT' && (
-                <div className="pt-2 border-t border-gray-100">
-                  <Button 
-                    size="sm" 
-                    variant="danger" 
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDelete(user.id)
-                    }}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* Edit User Modal */}
       <Modal
@@ -181,89 +184,44 @@ export const Users: React.FC = () => {
         title="Edit Family Member"
       >
         {editingUser && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-              <input
-                type="text"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                type="email"
-                value={editEmail}
-                onChange={(e) => setEditEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter email"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Calendar Color</label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={editColor}
-                  onChange={(e) => setEditColor(e.target.value)}
-                  className="w-12 h-12 rounded-lg cursor-pointer border border-gray-300"
-                />
-                <input
-                  type="text"
-                  value={editColor}
-                  onChange={(e) => setEditColor(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-                  placeholder="#000000"
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-2">Preview:</p>
-              <div
-                className="mt-1 h-8 rounded-lg flex items-center justify-center text-white font-medium"
-                style={{ backgroundColor: editColor }}
-              >
-                {editName || 'User Name'}
-              </div>
-            </div>
-
-            {editingUser.role === 'CHILD' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Base Pocket Money (€)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={editBasePocketMoney}
-                  onChange={(e) => setEditBasePocketMoney(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="0.00"
-                />
-                <p className="text-xs text-gray-500 mt-1">Base amount added to pocket money each payout period</p>
-              </div>
-            )}
-
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => setEditingUser(null)}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleEditSubmit}
-                disabled={isSubmitting || !editName.trim() || !editEmail.trim()}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </div>
+          <UserForm
+            user={editingUser}
+            onSubmit={handleEditSubmit}
+            onCancel={() => setEditingUser(null)}
+            loading={isSubmitting}
+          />
         )}
       </Modal>
+
+      {/* Create User Modal */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Add New User"
+      >
+        <UserForm
+          onSubmit={handleCreateSubmit}
+          onCancel={() => setShowCreateModal(false)}
+          loading={isSubmitting}
+        />
+      </Modal>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false)
+          setUserToDelete(null)
+        }}
+        onConfirm={handleDelete}
+        title="Delete User"
+        message={`Are you sure you want to delete ${userToDelete?.name}? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+        loading={isSubmitting}
+      />
     </div>
   )
 }
+
+export default Users

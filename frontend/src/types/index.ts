@@ -7,6 +7,17 @@ export interface User {
   basePocketMoney: number // Base pocket money in euros
   color: string | null
   createdAt: string
+  // Account lockout fields
+  failedLoginAttempts?: number
+  lockoutUntil?: string | null
+  lockedAt?: string | null
+}
+
+export interface UserWithStats extends User {
+  _count?: {
+    assignedChores: number
+    completedChores: number
+  }
 }
 
 export interface ChoreCategory {

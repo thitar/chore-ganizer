@@ -2,7 +2,7 @@ import { Router } from 'express'
 import * as usersController from '../controllers/users.controller.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authenticate, authorize, requireParent } from '../middleware/auth.js'
-import { validate, updateUserSchema, idParamSchema } from '../middleware/validator.js'
+import { validate, updateUserSchema, idParamSchema, createUserSchema } from '../middleware/validator.js'
 
 const router = Router()
 
@@ -15,6 +15,19 @@ router.get(
   '/',
   authenticate,
   asyncHandler(usersController.getAllUsers)
+)
+
+/**
+ * @route   POST /api/users
+ * @desc    Create a new user
+ * @access  Private (Parents only)
+ */
+router.post(
+  '/',
+  authenticate,
+  requireParent,
+  validate(createUserSchema),
+  asyncHandler(usersController.createUser)
 )
 
 /**
@@ -54,6 +67,45 @@ router.put(
   validate(idParamSchema, 'params'),
   validate(updateUserSchema),
   asyncHandler(usersController.updateUser)
+)
+
+/**
+ * @route   DELETE /api/users/:id
+ * @desc    Delete user
+ * @access  Private (Parents only)
+ */
+router.delete(
+  '/:id',
+  authenticate,
+  requireParent,
+  validate(idParamSchema, 'params'),
+  asyncHandler(usersController.deleteUser)
+)
+
+/**
+ * @route   POST /api/users/:id/lock
+ * @desc    Lock a user account
+ * @access  Private (Parents only)
+ */
+router.post(
+  '/:id/lock',
+  authenticate,
+  requireParent,
+  validate(idParamSchema, 'params'),
+  asyncHandler(usersController.lockUser)
+)
+
+/**
+ * @route   POST /api/users/:id/unlock
+ * @desc    Unlock a user account
+ * @access  Private (Parents only)
+ */
+router.post(
+  '/:id/unlock',
+  authenticate,
+  requireParent,
+  validate(idParamSchema, 'params'),
+  asyncHandler(usersController.unlockUser)
 )
 
 export default router

@@ -44,6 +44,8 @@ export const createUserSchema = z.object({
   password: passwordSchema,
   name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or less'),
   role: z.enum(['PARENT', 'CHILD']).optional().default('CHILD'),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Color must be a valid hex color').optional(),
+  basePocketMoney: z.number().min(0, 'Base pocket money must be at least 0').optional(),
 })
 
 // Helper to transform empty strings to undefined for optional fields
@@ -56,6 +58,7 @@ const optionalString = <T extends z.ZodTypeAny>(schema: T) =>
 export const updateUserSchema = z.object({
   name: optionalString(z.string().min(1, 'Name cannot be empty').max(100, 'Name must be 100 characters or less')),
   email: optionalString(z.string().email('Invalid email address')),
+  role: z.enum(['PARENT', 'CHILD']).optional(),
   color: optionalString(z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Color must be a valid hex color (e.g., #FF5733)')),
   basePocketMoney: z.number().min(0, 'Base pocket money must be at least 0').optional(),
 })

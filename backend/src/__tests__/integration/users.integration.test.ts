@@ -234,4 +234,181 @@ describe('Users API Integration Tests', () => {
       expect(response.body.data.user.basePocketMoney).toBe(0)
     })
   })
+
+  describe('POST /api/users', () => {
+    it('should create a new user as parent', async () => {
+      await api.login(testData.users.parent)
+
+      const response = await api.createUser({
+        email: 'newuser@test.com',
+        password: 'SecurePass123!',
+        name: 'New User',
+        role: 'CHILD',
+        color: '#FF0000',
+        basePocketMoney: 5.0,
+      })
+
+      expect(response.status).toBe(201)
+      expect(response.body.success).toBe(true)
+      expect(response.body.data.user.email).toBe('newuser@test.com')
+      expect(response.body.data.user.name).toBe('New User')
+      expect(response.body.data.user.role).toBe('CHILD')
+    })
+
+    it('should reject duplicate email', async () => {
+      await api.login(testData.users.parent)
+
+      // Try to create user with existing email
+      const response = await api.createUser({
+        email: testData.users.child1.email,
+        password: 'SecurePass123!',
+        name: 'Duplicate',
+        role: 'CHILD',
+      })
+
+      expect(response.status).toBe(400)
+    })
+
+    it('should reject weak password', async () => {
+      await api.login(testData.users.parent)
+
+      const response = await api.createUser({
+        email: 'newuser2@test.com',
+        password: 'weak',
+        name: 'New User',
+        role: 'CHILD',
+      })
+
+      expect(response.status).toBe(400)
+    })
+
+    it('should not allow child to create user', async () => {
+      await api.login(testData.users.child1)
+
+      const response = await api.createUser({
+        email: 'newuser@test.com',
+        password: 'SecurePass123!',
+        name: 'New User',
+        role: 'CHILD',
+      })
+
+      expect(response.status).toBe(403)
+    })
+
+    it('should not allow unauthenticated user to create user', async () => {
+      const response = await api.createUser({
+        email: 'newuser@test.com',
+        password: 'SecurePass123!',
+        name: 'New User',
+        role: 'CHILD',
+      })
+
+      expect(response.status).toBe(401)
+    })
+  })
+
+  describe('POST /api/users/:id/lock', () => {
+    it('should lock a user account as parent', async () => {
+      await api.login(testData.users.parent)
+
+      const response = await api.post(`/users/${testData.users.child1.id}/lock`, {})
+
+      expect(response.status).toBe(200)
+      expect(response.body.success).toBe(true)
+      expect(response.body.data.user.lockedAt).toBeDefined()
+    })
+
+    it('should not allow parent to lock themselves', async () => {
+      await api.login(testData.users.parent)
+
+      const response = await api.post(`/users/${testData.users.parent.id}/lock`, {})
+
+      expect(response.status).toBe(400)
+      expect(response.body.error.message).toContain('cannot lock your own account')
+    })
+
+    it('should not allow child to lock user', async () => {
+      await api.login(testData.users.child1)
+
+      const response = await api.post(`/users/${testData.users.child2.id}/lock`, {})
+
+      expect(response.status).toBe(403)
+    })
+  })
+
+  describe('POST /api/users/:id/unlock', () => {
+    it('should unlock a user account as parent', async () => {
+      await api.login(testData.users.parent)
+
+      // First lock the user
+      await api.post(`/users/${testData.users.child1.id}/lock`, {})
+
+      // Then unlock
+      const response = await api.post(`/users/${testData.users.child1.id}/unlock`, {})
+
+      expect(response.status).toBe(200)
+      expect(response.body.success).toBe(true)
+      expect(response.body.data.user.lockedAt).toBeNull()
+    })
+
+    it('should not allow child to unlock user', async () => {
+      await api.login(testData.users.child1)
+
+      const response = await api.post(`/users/${testData.users.child2.id}/unlock`, {})
+
+      expect(response.status).toBe(403)
+    })
+  })
+
+  describe('DELETE /api/users/:id', () => {
+    it('should delete user as parent', async () => {
+      await api.login(testData.users.parent)
+
+      // First create a user to delete
+      const createResponse = await api.createUser({
+        email: 'todelete@test.com',
+        password: 'SecurePass123!',
+        name: 'To Delete',
+        role: 'CHILD',
+      })
+      const userId = createResponse.body.data.user.id
+
+      const response = await api.deleteUser(userId)
+
+      expect(response.status).toBe(200)
+    })
+
+    it('should not allow parent to delete themselves', async () => {
+      await api.login(testData.users.parent)
+
+      const response = await api.deleteUser(testData.users.parent.id)
+
+      expect(response.status).toBe(400)
+      expect(response.body.error.message).toContain('cannot delete your own account')
+    })
+
+    it('should not allow child to delete user', async () => {
+      await api.login(testData.users.child1)
+
+      const response = await api.deleteUser(testData.users.child2.id)
+
+      expect(response.status).toBe(403)
+    })
+
+    it('should not delete user with active assignments', async () => {
+      await api.login(testData.users.parent)
+
+      // Assign a chore to child1
+      await api.createAssignment({
+        choreTemplateId: testData.templates.dishes.id,
+        assignedToId: testData.users.child1.id,
+        dueDate: new Date(Date.now() + 86400000).toISOString(),
+      })
+
+      const response = await api.deleteUser(testData.users.child1.id)
+
+      expect(response.status).toBe(400)
+      expect(response.body.error.message).toContain('active assignments')
+    })
+  })
 })

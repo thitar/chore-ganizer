@@ -20,10 +20,13 @@ jest.mock('../../config/database', () => ({
       findMany: jest.fn(),
       findUnique: jest.fn(),
       findFirst: jest.fn(),
+      create: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
     },
     choreAssignment: {
       findMany: jest.fn(),
+      count: jest.fn(),
     },
   },
 }))
@@ -55,6 +58,9 @@ describe('Users Service', () => {
           color: true,
           familyId: true,
           createdAt: true,
+          failedLoginAttempts: true,
+          lockoutUntil: true,
+          lockedAt: true,
         },
         orderBy: {
           name: 'asc',
@@ -279,6 +285,181 @@ describe('Users Service', () => {
           basePocketMoney: 15.0,
         },
         select: expect.any(Object),
+      })
+    })
+  })
+
+  describe('createUser', () => {
+    it('should create a new user with all fields', async () => {
+      const newUser = {
+        id: 3,
+        email: 'newuser@test.com',
+        name: 'New User',
+        role: 'CHILD',
+        points: 0,
+        basePocketMoney: 5.0,
+        color: '#FF0000',
+        familyId: null,
+        createdAt: new Date(),
+      }
+      ;(prisma.user.create as jest.Mock).mockResolvedValue(newUser)
+
+      const result = await usersService.createUser({
+        email: 'newuser@test.com',
+        password: 'hashedpassword',
+        name: 'New User',
+        role: 'CHILD',
+        color: '#FF0000',
+        basePocketMoney: 5.0,
+      })
+
+      expect(result).toEqual(newUser)
+      expect(prisma.user.create).toHaveBeenCalledWith({
+        data: {
+          email: 'newuser@test.com',
+          password: 'hashedpassword',
+          name: 'New User',
+          role: 'CHILD',
+          color: '#FF0000',
+          basePocketMoney: 5.0,
+        },
+        select: expect.objectContaining({
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          points: true,
+          basePocketMoney: true,
+          color: true,
+          familyId: true,
+          createdAt: true,
+        }),
+      })
+    })
+
+    it('should create user with default values', async () => {
+      const newUser = {
+        id: 3,
+        email: 'newuser@test.com',
+        name: 'New User',
+        role: 'CHILD',
+        points: 0,
+        basePocketMoney: 0,
+        color: '#3B82F6',
+        familyId: null,
+        createdAt: new Date(),
+      }
+      ;(prisma.user.create as jest.Mock).mockResolvedValue(newUser)
+
+      const result = await usersService.createUser({
+        email: 'newuser@test.com',
+        password: 'hashedpassword',
+        name: 'New User',
+        role: 'CHILD',
+        color: '#3B82F6',
+        basePocketMoney: 0,
+      })
+
+      expect(result).toEqual(newUser)
+    })
+  })
+
+  describe('deleteUser', () => {
+    it('should delete a user', async () => {
+      ;(prisma.user.delete as jest.Mock).mockResolvedValue(mockUsers.child)
+
+      await usersService.deleteUser(2)
+
+      expect(prisma.user.delete).toHaveBeenCalledWith({
+        where: { id: 2 },
+      })
+    })
+  })
+
+  describe('userHasActiveAssignments', () => {
+    it('should return true when user has active assignments', async () => {
+      ;(prisma.choreAssignment.count as jest.Mock).mockResolvedValue(5)
+
+      const result = await usersService.userHasActiveAssignments(2)
+
+      expect(result).toBe(true)
+      expect(prisma.choreAssignment.count).toHaveBeenCalledWith({
+        where: {
+          assignedToId: 2,
+          status: 'PENDING',
+        },
+      })
+    })
+
+    it('should return false when user has no active assignments', async () => {
+      ;(prisma.choreAssignment.count as jest.Mock).mockResolvedValue(0)
+
+      const result = await usersService.userHasActiveAssignments(2)
+
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('lockUser', () => {
+    it('should lock a user account', async () => {
+      const lockedUser = {
+        ...mockUsers.child,
+        lockedAt: new Date(),
+        failedLoginAttempts: 10,
+        lockoutUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      }
+      ;(prisma.user.update as jest.Mock).mockResolvedValue(lockedUser)
+
+      const result = await usersService.lockUser(2)
+
+      expect(result).toEqual(lockedUser)
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 2 },
+        data: {
+          lockedAt: expect.any(Date),
+          failedLoginAttempts: 10,
+          lockoutUntil: expect.any(Date),
+        },
+        select: expect.objectContaining({
+          id: true,
+          email: true,
+          name: true,
+          lockedAt: true,
+          failedLoginAttempts: true,
+          lockoutUntil: true,
+        }),
+      })
+    })
+  })
+
+  describe('unlockUser', () => {
+    it('should unlock a user account', async () => {
+      const unlockedUser = {
+        ...mockUsers.child,
+        lockedAt: null,
+        failedLoginAttempts: 0,
+        lockoutUntil: null,
+      }
+      ;(prisma.user.update as jest.Mock).mockResolvedValue(unlockedUser)
+
+      const result = await usersService.unlockUser(2)
+
+      expect(result).toEqual(unlockedUser)
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 2 },
+        data: {
+          lockedAt: null,
+          failedLoginAttempts: 0,
+          lockoutUntil: null,
+        },
+        select: expect.objectContaining({
+          id: true,
+          email: true,
+          name: true,
+          lockedAt: true,
+          failedLoginAttempts: true,
+          lockoutUntil: true,
+        }),
       })
     })
   })

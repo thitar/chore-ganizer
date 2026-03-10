@@ -148,7 +148,12 @@ Parents can view and manage all family members:
    - Role (Parent or Child)
    - Point total
    - Personal color (shown on calendar)
-3. View each member's assigned chores and completion history
+   - Account status (Active/Locked)
+3. Click on a member to view details
+4. Click **View** to see their profile with:
+   - Total points
+   - Member since date
+5. Use column headers to sort by name, email, role, or points
 
 > **Note:** Children do not see the Family Members, Templates, or Calendar pages in their navigation menu. These pages are protected and only accessible to parents.
 

@@ -64,6 +64,32 @@ export function useUsers() {
     }
   }
 
+  const lockUser = async (id: number) => {
+    try {
+      setError(null)
+      const user = await usersApi.lock(id)
+      setUsers(users.map((u) => (u.id === id ? user : u)))
+      return { success: true, user }
+    } catch (err: any) {
+      const errorMessage = err.error?.message || 'Failed to lock user'
+      setError(errorMessage)
+      return { success: false, error: errorMessage }
+    }
+  }
+
+  const unlockUser = async (id: number) => {
+    try {
+      setError(null)
+      const user = await usersApi.unlock(id)
+      setUsers(users.map((u) => (u.id === id ? user : u)))
+      return { success: true, user }
+    } catch (err: any) {
+      const errorMessage = err.error?.message || 'Failed to unlock user'
+      setError(errorMessage)
+      return { success: false, error: errorMessage }
+    }
+  }
+
   return {
     users,
     loading,
@@ -71,6 +97,8 @@ export function useUsers() {
     createUser,
     updateUser,
     deleteUser,
+    lockUser,
+    unlockUser,
     refresh: fetchUsers,
   }
 }

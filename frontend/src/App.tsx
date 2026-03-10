@@ -12,6 +12,7 @@ const Chores = lazy(() => import('./pages/Chores').then(m => ({ default: m.Chore
 const Templates = lazy(() => import('./pages/Templates').then(m => ({ default: m.Templates })))
 const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })))
 const Users = lazy(() => import('./pages/Users').then(m => ({ default: m.Users })))
+const UserDetail = lazy(() => import('./pages/UserDetail').then(m => ({ default: m.UserDetail })))
 const Calendar = lazy(() => import('./pages/Calendar').then(m => ({ default: m.Calendar })))
 const RecurringChoresPage = lazy(() => import('./pages/RecurringChoresPage').then(m => ({ default: m.RecurringChoresPage })))
 const PocketMoney = lazy(() => import('./pages/PocketMoney').then(m => ({ default: m.PocketMoney })))
@@ -80,6 +81,11 @@ function AppContent() {
                 } />
                 <Route path="/users" element={
                   <Suspense fallback={<PageLoader />}><Users /></Suspense>
+                } />
+                <Route path="/users/:id" element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<PageLoader />}><UserDetail /></Suspense>
+                  </ProtectedRoute>
                 } />
                 <Route 
                   path="/templates" 
