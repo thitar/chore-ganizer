@@ -10,6 +10,7 @@ import request from 'supertest'
 import session from 'express-session'
 import routes from '../../routes/index.js'
 import { TestData } from './db-setup.js'
+import { errorHandler, notFoundHandler } from '../../middleware/errorHandler.js'
 
 // Declare module for session type
 declare module 'express-session' {
@@ -54,6 +55,10 @@ export function createTestApp(): express.Application {
   
   // Mount API routes
   app.use('/api', routes)
+  
+  // Add error handlers
+  app.use(notFoundHandler)
+  app.use(errorHandler)
   
   return app
 }
@@ -147,6 +152,14 @@ export class ApiClient {
 
   async deleteUser(id: number) {
     return this.agent.delete(`/api/users/${id}`)
+  }
+
+  async lockUser(id: number) {
+    return this.agent.post(`/api/users/${id}/lock`).send({})
+  }
+
+  async unlockUser(id: number) {
+    return this.agent.post(`/api/users/${id}/unlock`).send({})
   }
 
   // ============================================

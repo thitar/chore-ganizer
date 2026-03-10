@@ -308,10 +308,19 @@ describe('Users API Integration Tests', () => {
   })
 
   describe('POST /api/users/:id/lock', () => {
+    // Unlock users before each test to ensure clean state
+    beforeEach(async () => {
+      await api.login(testData.users.parent)
+      // Unlock any locked users
+      await api.unlockUser(testData.users.child1.id).catch(() => {})
+      await api.unlockUser(testData.users.child2.id).catch(() => {})
+      await api.logout()
+    })
+
     it('should lock a user account as parent', async () => {
       await api.login(testData.users.parent)
 
-      const response = await api.post(`/users/${testData.users.child1.id}/lock`, {})
+      const response = await api.lockUser(testData.users.child1.id)
 
       expect(response.status).toBe(200)
       expect(response.body.success).toBe(true)
@@ -321,7 +330,7 @@ describe('Users API Integration Tests', () => {
     it('should not allow parent to lock themselves', async () => {
       await api.login(testData.users.parent)
 
-      const response = await api.post(`/users/${testData.users.parent.id}/lock`, {})
+      const response = await api.lockUser(testData.users.parent.id)
 
       expect(response.status).toBe(400)
       expect(response.body.error.message).toContain('cannot lock your own account')
@@ -330,7 +339,7 @@ describe('Users API Integration Tests', () => {
     it('should not allow child to lock user', async () => {
       await api.login(testData.users.child1)
 
-      const response = await api.post(`/users/${testData.users.child2.id}/lock`, {})
+      const response = await api.lockUser(testData.users.child2.id)
 
       expect(response.status).toBe(403)
     })
@@ -341,10 +350,10 @@ describe('Users API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       // First lock the user
-      await api.post(`/users/${testData.users.child1.id}/lock`, {})
+      await api.lockUser(testData.users.child1.id)
 
       // Then unlock
-      const response = await api.post(`/users/${testData.users.child1.id}/unlock`, {})
+      const response = await api.unlockUser(testData.users.child1.id)
 
       expect(response.status).toBe(200)
       expect(response.body.success).toBe(true)
@@ -354,7 +363,7 @@ describe('Users API Integration Tests', () => {
     it('should not allow child to unlock user', async () => {
       await api.login(testData.users.child1)
 
-      const response = await api.post(`/users/${testData.users.child2.id}/unlock`, {})
+      const response = await api.unlockUser(testData.users.child2.id)
 
       expect(response.status).toBe(403)
     })
@@ -384,6 +393,7 @@ describe('Users API Integration Tests', () => {
       const response = await api.deleteUser(testData.users.parent.id)
 
       expect(response.status).toBe(400)
+      expect(response.body.success).toBe(false)
       expect(response.body.error.message).toContain('cannot delete your own account')
     })
 
@@ -408,6 +418,7 @@ describe('Users API Integration Tests', () => {
       const response = await api.deleteUser(testData.users.child1.id)
 
       expect(response.status).toBe(400)
+      expect(response.body.success).toBe(false)
       expect(response.body.error.message).toContain('active assignments')
     })
   })
