@@ -8,29 +8,32 @@
 
 1. [Introduction](#introduction)
 2. [Test Environment Setup](#test-environment-setup)
-3. [Parent Test Cases](#parent-test-cases)
-   - [Authentication Tests](#parent-authentication-tests)
+3. [Phase 1: Authentication](#phase-1-authentication)
+   - [Parent Authentication Tests](#parent-authentication-tests)
+   - [Child Authentication Tests](#child-authentication-tests)
+4. [Phase 2: Core Features](#phase-2-core-features)
    - [User Management Tests](#user-management-tests)
    - [Chore Template Tests](#chore-template-tests)
    - [Chore Assignment Tests](#chore-assignment-tests)
-   - [Overdue Penalty Tests](#overdue-penalty-tests)
+   - [Child Chore Viewing Tests](#chore-viewing-tests)
+5. [Phase 3: Advanced Features](#phase-3-advanced-features)
    - [Recurring Chores Tests](#recurring-chores-tests)
    - [Pocket Money Tests](#pocket-money-tests)
    - [Statistics Dashboard Tests](#statistics-dashboard-tests)
+   - [Child Chore Completion Tests](#chore-completion-tests)
+   - [Overdue Penalty Tests](#overdue-penalty-tests)
+6. [Phase 4: Cross-Cutting](#phase-4-cross-cutting)
    - [Calendar Tests](#calendar-tests)
    - [Notification Tests](#notification-tests)
-   - [PWA Tests](#pwa-tests-parent)
+   - [PWA Tests (Parent)](#pwa-tests-parent)
+   - [PWA Tests (Child)](#pwa-tests-child)
+   - [Notification Tests (Child)](#notification-tests-child)
+7. [Phase 5: Final Regression](#phase-5-final-regression)
+   - [Settings Tests](#settings-tests)
    - [Personal Dashboard Tests](#personal-dashboard-tests)
    - [Responsive Design Tests](#responsive-design-tests)
-   - [Settings Tests](#settings-tests)
-4. [Child Test Cases](#child-test-cases)
-   - [Authentication Tests](#child-authentication-tests)
-   - [Chore Viewing Tests](#chore-viewing-tests)
-   - [Chore Completion Tests](#chore-completion-tests)
    - [Points/Pocket Money Tests](#pointspocket-money-tests)
-   - [PWA Tests](#pwa-tests-child)
-   - [Notification Tests](#notification-tests-child)
-5. [Test Completion Checklist](#test-completion-checklist)
+8. [Test Completion Checklist](#test-completion-checklist)
 
 ---
 
@@ -54,6 +57,24 @@ This testing guide covers:
 2. Mark each test as Pass or Fail
 3. Document any issues found
 4. Report bugs with steps to reproduce
+
+---
+
+## Phase Quick Reference
+
+| Phase | Branch | Categories | Git Tag Prefix |
+|-------|--------|------------|----------------|
+| 1: Authentication | `test/phase1-auth` | Parent Auth, Child Auth | `test/phase1-auth-*` |
+| 2: Core Features | `test/phase2-core` | User Mgmt, Templates, Assignments, Child Viewing | `test/phase2-core-*` |
+| 3: Advanced | `test/phase3-advanced` | Recurring, Pocket Money, Statistics, Child Completion, Overdue | `test/phase3-advanced-*` |
+| 4: Cross-Cutting | `test/phase4-crosscut` | Calendar, Notifications, PWA | `test/phase4-crosscut-*` |
+| 5: Regression | `test/phase5-regression` | Settings, Dashboard, Responsive, Points | `test/phase5-regression-*` |
+
+**Workflow:**
+1. Checkout phase branch: `git checkout -b test/phase{N}-{name} test/phase{N-1}-merged`
+2. Run tests in category
+3. Tag result: `git tag -a test/phase{N}-cat-{category}-complete -m "X/Y passed"`
+4. When phase complete, merge: `git checkout staging && git merge test/phase{N}-{name}`
 
 ### Test Case Format
 
@@ -138,7 +159,10 @@ docker-compose up -d
 
 ---
 
-## Parent Test Cases
+## Phase 1: Authentication
+
+> **Branch:** `test/phase1-auth`
+> **Git Tag Prefix:** `test/phase1-auth-*`
 
 ### Parent Authentication Tests
 
@@ -328,6 +352,11 @@ docker-compose up -d
 **Pass/Fail:** [X] Pass [ ] Fail
 
 ---
+
+## Phase 2: Core Features
+
+> **Branch:** `test/phase2-core`
+> **Git Tag Prefix:** `test/phase2-core-*`
 
 ### User Management Tests
 
@@ -1115,6 +1144,11 @@ docker-compose up -d
 
 ---
 
+## Phase 3: Advanced Features
+
+> **Branch:** `test/phase3-advanced`
+> **Git Tag Prefix:** `test/phase3-advanced-*`
+
 ### Recurring Chores Tests
 
 #### P-401: Create Daily Recurring Chore
@@ -1718,6 +1752,11 @@ docker-compose up -d
 
 ---
 
+## Phase 4: Cross-Cutting
+
+> **Branch:** `test/phase4-crosscut`
+> **Git Tag Prefix:** `test/phase4-crosscut-*`
+
 ### Calendar Tests
 
 #### P-701: View Family Calendar
@@ -2176,6 +2215,11 @@ docker-compose up -d
 
 ---
 
+## Phase 5: Final Regression
+
+> **Branch:** `test/phase5-regression`
+> **Git Tag Prefix:** `test/phase5-regression-*`
+
 ### Settings Tests
 
 #### P-901: View Profile Settings
@@ -2376,9 +2420,10 @@ docker-compose up -d
 
 ---
 
-## Child Test Cases
-
 ### Child Authentication Tests
+
+> **Part of:** Phase 1: Authentication
+> **Git Tag:** `test/phase1-auth-child-*`
 
 #### C-001: Child Login with Valid Credentials
 
@@ -2478,6 +2523,9 @@ docker-compose up -d
 
 ### Chore Viewing Tests
 
+> **Part of:** Phase 2: Core Features
+> **Git Tag:** `test/phase2-core-child-viewing-*`
+
 #### C-101: View Assigned Chores
 
 | Field | Value |
@@ -2574,6 +2622,9 @@ docker-compose up -d
 ---
 
 ### Chore Completion Tests
+
+> **Part of:** Phase 3: Advanced Features
+> **Git Tag:** `test/phase3-advanced-child-completion-*`
 
 #### C-201: Mark Chore as Complete
 
@@ -2675,6 +2726,9 @@ docker-compose up -d
 
 ### Points/Pocket Money Tests
 
+> **Part of:** Phase 5: Final Regression
+> **Git Tag:** `test/phase5-regression-points-*`
+
 #### C-301: View Current Point Balance
 
 | Field | Value |
@@ -2768,6 +2822,9 @@ docker-compose up -d
 ---
 
 ### PWA Tests (Child)
+
+> **Part of:** Phase 4: Cross-Cutting
+> **Git Tag:** `test/phase4-crosscut-pwa-child-*`
 
 #### C-401: Install PWA on Child Device
 

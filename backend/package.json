@@ -41,7 +41,7 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.1",
     "prom-client": "^15.1.0",
-    "tar": "7.5.9",
+    "tar": "^7.5.11",
     "uuid": "^13.0.0",
     "winston": "^3.11.0",
     "zod": "^3.22.4"
@@ -69,7 +69,7 @@
     "typescript": "^5.3.3"
   },
   "overrides": {
-    "tar": "7.5.9",
+    "tar": "^7.5.11",
     "glob": {
       "minimatch": "^10.2.3"
     },
