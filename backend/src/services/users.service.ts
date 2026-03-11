@@ -1,4 +1,5 @@
 import prisma from '../config/database.js'
+import { AppError } from '../middleware/errorHandler.js'
 
 export interface User {
   id: number
@@ -87,7 +88,7 @@ export const getUserById = async (userId: number): Promise<User> => {
   })
 
   if (!user) {
-    throw new Error('User not found')
+    throw new AppError('User not found', 404, 'NOT_FOUND')
   }
 
   return user
@@ -211,7 +212,7 @@ export const updateUser = async (userId: number, data: { name?: string; role?: s
       }
     })
     if (existingUser) {
-      throw new Error('Email is already taken')
+      throw new AppError('Email is already taken', 409, 'CONFLICT')
     }
   }
 

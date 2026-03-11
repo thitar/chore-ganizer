@@ -98,10 +98,10 @@ Welcome to the Chore-Ganizer documentation. This index helps you find the right 
 ### Default Credentials
 | Role | Email | Password |
 |------|-------|----------|
-| Parent | dad@home | password123 |
-| Parent | mom@home | password123 |
-| Child | alice@home | password123 |
-| Child | bob@home | password123 |
+| Parent | dad@home.local | password123 |
+| Parent | mom@home.local | password123 |
+| Child | alice@home.local | password123 |
+| Child | bob@home.local | password123 |
 
 ---
 

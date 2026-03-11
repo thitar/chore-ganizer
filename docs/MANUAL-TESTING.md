@@ -87,10 +87,10 @@ The following test accounts are available by default:
 
 | Role | Email | Password |
 |------|-------|----------|
-| Parent | `dad@home` | `password123` |
-| Parent | `mom@home` | `password123` |
-| Child | `alice@home` | `password123` |
-| Child | `bob@home` | `password123` |
+| Parent | `dad@home.local` | `password123` |
+| Parent | `mom@home.local` | `password123` |
+| Child | `alice@home.local` | `password123` |
+| Child | `bob@home.local` | `password123` |
 
 #### Browser Requirements
 
@@ -153,7 +153,7 @@ docker-compose up -d
 **Steps:**
 
 1. Open a web browser and navigate to the application URL
-2. On the login page, enter email: `dad@home`
+2. On the login page, enter email: `dad@home.local`
 3. Enter password: `password123`
 4. Click the "Sign In" button
 
@@ -177,7 +177,7 @@ docker-compose up -d
 **Steps:**
 
 1. Navigate to the login page
-2. Enter email: `dad@home`
+2. Enter email: `dad@home.local`
 3. Enter password: `wrongpassword`
 4. Click the "Sign In" button
 
@@ -201,7 +201,7 @@ docker-compose up -d
 **Steps:**
 
 1. Navigate to the login page
-2. Enter email: `nonexistent@home`
+2. Enter email: `nonexistent@home.local`
 3. Enter password: `password123`
 4. Click the "Sign In" button
 
@@ -259,7 +259,7 @@ docker-compose up -d
 
 ---
 
-#### P-006: Session Expiration
+#### P-006: Session Expiration / Cookie Clearing
 
 | Field | Value |
 |-------|-------|
@@ -270,14 +270,19 @@ docker-compose up -d
 **Steps:**
 
 1. Log in as a parent
-2. Wait for session to expire (or clear session cookie manually)
-3. Attempt to navigate to a protected page
-4. Observe the application behavior
+2. Open browser Developer Tools (F12) → Application tab → Cookies
+3. Delete the session cookie (connect.sid)
+4. Click on any navigation link (e.g., Dashboard, Chores, etc.)
+5. Observe the application behavior
 
 **Expected Result:**
 - User is redirected to login page
 - Appropriate message may be shown indicating session expired
 - User can log in again
+
+**Why this test is important:**
+- Verifies the application properly detects when authentication is lost
+- The fix ensures auth is re-checked when window gains focus or user navigates
 
 **Pass/Fail:** [ ] Pass [ ] Fail
 
@@ -374,7 +379,7 @@ docker-compose up -d
      method: 'POST',
      headers: { 'Content-Type': 'application/json' },
      body: JSON.stringify({
-       email: 'newchild@home',
+       email: 'newchild@home.local',
        password: 'SecurePass123!',
        name: 'New Child',
        role: 'CHILD'
@@ -505,7 +510,7 @@ docker-compose up -d
 2. Click "Add User" button
 3. Fill in user details:
    - Name: "Test Child"
-   - Email: "testchild@home"
+   - Email: "testchild@home.local"
    - Password: "SecurePass123!"
    - Role: Child
 4. Select a color
@@ -2370,7 +2375,7 @@ docker-compose up -d
 **Steps:**
 
 1. Open a web browser and navigate to the application URL
-2. On the login page, enter email: `alice@home`
+2. On the login page, enter email: `alice@home.local`
 3. Enter password: `password123`
 4. Click the "Sign In" button
 
@@ -2395,7 +2400,7 @@ docker-compose up -d
 **Steps:**
 
 1. Navigate to the login page
-2. Enter email: `alice@home`
+2. Enter email: `alice@home.local`
 3. Enter password: `wrongpassword`
 4. Click the "Sign In" button
 

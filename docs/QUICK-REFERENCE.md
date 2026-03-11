@@ -129,12 +129,12 @@ docker-compose start backend
 ### Default Logins
 
 **Parents:**
-- dad@home / password123
-- mom@home / password123
+- dad@home.local / password123
+- mom@home.local / password123
 
 **Children:**
-- alice@home / password123
-- bob@home / password123
+- alice@home.local / password123
+- bob@home.local / password123
 
 ### Changing Passwords
 

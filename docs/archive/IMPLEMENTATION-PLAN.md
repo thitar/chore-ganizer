@@ -257,8 +257,8 @@ npx prisma migrate dev --name init
 - [ ] `backend/prisma/seed.ts` - Initial data seeding
 
 **Seed data includes:**
-- 2 parent users (dad@home, mom@home)
-- 2 child users (alice@home, bob@home)
+- 2 parent users (dad@home.local, mom@home.local)
+- 2 child users (alice@home.local, bob@home.local)
 - Sample chores
 
 **Commands to run:**

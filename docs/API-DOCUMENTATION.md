@@ -115,7 +115,7 @@ Register a new user account.
 **Request Body:**
 ```json
 {
-  "email": "newuser@home",
+  "email": "newuser@home.local",
   "password": "password123",
   "name": "New User",
   "role": "CHILD"
@@ -137,7 +137,7 @@ Register a new user account.
   "data": {
     "user": {
       "id": 5,
-      "email": "newuser@home",
+      "email": "newuser@home.local",
       "name": "New User",
       "role": "CHILD",
       "points": 0,
@@ -160,7 +160,7 @@ Authenticate a user and create a session.
 **Request Body:**
 ```json
 {
-  "email": "dad@home",
+  "email": "dad@home.local",
   "password": "password123"
 }
 ```
@@ -172,7 +172,7 @@ Authenticate a user and create a session.
   "data": {
     "user": {
       "id": 1,
-      "email": "dad@home",
+      "email": "dad@home.local",
       "name": "Dad",
       "role": "PARENT",
       "points": 0,
@@ -220,7 +220,7 @@ Get the currently authenticated user.
   "data": {
     "user": {
       "id": 1,
-      "email": "dad@home",
+      "email": "dad@home.local",
       "name": "Dad",
       "role": "PARENT",
       "points": 150,
@@ -249,7 +249,7 @@ Get all family members.
     "users": [
       {
         "id": 1,
-        "email": "dad@home",
+        "email": "dad@home.local",
         "name": "Dad",
         "role": "PARENT",
         "points": 150,
@@ -257,7 +257,7 @@ Get all family members.
       },
       {
         "id": 2,
-        "email": "alice@home",
+        "email": "alice@home.local",
         "name": "Alice",
         "role": "CHILD",
         "points": 75,
@@ -284,7 +284,7 @@ Get a specific user by ID.
   "data": {
     "user": {
       "id": 2,
-      "email": "alice@home",
+      "email": "alice@home.local",
       "name": "Alice",
       "role": "CHILD",
       "points": 75,
@@ -882,7 +882,7 @@ Health check endpoint (no authentication required).
 curl -X POST http://docker.lab:3002/api/auth/login \
   -H "Content-Type: application/json" \
   -c cookies.txt \
-  -d '{"email":"dad@home","password":"password123"}'
+  -d '{"email":"dad@home.local","password":"password123"}'
 
 # Get all chores (using session cookie)
 curl -X GET http://docker.lab:3002/api/chores \
@@ -1178,7 +1178,7 @@ Get all chore categories.
 curl -X POST http://localhost:3002/api/auth/login \
   -H "Content-Type: application/json" \
   -c cookies.txt \
-  -d '{"email":"dad@home","password":"password123"}'
+  -d '{"email":"dad@home.local","password":"password123"}'
 
 # Get all templates
 curl -X GET http://localhost:3002/api/chore-templates \

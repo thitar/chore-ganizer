@@ -29,6 +29,8 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    // Map uuid to a CommonJS mock for tests (uuid@13.x is ESM-only)
+    '^uuid$': '<rootDir>/src/__tests__/__mocks__/uuid.ts',
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
   // Transform ESM modules from node_modules (needed for uuid 13.x and other ESM packages)

@@ -45,7 +45,7 @@ describe('Request Timer Middleware', () => {
     expect(mockRes.on).toHaveBeenCalledWith('finish', expect.any(Function))
   })
 
-  it('should set X-Response-Time header on finish', () => {
+  it('should not set X-Response-Time header (removed - headers already sent)', () => {
     requestTimerMiddleware(mockReq as Request, mockRes as Response, mockNext)
     
     // Simulate finish event
@@ -54,7 +54,8 @@ describe('Request Timer Middleware', () => {
     )?.[1]
     if (finishCallback) finishCallback()
     
-    expect(mockRes.setHeader).toHaveBeenCalledWith('X-Response-Time', expect.any(String))
+    // X-Response-Time header is no longer set because headers are already sent by the time 'finish' fires
+    expect(mockRes.setHeader).not.toHaveBeenCalledWith('X-Response-Time', expect.any(String))
   })
 
   it('should log info for fast requests', () => {

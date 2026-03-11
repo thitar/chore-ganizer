@@ -30,8 +30,20 @@ FROM node:25-slim AS production
 
 WORKDIR /app
 
-# Install OpenSSL for Prisma, sqlite3 for backup/restore, and cron
-RUN apt-get update && apt-get install -y openssl sqlite3 cron && rm -rf /var/lib/apt/lists/*
+# Install OpenSSL for Prisma, sqlite3 for backup/restore, supercronic for cron jobs, and gosu for user switching
+RUN apt-get update && apt-get install -y openssl sqlite3 curl gosu && rm -rf /var/lib/apt/lists/*
+
+# Install supercronic
+# https://github.com/aptible/supercronic
+ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.29/supercronic-linux-amd64 \
+    SUPERCRONIC_SHA1SUM=cd48d45c4b10f3f0bfdd3a57d054cd05ac96812b \
+    SUPERCRONIC_PLATFORM=supercronic-linux-amd64 \
+    SUPERCRONIC=supercronic
+
+RUN curl -fsSLO "$SUPERCRONIC_URL" \
+    && echo "$SUPERCRONIC_SHA1SUM  $SUPERCRONIC_PLATFORM" | sha1sum -c - \
+    && chmod +x "$SUPERCRONIC_PLATFORM" \
+    && mv "$SUPERCRONIC_PLATFORM" /usr/local/bin/supercronic
 
 # Copy package files
 COPY package*.json ./
@@ -46,14 +58,12 @@ RUN npx prisma generate
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy entrypoint script
+# Copy entrypoint scripts and config
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
-
-# Copy cron entrypoint and crontab
 COPY cron-entrypoint.sh /app/cron-entrypoint.sh
+COPY supercronic.conf /app/supercronic.conf
 COPY crontab /crontab
-RUN chmod +x /app/cron-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
 # Create directory for backup scripts (will be populated at runtime)
 RUN mkdir -p /backup-scripts
@@ -78,8 +88,9 @@ RUN groupadd -r appuser && useradd -r -g appuser -u 1001 appuser \
     && chown -R appuser:appuser /backup-scripts \
     && chown -R appuser:appuser /app/data
 
-# Switch to non-root user (must be before CMD for security)
-USER appuser
+# Switch to non-root user (must be after CMD for security)
+# Note: USER appuser removed - entrypoint runs as root first to run migrations,
+# then uses gosu to switch to appuser
 
 # Start the application
 CMD ["/app/docker-entrypoint.sh"]

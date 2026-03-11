@@ -123,7 +123,7 @@ The guide expects non-technical parents to execute:
 ```sql
 -- Example from lines 537-542:
 INSERT INTO User (email, name, password, role, points, createdAt, updatedAt)
-VALUES ('newuser@home', 'New User', '$2b$10$...', 'CHILD', 0, datetime('now'), datetime('now'));
+VALUES ('newuser@home.local', 'New User', '$2b$10$...', 'CHILD', 0, datetime('now'), datetime('now'));
 ```
 
 ---

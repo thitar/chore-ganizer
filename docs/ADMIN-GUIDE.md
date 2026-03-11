@@ -26,12 +26,12 @@ This guide is for parents and administrators who manage the Chore-Ganizer applic
 The application comes with demo users pre-seeded in the database:
 
 **Parent Accounts:**
-- Email: `dad@home` / Password: `password123`
-- Email: `mom@home` / Password: `password123`
+- Email: `dad@home.local` / Password: `password123`
+- Email: `mom@home.local` / Password: `password123`
 
 **Child Accounts:**
-- Email: `alice@home` / Password: `password123`
-- Email: `bob@home` / Password: `password123`
+- Email: `alice@home.local` / Password: `password123`
+- Email: `bob@home.local` / Password: `password123`
 
 > **Security Note:** Change these passwords after initial setup using the SQL commands below.
 
@@ -675,7 +675,7 @@ SELECT id, email, name, role, points FROM User;
 ```sql
 -- Password is hashed with bcrypt. Use the API or copy hash from existing user for testing.
 INSERT INTO User (email, name, password, role, points, createdAt, updatedAt)
-VALUES ('newuser@home', 'New User', '$2b$10$...', 'CHILD', 0, datetime('now'), datetime('now'));
+VALUES ('newuser@home.local', 'New User', '$2b$10$...', 'CHILD', 0, datetime('now'), datetime('now'));
 ```
 
 > **Note:** For production, use the API endpoint `POST /api/auth/register` to create users with properly hashed passwords.
@@ -685,37 +685,37 @@ VALUES ('newuser@home', 'New User', '$2b$10$...', 'CHILD', 0, datetime('now'), d
 ```sql
 -- First, get a properly hashed password (create via API or use existing)
 -- This example sets password to "newpassword123" (you need the bcrypt hash)
-UPDATE User SET password = '$2b$10$...' WHERE email = 'user@home';
+UPDATE User SET password = '$2b$10$...' WHERE email = 'user@home.local';
 ```
 
 #### Adjust User Points
 
 ```sql
 -- Add 50 points to a user
-UPDATE User SET points = points + 50 WHERE email = 'alice@home';
+UPDATE User SET points = points + 50 WHERE email = 'alice@home.local';
 
 -- Set specific point value
-UPDATE User SET points = 100 WHERE email = 'bob@home';
+UPDATE User SET points = 100 WHERE email = 'bob@home.local';
 ```
 
 #### Change User Role
 
 ```sql
 -- Promote to parent
-UPDATE User SET role = 'PARENT' WHERE email = 'user@home';
+UPDATE User SET role = 'PARENT' WHERE email = 'user@home.local';
 
 -- Demote to child
-UPDATE User SET role = 'CHILD' WHERE email = 'user@home';
+UPDATE User SET role = 'CHILD' WHERE email = 'user@home.local';
 ```
 
 #### Delete a User
 
 ```sql
 -- First unassign their chores
-UPDATE ChoreAssignment SET assignedToId = NULL WHERE assignedToId = (SELECT id FROM User WHERE email = 'user@home');
+UPDATE ChoreAssignment SET assignedToId = NULL WHERE assignedToId = (SELECT id FROM User WHERE email = 'user@home.local');
 
 -- Then delete the user
-DELETE FROM User WHERE email = 'user@home';
+DELETE FROM User WHERE email = 'user@home.local';
 ```
 
 #### View All Chore Assignments
@@ -750,7 +750,7 @@ The recommended way to create users is via the API:
 # Register a new user (requires authentication)
 curl -X POST http://localhost:3010/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"newuser@home","password":"password123","name":"New User","role":"CHILD"}'
+  -d '{"email":"newuser@home.local","password":"password123","name":"New User","role":"CHILD"}'
 ```
 
 ---
@@ -772,7 +772,7 @@ The API uses CSRF (Cross-Site Request Forgery) tokens to protect against unautho
    curl -X POST http://localhost:3010/api/auth/register \
      -H "Content-Type: application/json" \
      -H "X-CSRF-Token: YOUR_CSRF_TOKEN" \
-     -d '{"email":"newuser@home","password":"SecurePass123!","name":"New User","role":"CHILD"}'
+     -d '{"email":"newuser@home.local","password":"SecurePass123!","name":"New User","role":"CHILD"}'
    ```
 
 ### Password Requirements
@@ -839,7 +839,7 @@ The following validation schemas are applied:
 
 **Points not updating:**
 - Points are awarded when chore is marked complete
-- Check the database: `SELECT points FROM User WHERE email = 'user@home'`
+- Check the database: `SELECT points FROM User WHERE email = 'user@home.local'`
 
 **Email notifications not sending:**
 - Check SMTP configuration in environment variables

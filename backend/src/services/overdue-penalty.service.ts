@@ -1,5 +1,6 @@
 import prisma from '../config/database.js'
 import { getOrCreateSettings, sendPushNotification } from './notification-settings.service.js'
+import { AppError } from '../middleware/errorHandler.js'
 
 /**
  * Get all parents in the system
@@ -63,7 +64,7 @@ export const applyOverduePenalty = async (
   })
   
   if (!assignment) {
-    throw new Error(`Assignment ${assignmentId} not found`)
+    throw new AppError(`Assignment ${assignmentId} not found`, 404, 'NOT_FOUND')
   }
   
   // Calculate penalty (negative points)

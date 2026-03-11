@@ -1,4 +1,5 @@
 import prisma from '../config/database.js'
+import { AppError } from '../middleware/errorHandler.js'
 
 export interface CreateAssignmentData {
   choreTemplateId: number
@@ -273,18 +274,18 @@ export const completeAssignment = async (
   })
 
   if (!assignment) {
-    throw new Error('Assignment not found')
+    throw new AppError('Assignment not found', 404, 'NOT_FOUND')
   }
 
   if (assignment.status !== 'PENDING') {
-    throw new Error('Assignment is already completed')
+    throw new AppError('Assignment is already completed', 400, 'INVALID_OPERATION')
   }
 
   // Determine if user can complete this assignment
   // Parents can complete any assignment, children can only complete their own
   const isParent = options?.isParent || false
   if (!isParent && assignment.assignedToId !== userId) {
-    throw new Error('You can only complete your own assignments')
+    throw new AppError('You can only complete your own assignments', 403, 'FORBIDDEN')
   }
 
   // Determine status and points

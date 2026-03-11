@@ -207,8 +207,8 @@ Phase 1 established the complete project structure and configuration files for C
 #### 21. `backend/prisma/seed.ts`
 - **Purpose:** Initial database seeding
 - **Seed Data:**
-  - 2 parent users (dad@home, mom@home)
-  - 2 child users (alice@home, bob@home)
+  - 2 parent users (dad@home.local, mom@home.local)
+  - 2 child users (alice@home.local, bob@home.local)
   - 4 sample chores assigned to children
 - **Password:** All users use `password123` (hashed with bcrypt)
 - **Features:**

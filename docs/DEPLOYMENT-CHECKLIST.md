@@ -108,7 +108,7 @@ Use this checklist when deploying Chore-Ganizer to your homelab for the first ti
   **Example:**
   ```typescript
   {
-    email: 'dad@home',
+    email: 'dad@home.local',
     password: await bcrypt.hash('your-secure-password', 10),
     name: 'John',
     role: UserRole.PARENT,
@@ -181,11 +181,11 @@ Use this checklist when deploying Chore-Ganizer to your homelab for the first ti
 - [ ] Open browser on server
 - [ ] Navigate to `http://localhost:3002`
 - [ ] Should see login page
-- [ ] Login as parent (dad@home / your-password)
+- [ ] Login as parent (dad@home.local / your-password)
 - [ ] Should see dashboard
 - [ ] Create a test chore
 - [ ] Logout
-- [ ] Login as child (alice@home / your-password)
+- [ ] Login as child (alice@home.local / your-password)
 - [ ] Should see the test chore
 - [ ] Mark chore as complete
 - [ ] Verify points were awarded

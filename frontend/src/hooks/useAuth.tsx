@@ -26,6 +26,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth()
   }, [])
 
+  // Re-check auth when window gains focus (e.g., user returns to tab after deleting cookies)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !user) {
+        // Only re-check if not currently authenticated
+        checkAuth()
+      }
+    }
+
+    const handleFocus = () => {
+      // Re-check auth when window gains focus
+      if (!user) {
+        checkAuth()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [user])
+
   const checkAuth = async () => {
     try {
       console.log('[AuthProvider] checkAuth called')

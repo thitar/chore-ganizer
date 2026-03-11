@@ -83,7 +83,7 @@ Add a new user to the users array:
 ```typescript
 await prisma.user.create({
   data: {
-    email: 'charlie@home',
+    email: 'charlie@home.local',
     password: await bcrypt.hash('secure-password', 10),
     name: 'Charlie',
     role: UserRole.CHILD,

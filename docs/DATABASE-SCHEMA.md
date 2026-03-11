@@ -478,10 +478,10 @@ The database is seeded with default users:
 
 | Email | Password | Role | Name |
 |-------|----------|------|------|
-| dad@home | password123 | PARENT | Dad |
-| mom@home | password123 | PARENT | Mom |
-| alice@home | password123 | CHILD | Alice |
-| bob@home | password123 | CHILD | Bob |
+| dad@home.local | password123 | PARENT | Dad |
+| mom@home.local | password123 | PARENT | Mom |
+| alice@home.local | password123 | CHILD | Alice |
+| bob@home.local | password123 | CHILD | Bob |
 
 ---
 

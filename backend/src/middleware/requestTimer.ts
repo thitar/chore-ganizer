@@ -21,12 +21,9 @@ export const requestTimerMiddleware = (
   // Record start time
   req.startTime = Date.now();
 
-  // Listen for response finish
+  // Listen for response finish to log timing (can't set headers here as they're already sent)
   res.on('finish', () => {
     const duration = Date.now() - (req.startTime || Date.now());
-    
-    // Add timing header
-    res.setHeader('X-Response-Time', `${duration}ms`);
 
     // Log slow requests
     if (duration > SLOW_REQUEST_THRESHOLD) {

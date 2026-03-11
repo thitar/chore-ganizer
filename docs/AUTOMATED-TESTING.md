@@ -349,14 +349,14 @@ test.describe('Authentication', () => {
   })
 
   test('should login successfully with valid credentials', async ({ page }) => {
-    await utils.login('dad@home', 'password123')
+    await utils.login('dad@home.local', 'password123')
     
     await expect(page).toHaveURL(/.*dashboard/)
     await expect(page.locator('[data-testid="user-name"]')).toContainText('Dad')
   })
 
   test('should show error with invalid credentials', async ({ page }) => {
-    await page.fill('[name="email"]', 'dad@home')
+    await page.fill('[name="email"]', 'dad@home.local')
     await page.fill('[name="password"]', 'wrongpassword')
     await page.click('button[type="submit"]')
     

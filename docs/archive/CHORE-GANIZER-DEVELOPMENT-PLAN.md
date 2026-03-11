@@ -955,28 +955,28 @@ async function main() {
   // IMPORTANT: Change these to match your family!
   const users = [
     {
-      email: 'dad@home',
+      email: 'dad@home.local',
       password: await bcrypt.hash('password123', 10),
       name: 'Dad',
       role: UserRole.PARENT,
       points: 0,
     },
     {
-      email: 'mom@home',
+      email: 'mom@home.local',
       password: await bcrypt.hash('password123', 10),
       name: 'Mom',
       role: UserRole.PARENT,
       points: 0,
     },
     {
-      email: 'alice@home',
+      email: 'alice@home.local',
       password: await bcrypt.hash('password123', 10),
       name: 'Alice',
       role: UserRole.CHILD,
       points: 150,
     },
     {
-      email: 'bob@home',
+      email: 'bob@home.local',
       password: await bcrypt.hash('password123', 10),
       name: 'Bob',
       role: UserRole.CHILD,
@@ -1108,11 +1108,11 @@ async function main() {
   console.log('');
   console.log('👥 Login credentials:');
   console.log('  Parents:');
-  console.log('    dad@home / password123');
-  console.log('    mom@home / password123');
+  console.log('    dad@home.local / password123');
+  console.log('    mom@home.local / password123');
   console.log('  Kids:');
-  console.log('    alice@home / password123');
-  console.log('    bob@home / password123');
+  console.log('    alice@home.local / password123');
+  console.log('    bob@home.local / password123');
   console.log('');
 }
 
@@ -1518,7 +1518,7 @@ export default router;
 # Login
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"alice@home","password":"password123"}' \
+  -d '{"email":"alice@home.local","password":"password123"}' \
   -c cookies.txt
 
 # Get current user
@@ -1720,7 +1720,7 @@ export const Login: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="your@home"
+              placeholder="your@home.local"
             />
           </div>
 
@@ -1749,7 +1749,7 @@ export const Login: React.FC = () => {
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-600">
-          <p>🔑 Use your family email (e.g., alice@home)</p>
+          <p>🔑 Use your family email (e.g., alice@home.local)</p>
         </div>
       </div>
     </div>
@@ -1879,7 +1879,7 @@ export const Dashboard: React.FC = () => {
 1. Start both servers
 2. Go to http://localhost:5173
 3. Should redirect to /login
-4. Login with alice@home / password123
+4. Login with alice@home.local / password123
 5. Should redirect to /dashboard
 6. Refresh page - should stay on dashboard
 7. Click logout - should redirect to login
@@ -2290,7 +2290,7 @@ app.use('/api/chores', choreRoutes);
 # Login as parent first
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"dad@home","password":"password123"}' \
+  -d '{"email":"dad@home.local","password":"password123"}' \
   -c cookies.txt
 
 # Create a chore

@@ -1,4 +1,5 @@
 import prisma from '../config/database.js'
+import { AppError } from '../middleware/errorHandler.js'
 
 export interface NotificationData {
   userId: number
@@ -66,11 +67,11 @@ export const markNotificationAsRead = async (
   })
 
   if (!notification) {
-    throw new Error('Notification not found')
+    throw new AppError('Notification not found', 404, 'NOT_FOUND')
   }
 
   if (notification.userId !== userId) {
-    throw new Error('Notification does not belong to user')
+    throw new AppError('Notification does not belong to user', 403, 'FORBIDDEN')
   }
 
   const updated = await prisma.notification.update({
@@ -111,11 +112,11 @@ export const deleteNotification = async (
   })
 
   if (!notification) {
-    throw new Error('Notification not found')
+    throw new AppError('Notification not found', 404, 'NOT_FOUND')
   }
 
   if (notification.userId !== userId) {
-    throw new Error('Notification does not belong to user')
+    throw new AppError('Notification does not belong to user', 403, 'FORBIDDEN')
   }
 
   await prisma.notification.delete({

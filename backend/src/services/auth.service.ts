@@ -1,6 +1,7 @@
 import * as bcrypt from 'bcrypt'
 import prisma from '../config/database.js'
 import { checkEmailLockout, recordFailedAttempt, resetFailedAttempts } from '../utils/lockout.js'
+import { AppError } from '../middleware/errorHandler.js'
 
 export interface LoginCredentials {
   email: string
@@ -37,7 +38,7 @@ export const register = async (credentials: RegisterCredentials): Promise<AuthRe
   })
 
   if (existingUser) {
-    throw new Error('User with this email already exists')
+    throw new AppError('User with this email already exists', 409, 'CONFLICT')
   }
 
   // Hash password
@@ -78,13 +79,13 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResult> 
   })
 
   if (!user) {
-    throw new Error('Invalid credentials')
+    throw new AppError('Invalid credentials', 401, 'UNAUTHORIZED')
   }
 
   // Check if account is locked before attempting password verification
   const lockoutCheck = await checkEmailLockout(email)
   if (lockoutCheck.isLocked) {
-    throw new Error(lockoutCheck.message)
+    throw new AppError(lockoutCheck.message, 401, 'ACCOUNT_LOCKED')
   }
 
   // Verify password
@@ -94,9 +95,9 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResult> 
     // Record failed attempt
     const lockoutStatus = await recordFailedAttempt(user.id)
     if (lockoutStatus.isLocked) {
-      throw new Error(`Account locked due to too many failed attempts. Try again in ${Math.ceil((lockoutStatus.lockoutUntil!.getTime() - Date.now()) / 60000)} minutes.`)
+      throw new AppError(`Account locked due to too many failed attempts. Try again in ${Math.ceil((lockoutStatus.lockoutUntil!.getTime() - Date.now()) / 60000)} minutes.`, 401, 'ACCOUNT_LOCKED')
     }
-    throw new Error('Invalid credentials')
+    throw new AppError('Invalid credentials', 401, 'UNAUTHORIZED')
   }
 
   // Reset failed attempts on successful login
@@ -123,7 +124,7 @@ export const getUserById = async (userId: number): Promise<AuthResult> => {
   })
 
   if (!user) {
-    throw new Error('User not found')
+    throw new AppError('User not found', 404, 'NOT_FOUND')
   }
 
   return {

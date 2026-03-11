@@ -58,6 +58,7 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+cookies.txt
 
 # Production
 uploads/*

@@ -5,6 +5,8 @@
  * Handles DAILY, WEEKLY, MONTHLY, and YEARLY frequencies with various patterns.
  */
 
+import { AppError } from '../middleware/errorHandler.js'
+
 /**
  * Recurrence rule configuration for generating occurrence dates
  */
@@ -85,7 +87,7 @@ export const RecurrenceService = {
    */
   generateOccurrences(rule: RecurrenceRule, startDate: Date, endDate: Date): Date[] {
     if (!this.isValidRule(rule)) {
-      throw new Error('Invalid recurrence rule')
+      throw new AppError('Invalid recurrence rule', 400, 'VALIDATION_ERROR')
     }
 
     if (startDate > endDate) {
@@ -359,13 +361,13 @@ export const RecurrenceService = {
    */
   getNthWeekdayOfMonth(year: number, month: number, week: number, day: number): Date {
     if (week < 1 || week > 5) {
-      throw new Error('week must be between 1 and 5')
+      throw new AppError('week must be between 1 and 5', 400, 'VALIDATION_ERROR')
     }
     if (day < 0 || day > 6) {
-      throw new Error('day must be between 0 (Sunday) and 6 (Saturday)')
+      throw new AppError('day must be between 0 (Sunday) and 6 (Saturday)', 400, 'VALIDATION_ERROR')
     }
     if (month < 0 || month > 11) {
-      throw new Error('month must be between 0 (January) and 11 (December)')
+      throw new AppError('month must be between 0 (January) and 11 (December)', 400, 'VALIDATION_ERROR')
     }
 
     // Start from the first day of the month
