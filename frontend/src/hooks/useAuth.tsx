@@ -3,6 +3,10 @@ import { authApi } from '../api'
 import type { User, LoginCredentials } from '../types'
 import type { RegisterCredentials } from '../api/auth.api'
 
+// Enable debug logging in development OR when debug is enabled in config
+const isDev = import.meta.env.DEV
+const debugEnabled = isDev || window.APP_CONFIG?.debug === true || import.meta.env.VITE_DEBUG === 'true'
+
 interface AuthContextType {
   user: User | null
   loading: boolean
@@ -31,34 +35,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && !user) {
         // Only re-check if not currently authenticated
+        if (debugEnabled) {
+          console.log('[AuthProvider] Visibility changed to visible, re-checking auth...')
+        }
         checkAuth()
       }
     }
 
     const handleFocus = () => {
       // Re-check auth when window gains focus
+      if (debugEnabled) {
+        console.log('[AuthProvider] Window gained focus, re-checking auth...')
+      }
       if (!user) {
         checkAuth()
       }
     }
 
+    // Listen for unauthorized events from API client
+    const handleUnauthorized = () => {
+      if (debugEnabled) {
+        console.log('[AuthProvider] Received unauthorized event, logging out...')
+      }
+      setUser(null)
+    }
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('focus', handleFocus)
+    window.addEventListener('auth:unauthorized', handleUnauthorized)
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('auth:unauthorized', handleUnauthorized)
     }
   }, [user])
 
   const checkAuth = async () => {
     try {
-      console.log('[AuthProvider] checkAuth called')
+      if (debugEnabled) {
+        console.log('[AuthProvider] checkAuth called')
+      }
       const response = await authApi.getCurrentUser()
-      console.log('[AuthProvider] checkAuth response:', response)
+      if (debugEnabled) {
+        console.log('[AuthProvider] checkAuth response:', response)
+      }
       setUser(response.data.user)
     } catch (err) {
-      console.log('[AuthProvider] checkAuth error:', err)
+      if (debugEnabled) {
+        console.log('[AuthProvider] checkAuth error:', err)
+      }
       setUser(null)
     } finally {
       setLoading(false)
@@ -67,14 +93,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (credentials: LoginCredentials) => {
     try {
-      console.log('[AuthProvider] login called with:', credentials)
+      if (debugEnabled) {
+        console.log('[AuthProvider] login called with:', credentials)
+      }
       setError(null)
       const response = await authApi.login(credentials)
-      console.log('[AuthProvider] login response:', response)
+      if (debugEnabled) {
+        console.log('[AuthProvider] login response:', response)
+      }
       setUser(response.data.user)
       return { success: true }
     } catch (err: any) {
-      console.error('[AuthProvider] login error:', err)
+      if (debugEnabled) {
+        console.error('[AuthProvider] login error:', err)
+      }
       const errorMessage = err.error?.message || 'Login failed'
       setError(errorMessage)
       return { success: false, error: errorMessage }
@@ -83,14 +115,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (credentials: RegisterCredentials) => {
     try {
-      console.log('[AuthProvider] register called with:', credentials)
+      if (debugEnabled) {
+        console.log('[AuthProvider] register called with:', credentials)
+      }
       setError(null)
       const response = await authApi.register(credentials)
-      console.log('[AuthProvider] register response:', response)
+      if (debugEnabled) {
+        console.log('[AuthProvider] register response:', response)
+      }
       setUser(response.data.user)
       return { success: true }
     } catch (err: any) {
-      console.error('[AuthProvider] register error:', err)
+      if (debugEnabled) {
+        console.error('[AuthProvider] register error:', err)
+      }
       const errorMessage = err.error?.message || err.message || 'Registration failed'
       setError(errorMessage)
       return { success: false, error: errorMessage }

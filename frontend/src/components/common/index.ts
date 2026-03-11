@@ -12,4 +12,6 @@ export type { LoadingProps } from './Loading'
 
 export { ErrorBoundary } from './ErrorBoundary'
 
+export { ErrorDisplay } from './ErrorDisplay'
+
 export { PasswordStrengthIndicator } from './PasswordStrengthIndicator'

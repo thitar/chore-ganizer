@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth, useUsers } from '../hooks'
-import { Button, Modal } from '../components/common'
+import { Button, Modal, ErrorDisplay } from '../components/common'
 import { UserTable, UserForm, ConfirmDialog } from '../components/users'
 import type { User, CreateUserData, UpdateUserData } from '../types'
 
@@ -122,8 +122,12 @@ export const Users: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-600">{error}</p>
+      <div className="p-6">
+        <ErrorDisplay
+          title="Unable to Load Users"
+          message={error}
+          onRetry={refresh}
+        />
       </div>
     )
   }

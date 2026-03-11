@@ -162,7 +162,7 @@ docker-compose up -d
 - Navigation bar shows the user's name
 - Sidebar shows all parent-accessible menu items (Dashboard, Chores, Templates, Calendar, Family Members, Statistics, Pocket Money)
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -186,7 +186,7 @@ docker-compose up -d
 - User remains on the login page
 - Login form is cleared or password field is cleared
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -209,7 +209,7 @@ docker-compose up -d
 - Error message is displayed indicating invalid credentials
 - User remains on the login page
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -231,7 +231,7 @@ docker-compose up -d
 - Session is terminated
 - Attempting to access protected routes redirects to login
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -255,7 +255,7 @@ docker-compose up -d
 - Current page is still displayed
 - No redirect to login page occurs
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -283,6 +283,7 @@ docker-compose up -d
 **Why this test is important:**
 - Verifies the application properly detects when authentication is lost
 - The fix ensures auth is re-checked when window gains focus or user navigates
+- When 401 is detected, user is automatically logged out and can log in again
 
 **Pass/Fail:** [ ] Pass [ ] Fail
 
@@ -299,17 +300,32 @@ docker-compose up -d
 **Steps:**
 
 1. Log in as a parent
-2. Navigate to `/templates` directly via URL
-3. Navigate to `/calendar` directly via URL
-4. Navigate to `/statistics` directly via URL
-5. Navigate to `/users` directly via URL
+2. Navigate to `/dashboard` directly via URL
+3. Navigate to `/chores` directly via URL
+4. Navigate to `/templates` directly via URL
+5. Navigate to `/calendar` directly via URL
+6. Navigate to `/users` directly via URL
+7. Navigate to `/statistics` directly via URL
+8. Navigate to `/pocket-money` directly via URL
+9. Navigate to `/profile` directly via URL
+10. Navigate to `/recurring-chores` directly via URL
 
 **Expected Result:**
 - All protected routes are accessible to parent users
-- No redirects occur
+- No redirects occur (except `/` which redirects to `/dashboard`)
 - Each page loads correctly
+- All expected page content is displayed:
+  - Dashboard shows overview with assigned chores and points
+  - Chores shows chore list with management options
+  - Templates shows chore templates
+  - Calendar shows calendar view of assignments
+  - Users shows family members list
+  - Statistics shows analytics and charts
+  - Pocket Money shows transaction history and balance
+  - Profile shows user settings
+  - Recurring Chores shows recurring chore schedules
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 

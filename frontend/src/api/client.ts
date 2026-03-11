@@ -89,12 +89,25 @@ class ApiClient {
         return response
       },
       async (error: AxiosError<ApiError>) => {
+        const status = error.response?.status
+        const errorCode = (error.response?.data as any)?.error?.code
+        const errorMessage = (error.response?.data as any)?.error?.message
+        
         if (debugEnabled) {
-          console.error('[ApiClient] Response error:', error.message, error.response?.status, error.response?.data)
+          console.error('[ApiClient] Response error:', error.message, status, errorCode, errorMessage)
+        }
+        
+        // Log 401 UNAUTHORIZED errors for debugging session issues
+        if (status === 401) {
+          console.warn('[ApiClient] 🚨 401 UNAUTHORIZED - Session may be invalid:', errorCode, errorMessage)
+          // Dispatch custom event so AuthContext can handle logout
+          window.dispatchEvent(new CustomEvent('auth:unauthorized', {
+            detail: { code: errorCode, message: errorMessage }
+          }))
         }
         
         // Handle CSRF token errors - try to refresh token and retry
-        if (error.response?.status === 403) {
+        if (status === 403 && error.response) {
           const errorData = error.response.data as any
           if (errorData?.error?.code === 'CSRF_TOKEN_INVALID' || errorData?.error?.code === 'CSRF_TOKEN_MISSING') {
             if (debugEnabled) {

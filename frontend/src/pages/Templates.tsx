@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth, useTemplates, useCategories, useUsers } from '../hooks'
-import { Button } from '../components/common'
+import { Button, ErrorDisplay } from '../components/common'
 import type { ChoreTemplate, CreateTemplateData, UpdateTemplateData } from '../types'
 
 // Chore Definition Card Component
@@ -232,9 +232,11 @@ export const Templates: React.FC = () => {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-600">{error}</p>
-        </div>
+        <ErrorDisplay
+          title="Unable to Load Templates"
+          message={error}
+          onRetry={fetchTemplates}
+        />
       )}
 
       {loading ? (

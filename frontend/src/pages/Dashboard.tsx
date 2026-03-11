@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth, useAssignments } from '../hooks'
-import { Loading } from '../components/common'
+import { Loading, ErrorDisplay } from '../components/common'
 import { assignmentsApi } from '../api'
 import type { ChoreAssignment } from '../types'
 
@@ -9,6 +9,7 @@ export const Dashboard: React.FC = () => {
   const { completeAssignment } = useAssignments()
   const [assignments, setAssignments] = useState<ChoreAssignment[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [showCompleted, setShowCompleted] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [calendarData, setCalendarData] = useState<{
@@ -46,8 +47,11 @@ export const Dashboard: React.FC = () => {
         month: calData.month,
         days: userDays
       })
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load assignments:', err)
+      const errorMessage = err?.error?.message || err?.message || 'Failed to load assignments'
+      console.warn('[Dashboard] Error loading assignments - could be auth issue:', errorMessage)
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -143,6 +147,21 @@ export const Dashboard: React.FC = () => {
 
   if (loading) {
     return <Loading text="Loading your dashboard..." />
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <ErrorDisplay
+          title="Unable to Load Dashboard"
+          message={error}
+          onRetry={() => {
+            setError(null)
+            loadMyAssignments()
+          }}
+        />
+      </div>
+    )
   }
 
   return (

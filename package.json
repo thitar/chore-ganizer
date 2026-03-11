@@ -1,6 +1,6 @@
 {
   "name": "chore-ganizer",
-  "version": "2.1.7",
+  "version": "2.1.8",
   "description": "Chore-Ganizer - Family chore management application",
   "private": true,
   "scripts": {
