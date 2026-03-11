@@ -36,6 +36,12 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "@prisma/client"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/bcrypt"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/supertest"
+        update-types: ["version-update:semver-major"]
 
   # Frontend dependencies (Node.js)
   - package-ecosystem: "npm"
@@ -61,6 +67,14 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    # Ignore major version updates for packages with breaking changes
+    ignore:
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "jsdom"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
