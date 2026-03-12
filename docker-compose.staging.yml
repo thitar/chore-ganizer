@@ -53,8 +53,9 @@ services:
       - DATABASE_URL=${STAGING_DATABASE_URL:-file:/app/data/chore-ganizer-staging.db}
       # Staging session secret (can be different from production)
       - SESSION_SECRET=${STAGING_SESSION_SECRET:-staging-secret-change-me}
-      # Allow CORS from staging frontend
-      - CORS_ORIGIN=${STAGING_CORS_ORIGIN:-http://localhost:3003}
+      # Allow CORS from staging frontend - supports multiple origins
+      # Default allows localhost:3003 AND docker.lab:3003 for local testing
+      - CORS_ORIGIN=${STAGING_CORS_ORIGIN:-http://localhost:3003,http://docker.lab:3003}
       - SECURE_COOKIES=${SECURE_COOKIES:-false}
       - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}
       - LOG_LEVEL=${LOG_LEVEL:-debug}
