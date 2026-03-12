@@ -1,0 +1,97 @@
+# Docker Compose configuration for Chore-Ganizer Staging
+# Use this for manual testing before deploying to production
+#
+# Usage:
+#   docker compose -f docker-compose.staging.yml up -d
+#
+# This runs staging alongside production on different ports:
+# - Staging Frontend: http://localhost:3003
+# - Staging Backend:  http://localhost:3011
+
+services:
+  # Frontend service (staging)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_APP_VERSION=${APP_VERSION:-staging}
+    container_name: chore-ganizer-frontend-staging
+    restart: unless-stopped
+    ports:
+      - "${STAGING_FRONTEND_PORT:-3003}:80"
+    environment:
+      - VITE_API_URL=${STAGING_VITE_API_URL:-http://localhost:3011}
+      - VITE_DEBUG=${VITE_DEBUG:-false}
+      - VITE_APP_VERSION=${APP_VERSION:-staging}
+    depends_on:
+      - backend
+    networks:
+      - chore-ganizer-staging-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Backend service (staging)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: chore-ganizer-backend-staging
+    restart: unless-stopped
+    ports:
+      - "${STAGING_PORT:-3011}:3011"
+    environment:
+      # Core configuration
+      - NODE_ENV=${NODE_ENV:-staging}
+      - PORT=3011
+      - APP_VERSION=${APP_VERSION:-staging}
+      # Use separate database for staging
+      - DATABASE_URL=${STAGING_DATABASE_URL:-file:/app/data/chore-ganizer-staging.db}
+      # Staging session secret (can be different from production)
+      - SESSION_SECRET=${STAGING_SESSION_SECRET:-staging-secret-change-me}
+      # Allow CORS from staging frontend
+      - CORS_ORIGIN=${STAGING_CORS_ORIGIN:-http://localhost:3003}
+      - SECURE_COOKIES=${SECURE_COOKIES:-false}
+      - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+      # Ntfy notification defaults (use separate topic for staging)
+      - NTFY_DEFAULT_SERVER_URL=${NTFY_DEFAULT_SERVER_URL:-https://ntfy.sh}
+      - NTFY_DEFAULT_TOPIC=${STAGING_NTFY_TOPIC:-chore-ganizer-staging}
+      - NTFY_DEFAULT_NOTIFY_CHORE_ASSIGNED=${NTFY_DEFAULT_NOTIFY_CHORE_ASSIGNED:-true}
+      - NTFY_DEFAULT_NOTIFY_CHORE_DUE_SOON=${NTFY_DEFAULT_NOTIFY_CHORE_DUE_SOON:-true}
+      - NTFY_DEFAULT_NOTIFY_CHORE_COMPLETED=${NTFY_DEFAULT_NOTIFY_CHORE_COMPLETED:-true}
+      - NTFY_DEFAULT_NOTIFY_CHORE_OVERDUE=${NTFY_DEFAULT_NOTIFY_CHORE_OVERDUE:-true}
+      - NTFY_DEFAULT_NOTIFY_POINTS_EARNED=${NTFY_DEFAULT_NOTIFY_POINTS_EARNED:-true}
+      - NTFY_DEFAULT_REMINDER_HOURS=${NTFY_DEFAULT_REMINDER_HOURS:-2}
+      - NTFY_DEFAULT_QUIET_HOURS_START=${NTFY_DEFAULT_QUIET_HOURS_START:-}
+      - NTFY_DEFAULT_QUIET_HOURS_END=${NTFY_DEFAULT_QUIET_HOURS_END:-}
+      # Overdue penalty settings
+      - OVERDUE_PENALTY_ENABLED=${OVERDUE_PENALTY_ENABLED:-true}
+      - OVERDUE_PENALTY_MULTIPLIER=${OVERDUE_PENALTY_MULTIPLIER:-2}
+      - NOTIFY_PARENT_ON_OVERDUE=${NOTIFY_PARENT_ON_OVERDUE:-true}
+    volumes:
+      - staging-backend-data:/app/data
+    networks:
+      - chore-ganizer-staging-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3011/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+# Named volumes (separate from production)
+volumes:
+  staging-backend-data:
+    driver: local
+    name: chore-ganizer-staging-data
+
+# Network configuration (separate from production)
+networks:
+  chore-ganizer-staging-network:
+    driver: bridge
+    name: chore-ganizer-staging-network
