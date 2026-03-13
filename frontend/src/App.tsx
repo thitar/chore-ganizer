@@ -80,7 +80,9 @@ function AppContent() {
                   <Suspense fallback={<PageLoader />}><Profile /></Suspense>
                 } />
                 <Route path="/users" element={
-                  <Suspense fallback={<PageLoader />}><Users /></Suspense>
+                  <ProtectedRoute>
+                    <Suspense fallback={<PageLoader />}><Users /></Suspense>
+                  </ProtectedRoute>
                 } />
                 <Route path="/users/:id" element={
                   <ProtectedRoute>
@@ -104,10 +106,14 @@ function AppContent() {
                   } 
                 />
                 <Route path="/recurring-chores" element={
-                  <Suspense fallback={<PageLoader />}><RecurringChoresPage /></Suspense>
+                  <ProtectedRoute>
+                    <Suspense fallback={<PageLoader />}><RecurringChoresPage /></Suspense>
+                  </ProtectedRoute>
                 } />
                 <Route path="/pocket-money" element={
-                  <Suspense fallback={<PageLoader />}><PocketMoney /></Suspense>
+                  <ProtectedRoute>
+                    <Suspense fallback={<PageLoader />}><PocketMoney /></Suspense>
+                  </ProtectedRoute>
                 } />
                 <Route path="/statistics" element={
                   <ProtectedRoute>

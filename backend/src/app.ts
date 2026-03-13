@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { RequestHandler } from 'express'
 import cors from 'cors'
 import session from 'express-session'
 import dotenv from 'dotenv'
@@ -50,16 +50,21 @@ app.use(helmet({
 }))
 
 // Rate limiting - General API limiter
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per window
-  message: {
-    success: false,
-    error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' }
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-})
+// Disabled in staging for local testing
+const noOpMiddleware: RequestHandler = (_req, _res, next) => next();
+
+const generalLimiter = process.env.DISABLE_RATE_LIMIT === 'true'
+  ? noOpMiddleware
+  : rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 100, // limit each IP to 100 requests per window
+      message: {
+        success: false,
+        error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' }
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+    })
 
 // Apply general rate limiter to all API routes
 app.use('/api', generalLimiter)
@@ -99,6 +104,7 @@ const getSessionSecret = (): string => {
 
 const sessionSecret = getSessionSecret()
 const sessionMaxAge = Number(process.env.SESSION_MAX_AGE) || 604800000 // 7 days
+const sameSitePolicy = (process.env.SAMESITE_POLICY || 'strict') as 'strict' | 'lax' | 'none' // 'strict', 'lax', or 'none'
 
 // Check if we're behind a trusted proxy
 const isProduction = process.env.NODE_ENV === 'production'
@@ -122,7 +128,7 @@ app.use(session({
     secure: isSecureCookie,
     httpOnly: true,
     maxAge: sessionMaxAge,
-    sameSite: 'strict',  // Strict provides better CSRF protection
+    sameSite: sameSitePolicy,  // Configurable via SAMESITE_POLICY env var
     path: '/',
   },
 }))

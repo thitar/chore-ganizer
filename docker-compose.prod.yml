@@ -24,7 +24,8 @@ services:
       # Runtime configuration (injected at container start)
       - VITE_API_URL=${VITE_API_URL:-}
       - VITE_DEBUG=${VITE_DEBUG:-false}
-      - VITE_APP_VERSION=${APP_VERSION:-2.1.7}
+      - VITE_APP_VERSION=${APP_VERSION:-2.1.8}
+      - BACKEND_PORT=${BACKEND_PORT:-3010}
     depends_on:
       - backend
     networks:

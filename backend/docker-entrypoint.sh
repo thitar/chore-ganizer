@@ -28,7 +28,7 @@ if [ "$(id -u)" = "0" ]; then
     
     # Parse database file path from DATABASE_URL (supports file: and sqlite: prefixes)
     # Handle various formats: file:/path, file:///path, sqlite:/path, sqlite://path
-    DB_FILE=$(echo "$DB_PATH" | sed -E 's#^(file|sqlite):/{2,3}(.*)#\2#')
+    DB_FILE=$(echo "$DB_PATH" | sed -E 's#^(file|sqlite):/{1,3}(.*)#\2#')
     
     # Validate database path was parsed correctly
     if [ -z "$DB_FILE" ]; then
@@ -43,14 +43,17 @@ if [ "$(id -u)" = "0" ]; then
     fi
     
     # Check if database file exists (handle both absolute paths and file: URLs)
-    # After db push, the file will be at /app/data/chore-ganizer.db
+    # After db push, the file will be at /app/data/chore-ganizer.db or the staging variant
     if [ ! -f "$DB_FILE" ]; then
-        # Try with the actual file path if using file: URL
+        # Try with common database paths if using file: URL
         if [ -f "/app/data/chore-ganizer.db" ]; then
             DB_FILE="/app/data/chore-ganizer.db"
             echo "Database found at /app/data/chore-ganizer.db"
+        elif [ -f "/app/data/chore-ganizer-staging.db" ]; then
+            DB_FILE="/app/data/chore-ganizer-staging.db"
+            echo "Database found at /app/data/chore-ganizer-staging.db"
         else
-            echo "WARNING: Database file not found at $DB_FILE or /app/data/chore-ganizer.db"
+            echo "WARNING: Database file not found at $DB_FILE or /app/data/chore-ganizer*.db"
         fi
     fi
     
