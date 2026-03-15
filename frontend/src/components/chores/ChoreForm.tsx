@@ -44,7 +44,7 @@ export const ChoreForm: React.FC<ChoreFormProps> = ({
     const data: CreateAssignmentData | UpdateAssignmentData = {
       choreTemplateId: templateId,
       assignedToId,
-      dueDate,
+      dueDate: dueDate ? new Date(dueDate + 'T00:00:00.000Z').toISOString() : undefined,
     }
 
     await onSubmit(data)
