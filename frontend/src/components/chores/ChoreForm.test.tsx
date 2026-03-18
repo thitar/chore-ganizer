@@ -106,7 +106,7 @@ describe('ChoreForm', () => {
       expect(mockOnSubmit).toHaveBeenCalledWith({
         choreTemplateId: 1,
         assignedToId: 2,
-        dueDate: '2024-12-31',
+        dueDate: '2024-12-31T00:00:00.000Z',
       })
     })
   })

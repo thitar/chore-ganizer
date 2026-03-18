@@ -1,4 +1,4 @@
-# You're on Phase 1: Authentication Testing! 🎉
+doc# You're on Phase 1: Authentication Testing! 🎉
 
 You're currently on the **`test/phase1-auth`** branch - perfect!
 
