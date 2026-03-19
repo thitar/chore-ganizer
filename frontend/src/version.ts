@@ -22,6 +22,6 @@ declare global {
 }
 
 // Get version from runtime config (production) or build-time env (development)
-export const VERSION = window.APP_CONFIG?.appVersion || import.meta.env.VITE_APP_VERSION || '2.1.8';
+export const VERSION = window.APP_CONFIG?.appVersion || import.meta.env.VITE_APP_VERSION || '2.1.9';
 export const BUILD_DATE = '2026-03-11';
 export const FULL_VERSION = `${VERSION}+${BUILD_DATE.replace(/-/g, '')}`;

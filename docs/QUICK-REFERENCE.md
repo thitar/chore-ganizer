@@ -1,6 +1,6 @@
 # 🚀 Chore-Ganizer Quick Reference
 
-## Version 2.1.7
+## Version 2.1.9
 
 ## 📱 Daily Operations
 
@@ -246,7 +246,7 @@ The application uses **React Router v6** for URL-based navigation.
 
 ---
 
-## 📧 Email Notifications (v2.1.7)
+## 📧 Email Notifications (v2.1.9)
 
 ### Configuration
 
@@ -276,7 +276,7 @@ docker-compose logs backend | grep -i email
 
 ---
 
-## 📱 PWA Installation (v2.1.7)
+## 📱 PWA Installation (v2.1.9)
 
 ### Desktop (Chrome/Edge)
 1. Navigate to the app URL
@@ -351,7 +351,7 @@ RecurringChoreFormModal - Create/edit modal
 
 ---
 
-## 📊 Statistics Dashboard (v2.1.7)
+## 📊 Statistics Dashboard (v2.1.9)
 
 ### Access
 - URL: `/statistics`
@@ -370,7 +370,7 @@ GET /api/statistics - Get family statistics
 
 ---
 
-## 🧪 Testing (v2.1.7)
+## 🧪 Testing (v2.1.9)
 
 ### Run Tests
 
@@ -465,7 +465,7 @@ ls data/backups/ | wc -l
 
 ---
 
-## 🆕 What's New in v2.1.7
+## 🆕 What's New in v2.1.9
 
 | Feature | Description |
 |---------|-------------|

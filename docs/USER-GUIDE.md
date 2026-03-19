@@ -1,6 +1,6 @@
 # Chore-Ganizer User Guide
 
-## Version 2.1.7
+## Version 2.1.9
 
 ## Welcome to Chore-Ganizer! 🏠
 

@@ -4,7 +4,7 @@
 
 **Chore-Ganizer** is a modern, family-friendly chore management system designed for homelab deployment. It helps families organize, track, and reward household chores.
 
-**Current Version:** 2.1.8
+**Current Version:** 2.1.9
 
 ---
 

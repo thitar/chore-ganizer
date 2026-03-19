@@ -1,6 +1,6 @@
 # 📚 Chore-Ganizer Documentation
 
-**Version:** 2.1.7  
+**Version:** 2.1.9  
 **Last Updated:** March 2026
 
 Welcome to the Chore-Ganizer documentation. This index helps you find the right guide for your needs.

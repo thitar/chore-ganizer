@@ -1,6 +1,6 @@
 # Chore-Ganizer Admin Guide
 
-## Version 2.1.7
+## Version 2.1.9
 
 This guide is for parents and administrators who manage the Chore-Ganizer application. As an admin (Parent role), you have access to manage chores and view family member information.
 

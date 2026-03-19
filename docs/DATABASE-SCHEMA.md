@@ -1,6 +1,6 @@
 # Chore-Ganizer Database Schema
 
-**Version:** 2.1.7  
+**Version:** 2.1.9  
 **Database:** SQLite  
 **ORM:** Prisma
 
