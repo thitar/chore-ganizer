@@ -9,6 +9,7 @@ interface OccurrenceListProps {
   onSkip: (occurrence: ChoreOccurrence) => void
   onUnskip: (occurrence: ChoreOccurrence) => void
   currentUserId: number
+  isParent?: boolean
   isLoading?: boolean
   filter?: 'all' | 'pending' | 'completed' | 'skipped'
   onFilterChange?: (filter: 'all' | 'pending' | 'completed' | 'skipped') => void
@@ -106,6 +107,7 @@ export function OccurrenceList({
   onSkip,
   onUnskip,
   currentUserId,
+  isParent = false,
   isLoading = false,
   filter = 'all',
   onFilterChange,
@@ -210,6 +212,7 @@ export function OccurrenceList({
                 onSkip={onSkip}
                 onUnskip={onUnskip}
                 currentUserId={currentUserId}
+                isParent={isParent}
                 isProcessing={processingId !== null}
                 defaultCollapsed={groupLabel === 'Later'}
               />

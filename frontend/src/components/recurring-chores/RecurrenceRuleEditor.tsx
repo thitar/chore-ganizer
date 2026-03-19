@@ -83,6 +83,14 @@ function generatePreviewText(rule: RecurrenceRule, startDate?: Date): string {
         return `The ${weekLabel.toLowerCase()} ${dayLabel} of every ${interval} months`
       }
       
+      // Handle last day of month
+      if (dayOfMonth === -1) {
+        if (interval === 1) {
+          return 'On the last day of every month'
+        }
+        return `On the last day of every ${interval} months`
+      }
+
       const dayOfMonthValue = dayOfMonth || day
       if (interval === 1) {
         return `On the ${getOrdinal(dayOfMonthValue)} of every month`
@@ -163,6 +171,27 @@ export function RecurrenceRuleEditor({
     }
     delete newRule.nthWeekday
     onChange(newRule)
+  }
+
+  const handleLastDayToggle = (isLastDay: boolean) => {
+    if (isLastDay) {
+      const newRule: RecurrenceRule = {
+        ...value,
+        dayOfMonth: -1,  // -1 indicates last day of month
+      }
+      delete newRule.nthWeekday
+      onChange(newRule)
+    } else {
+      // Clamp to valid day range (1-31) based on startDate
+      const day = startDate?.getDate()
+      const validDay = day ? Math.min(Math.max(day, 1), 31) : 1
+      const newRule: RecurrenceRule = {
+        ...value,
+        dayOfMonth: validDay,
+      }
+      delete newRule.nthWeekday
+      onChange(newRule)
+    }
   }
 
   const handleNthWeekdayChange = (field: 'week' | 'day', newValue: number) => {
@@ -321,18 +350,30 @@ export function RecurrenceRuleEditor({
 
           {/* Day of month input */}
           {!isNthWeekdayMode && (
-            <div className="flex items-center gap-2">
-              <span className="text-gray-600">Day</span>
-              <input
-                type="number"
-                min={1}
-                max={31}
-                value={value.dayOfMonth || 1}
-                onChange={handleDayOfMonthChange}
-                disabled={disabled}
-                className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-              />
-              <span className="text-gray-600">of the month</span>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-600">Day</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={value.dayOfMonth && value.dayOfMonth > 0 ? value.dayOfMonth : 1}
+                  onChange={handleDayOfMonthChange}
+                  disabled={disabled || value.dayOfMonth === -1}
+                  className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+                <span className="text-gray-600">of the month</span>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={value.dayOfMonth === -1}
+                  onChange={(e) => handleLastDayToggle(e.target.checked)}
+                  disabled={disabled}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                />
+                <span className="text-sm text-gray-700">Last day of the month</span>
+              </label>
             </div>
           )}
 

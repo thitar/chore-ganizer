@@ -13,6 +13,7 @@ interface OccurrenceCardProps {
   onSkip: (occurrence: ChoreOccurrence) => void
   onUnskip: (occurrence: ChoreOccurrence) => void
   currentUserId: number
+  isParent?: boolean
   isProcessing?: boolean
 }
 
@@ -22,11 +23,12 @@ export function OccurrenceCard({
   onSkip,
   onUnskip,
   currentUserId,
+  isParent = false,
   isProcessing = false
 }: OccurrenceCardProps) {
   const { recurringChore, status, assignedUsers, completedBy, completedAt, skippedBy, skippedAt } = occurrence
   const colors = getStatusColorClasses(status)
-  const canAct = canUserAct(occurrence, currentUserId)
+  const canAct = canUserAct(occurrence, currentUserId, isParent)
   const isDisabled = isProcessing || !canAct
 
   return (

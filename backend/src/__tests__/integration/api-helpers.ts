@@ -337,6 +337,10 @@ export class ApiClient {
     return this.agent.delete(`/api/recurring-chores/${id}`)
   }
 
+  async toggleRecurringChoreActive(id: number, isActive: boolean) {
+    return this.agent.patch(`/api/recurring-chores/${id}/toggle-active`).send({ isActive })
+  }
+
   async getOccurrences(recurringChoreId: number, startDate: string, endDate: string) {
     return this.agent.get(
       `/api/recurring-chores/${recurringChoreId}/occurrences?startDate=${startDate}&endDate=${endDate}`

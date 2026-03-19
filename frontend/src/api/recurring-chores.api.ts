@@ -54,6 +54,12 @@ export const recurringChoresApi = {
     })
   },
 
+  // Toggle recurring chore active status
+  toggleActive: async (id: number, isActive: boolean): Promise<RecurringChore> => {
+    const response = await apiClient.patch<RecurringChoreResponse>(`/recurring-chores/${id}/toggle-active`, { isActive })
+    return response.data?.recurringChore
+  },
+
   // List occurrences
   listOccurrences: async (params?: {
     status?: ChoreOccurrenceStatus

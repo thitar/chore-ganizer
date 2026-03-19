@@ -2705,6 +2705,97 @@
         }
       }
     },
+    "/recurring-chores/{id}/toggle-active": {
+      "patch": {
+        "tags": ["Recurring Chores"],
+        "summary": "Toggle recurring chore active status",
+        "description": "Activate or deactivate a recurring chore (Parents only)",
+        "operationId": "toggleRecurringChoreActive",
+        "security": [
+          { "cookieAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Recurring chore ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "isActive": {
+                    "type": "boolean",
+                    "description": "Set to true to activate, false to deactivate"
+                  }
+                },
+                "required": ["isActive"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recurring chore active status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringChoreResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized (Parent role required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurring chore not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/recurring-chores/{id}": {
       "get": {
         "tags": ["Recurring Chores"],

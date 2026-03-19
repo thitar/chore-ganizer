@@ -5,6 +5,7 @@ interface RecurringChoresListProps {
   recurringChores: RecurringChore[]
   onEdit: (recurringChore: RecurringChore) => void
   onDelete: (recurringChore: RecurringChore) => void
+  onToggleActive?: (recurringChore: RecurringChore, isActive: boolean) => void
   isLoading?: boolean
 }
 
@@ -43,6 +44,12 @@ function generateRecurrencePreview(chore: RecurringChore): string {
         return interval === 1
           ? `${weekLabel} ${dayLabel} of each month`
           : `${weekLabel} ${dayLabel} every ${interval} months`
+      }
+      // Handle last day of month
+      if (dayOfMonth === -1) {
+        return interval === 1
+          ? 'Last day of each month'
+          : `Last day every ${interval} months`
       }
       const day = dayOfMonth || startDate.getDate()
       return interval === 1
@@ -163,6 +170,7 @@ export function RecurringChoresList({
   recurringChores,
   onEdit,
   onDelete,
+  onToggleActive,
   isLoading = false,
 }: RecurringChoresListProps) {
   if (isLoading) {
@@ -267,6 +275,25 @@ export function RecurringChoresList({
               </svg>
               Edit
             </button>
+            {onToggleActive && (
+              <button
+                onClick={() => onToggleActive(chore, !chore.isActive)}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  chore.isActive
+                    ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'
+                    : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {chore.isActive ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  )}
+                </svg>
+                {chore.isActive ? 'Deactivate' : 'Activate'}
+              </button>
+            )}
             <button
               onClick={() => onDelete(chore)}
               className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"

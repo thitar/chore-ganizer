@@ -165,6 +165,24 @@ export function RecurringChoresPage() {
     setDeletingChore(chore)
   }
 
+  // Handle toggle active status
+  const handleToggleActive = async (chore: RecurringChore, isActive: boolean) => {
+    try {
+      setProcessingId(chore.id)
+      await recurringChoresApi.toggleActive(chore.id, isActive)
+      setRecurringChores(recurringChores.map((c) => (c.id === chore.id ? { ...c, isActive } : c)))
+      // Only fetch new occurrences when activating (deactivation just hides them)
+      if (isActive) {
+        await fetchOccurrences()
+      }
+    } catch (error: any) {
+      console.error('Failed to toggle active status:', error)
+      alert(error?.error?.message || 'Failed to toggle active status. Please try again.')
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
   // Confirm delete chore
   const confirmDeleteChore = async (deleteFutureOccurrences: boolean) => {
     if (!deletingChore) return
@@ -176,8 +194,9 @@ export function RecurringChoresPage() {
       setDeletingChore(null)
       // Also refresh occurrences since deleting may affect them
       await fetchOccurrences()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete recurring chore:', error)
+      alert(error?.error?.message || 'Failed to delete recurring chore. Please try again.')
     } finally {
       setIsDeleting(false)
     }
@@ -266,6 +285,7 @@ export function RecurringChoresPage() {
           onSkip={handleSkipOccurrence}
           onUnskip={handleUnskipOccurrence}
           currentUserId={user?.id || 0}
+          isParent={isParent}
           isLoading={isLoadingOccurrences}
           filter={occurrenceFilter}
           onFilterChange={setOccurrenceFilter}
@@ -276,6 +296,7 @@ export function RecurringChoresPage() {
           recurringChores={recurringChores}
           onEdit={handleEditChore}
           onDelete={handleDeleteChore}
+          onToggleActive={handleToggleActive}
           isLoading={isLoadingChores}
         />
       )}

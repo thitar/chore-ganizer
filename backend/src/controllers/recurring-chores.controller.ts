@@ -1032,3 +1032,48 @@ export const triggerOccurrenceGeneration = async (req: Request, res: Response) =
     })
   }
 }
+
+/**
+ * PATCH /api/recurring-chores/:id/toggle-active
+ * Toggle the active status of a recurring chore
+ * @access Private (Parents only)
+ */
+export const toggleRecurringChoreActive = async (req: Request, res: Response) => {
+  const id = Number(req.params.id)
+  const { isActive } = req.body
+
+  if (isNaN(id)) {
+    throw new AppError('Invalid recurring chore ID', 400, 'VALIDATION_ERROR')
+  }
+
+  // isActive validation is handled by toggleActiveSchema middleware
+  // Validation: isActive must be a boolean
+
+  // Use update directly - Prisma throws P2025 if record not found
+  try {
+    const updated = await prisma.recurringChore.update({
+      where: { id },
+      data: { isActive },
+      include: {
+        category: true,
+        fixedAssignees: true,
+        roundRobinPool: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    })
+
+    res.json({
+      success: true,
+      data: { recurringChore: transformRecurringChore(updated) },
+    })
+  } catch (error: any) {
+    // Prisma error code P2025 = Record to update not found
+    if (error.code === 'P2025') {
+      throw new AppError('Recurring chore not found', 404, 'NOT_FOUND')
+    }
+    throw error
+  }
+}

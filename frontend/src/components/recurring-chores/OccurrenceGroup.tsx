@@ -9,6 +9,7 @@ interface OccurrenceGroupProps {
   onSkip: (occurrence: ChoreOccurrence) => void
   onUnskip: (occurrence: ChoreOccurrence) => void
   currentUserId: number
+  isParent?: boolean
   isProcessing?: boolean
   defaultCollapsed?: boolean
 }
@@ -20,6 +21,7 @@ export function OccurrenceGroup({
   onSkip,
   onUnskip,
   currentUserId,
+  isParent = false,
   isProcessing = false,
   defaultCollapsed = false
 }: OccurrenceGroupProps) {
@@ -69,6 +71,7 @@ export function OccurrenceGroup({
               onSkip={onSkip}
               onUnskip={onUnskip}
               currentUserId={currentUserId}
+              isParent={isParent}
               isProcessing={isProcessing}
             />
           ))}

@@ -39,6 +39,11 @@ describe('RecurrenceService', () => {
       expect(RecurrenceService.isValidRule(rule)).toBe(true)
     })
 
+    it('should validate monthly rule with last day of month (-1)', () => {
+      const rule: RecurrenceRule = { frequency: 'MONTHLY', interval: 1, dayOfMonth: -1 }
+      expect(RecurrenceService.isValidRule(rule)).toBe(true)
+    })
+
     it('should validate monthly rule with nth weekday', () => {
       const rule: RecurrenceRule = { frequency: 'MONTHLY', interval: 1, nthWeekday: { week: 2, day: 2 } }
       expect(RecurrenceService.isValidRule(rule)).toBe(true)
@@ -271,6 +276,50 @@ describe('RecurrenceService', () => {
         
         // Should not error and should return results
         expect(Array.isArray(result)).toBe(true)
+      })
+
+      it('should generate occurrences on last day of month (-1)', () => {
+        const rule: RecurrenceRule = { frequency: 'MONTHLY', interval: 1, dayOfMonth: -1 }
+        const startDate = new Date('2024-01-01')
+        const endDate = new Date('2024-12-31')
+        
+        const result = RecurrenceService.generateOccurrences(rule, startDate, endDate)
+        
+        // Should generate 12 occurrences (one per month)
+        expect(result.length).toBe(12)
+        
+        // Verify each occurrence is the last day of the month
+        // January: 31
+        expect(result[0].getUTCDate()).toBe(31)
+        expect(result[0].getUTCMonth()).toBe(0) // January
+        // February 2024 is leap year: 29
+        expect(result[1].getUTCDate()).toBe(29)
+        expect(result[1].getUTCMonth()).toBe(1) // February
+        // March: 31
+        expect(result[2].getUTCDate()).toBe(31)
+        expect(result[2].getUTCMonth()).toBe(2) // March
+        // April: 30
+        expect(result[3].getUTCDate()).toBe(30)
+        expect(result[3].getUTCMonth()).toBe(3) // April
+      })
+
+      it('should generate occurrences on last day of month with interval', () => {
+        const rule: RecurrenceRule = { frequency: 'MONTHLY', interval: 2, dayOfMonth: -1 }
+        const startDate = new Date('2024-01-01')
+        const endDate = new Date('2024-12-31')
+        
+        const result = RecurrenceService.generateOccurrences(rule, startDate, endDate)
+        
+        // Should generate 6 occurrences (every 2 months: Jan, Mar, May, Jul, Sep, Nov)
+        expect(result.length).toBe(6)
+        
+        // Verify they are the last days of each month
+        expect(result[0].getUTCDate()).toBe(31) // January
+        expect(result[1].getUTCDate()).toBe(31) // March (interval 2 from Jan skips Feb)
+        expect(result[2].getUTCDate()).toBe(31) // May
+        expect(result[3].getUTCDate()).toBe(31) // July
+        expect(result[4].getUTCDate()).toBe(30) // September
+        expect(result[5].getUTCDate()).toBe(30) // November
       })
     })
 

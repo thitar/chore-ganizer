@@ -135,3 +135,11 @@ export type CreateChoreAssignmentInput = z.infer<typeof createChoreAssignmentSch
 export type UpdateChoreAssignmentInput = z.infer<typeof updateChoreAssignmentSchema>
 export type CreateChoreCategoryInput = z.infer<typeof createChoreCategorySchema>
 export type UpdateChoreCategoryInput = z.infer<typeof updateChoreCategorySchema>
+
+// ============================================
+// Recurring Chore Schemas
+// ============================================
+
+export const toggleActiveSchema = z.object({
+  isActive: z.boolean(),
+})

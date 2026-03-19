@@ -5,6 +5,20 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.9] - 2026-03-19
+
+### Added
+- P-405: Toggle active/deactivate recurring chores - new `PATCH /api/recurring-chores/:id/toggle-active` endpoint
+- P-410: Last day of month recurrence rule support - `dayOfMonth: -1` generates occurrences on the last day of each month
+- P-407: Parents can complete/skip any occurrence, not just assigned ones
+
+### Changed
+- Synchronized version numbers across all files to 2.1.9
+- Updated swagger.json with new toggle-active endpoint documentation
+
+### Fixed
+- Fixed duplicate JSDoc comment in recurring-chores controller
+
 ## [2.1.8] - 2026-03-11
 
 ### Added

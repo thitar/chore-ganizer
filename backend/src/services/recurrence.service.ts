@@ -211,6 +211,7 @@ export const RecurrenceService = {
 
     if (rule.dayOfMonth !== undefined) {
       // Nth day of month (e.g., 15th of every month)
+      // Special case: -1 means last day of month
       const targetDay = rule.dayOfMonth
       
       // Start from the month of startDate
@@ -226,7 +227,8 @@ export const RecurrenceService = {
         
         if (monthsSinceReference % interval === 0) {
           const daysInMonth = getDaysInMonth(currentYear, currentMonth)
-          const actualDay = Math.min(targetDay, daysInMonth)
+          // Handle last day of month (-1) or clamp to days in month
+          const actualDay = targetDay === -1 ? daysInMonth : Math.min(targetDay, daysInMonth)
           
           const occurrence = new Date(Date.UTC(currentYear, currentMonth, actualDay))
           
@@ -450,7 +452,8 @@ export const RecurrenceService = {
 
     // Validate optional dayOfMonth
     if (obj.dayOfMonth !== undefined) {
-      if (typeof obj.dayOfMonth !== 'number' || obj.dayOfMonth < 1 || obj.dayOfMonth > 31 || !Number.isInteger(obj.dayOfMonth)) {
+      // Allow -1 for last day of month, or 1-31 for specific day
+      if (typeof obj.dayOfMonth !== 'number' || (!Number.isInteger(obj.dayOfMonth)) || (obj.dayOfMonth !== -1 && (obj.dayOfMonth < 1 || obj.dayOfMonth > 31))) {
         return false
       }
     }

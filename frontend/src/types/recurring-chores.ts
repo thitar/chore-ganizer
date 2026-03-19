@@ -14,7 +14,7 @@ export interface RecurrenceRule {
   frequency: Frequency
   interval: number
   dayOfWeek?: number[]   // 0-6 (Sun-Sat)
-  dayOfMonth?: number    // 1-31
+  dayOfMonth?: number    // 1-31, or -1 for last day of month
   nthWeekday?: NthWeekday
 }
 

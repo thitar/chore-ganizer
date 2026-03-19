@@ -178,8 +178,13 @@ export function getUserInitials(name: string): string {
 
 /**
  * Check if a user can perform actions on an occurrence
+ * Parents can perform actions on any occurrence, children only on their assigned ones
  */
-export function canUserAct(occurrence: ChoreOccurrence, userId: number): boolean {
-  // User can act if they are assigned to this occurrence
+export function canUserAct(occurrence: ChoreOccurrence, userId: number, isParent: boolean = false): boolean {
+  // Parents can act on any occurrence
+  if (isParent) {
+    return true
+  }
+  // Children can only act if they are assigned to this occurrence
   return occurrence.assignedUserIds.includes(userId)
 }

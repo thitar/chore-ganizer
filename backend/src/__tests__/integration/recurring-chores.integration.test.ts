@@ -453,6 +453,88 @@ describe('Recurring Chores API Integration Tests', () => {
     })
   })
 
+  describe('PATCH /api/recurring-chores/:id/toggle-active', () => {
+    it('should allow parent to toggle recurring chore active status', async () => {
+      await api.login(testData.users.parent)
+
+      // Create a recurring chore
+      const createResponse = await api.createRecurringChore({
+        title: 'Toggle Test Chore',
+        description: 'Testing toggle',
+        points: 10,
+        startDate: '2024-01-01',
+        recurrenceRule: { frequency: 'DAILY', interval: 1 },
+        assignmentMode: 'FIXED',
+        fixedAssigneeIds: [testData.users.child1.id],
+      })
+
+      expect(createResponse.status).toBe(201)
+      const choreId = createResponse.body.data.recurringChore.id
+
+      // Initially active (true)
+      expect(createResponse.body.data.recurringChore.isActive).toBe(true)
+
+      // Deactivate
+      const deactivateResponse = await api.toggleRecurringChoreActive(choreId, false)
+      expect(deactivateResponse.status).toBe(200)
+      expect(deactivateResponse.body.data.recurringChore.isActive).toBe(false)
+
+      // Reactivate
+      const reactivateResponse = await api.toggleRecurringChoreActive(choreId, true)
+      expect(reactivateResponse.status).toBe(200)
+      expect(reactivateResponse.body.data.recurringChore.isActive).toBe(true)
+    })
+
+    it('should return 404 for non-existent recurring chore', async () => {
+      await api.login(testData.users.parent)
+
+      const response = await api.toggleRecurringChoreActive(99999, false)
+      expect(response.status).toBe(404)
+    })
+
+    it('should return 403 for child users', async () => {
+      await api.login(testData.users.parent)
+
+      const createResponse = await api.createRecurringChore({
+        title: 'Child Toggle Test',
+        points: 5,
+        startDate: '2024-01-01',
+        recurrenceRule: { frequency: 'DAILY', interval: 1 },
+        assignmentMode: 'FIXED',
+        fixedAssigneeIds: [testData.users.child1.id],
+      })
+
+      await api.logout()
+      await api.login(testData.users.child1)
+
+      const response = await api.toggleRecurringChoreActive(createResponse.body.data.recurringChore.id, false)
+      expect(response.status).toBe(403)
+    })
+
+    it('should reject when isActive is not a boolean', async () => {
+      await api.login(testData.users.parent)
+
+      const createResponse = await api.createRecurringChore({
+        title: 'Validation Test',
+        points: 5,
+        startDate: '2024-01-01',
+        recurrenceRule: { frequency: 'DAILY', interval: 1 },
+        assignmentMode: 'FIXED',
+        fixedAssigneeIds: [testData.users.child1.id],
+      })
+
+      // Use toggleActive with wrong type - this will fail validation at middleware level
+      // The validation is handled by toggleActiveSchema middleware
+      const response = await api.toggleRecurringChoreActive(
+        createResponse.body.data.recurringChore.id,
+        // @ts-ignore - intentionally passing wrong type
+        'true'
+      )
+
+      expect(response.status).toBe(400)
+    })
+  })
+
   describe('GET /api/recurring-chores/:id/occurrences', () => {
     beforeEach(async () => {
       await api.login(testData.users.parent)

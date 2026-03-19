@@ -2,7 +2,7 @@ import { Router } from 'express'
 import * as recurringChoresController from '../controllers/recurring-chores.controller.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authenticate, requireParent } from '../middleware/auth.js'
-import { validate, idParamSchema } from '../middleware/validator.js'
+import { validate, idParamSchema, toggleActiveSchema } from '../middleware/validator.js'
 
 const router = Router()
 
@@ -47,6 +47,13 @@ router.put('/:id', authenticate, requireParent, validate(idParamSchema, 'params'
  * @access  Private (Parents only)
  */
 router.delete('/:id', authenticate, requireParent, validate(idParamSchema, 'params'), asyncHandler(recurringChoresController.deleteRecurringChore))
+
+/**
+ * @route   PATCH /api/recurring-chores/:id/toggle-active
+ * @desc    Toggle the active status of a recurring chore
+ * @access  Private (Parents only)
+ */
+router.patch('/:id/toggle-active', authenticate, requireParent, validate(idParamSchema, 'params'), validate(toggleActiveSchema, 'body'), asyncHandler(recurringChoresController.toggleRecurringChoreActive))
 
 /**
  * @route   PATCH /api/recurring-chores/occurrences/:id/complete
