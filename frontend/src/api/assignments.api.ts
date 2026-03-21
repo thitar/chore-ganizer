@@ -90,7 +90,15 @@ export const assignmentsApi = {
       `/chore-assignments/${id}/complete`,
       options
     )
-    const data = response.data?.data
-    return data || { assignment: {} as ChoreAssignment, pointsAwarded: 0 }
+    // Handle possible response structures - check both nested and flat formats
+    const responseData = response?.data
+    const data = responseData?.data ?? responseData
+    if (data?.assignment || data?.pointsAwarded !== undefined) {
+      return { 
+        assignment: data.assignment || {} as ChoreAssignment, 
+        pointsAwarded: data.pointsAwarded ?? 0 
+      }
+    }
+    return { assignment: {} as ChoreAssignment, pointsAwarded: 0 }
   },
 }

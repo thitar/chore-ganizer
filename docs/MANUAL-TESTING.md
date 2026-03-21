@@ -378,7 +378,7 @@ docker-compose up -d
 - Each member shows: name, email, role (Parent/Child), point total
 - Each member has a unique color indicator
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -402,7 +402,7 @@ docker-compose up -d
 - Shows completion history
 - Shows current point balance
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -438,7 +438,7 @@ docker-compose up -d
 - New user appears in Family Members list
 - User can log in with the new credentials
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -461,7 +461,7 @@ docker-compose up -d
 - Password `Password1` is rejected (missing special character)
 - Password `Password123!` is accepted (meets all requirements)
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -487,7 +487,7 @@ docker-compose up -d
 - Success message is displayed
 - Changes are reflected in the family members list
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -511,7 +511,7 @@ docker-compose up -d
 - Member no longer appears in the list
 - Success message is displayed
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -537,7 +537,7 @@ docker-compose up -d
 - Calendar shows the selected color for this member's chores
 - Color appears in family members list
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -568,7 +568,7 @@ docker-compose up -d
 - New user appears in Family Members list
 - User can log in with the new credentials
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -593,7 +593,7 @@ docker-compose up -d
 - User cannot log in with their credentials
 - Success message is displayed
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -618,7 +618,7 @@ docker-compose up -d
 - User can log in with their credentials again
 - Success message is displayed
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -645,7 +645,7 @@ docker-compose up -d
 - Sort direction indicator shows (ascending/descending)
 - Sorting works in both directions
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -672,7 +672,7 @@ docker-compose up -d
 - Preview shows the selected color
 - Custom hex input works
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -702,7 +702,7 @@ docker-compose up -d
 - New template appears in the templates list
 - All entered information is saved correctly
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -729,7 +729,7 @@ docker-compose up -d
 - Changes are reflected in the template list
 - Changes persist after page refresh
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -753,7 +753,7 @@ docker-compose up -d
 - Template no longer appears in the list
 - Success message is displayed
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -782,7 +782,7 @@ docker-compose up -d
 - Icon and color are displayed in the template card
 - Category is correctly assigned
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -808,7 +808,7 @@ docker-compose up -d
 - Title field is highlighted as required
 - Template is not created
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -862,7 +862,7 @@ docker-compose up -d
 - Child receives a notification (if notifications enabled)
 - Template details are copied to the assignment
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -891,7 +891,7 @@ docker-compose up -d
 - Assignment appears in the chores list
 - All custom fields are saved correctly
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -917,7 +917,7 @@ docker-compose up -d
 - Changes are reflected in the chores list
 - Success message is displayed
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -941,7 +941,7 @@ docker-compose up -d
 - Assignment no longer appears in the list
 - Success message is displayed
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -966,7 +966,7 @@ docker-compose up -d
 - Points are automatically awarded to the child
 - Completion timestamp is recorded
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -993,7 +993,7 @@ docker-compose up -d
 - Notes are saved and visible
 - Child receives partial points
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1017,7 +1017,7 @@ docker-compose up -d
 - Filter state is visually indicated
 - Results update immediately
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1066,7 +1066,7 @@ docker-compose up -d
 - Due date shows as past
 - Visual indicator (color, badge) shows overdue status
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail (Overdue visible in Calendar view)
 
 ---
 
@@ -1177,7 +1177,7 @@ docker-compose up -d
 - Occurrences are generated for the next 30 days
 - Each occurrence is assigned to the selected child
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1206,7 +1206,7 @@ docker-compose up -d
 - Occurrences are generated for Mon/Wed/Fri
 - Each occurrence is assigned correctly
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1629,7 +1629,7 @@ docker-compose up -d
 - Point trends chart is visible
 - Activity feed is displayed
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [ ] Pass [X] Fail
 
 ---
 
@@ -2517,8 +2517,7 @@ docker-compose up -d
 - May see "Access Denied" message or redirect to dashboard
 - Cannot access parent-only functionality
 
-**Pass/Fail:** [ ] Pass [X] Fail
-- **Note:** This test is failing because child can access parent routes (/users). Need to implement proper route protection.
+**Pass/Fail:** [X] Pass [ ] Fail
 ---
 
 #### C-005: Child Session Persistence
@@ -2628,7 +2627,7 @@ docker-compose up -d
 - Each chore shows title, description, points, and due date
 - Chores not assigned to this child are not visible
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [X] Pass [ ] Fail
 
 ---
 
@@ -2780,7 +2779,7 @@ docker-compose up -d
 - Dashboard updates to reflect completion
 - Success message appears
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [X] Pass [ ] Fail
 
 ---
 

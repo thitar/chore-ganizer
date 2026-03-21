@@ -44,16 +44,31 @@ if [ "$(id -u)" = "0" ]; then
     
     # Check if database file exists (handle both absolute paths and file: URLs)
     # After db push, the file will be at /app/data/chore-ganizer.db or the staging variant
+    # Use NODE_ENV to determine which database to prefer
     if [ ! -f "$DB_FILE" ]; then
-        # Try with common database paths if using file: URL
-        if [ -f "/app/data/chore-ganizer.db" ]; then
-            DB_FILE="/app/data/chore-ganizer.db"
-            echo "Database found at /app/data/chore-ganizer.db"
-        elif [ -f "/app/data/chore-ganizer-staging.db" ]; then
-            DB_FILE="/app/data/chore-ganizer-staging.db"
-            echo "Database found at /app/data/chore-ganizer-staging.db"
+        # Check environment to determine database preference
+        if [ "$NODE_ENV" = "staging" ]; then
+            # Staging environment - prefer staging database
+            if [ -f "/app/data/chore-ganizer-staging.db" ]; then
+                DB_FILE="/app/data/chore-ganizer-staging.db"
+                echo "Database found at /app/data/chore-ganizer-staging.db (staging mode)"
+            elif [ -f "/app/data/chore-ganizer.db" ]; then
+                DB_FILE="/app/data/chore-ganizer.db"
+                echo "Database found at /app/data/chore-ganizer.db (staging fallback)"
+            else
+                echo "WARNING: Database file not found at $DB_FILE or /app/data/chore-ganizer*.db"
+            fi
         else
-            echo "WARNING: Database file not found at $DB_FILE or /app/data/chore-ganizer*.db"
+            # Production/other environment - prefer production database
+            if [ -f "/app/data/chore-ganizer.db" ]; then
+                DB_FILE="/app/data/chore-ganizer.db"
+                echo "Database found at /app/data/chore-ganizer.db"
+            elif [ -f "/app/data/chore-ganizer-staging.db" ]; then
+                DB_FILE="/app/data/chore-ganizer-staging.db"
+                echo "Database found at /app/data/chore-ganizer-staging.db (production fallback)"
+            else
+                echo "WARNING: Database file not found at $DB_FILE or /app/data/chore-ganizer*.db"
+            fi
         fi
     fi
     

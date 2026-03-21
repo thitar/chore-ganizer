@@ -37,6 +37,7 @@ build/
 # Testing
 coverage/
 test/
+test-results/
 
 # IDE
 .vscode/

@@ -5,6 +5,7 @@ name: CI/CD
 
 # Triggers
 on:
+  workflow_dispatch:  # Allow manual trigger from GitHub UI
   push:
     branches: ['**']
   pull_request:
