@@ -10,87 +10,9 @@ This document outlines planned enhancements and features for future development 
 
 ---
 
-## Phase 6: Production Hardening 🔴
-
-### Security Enhancements
-
-- [x] **Rate Limiting** ✅ COMPLETED
-  - Add express-rate-limit to prevent brute force attacks
-  - Configure limits per endpoint (stricter for auth endpoints)
-  - Implemented in `backend/src/middleware/rateLimiter.ts`
-
-- [x] **Session Store Migration** ✅ COMPLETED
-  - Replaced MemoryStore with SQLite store
-  - Session persistence configured across restarts
-  - Implemented in `backend/src/app.ts`
-
-- [x] **Helmet Security Headers** ✅ COMPLETED
-  - Added Helmet middleware for security headers
-  - Content Security Policy configured
-  - Implemented in `backend/src/app.ts`
-
-- [x] **Request Size Limits** ✅ COMPLETED
-  - Added 10kb request body limit
-  - Trust proxy configuration enabled
-  - Implemented in `backend/src/app.ts`
-
-- [x] **Password Policy** ✅ COMPLETED
-  - Minimum length requirement (8+ characters)
-  - Complexity requirements (uppercase, lowercase, number, special)
-  - Password strength indicator on registration
-  - Implemented in `backend/src/schemas/validation.schemas.ts` and `frontend/src/components/common/PasswordStrengthIndicator.tsx`
-
-- [x] **CSRF Protection** ✅ COMPLETED
-  - Implement CSRF tokens for form submissions
-  - Configure for API endpoints
-  - Token endpoint at `/api/csrf-token`
-  - Implemented in `backend/src/routes/auth.routes.ts` and `frontend/src/api/client.ts`
-
-- [x] **Input Validation Middleware** ✅ COMPLETED
-  - Zod schemas for all API endpoints
-  - Validation on users, templates, assignments, categories routes
-  - Implemented in `backend/src/schemas/validation.schemas.ts` and `backend/src/middleware/validator.ts`
-
-- [x] **Session sameSite Configuration** ✅ COMPLETED
-  - Changed from 'lax' to 'strict' for full CSRF protection
-  - Implemented in `backend/src/app.ts`
-
-### Infrastructure
-
-- [x] **Reverse Proxy Setup** ✅ COMPLETED
-  - Configured Caddy as reverse proxy
-  - Enabled HTTPS with Let's Encrypt
-  - Accessible at https://chore.thitar.ovh
-  - Proper headers configured (HSTS, X-Frame-Options)
-
-- [x] **Environment Configuration** ✅ COMPLETED
-  - Production .env template created
-  - Required environment variables documented
-  - Environment validation on startup configured
-
----
-
 ## Phase 7: Feature Enhancements 🟡
 
 ### Chore Improvements
-
-- [x] **Recurring Chores Automation** ✅ COMPLETED
-  - Daily, weekly, monthly, yearly recurrence options
-  - Automatic chore occurrence generation
-  - Fixed, round-robin, and mixed assignment modes
-  - Occurrence completion, skip, and unskip functionality
-  - Implemented in `backend/src/services/recurrence.service.ts` and related routes
-
-- [x] **Chore Templates** ✅ COMPLETED
-  - Pre-defined chore templates by age group
-  - Template management page implemented
-  - Implemented in `backend/prisma/schema.prisma` and `frontend/src/pages/Templates.tsx`
-
-- [x] **Chore Categories/Tags** ✅ COMPLETED
-  - Organize chores by category (cleaning, outdoor, pet care)
-  - Filter and sort by category
-  - Category-based point suggestions
-  - Implemented in schema and templates
 
 - [ ] **Chore Attachments**
   - Add photos to chore instructions
@@ -119,12 +41,6 @@ This document outlines planned enhancements and features for future development 
 
 ### Notifications
 
-- [x] **ntfy Push Notifications** ✅ COMPLETED
-  - ntfy integration for push notifications
-  - User notification preferences
-  - Quiet hours configuration
-  - Implemented in `backend/src/services/ntfy.service.ts` and `frontend/src/pages/Profile.tsx`
-
 - [ ] **Email Notifications**
   - Configure SMTP settings
   - Email templates
@@ -136,56 +52,9 @@ This document outlines planned enhancements and features for future development 
   - Notification preferences per user
   - Estimated effort: 8 hours
 
-- [x] **Reminder System** ✅ COMPLETED
-  - Customizable reminder times (hours before due)
-  - Push notifications for due soon chores
-  - Implemented in `backend/src/services/notification-settings.service.ts`
-
-### Penalties
-
-- [x] **Overdue Penalty System** ✅ COMPLETED
-  - Automatic point deduction for overdue chores
-  - Configurable penalty multiplier (1-5x)
-  - Parent notifications for overdue chores
-  - Implemented in `backend/src/services/overdue-penalty.service.ts`
-
-- [x] **Pocket Money System** ✅ COMPLETED
-  - Points-to-currency conversion with configurable rate
-  - Base amount per child - Each child can have their own base amount (in euros) added to their monthly payout
-  - Transaction tracking (earned, bonus, deductions, payouts)
-  - Weekly/Monthly payout periods
-  - Advance payment support
-  - Projected earnings
-  - Parent dashboard
-  - Child self-service view
-
 ---
 
 ## Phase 8: User Experience 🟡
-
-### Dashboard Enhancements
-
-- [x] **Calendar View** ✅ COMPLETED
-  - Visual calendar of chores by due date
-  - Family calendar with user color coding
-  - Implemented in `frontend/src/pages/Calendar.tsx`
-
-- [x] **Dashboard Personal View** ✅ COMPLETED
-  - Each user sees only their own data
-  - Personal statistics and assignments
-  - Implemented in dashboard components
-
-- [ ] **Statistics Dashboard**
-  - Completion rate charts
-  - Points over time graph
-  - Leaderboard
-  - Estimated effort: 8 hours
-
-- [ ] **Mobile Responsiveness**
-  - Optimize for mobile devices
-  - Touch-friendly interface
-  - PWA support
-  - Estimated effort: 12 hours
 
 ### Family Features
 
@@ -204,6 +73,12 @@ This document outlines planned enhancements and features for future development 
   - Light/dark mode
   - Custom color themes
   - Estimated effort: 6 hours
+
+- [ ] **Mobile Responsiveness**
+  - Optimize for mobile devices
+  - Touch-friendly interface
+  - PWA support
+  - Estimated effort: 12 hours
 
 ---
 
@@ -327,36 +202,27 @@ This document outlines planned enhancements and features for future development 
 16. ✅ Reminder System
 17. ✅ Overdue Penalty System
 18. ✅ Recurring Chores Automation
-19. ✅ Pocket Money System
-
-### Phase 6 Complete ✅
-All Phase 6 security hardening tasks have been completed. The application is now production-ready with comprehensive security measures in place.
-
-### Phase 7 In Progress
-Recurring chores automation, push notifications, and penalty system have been implemented. Remaining Phase 7 features include rewards catalog and email notifications.
-
-### Recurring Chores Follow-up Tasks
-1. Background job for automatic occurrence generation (cron-based)
-2. Notification integration for recurring chore reminders
-3. Occurrence analytics and reporting
+19. ✅ Pocket Money System (P-501)
+20. ✅ Statistics Dashboard (P-601)
 
 ### Short Term (1-2 Months)
 1. Rewards Catalog
 2. Email Notifications
-3. E2E Tests
-4. Background job for occurrence generation
+3. Family Groups
+4. Avatar/Profile Pictures
 
 ### Medium Term (3-6 Months)
 1. CI/CD Pipeline
 2. Mobile Responsiveness
 3. Achievements/Badges
 4. Database Optimization
+5. Themes
 
 ### Long Term (6+ Months)
 1. Smart Home Integration
-2. Family Groups
-3. Analytics Dashboard
-4. Calendar Integration
+2. Calendar Integration
+3. Browser Push Notifications
+4. Chore Attachments
 
 ---
 
@@ -382,6 +248,17 @@ Recurring chores automation, push notifications, and penalty system have been im
 
 ## Notes
 
+### Test Status Update (March 2026)
+
+Both P-501 and P-601 now **PASS** after fixing the docker-entrypoint.sh to properly seed the database with:
+- Family record creation
+- User-family associations (familyId)
+- PocketMoneyConfig initialization
+
+The previous test failures were due to missing database seeding, not missing features.
+
+### General Notes
+
 - Effort estimates are approximate and may vary
 - Priorities may shift based on user feedback
 - Consider user feedback when prioritizing features
@@ -389,4 +266,5 @@ Recurring chores automation, push notifications, and penalty system have been im
 
 ---
 
-*Last updated: February 2026*
+*Last updated: March 2026*
+*Version: 2.1.9*

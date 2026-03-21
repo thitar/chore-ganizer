@@ -9,7 +9,8 @@
 
   color-scheme: light;
   color: rgba(55, 65, 81, 1);
-  background-color: #f9fafb;
+  /* Matches Tailwind gray-100 for consistency with App.tsx */
+  background-color: #f3f4f6;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

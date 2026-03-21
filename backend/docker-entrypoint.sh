@@ -80,12 +80,16 @@ if [ "$(id -u)" = "0" ]; then
           # Try to run seed, but don't fail if not configured - just create default users
           npx prisma db seed 2>/dev/null || {
             echo "Seed not configured, creating default users manually..."
+            # Create default family first
+            sqlite3 "$DB_FILE" "INSERT OR IGNORE INTO Family (id, name, createdAt, updatedAt) VALUES ('default-family', 'The Family', datetime('now'), datetime('now'));"
             # Create default users matching the seed file: dad, mom, alice, bob
             # bcrypt hash of 'password123'
-            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points) VALUES ('dad@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Dad', 'PARENT', 0);"
-            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points) VALUES ('mom@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Mom', 'PARENT', 0);"
-            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points) VALUES ('alice@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Alice', 'CHILD', 0);"
-            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points) VALUES ('bob@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Bob', 'CHILD', 0);"
+            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points, familyId) VALUES ('dad@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Dad', 'PARENT', 0, 'default-family');"
+            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points, familyId) VALUES ('mom@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Mom', 'PARENT', 0, 'default-family');"
+            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points, familyId) VALUES ('alice@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Alice', 'CHILD', 0, 'default-family');"
+            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points, familyId) VALUES ('bob@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Bob', 'CHILD', 0, 'default-family');"
+            # Create pocket money config
+            sqlite3 "$DB_FILE" "INSERT OR IGNORE INTO PocketMoneyConfig (familyId, pointValue, currency, payoutPeriod, payoutDay, allowAdvance, maxAdvancePoints, createdAt, updatedAt) VALUES ('default-family', 10, 'EUR', 'MONTHLY', 15, 1, 50, datetime('now'), datetime('now'));"
           }
         else
           echo "Database already seeded ($USER_COUNT users found)"

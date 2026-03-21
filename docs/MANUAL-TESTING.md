@@ -1446,7 +1446,7 @@ docker-compose up -d
 - Shows projected payout amounts
 - Shows currency and conversion rate
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1629,7 +1629,7 @@ docker-compose up -d
 - Point trends chart is visible
 - Activity feed is displayed
 
-**Pass/Fail:** [ ] Pass [X] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
