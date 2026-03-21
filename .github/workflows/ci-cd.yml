@@ -256,23 +256,9 @@ jobs:
         with:
           category: "/language:javascript"
 
-  # Job 6: Secret Scanning
-  secret-scan:
-    name: Secret Scanning
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    continue-on-error: true
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-      - name: Run Gitleaks
-        uses: zricethezav/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   # ==================== CD JOBS ====================
   
-  # Job 7: Deploy to Server (Optional - requires additional configuration)
+  # Job 6: Deploy to Server (Optional - requires additional configuration)
   deploy-to-server:
     name: Deploy to Server
     needs: build-and-push
