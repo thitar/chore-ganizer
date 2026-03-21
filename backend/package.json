@@ -58,7 +58,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^7.0.11",
     "@types/supertest": "^6.0.2",
-    "@types/uuid": "^9.0.0",
+    "@types/uuid": "^11.0.0",
     "jest": "^30.0.0",
     "nodemon": "^3.0.2",
     "npm": "^11.10.1",
