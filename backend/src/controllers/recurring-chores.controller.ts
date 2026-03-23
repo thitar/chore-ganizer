@@ -581,7 +581,7 @@ export const deleteRecurringChore = async (req: Request, res: Response) => {
  * List occurrences for the next 30 days
  */
 export const listOccurrences = async (req: Request, res: Response) => {
-  const { status, assignedToMe } = req.query
+  const { status, assignedToMe, userId } = req.query
 
   const now = new Date()
   const endDate = new Date(now)
@@ -603,8 +603,10 @@ export const listOccurrences = async (req: Request, res: Response) => {
     where.status = status as 'PENDING' | 'COMPLETED' | 'SKIPPED'
   }
 
-  // Filter by assigned to current user
-  if (assignedToMe === 'true') {
+  // Filter by assigned to a specific user (userId) or current user (assignedToMe)
+  const filterUserId = userId ? Number(userId) : (assignedToMe === 'true' ? req.user!.id : null)
+  
+  if (filterUserId !== null) {
     // SQLite doesn't support JSON contains, so we need to fetch all and filter in memory
     const allOccurrences = await prisma.choreOccurrence.findMany({
       where: {
@@ -636,10 +638,10 @@ export const listOccurrences = async (req: Request, res: Response) => {
       orderBy: { dueDate: 'asc' },
     })
 
-    // Filter in memory for assignedToMe
+    // Filter in memory for the specific user
     const occurrences = allOccurrences.filter(occ => {
       const assignedIds = JSON.parse(occ.assignedUserIds) as number[]
-      return assignedIds.includes(req.user!.id)
+      return assignedIds.includes(filterUserId)
     })
 
     // Fetch assigned users for each occurrence

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { usersApi } from '../api'
 import type { User, CreateUserData, UpdateUserData } from '../types'
 
@@ -7,7 +7,7 @@ export function useUsers() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setError(null)
       setLoading(true)
@@ -19,11 +19,11 @@ export function useUsers() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchUsers()
-  }, [])
+  }, [fetchUsers])
 
   const createUser = async (data: CreateUserData) => {
     try {

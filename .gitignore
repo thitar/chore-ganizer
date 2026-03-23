@@ -38,6 +38,8 @@ build/
 coverage/
 test/
 test-results/
+test-reports/
+test/reports/
 
 # IDE
 .vscode/

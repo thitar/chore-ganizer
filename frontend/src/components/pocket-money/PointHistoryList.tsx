@@ -97,7 +97,10 @@ export const PointHistoryList: React.FC<PointHistoryListProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-gray-800">{config.label}</span>
-                    {transaction.description && (
+                    {transaction.choreAssignment?.choreTemplate?.title && (
+                      <span className="text-sm text-gray-500 truncate">- {transaction.choreAssignment.choreTemplate.title}</span>
+                    )}
+                    {transaction.description && !transaction.choreAssignment?.choreTemplate?.title && (
                       <span className="text-sm text-gray-500 truncate">- {transaction.description}</span>
                     )}
                   </div>
@@ -105,8 +108,15 @@ export const PointHistoryList: React.FC<PointHistoryListProps> = ({
                     {new Date(transaction.createdAt).toLocaleString()}
                   </p>
                 </div>
-                <div className={`text-lg font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {isPositive ? '+' : ''}{transaction.amount.toLocaleString()}
+                <div className="text-right">
+                  <div className={`text-lg font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                    {isPositive ? '+' : ''}{transaction.amount.toLocaleString()}
+                  </div>
+                  {transaction.runningBalance !== undefined && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Balance: {transaction.runningBalance.toLocaleString()}
+                    </div>
+                  )}
                 </div>
               </div>
             )

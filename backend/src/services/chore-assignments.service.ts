@@ -348,6 +348,17 @@ export const completeAssignment = async (
       },
     })
 
+    // Create point transaction record
+    await tx.pointTransaction.create({
+      data: {
+        userId: assignment.assignedToId,
+        type: 'EARNED',
+        amount: pointsToAward,
+        description: `Completed: ${assignment.choreTemplate.title}`,
+        choreAssignmentId: assignmentId,
+      },
+    })
+
     return { assignment: updated, pointsAwarded: pointsToAward }
   })
 

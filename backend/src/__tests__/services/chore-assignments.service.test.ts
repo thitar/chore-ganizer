@@ -42,6 +42,9 @@ jest.mock('../../config/database', () => ({
         user: {
           update: jest.fn().mockResolvedValue({ ...mockUsers.child, points: 60 }),
         },
+        pointTransaction: {
+          create: jest.fn().mockResolvedValue({ id: 1 }),
+        },
       }
       return callback(mockTx)
     }),
