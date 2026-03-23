@@ -396,11 +396,11 @@ export const getTransactionHistory = async (req: Request, res: Response) => {
     }
   }
 
-  // Get paginated transactions in chronological order for balance calculation
-  // We need ascending order to calculate running balance for the visible page
-  const transactionsAsc = await prisma.pointTransaction.findMany({
+  // Get paginated transactions in descending order (newest first)
+  // This matches user expectations for viewing transaction history
+  const transactions = await prisma.pointTransaction.findMany({
     where,
-    orderBy: { createdAt: 'asc' },
+    orderBy: { createdAt: 'desc' },
     skip,
     take: limitNum,
     include: {
@@ -417,9 +417,24 @@ export const getTransactionHistory = async (req: Request, res: Response) => {
     },
   })
 
-  // Calculate running balance for visible transactions
-  let runningBalance = startingBalance
-  const transactionsWithBalance = transactionsAsc.map((tx) => {
+  // Calculate running balance by fetching all transactions up to this page
+  const allPriorTx = await prisma.pointTransaction.findMany({
+    where: { userId: targetUserId },
+    orderBy: { createdAt: 'asc' },
+    take: skip + limitNum,
+    select: { type: true, amount: true },
+  })
+
+  let runningBalance = 0
+  for (const tx of allPriorTx) {
+    if (tx.type === 'EARNED' || tx.type === 'BONUS' || tx.type === 'ADJUSTMENT') {
+      runningBalance += tx.amount
+    } else {
+      runningBalance -= tx.amount
+    }
+  }
+
+  const transactionsWithBalance = transactions.map((tx) => {
     if (tx.type === 'EARNED' || tx.type === 'BONUS' || tx.type === 'ADJUSTMENT') {
       runningBalance += tx.amount
     } else {

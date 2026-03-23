@@ -152,9 +152,11 @@ describe('Pocket Money API Integration Tests', () => {
       const response = await api.getTransactions()
 
       expect(response.status).toBe(200)
+      // Check that dates are in descending order (allow equal for same-millisecond transactions)
       const dates = response.body.data.transactions.map((t: { createdAt: string }) => new Date(t.createdAt).getTime())
-      const sortedDates = [...dates].sort((a, b) => b - a)
-      expect(dates).toEqual(sortedDates)
+      for (let i = 0; i < dates.length - 1; i++) {
+        expect(dates[i]).toBeGreaterThanOrEqual(dates[i + 1])
+      }
     })
   })
 
