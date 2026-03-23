@@ -17,6 +17,7 @@ const Calendar = lazy(() => import('./pages/Calendar').then(m => ({ default: m.C
 const RecurringChoresPage = lazy(() => import('./pages/RecurringChoresPage').then(m => ({ default: m.RecurringChoresPage })))
 const PocketMoney = lazy(() => import('./pages/PocketMoney').then(m => ({ default: m.PocketMoney })))
 const StatisticsPage = lazy(() => import('./pages/StatisticsPage').then(m => ({ default: m.StatisticsPage })))
+const Notifications = lazy(() => import('./pages/Notifications').then(m => ({ default: m.Notifications })))
 const NotFound = lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })))
 
 // Loading fallback for lazy-loaded components
@@ -111,14 +112,15 @@ function AppContent() {
                   </ProtectedRoute>
                 } />
                 <Route path="/pocket-money" element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}><PocketMoney /></Suspense>
-                  </ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}><PocketMoney /></Suspense>
                 } />
                 <Route path="/statistics" element={
                   <ProtectedRoute>
                     <Suspense fallback={<PageLoader />}><StatisticsPage /></Suspense>
                   </ProtectedRoute>
+                } />
+                <Route path="/notifications" element={
+                  <Suspense fallback={<PageLoader />}><Notifications /></Suspense>
                 } />
                 <Route path="*" element={
                   <Suspense fallback={<PageLoader />}><NotFound /></Suspense>

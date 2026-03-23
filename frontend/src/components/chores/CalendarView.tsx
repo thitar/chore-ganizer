@@ -32,12 +32,16 @@ interface CalendarDay {
   isCurrentMonth: boolean
 }
 
+export type CalendarViewMode = 'month' | 'week'
+
 interface CalendarViewProps {
   onAssignmentClick?: (assignment: ChoreAssignment) => void
   onOccurrenceClick?: (occurrence: ChoreOccurrence) => void
   onEventClick?: (event: CalendarEvent) => void
   onDateClick?: (date: Date) => void
   refreshTrigger?: number
+  userId?: number
+  initialView?: CalendarViewMode
 }
 
 /**
@@ -131,41 +135,62 @@ export default function CalendarView({
   onOccurrenceClick,
   onEventClick,
   onDateClick, 
-  refreshTrigger 
+  refreshTrigger,
+  userId,
+  initialView = 'month'
 }: CalendarViewProps) {
   const [year, setYear] = useState(new Date().getFullYear())
   const [month, setMonth] = useState(new Date().getMonth() + 1)
+  const [viewMode, setViewMode] = useState<CalendarViewMode>(initialView)
+  const [weekStart, setWeekStart] = useState(() => {
+    // Get the start of the current week (Sunday)
+    const today = new Date()
+    const day = today.getDay()
+    const diff = today.getDate() - day
+    return new Date(today.setDate(diff))
+  })
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadCalendar()
-  }, [year, month, refreshTrigger])
+  }, [year, month, weekStart, refreshTrigger, userId, viewMode])
 
   const loadCalendar = async () => {
     try {
       setLoading(true)
       setError(null)
       
+      // Determine date range based on view mode
+      let startDate: Date
+      let endDate: Date
+      
+      if (viewMode === 'week') {
+        startDate = new Date(weekStart)
+        endDate = new Date(weekStart)
+        endDate.setDate(endDate.getDate() + 6)
+        endDate.setHours(23, 59, 59, 999)
+      } else {
+        startDate = new Date(year, month - 1, 1)
+        endDate = new Date(year, month, 0)
+        endDate.setHours(23, 59, 59, 999)
+      }
+      
       // Fetch both assignments and occurrences in parallel
       const [assignmentsData, occurrences] = await Promise.all([
-        assignmentsApi.getCalendar(year, month),
-        recurringChoresApi.listOccurrences(),
+        assignmentsApi.getCalendar(year, month, userId),
+        recurringChoresApi.listOccurrences(userId ? { userId } : {}),
       ])
       
       // Convert assignments to events
       const assignmentEvents = (assignmentsData.assignments || []).map(assignmentToEvent)
       
-      // Filter occurrences to only those in the current month and convert to events
-      const monthStart = new Date(year, month - 1, 1)
-      const monthEnd = new Date(year, month, 0)
-      monthEnd.setHours(23, 59, 59, 999)
-      
+      // Filter occurrences to only those in the current view range and convert to events
       const occurrenceEvents = occurrences
         .filter(occ => {
           const dueDate = new Date(occ.dueDate)
-          return dueDate >= monthStart && dueDate <= monthEnd
+          return dueDate >= startDate && dueDate <= endDate
         })
         .map(occurrenceToEvent)
       
@@ -270,6 +295,59 @@ export default function CalendarView({
     const today = new Date()
     setYear(today.getFullYear())
     setMonth(today.getMonth() + 1)
+    // Reset week to current week
+    const day = today.getDay()
+    const diff = today.getDate() - day
+    setWeekStart(new Date(today.setDate(diff)))
+  }
+
+  const goToPrevWeek = () => {
+    const newStart = new Date(weekStart)
+    newStart.setDate(newStart.getDate() - 7)
+    setWeekStart(newStart)
+    // Update year/month to match
+    setYear(newStart.getFullYear())
+    setMonth(newStart.getMonth() + 1)
+  }
+
+  const goToNextWeek = () => {
+    const newStart = new Date(weekStart)
+    newStart.setDate(newStart.getDate() + 7)
+    setWeekStart(newStart)
+    // Update year/month to match
+    setYear(newStart.getFullYear())
+    setMonth(newStart.getMonth() + 1)
+  }
+
+  const getWeekDays = (): CalendarDay[] => {
+    const days: CalendarDay[] = []
+    const today = new Date()
+    const currentYear = today.getFullYear()
+    const currentMonth = today.getMonth() + 1
+    const currentDay = today.getDate()
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart)
+      date.setDate(date.getDate() + i)
+      const dayNum = date.getDate()
+      
+      days.push({
+        day: dayNum,
+        date: date,
+        events: events.filter(event => {
+          const eventDate = new Date(event.dueDate)
+          return eventDate.getFullYear() === date.getFullYear() && 
+                 eventDate.getMonth() === date.getMonth() && 
+                 eventDate.getDate() === date.getDate()
+        }),
+        isToday: date.getFullYear() === currentYear && 
+                 date.getMonth() + 1 === currentMonth && 
+                 date.getDate() === currentDay,
+        isCurrentMonth: date.getMonth() + 1 === month,
+      })
+    }
+    
+    return days
   }
 
   const handleDateClick = (calendarDay: CalendarDay) => {
@@ -308,16 +386,31 @@ export default function CalendarView({
     )
   }
 
-  const calendarDays = generateCalendarDays()
+  const calendarDays = viewMode === 'week' ? getWeekDays() : generateCalendarDays()
+
+  // Helper function to get week date range string
+  const getWeekRangeString = () => {
+    const start = new Date(weekStart)
+    const end = new Date(weekStart)
+    end.setDate(end.getDate() + 6)
+    
+    const startMonth = start.toLocaleDateString('en-US', { month: 'short' })
+    const endMonth = end.toLocaleDateString('en-US', { month: 'short' })
+    
+    if (startMonth === endMonth) {
+      return `${startMonth} ${start.getDate()} - ${end.getDate()}, ${start.getFullYear()}`
+    }
+    return `${startMonth} ${start.getDate()} - ${endMonth} ${end.getDate()}, ${start.getFullYear()}`
+  }
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
       {/* Calendar Header */}
       <div className="flex items-center justify-between mb-4">
         <button
-          onClick={goToPrevMonth}
+          onClick={viewMode === 'week' ? goToPrevWeek : goToPrevMonth}
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          aria-label="Previous month"
+          aria-label={viewMode === 'week' ? 'Previous week' : 'Previous month'}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -325,7 +418,7 @@ export default function CalendarView({
         </button>
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-semibold">
-            {monthNames[month - 1]} {year}
+            {viewMode === 'week' ? getWeekRangeString() : `${monthNames[month - 1]} ${year}`}
           </h2>
           <button
             onClick={goToToday}
@@ -335,14 +428,40 @@ export default function CalendarView({
           </button>
         </div>
         <button
-          onClick={goToNextMonth}
+          onClick={viewMode === 'week' ? goToNextWeek : goToNextMonth}
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          aria-label="Next month"
+          aria-label={viewMode === 'week' ? 'Next week' : 'Next month'}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
+      </div>
+
+      {/* View Toggle */}
+      <div className="flex justify-center mb-4">
+        <div className="inline-flex rounded-lg bg-gray-100 p-1">
+          <button
+            onClick={() => setViewMode('month')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              viewMode === 'month'
+                ? 'bg-white text-blue-600 shadow'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Month
+          </button>
+          <button
+            onClick={() => setViewMode('week')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              viewMode === 'week'
+                ? 'bg-white text-blue-600 shadow'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Week
+          </button>
+        </div>
       </div>
 
       {/* Day Names Header */}
@@ -354,8 +473,72 @@ export default function CalendarView({
         ))}
       </div>
 
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1">
+      {viewMode === 'week' ? (
+        /* Week View Grid */
+        <div className="grid grid-cols-7 gap-2">
+          {calendarDays.map((calendarDay, index) => (
+            <div
+              key={index}
+              onClick={() => handleDateClick(calendarDay)}
+              className={`
+                min-h-[150px] p-2 border rounded-lg
+                ${calendarDay.isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
+                ${calendarDay.isToday ? 'border-blue-500 border-2' : 'border-gray-200'}
+                ${calendarDay.isCurrentMonth && calendarDay.events.length === 0 && onDateClick ? 'cursor-pointer hover:bg-gray-50' : ''}
+              `}
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div className={`
+                  text-sm font-semibold
+                  ${calendarDay.isToday ? 'text-blue-600' : ''}
+                  ${!calendarDay.isCurrentMonth ? 'text-gray-400' : 'text-gray-700'}
+                `}>
+                  {calendarDay.day}
+                </div>
+                <div className="text-xs text-gray-400">
+                  {calendarDay.date.toLocaleDateString('en-US', { weekday: 'short' })}
+                </div>
+              </div>
+              <div className="space-y-1">
+                {calendarDay.events.map((event) => {
+                  const bgColor = event.assignedTo.color || '#3B82F6'
+                  const textColor = getContrastColor(event.assignedTo.color)
+                  const borderColor = getStatusBorderColor(event.status, event.isOverdue)
+                  
+                  return (
+                    <button
+                      key={`${event.type}-${event.id}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEventClick(event)
+                      }}
+                      className="w-full text-xs py-1 px-2 rounded truncate text-left font-medium border-l-4"
+                      style={{
+                        backgroundColor: bgColor,
+                        color: textColor,
+                        borderLeftColor: borderColor,
+                      }}
+                      title={`${event.title} - ${event.assignedTo.name}${event.type === 'occurrence' ? ' (Recurring)' : ''}`}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span className="truncate">{event.title}</span>
+                        <span className="text-xs opacity-75 whitespace-nowrap">({event.assignedTo.name})</span>
+                      </div>
+                    </button>
+                  )
+                })}
+                {calendarDay.events.length === 0 && (
+                  <div className="text-xs text-gray-400 text-center py-2">
+                    No chores
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* Month View Grid */
+        <>
         {calendarDays.map((calendarDay, index) => (
           <div
             key={index}
@@ -410,7 +593,8 @@ export default function CalendarView({
             </div>
           </div>
         ))}
-      </div>
+        </>
+      )}
 
       {/* Legend */}
       <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">

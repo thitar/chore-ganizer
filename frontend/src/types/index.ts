@@ -93,7 +93,7 @@ export interface Chore {
 export interface Notification {
   id: number
   userId: number
-  type: 'CHORE_ASSIGNED' | 'CHORE_COMPLETED' | 'POINTS_EARNED'
+  type: 'CHORE_ASSIGNED' | 'CHORE_COMPLETED' | 'POINTS_EARNED' | 'OVERDUE_CHORE'
   title: string
   message: string
   read: boolean

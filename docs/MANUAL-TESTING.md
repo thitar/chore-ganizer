@@ -1836,6 +1836,28 @@ docker-compose up -d
 | Field | Value |
 |-------|-------|
 | **Test ID** | P-704 |
+| **Test Name** | Filter Calendar by Family Member
+| **Prerequisites** | Parent is logged in, multiple family members with chores exist
+| **Status** | PASS (2026-03-22)
+
+**Steps:**
+
+1. Navigate to Calendar page
+2. Find filter dropdown for family members
+3. Select one family member
+4. Observe the calendar updates
+5. Clear filter to show all
+
+**Expected Result:**
+- Only selected family member's chores are displayed
+- Filter indicator is visible
+- Clearing filter shows all chores again
+
+**Pass/Fail:** [x] Pass [ ] Fail
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-704 |
 | **Test Name** | Filter Calendar by Family Member |
 | **Prerequisites** | Parent is logged in, multiple family members with chores exist |
 
@@ -1876,7 +1898,7 @@ docker-compose up -d
 - Shows 7 days with more detail per day
 - Can navigate between weeks
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [x] Pass [ ] Fail
 
 ---
 
@@ -1925,7 +1947,7 @@ docker-compose up -d
 - Unread notifications are visually distinguished
 - Count badge shows unread count
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [x] Pass [ ] Fail
 
 ---
 
@@ -2854,7 +2876,9 @@ docker-compose up -d
 - Shows points and running balance
 - Shows date and source (chore name)
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
+
+**Notes:** ✅ **FIX VERIFIED** - The routing issue has been fixed. The `ProtectedRoute` wrapper was removed from the `/pocket-money` route in [`frontend/src/App.tsx`](frontend/src/App.tsx:114-116). Children can now access the Pocket Money page and view their point history. See verification report: `test-reports/20260322-214452_C-302_fix-verification_pass.md`
 
 ---
 
@@ -2877,7 +2901,7 @@ docker-compose up -d
 - Shows next payout date
 - Shows progress toward payout
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [ ] Pass [X] Fail - Feature not implemented: No "Projected Earnings" section showing upcoming chore assignments. See test report: test/reports/20260322-215014_C-303_feature-missing.md
 
 ---
 
@@ -2900,7 +2924,7 @@ docker-compose up -d
 - Update is immediate
 - Transaction appears in history
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 

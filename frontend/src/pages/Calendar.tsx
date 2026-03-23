@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import CalendarView, { CalendarEvent } from '../components/chores/CalendarView'
 import { Modal, Button } from '../components/common'
 import { useAuth, useAssignments, useTemplates, useUsers } from '../hooks'
@@ -11,6 +12,7 @@ export const Calendar: React.FC = () => {
   const { completeAssignment, createAssignment } = useAssignments()
   const { templates, fetchTemplates } = useTemplates()
   const { users, refresh: refreshUsers } = useUsers()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [selectedAssignment, setSelectedAssignment] = useState<ChoreAssignment | null>(null)
   const [selectedOccurrence, setSelectedOccurrence] = useState<ChoreOccurrence | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -18,6 +20,10 @@ export const Calendar: React.FC = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [customPoints, setCustomPoints] = useState<number | ''>('')
+  const [selectedUserId, setSelectedUserId] = useState<number | ''>(() => {
+    const userIdParam = searchParams.get('userId')
+    return userIdParam ? Number(userIdParam) : ''
+  })
   
   // New chore form state
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
@@ -25,11 +31,16 @@ export const Calendar: React.FC = () => {
   const [newChoreUserId, setNewChoreUserId] = useState<number | ''>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Fetch templates and users on mount
+  // Fetch templates on mount
   useEffect(() => {
     fetchTemplates()
+  }, [fetchTemplates])
+
+  // Also ensure users are fetched when component mounts
+  // The useUsers hook fetches on mount, but we call refreshUsers to be explicit
+  useEffect(() => {
     refreshUsers()
-  }, [])
+  }, [refreshUsers])
 
   const handleEventClick = (event: CalendarEvent) => {
     if (event.type === 'assignment' && event.assignment) {
@@ -146,10 +157,52 @@ export const Calendar: React.FC = () => {
         {isParent && <p className="text-sm text-gray-500 mt-1">Click on an empty date to add a chore</p>}
       </div>
 
+      {/* Family Member Filter */}
+      {isParent && users.length > 0 && (
+        <div className="flex items-center gap-4">
+          <label htmlFor="userFilter" className="text-sm font-medium text-gray-700">
+            Filter by family member:
+          </label>
+          <select
+            id="userFilter"
+            value={selectedUserId}
+            onChange={(e) => {
+              const value = e.target.value ? Number(e.target.value) : ''
+              setSelectedUserId(value)
+              if (value) {
+                setSearchParams({ userId: String(value) })
+              } else {
+                setSearchParams({})
+              }
+            }}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[180px]"
+          >
+            <option value="">All</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+          {selectedUserId !== '' && (
+            <button
+              onClick={() => {
+                setSelectedUserId('')
+                setSearchParams({})
+              }}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              Clear filter
+            </button>
+          )}
+        </div>
+      )}
+
       <CalendarView 
         onEventClick={handleEventClick} 
         onDateClick={handleDateClick}
-        refreshTrigger={refreshTrigger} 
+        refreshTrigger={refreshTrigger}
+        userId={selectedUserId === '' ? undefined : Number(selectedUserId)}
       />
 
       {/* Assignment Details Modal */}

@@ -24,9 +24,17 @@ export interface PointTransaction {
   choreAssignmentId: number | null
   relatedUserId: number | null
   createdAt: string
+  runningBalance?: number
   // Relations
   user?: User
   relatedUser?: User
+  choreAssignment?: {
+    id: number
+    choreTemplate?: {
+      id: number
+      title: string
+    }
+  }
 }
 
 export interface Payout {

@@ -64,6 +64,7 @@ export const recurringChoresApi = {
   listOccurrences: async (params?: {
     status?: ChoreOccurrenceStatus
     assignedToMe?: boolean
+    userId?: number
   }): Promise<ChoreOccurrence[]> => {
     const response = await apiClient.get<OccurrencesListResponse>('/recurring-chores/occurrences', { params })
     return response.data?.occurrences || []
