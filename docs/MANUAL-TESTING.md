@@ -833,7 +833,9 @@ docker-compose up -d
 - Points must be a positive number
 - Template is not created
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
+
+**Notes:** Fixed in frontend/src/pages/Templates.tsx - Added client-side validation for negative points in handleSubmit function and error display in form.
 
 ---
 
