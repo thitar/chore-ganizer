@@ -1144,6 +1144,30 @@ docker-compose up -d
 
 ---
 
+#### P-313: Overdue Detection - Day After Due Date
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-313 |
+| **Test Name** | Overdue Detection - Day After Due Date |
+| **Prerequisites** | Parent is logged in, chore exists with due date in the past |
+
+**Steps:**
+
+1. Create a chore assignment with due date set to yesterday
+2. Create another chore assignment with due date set to today
+3. Observe the overdue status indicators on both chores
+4. Wait for a chore to become overdue (day after due date passes)
+
+**Expected Result:**
+- Chores with past due dates show "Overdue!" badge
+- Chores due TODAY should NOT show "Overdue!" badge
+- Only chores where the due date has passed should be marked as overdue
+
+**Pass/Fail:** [ ] Pass [X] Fail - Chore due TODAY incorrectly shows "Overdue!" badge. Backend code has been updated to use timezone-aware `getStartOfToday()` for overdue detection, but staging container appears to be running an older version (v2.1.8) without the fix.
+
+---
+
 ## Phase 3: Advanced Features
 
 > **Branch:** `test/phase3-advanced`
@@ -1554,7 +1578,7 @@ docker-compose up -d
 - Child's point balance is reduced
 - Payout appears in history
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [ ] Pass [X] Fail - Backend error: "periodStart and periodEnd are required"
 
 ---
 
