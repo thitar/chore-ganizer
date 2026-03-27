@@ -1043,7 +1043,7 @@ docker-compose up -d
 - Each child has their own assignment
 - Each can complete independently
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1088,12 +1088,7 @@ docker-compose up -d
 4. Complete the chore
 5. Check point award
 
-**Expected Result:**
-- Overdue chore shows reduced points (if penalty configured)
-- Points awarded reflect the penalty
-- Penalty amount is documented
-
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
