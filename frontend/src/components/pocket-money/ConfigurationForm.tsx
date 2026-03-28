@@ -19,6 +19,7 @@ export const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ config, on
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,7 +28,7 @@ export const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ config, on
 
     try {
       await pocketMoneyApi.updateConfig(formData)
-      onSuccess()
+      setSuccess(true)
     } catch (err: any) {
       setError(err?.error?.message || 'Failed to update configuration')
     } finally {
@@ -54,6 +55,12 @@ export const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ config, on
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
               {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-lg text-sm">
+              Settings updated successfully!
             </div>
           )}
 
@@ -182,20 +189,32 @@ export const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ config, on
 
             {/* Submit */}
             <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-              >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
-              </button>
+              {success ? (
+                <button
+                  type="button"
+                  onClick={onSuccess}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Close
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </>
+              )}
             </div>
           </form>
         </div>

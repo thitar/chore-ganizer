@@ -255,6 +255,7 @@ export const PocketMoneyDashboard: React.FC<PocketMoneyDashboardProps> = ({ chil
         <BonusDeductionModal
           children={children}
           selectedChild={selectedChild}
+          config={config}
           onClose={() => setShowBonusDeduction(false)}
           onSuccess={() => {
             setShowBonusDeduction(false)
@@ -267,6 +268,7 @@ export const PocketMoneyDashboard: React.FC<PocketMoneyDashboardProps> = ({ chil
         <PayoutModal
           child={selectedChild}
           balance={childBalances.find((b) => b.user.id === selectedChild.id)?.balance || null}
+          config={config}
           onClose={() => setShowPayout(false)}
           onSuccess={() => {
             setShowPayout(false)

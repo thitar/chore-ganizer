@@ -1501,7 +1501,7 @@ docker-compose up -d
 - Projected payouts update with new values
 - Success message is displayed
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail - Fixed: Added success state in ConfigurationForm showing "Settings updated successfully!" with a Close button (2026-03-28)
 
 ---
 
@@ -1528,7 +1528,7 @@ docker-compose up -d
 - Child's projected payout increases
 - Child receives notification (if enabled)
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail - Verified 2026-03-28
 
 ---
 
@@ -1555,7 +1555,7 @@ docker-compose up -d
 - Child's projected payout decreases
 - Child receives notification (if enabled)
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail - Verified 2026-03-28
 
 ---
 
@@ -1582,7 +1582,7 @@ docker-compose up -d
 - Child's point balance is reduced
 - Payout appears in history
 
-**Pass/Fail:** [ ] Pass [X] Fail - Backend error: "periodStart and periodEnd are required"
+**Pass/Fail:** [X] Pass [ ] Fail - Fixed: PayoutModal now auto-calculates periodStart/periodEnd from config (start of period to today); backend endpoint updated to accept these fields (2026-03-28)
 
 ---
 
@@ -1606,7 +1606,7 @@ docker-compose up -d
 - Running balance is displayed
 - Different transaction types are visually distinguished
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail - Verified 2026-03-28
 
 ---
 
@@ -1632,7 +1632,7 @@ docker-compose up -d
 - Child balance can go negative
 - Advance is tracked in transaction history
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail - Fixed: Added POST /api/pocket-money/advance backend endpoint; added "💳 Advance" tab to BonusDeductionModal (visible when allowAdvance is enabled); child balance can go negative up to maxAdvancePoints limit (2026-03-28)
 
 ---
 
