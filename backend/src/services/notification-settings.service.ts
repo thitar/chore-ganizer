@@ -248,7 +248,9 @@ export const sendPushNotification = async (
       break
     case 'CHORE_OVERDUE':
       title = `Overdue: ${context.choreTitle || 'Chore'}`
-      message = `"${context.choreTitle || 'Chore'}" is ${context.daysOverdue || 1} day(s) overdue`
+      message = context.userName
+        ? `"${context.choreTitle || 'Chore'}" assigned to ${context.userName} is ${context.daysOverdue || 1} day(s) overdue`
+        : `"${context.choreTitle || 'Chore'}" is ${context.daysOverdue || 1} day(s) overdue`
       break
     case 'POINTS_EARNED':
       title = `You earned ${context.points || 0} points!`

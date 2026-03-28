@@ -13,19 +13,19 @@ import { mockNotificationSettings } from '../test-helpers'
 
 // Mock ntfy service
 jest.mock('../../services/ntfy.service.js', () => ({
-  sendNtfyNotification: jest.fn(),
+  sendNtfyNotification: jest.fn().mockResolvedValue(true),
   NotificationPriorities: {
     HIGH: 'high',
     DEFAULT: 'default',
     LOW: 'low',
+    CHORE_OVERDUE: 5,
+    POINTS_EARNED: 3,
   },
   NotificationTags: {
     WARNING: 'warning',
     INFO: 'info',
-  },
-  NotificationType: {
-    CHORE_ASSIGNED: 'chore_assigned',
-    CHORE_DUE_SOON: 'chore_due_soon',
+    CHORE_OVERDUE: ['x', 'warning'],
+    POINTS_EARNED: ['white_check_mark'],
   },
 }))
 
@@ -163,6 +163,51 @@ describe('Notification Settings Service', () => {
       expect(defaults).toHaveProperty('notifyChoreAssigned')
       expect(defaults).toHaveProperty('reminderHoursBefore')
       expect(defaults).toHaveProperty('overduePenaltyEnabled')
+    })
+  })
+
+  describe('sendPushNotification', () => {
+    const settingsWithNtfy = {
+      ...mockNotificationSettings.default,
+      ntfyTopic: 'test-topic',
+      ntfyServerUrl: 'https://ntfy.sh',
+      notifyChoreOverdue: true,
+    }
+
+    beforeEach(() => {
+      ;(prisma.userNotificationSettings.findUnique as jest.Mock).mockResolvedValue(settingsWithNtfy)
+    })
+
+    it('should include assignee name in CHORE_OVERDUE message when userName is provided', async () => {
+      const { sendNtfyNotification } = require('../../services/ntfy.service')
+
+      await notificationSettingsService.sendPushNotification(1, 'CHORE_OVERDUE', {
+        choreTitle: 'Wash Dishes',
+        daysOverdue: 3,
+        userName: 'Alice',
+      })
+
+      expect(sendNtfyNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Overdue: Wash Dishes',
+          message: '"Wash Dishes" assigned to Alice is 3 day(s) overdue',
+        })
+      )
+    })
+
+    it('should omit assignee name in CHORE_OVERDUE message when userName is not provided', async () => {
+      const { sendNtfyNotification } = require('../../services/ntfy.service')
+
+      await notificationSettingsService.sendPushNotification(1, 'CHORE_OVERDUE', {
+        choreTitle: 'Wash Dishes',
+        daysOverdue: 3,
+      })
+
+      expect(sendNtfyNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: '"Wash Dishes" is 3 day(s) overdue',
+        })
+      )
     })
   })
 })
