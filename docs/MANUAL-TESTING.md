@@ -1262,7 +1262,7 @@ docker-compose up -d
 - Occurrences rotate through the assigned children
 - Each child gets equal turns
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1288,7 +1288,7 @@ docker-compose up -d
 - Future occurrences reflect the changes
 - Past occurrences remain unchanged
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1312,7 +1312,7 @@ docker-compose up -d
 - No new occurrences are generated
 - Existing pending occurrences may be cancelled or remain
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1336,7 +1336,7 @@ docker-compose up -d
 - Each occurrence shows due date, assigned user, and status
 - Occurrences are ordered by date
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1361,7 +1361,7 @@ docker-compose up -d
 - No points are awarded
 - Skip reason is recorded
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1390,7 +1390,7 @@ docker-compose up -d
 - Occurrences are generated for the selected day each month
 - Pattern is maintained correctly
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1420,7 +1420,7 @@ docker-compose up -d
 - Occurrences fall on 2nd Tuesday of each month
 - Pattern is correctly calculated
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1449,7 +1449,7 @@ docker-compose up -d
 - Occurrences fall on last day of each month
 - Handles months with different numbers of days
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
