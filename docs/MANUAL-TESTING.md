@@ -1144,7 +1144,7 @@ docker-compose up -d
 - Shows which chore is overdue
 - Shows assigned family member
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail - Fixed in branch `fix/P-312` (commits 4025528, b716695). In-app notifications now created for both parent and child on overdue penalty. Push notification message now includes assignee name ("Test Chore" assigned to Alice is 4 day(s) overdue). Verified 2026-03-28 on staging v2.1.9.
 
 ---
 
