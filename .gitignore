@@ -70,3 +70,9 @@ uploads/*
 
 # KiloCode
 .kilocode/
+
+# Claude Code
+.claude/
+
+# Playwright
+playwright-report/
