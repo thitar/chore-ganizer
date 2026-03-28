@@ -35,11 +35,12 @@ export const getFamilyPenaltySettings = async () => {
  * Find all overdue chores that haven't had a penalty applied yet
  */
 export const findOverdueChoresWithoutPenalty = async () => {
-  const now = new Date()
-  
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
+
   return prisma.choreAssignment.findMany({
     where: {
-      dueDate: { lt: now },
+      dueDate: { lt: startOfToday },
       status: 'PENDING',
       penaltyApplied: false,
     },
@@ -299,7 +300,9 @@ export const getAssignmentPenaltyStatus = async (assignmentId: number) => {
     return null
   }
   
-  const isOverdue = new Date() > assignment.dueDate && assignment.status === 'PENDING'
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
+  const isOverdue = startOfToday > assignment.dueDate && assignment.status === 'PENDING'
   const daysOverdue = isOverdue ? calculateDaysOverdue(assignment.dueDate) : 0
   
   return {

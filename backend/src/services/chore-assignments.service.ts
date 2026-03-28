@@ -117,10 +117,11 @@ export const getAllAssignments = async (
   })
 
   // Add isOverdue computed field to each assignment
-  const now = new Date()
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
   const assignmentsWithOverdue = assignments.map((assignment) => ({
     ...assignment,
-    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < now,
+    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < startOfToday,
   }))
 
   return assignmentsWithOverdue as AssignmentWithDetails[]
@@ -204,11 +205,12 @@ export const createAssignment = async (
     },
   })
 
-  const now = new Date()
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
   // Add isOverdue computed field
   const assignmentWithOverdue = {
     ...assignment,
-    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < now,
+    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < startOfToday,
   }
 
   return assignmentWithOverdue as AssignmentWithDetails
@@ -290,8 +292,9 @@ export const completeAssignment = async (
   }
 
   // Check if overdue penalty should be applied
-  const now = new Date()
-  const isOverdue = assignment.dueDate < now
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
+  const isOverdue = assignment.dueDate < startOfToday
   let penaltySettings = null
   let pointsToDeduct = 0
   
@@ -625,10 +628,11 @@ export const getAssignmentsForMonth = async (
   })
 
   // Add isOverdue computed field to each assignment
-  const now = new Date()
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
   const assignmentsWithOverdue = assignments.map((assignment) => ({
     ...assignment,
-    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < now,
+    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < startOfToday,
   }))
 
   return assignmentsWithOverdue as AssignmentWithDetails[]

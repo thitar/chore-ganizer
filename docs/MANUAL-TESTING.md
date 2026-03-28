@@ -1121,7 +1121,7 @@ docker-compose up -d
 - Penalty multiplier reverts to default 2x after page refresh
 - Persistence bug confirmed: form state not retained
 
-**Pass/Fail:** [ ] Pass [X] Fail - Overdue penalty settings do not persist after page refresh. The 5x multiplier selection is lost when the profile page is reloaded, indicating a state persistence bug in the form handling or session storage.
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
