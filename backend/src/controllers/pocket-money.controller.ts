@@ -24,6 +24,12 @@ interface AddDeductionBody {
   description?: string
 }
 
+interface AddAdvanceBody {
+  userId: number
+  amount: number
+  description?: string
+}
+
 interface CreatePayoutBody {
   userId: number
   points: number
@@ -544,6 +550,64 @@ export const addDeduction = async (req: Request, res: Response) => {
     -amount,
     {
       description: description || 'Points deducted',
+      relatedUserId: parentUserId,
+    }
+  )
+
+  res.status(201).json({
+    success: true,
+    data: { transaction },
+  })
+}
+
+/**
+ * POST /api/pocket-money/advance
+ * Grant an advance (negative balance) to a user (parents only)
+ */
+export const addAdvance = async (req: Request, res: Response) => {
+  const { userId, amount, description }: AddAdvanceBody = req.body
+
+  if (!userId || isNaN(Number(userId))) {
+    throw new AppError('Invalid userId', 400, 'VALIDATION_ERROR')
+  }
+
+  if (!amount || amount <= 0) {
+    throw new AppError('Amount must be a positive number', 400, 'VALIDATION_ERROR')
+  }
+
+  const targetUserId = Number(userId)
+  const parentUserId = req.user!.id
+
+  const targetUser = await prisma.user.findUnique({
+    where: { id: targetUserId },
+    include: { family: { include: { pocketMoneyConfig: true } } },
+  })
+
+  if (!targetUser) {
+    throw new AppError('Target user not found', 404, 'NOT_FOUND')
+  }
+
+  const config = targetUser.family?.pocketMoneyConfig
+  if (!config?.allowAdvance) {
+    throw new AppError('Advance payments are not enabled', 400, 'VALIDATION_ERROR')
+  }
+
+  const { totalPoints } = await calculatePointBalance(targetUserId)
+  const newBalance = totalPoints - amount
+  if (newBalance < -(config.maxAdvancePoints)) {
+    throw new AppError(
+      `Advance would exceed the maximum of ${config.maxAdvancePoints} points`,
+      400,
+      'VALIDATION_ERROR'
+    )
+  }
+
+  const transaction = await createTransaction(
+    targetUserId,
+    TransactionTypes.ADVANCE,
+    -amount,
+    {
+      description: description || 'Advance payment',
       relatedUserId: parentUserId,
     }
   )

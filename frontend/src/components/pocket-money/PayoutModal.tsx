@@ -1,16 +1,36 @@
 import React, { useState } from 'react'
 import { pocketMoneyApi } from '../../api'
 import type { User } from '../../types'
-import type { PointBalance } from '../../types/pocket-money'
+import type { PointBalance, PocketMoneyConfig } from '../../types/pocket-money'
 
 interface PayoutModalProps {
   child: User
   balance: PointBalance | null
+  config: PocketMoneyConfig
   onClose: () => void
   onSuccess: () => void
 }
 
-export const PayoutModal: React.FC<PayoutModalProps> = ({ child, balance, onClose, onSuccess }) => {
+function getPayoutPeriodDates(config: PocketMoneyConfig): { periodStart: string; periodEnd: string } {
+  const now = new Date()
+  const today = now.toISOString().split('T')[0]
+  let start: Date
+
+  if (config.payoutPeriod === 'WEEKLY') {
+    const day = now.getDay()
+    start = new Date(now)
+    start.setDate(now.getDate() - day)
+  } else {
+    start = new Date(now.getFullYear(), now.getMonth(), 1)
+  }
+
+  return {
+    periodStart: start.toISOString().split('T')[0],
+    periodEnd: today,
+  }
+}
+
+export const PayoutModal: React.FC<PayoutModalProps> = ({ child, balance, config, onClose, onSuccess }) => {
   const [points, setPoints] = useState<number>(balance?.points || 0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -32,7 +52,8 @@ export const PayoutModal: React.FC<PayoutModalProps> = ({ child, balance, onClos
     setIsSubmitting(true)
 
     try {
-      await pocketMoneyApi.createPayout(child.id, points)
+      const { periodStart, periodEnd } = getPayoutPeriodDates(config)
+      await pocketMoneyApi.createPayout(child.id, points, periodStart, periodEnd)
       onSuccess()
     } catch (err: any) {
       setError(err?.error?.message || 'Failed to create payout')

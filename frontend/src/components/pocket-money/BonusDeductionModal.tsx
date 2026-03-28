@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
 import { pocketMoneyApi } from '../../api'
 import type { User } from '../../types'
+import type { PocketMoneyConfig } from '../../types/pocket-money'
 
 interface BonusDeductionModalProps {
   children: User[]
   selectedChild: User | null
+  config: PocketMoneyConfig
   onClose: () => void
   onSuccess: () => void
 }
@@ -12,10 +14,11 @@ interface BonusDeductionModalProps {
 export const BonusDeductionModal: React.FC<BonusDeductionModalProps> = ({
   children,
   selectedChild,
+  config,
   onClose,
   onSuccess,
 }) => {
-  const [type, setType] = useState<'BONUS' | 'DEDUCTION'>('BONUS')
+  const [type, setType] = useState<'BONUS' | 'DEDUCTION' | 'ADVANCE'>('BONUS')
   const [userId, setUserId] = useState<number>(selectedChild?.id || (children.length > 0 ? children[0].id : 0))
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
@@ -36,8 +39,10 @@ export const BonusDeductionModal: React.FC<BonusDeductionModalProps> = ({
     try {
       if (type === 'BONUS') {
         await pocketMoneyApi.addBonus(userId, parseInt(amount), description || undefined)
-      } else {
+      } else if (type === 'DEDUCTION') {
         await pocketMoneyApi.addDeduction(userId, parseInt(amount), description || undefined)
+      } else {
+        await pocketMoneyApi.addAdvance(userId, parseInt(amount), description || undefined)
       }
       onSuccess()
     } catch (err: any) {
@@ -53,7 +58,7 @@ export const BonusDeductionModal: React.FC<BonusDeductionModalProps> = ({
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-800">
-              {type === 'BONUS' ? '🎁 Add Bonus' : '➖ Add Deduction'}
+              {type === 'BONUS' ? '🎁 Add Bonus' : type === 'DEDUCTION' ? '➖ Add Deduction' : '💳 Grant Advance'}
             </h2>
             <button
               onClick={onClose}
@@ -94,6 +99,19 @@ export const BonusDeductionModal: React.FC<BonusDeductionModalProps> = ({
               >
                 ➖ Deduction
               </button>
+              {config.allowAdvance && (
+                <button
+                  type="button"
+                  onClick={() => setType('ADVANCE')}
+                  className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                    type === 'ADVANCE'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  💳 Advance
+                </button>
+              )}
             </div>
 
             {/* User Select */}
@@ -159,10 +177,20 @@ export const BonusDeductionModal: React.FC<BonusDeductionModalProps> = ({
                 type="submit"
                 disabled={isSubmitting || children.length === 0}
                 className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 ${
-                  type === 'BONUS' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
+                  type === 'BONUS'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : type === 'DEDUCTION'
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-purple-600 hover:bg-purple-700'
                 }`}
               >
-                {isSubmitting ? 'Adding...' : type === 'BONUS' ? 'Add Bonus' : 'Add Deduction'}
+                {isSubmitting
+                  ? 'Adding...'
+                  : type === 'BONUS'
+                  ? 'Add Bonus'
+                  : type === 'DEDUCTION'
+                  ? 'Add Deduction'
+                  : 'Grant Advance'}
               </button>
             </div>
           </form>
