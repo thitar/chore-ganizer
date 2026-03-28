@@ -25,11 +25,9 @@ echo "  - API URL: ${VITE_API_URL:-'(empty - using nginx proxy)'}"
 echo "  - Debug: ${VITE_DEBUG:-false}"
 echo "  - Version: ${VITE_APP_VERSION:-1.2.3}"
 
-# Configure nginx backend port based on environment (default: 3011 for staging, 3010 for production)
-BACKEND_PORT=${BACKEND_PORT:-3011}
-sed -i "s|backend:3010|backend:${BACKEND_PORT}|g" /etc/nginx/conf.d/default.conf 2>/dev/null || true
-sed -i "s|Host \"backend:3010\"|Host \"backend:${BACKEND_PORT}\"|g" /etc/nginx/conf.d/default.conf 2>/dev/null || true
-echo "Nginx configured to proxy to backend:${BACKEND_PORT}"
+# NOTE: BACKEND_PORT env var is NOT read by nginx. The backend port is hardcoded
+# to 3010 in nginx.conf via a literal `set` directive. Change it there directly.
+echo "Backend port is hardcoded to 3010 in nginx.conf (BACKEND_PORT env var is ignored)"
 
 # Start nginx
 exec nginx -g 'daemon off;'

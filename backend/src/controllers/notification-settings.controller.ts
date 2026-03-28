@@ -34,6 +34,9 @@ export const updateSettings = async (req: Request, res: Response) => {
     reminderHoursBefore,
     quietHoursStart,
     quietHoursEnd,
+    overduePenaltyEnabled,
+    overduePenaltyMultiplier,
+    notifyParentOnOverdue,
   } = req.body
 
   // Validate quiet hours
@@ -48,6 +51,15 @@ export const updateSettings = async (req: Request, res: Response) => {
   if (reminderHoursBefore !== undefined && (reminderHoursBefore < 1 || reminderHoursBefore > 72)) {
     throw new AppError('reminderHoursBefore must be between 1 and 72', 400, 'VALIDATION_ERROR')
   }
+  // Validate overdue penalty multiplier
+  let parsedMultiplier = overduePenaltyMultiplier
+  if (overduePenaltyMultiplier !== undefined) {
+    parsedMultiplier = parseInt(overduePenaltyMultiplier, 10)
+    if (isNaN(parsedMultiplier) || parsedMultiplier < 0 || parsedMultiplier > 10) {
+      throw new AppError('overduePenaltyMultiplier must be between 0 and 10', 400, 'VALIDATION_ERROR')
+    }
+  }
+
 
   const settings = await notificationSettingsService.updateSettings(userId, {
     ntfyTopic,
@@ -60,6 +72,9 @@ export const updateSettings = async (req: Request, res: Response) => {
     reminderHoursBefore,
     quietHoursStart,
     quietHoursEnd,
+    overduePenaltyEnabled,
+    overduePenaltyMultiplier: parsedMultiplier,
+    notifyParentOnOverdue,
   })
 
   res.json({
