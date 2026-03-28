@@ -1144,7 +1144,7 @@ docker-compose up -d
 - Shows which chore is overdue
 - Shows assigned family member
 
-**Pass/Fail:** [ ] Pass [X] Fail - Two failures: (1) Overdue chore generates NO in-app notification — the overdue penalty service only sends ntfy push notifications without creating in-app notification records, so the `/notifications` page remains empty. (2) The ntfy push notification content ("Test Chore is 8 day(s) overdue") does not include the assigned family member's name — the `CHORE_OVERDUE` message template omits the `userName` field entirely.
+**Pass/Fail:** [X] Pass [ ] Fail - Fixed in branch `fix/P-312` (commits 4025528, b716695). In-app notifications now created for both parent and child on overdue penalty. Push notification message now includes assignee name ("Test Chore" assigned to Alice is 4 day(s) overdue). Verified 2026-03-28 on staging v2.1.9.
 
 ---
 
