@@ -1102,19 +1102,26 @@ docker-compose up -d
 
 **Steps:**
 
-1. Navigate to Settings or Admin page
-2. Find Overdue Penalty settings
-3. Enable/disable overdue penalty
-4. Set penalty percentage (e.g., 10% reduction per day)
-5. Save settings
-6. Test with an overdue chore
+1. Navigate to Profile page (click user menu)
+2. Scroll to "Overdue Penalty Settings" section
+3. Verify "Enable overdue penalties" checkbox is checked
+4. Change "Penalty Multiplier" from 2x to 5x using dropdown
+5. Click "Save Settings" button
+6. Verify success message "Notification settings saved successfully!"
+7. Refresh page (F5 or navigate away and back)
+8. Verify penalty multiplier remains 5x (persistence)
 
 **Expected Result:**
-- Settings are saved
-- Penalty is applied correctly to overdue chores
-- Visual feedback shows penalty applied
+- Settings are saved successfully with confirmation message
+- Penalty multiplier selection persists after page refresh
+- Overdue penalty settings are applied to overdue chores (requires separate test)
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Actual Result (2026-03-27):**
+- Settings save successfully (confirmation appears)
+- Penalty multiplier reverts to default 2x after page refresh
+- Persistence bug confirmed: form state not retained
+
+**Pass/Fail:** [ ] Pass [X] Fail - Overdue penalty settings do not persist after page refresh. The 5x multiplier selection is lost when the profile page is reloaded, indicating a state persistence bug in the form handling or session storage.
 
 ---
 
