@@ -1168,7 +1168,7 @@ docker-compose up -d
 - Chores due TODAY should NOT show "Overdue!" badge
 - Only chores where the due date has passed should be marked as overdue
 
-**Pass/Fail:** [ ] Pass [X] Fail - Chore due TODAY incorrectly shows "Overdue!" badge. Backend code has been updated to use timezone-aware `getStartOfToday()` for overdue detection, but staging container appears to be running an older version (v2.1.8) without the fix.
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
