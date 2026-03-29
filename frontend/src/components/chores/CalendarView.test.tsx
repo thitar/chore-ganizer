@@ -223,6 +223,20 @@ describe('CalendarView — day detail panel', () => {
     expect(screen.getByText('+ Add chore on this day')).toBeInTheDocument()
   })
 
+  it('deselects the day when the same cell is clicked again', async () => {
+    render(<CalendarView />)
+    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+
+    const cells = document.querySelectorAll('[data-testid="cal-cell"]')
+    // First click — opens panel
+    fireEvent.click(cells[14])
+    expect(screen.getByText('Sunday, March 15')).toBeInTheDocument()
+
+    // Second click on same day — closes panel
+    fireEvent.click(cells[14])
+    expect(screen.queryByText('Sunday, March 15')).not.toBeInTheDocument()
+  })
+
   it('does NOT show "+ Add chore" button when onDateClick is not provided', async () => {
     render(<CalendarView />)
     await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())

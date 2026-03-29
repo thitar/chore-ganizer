@@ -478,7 +478,7 @@ export default function CalendarView({
   const handleDateClick = (calendarDay: CalendarDay) => {
     if (!calendarDay.isCurrentMonth) return
     setSelectedDay(prev =>
-      prev && prev.toDateString() === calendarDay.date.toDateString() ? prev : calendarDay.date
+      prev && prev.toDateString() === calendarDay.date.toDateString() ? null : calendarDay.date
     )
   }
 
