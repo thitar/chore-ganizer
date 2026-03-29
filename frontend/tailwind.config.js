@@ -20,11 +20,12 @@ export default {
           ring: '#6366f1',
         },
         surface: {
-          DEFAULT: '#ffffff',
-          muted: '#f8fafc',
+          DEFAULT: '#e2e8f0',
+          muted: '#cbd5e1',
+          input: '#f1f5f9',
         },
         border: {
-          DEFAULT: '#e2e8f0',
+          DEFAULT: '#b6c0cc',
         },
       },
       fontFamily: {
