@@ -32,7 +32,9 @@ describe('Input', () => {
 
   it('applies normal border when no error', () => {
     render(<Input />)
-    expect(screen.getByRole('textbox')).toHaveClass('border-border')
+    const input = screen.getByRole('textbox')
+    expect(input).toHaveClass('border-border')
+    expect(input).toHaveClass('bg-surface-input')
   })
 
   it('handles value changes', () => {

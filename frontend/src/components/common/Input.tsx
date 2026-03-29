@@ -23,7 +23,7 @@ export const Input: React.FC<InputProps> = ({
       )}
       <input
         id={inputId}
-        className={`w-full px-3 py-2.5 border rounded-md text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-ring focus:border-transparent ${
+        className={`w-full px-3 py-2.5 border rounded-md text-sm text-slate-900 bg-surface-input focus:outline-none focus:ring-2 focus:ring-primary-ring focus:border-transparent ${
           error
             ? 'border-red-300 bg-red-50'
             : 'border-border'
