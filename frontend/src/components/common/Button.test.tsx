@@ -37,7 +37,7 @@ describe('Button', () => {
 
   it('shows loading spinner when loading', () => {
     render(<Button loading>Click me</Button>)
-    expect(screen.getByRole('button').querySelector('svg')).toBeInTheDocument()
+    expect(screen.getByRole('button').querySelector('svg')).not.toBeNull()
   })
 
   it('calls onClick handler when clicked', () => {
