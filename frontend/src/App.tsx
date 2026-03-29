@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth, AuthProvider } from './hooks'
 import { ErrorBoundary, Loading } from './components/common'
@@ -40,6 +40,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 function AppContent() {
   const { isAuthenticated, loading } = useAuth()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   if (loading) {
     return (
@@ -64,9 +65,9 @@ function AppContent() {
     <ErrorBoundary>
       <div className="min-h-screen flex flex-col bg-gray-100">
         <OfflineIndicator />
-        <Navbar />
+        <Navbar onMenuOpen={() => setSidebarOpen(true)} />
         <div className="flex flex-1">
-          <Sidebar />
+          <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
           <main className="flex-1 p-6 overflow-y-auto">
             <div className="max-w-7xl mx-auto">
               <Routes>

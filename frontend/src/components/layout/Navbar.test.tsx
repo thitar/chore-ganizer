@@ -2,23 +2,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '../../test/utils'
 import { Navbar } from './Navbar'
 
-// Mock useAuth hook
 vi.mock('../../hooks', () => ({
   useAuth: vi.fn(),
 }))
 
-// Mock useNavigate
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom')
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  }
+  return { ...actual, useNavigate: () => mockNavigate }
 })
 
 import { useAuth } from '../../hooks'
-
 const mockUseAuth = useAuth as ReturnType<typeof vi.fn>
 
 describe('Navbar', () => {
@@ -30,11 +24,7 @@ describe('Navbar', () => {
   })
 
   it('does not render when not authenticated', () => {
-    mockUseAuth.mockReturnValue({
-      user: null,
-      logout: mockLogout,
-      isAuthenticated: false,
-    })
+    mockUseAuth.mockReturnValue({ user: null, logout: mockLogout, isAuthenticated: false })
     render(<Navbar />)
     expect(screen.queryByText('Chore-Ganizer')).not.toBeInTheDocument()
   })
@@ -99,5 +89,17 @@ describe('Navbar', () => {
     render(<Navbar />)
     fireEvent.click(screen.getByText('Test User'))
     expect(mockNavigate).toHaveBeenCalledWith('/profile')
+  })
+
+  it('calls onMenuOpen when hamburger is clicked', () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 1, name: 'Test User', points: 100, role: 'PARENT' },
+      logout: mockLogout,
+      isAuthenticated: true,
+    })
+    const onMenuOpen = vi.fn()
+    render(<Navbar onMenuOpen={onMenuOpen} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }))
+    expect(onMenuOpen).toHaveBeenCalledTimes(1)
   })
 })
