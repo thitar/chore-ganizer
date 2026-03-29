@@ -23,47 +23,42 @@ describe('Input', () => {
     expect(screen.getByText('This field is required')).toBeInTheDocument()
   })
 
-  it('applies error styling when error is provided', () => {
+  it('applies error border and background when error is provided', () => {
     render(<Input error="Error" />)
     const input = screen.getByRole('textbox')
-    expect(input).toHaveClass('border-red-500')
+    expect(input).toHaveClass('border-red-300')
+    expect(input).toHaveClass('bg-red-50')
   })
 
-  it('applies normal styling when no error', () => {
+  it('applies normal border when no error', () => {
     render(<Input />)
-    const input = screen.getByRole('textbox')
-    expect(input).toHaveClass('border-gray-300')
+    expect(screen.getByRole('textbox')).toHaveClass('border-border')
   })
 
   it('handles value changes', () => {
     const handleChange = vi.fn()
     render(<Input onChange={handleChange} />)
-    const input = screen.getByRole('textbox')
-    fireEvent.change(input, { target: { value: 'test value' } })
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'test value' } })
     expect(handleChange).toHaveBeenCalled()
   })
 
   it('applies custom className', () => {
     render(<Input className="custom-class" />)
-    const input = screen.getByRole('textbox')
-    expect(input).toHaveClass('custom-class')
+    expect(screen.getByRole('textbox')).toHaveClass('custom-class')
   })
 
   it('uses id prop for input', () => {
     render(<Input id="custom-id" label="Test" />)
-    const input = screen.getByRole('textbox')
-    expect(input).toHaveAttribute('id', 'custom-id')
+    expect(screen.getByRole('textbox')).toHaveAttribute('id', 'custom-id')
   })
 
   it('generates id from label if id not provided', () => {
     render(<Input label="Email Address" />)
-    const input = screen.getByRole('textbox')
-    expect(input).toHaveAttribute('id', 'email-address')
+    expect(screen.getByRole('textbox')).toHaveAttribute('id', 'email-address')
   })
 
   it('supports different input types', () => {
     render(<Input type="password" />)
-    // Password inputs don't have role textbox, so we query by input tag directly
     const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement
     expect(passwordInput.type).toBe('password')
   })
@@ -75,13 +70,11 @@ describe('Input', () => {
 
   it('can be disabled', () => {
     render(<Input disabled />)
-    const input = screen.getByRole('textbox')
-    expect(input).toBeDisabled()
+    expect(screen.getByRole('textbox')).toBeDisabled()
   })
 
   it('supports required attribute', () => {
     render(<Input required />)
-    const input = screen.getByRole('textbox')
-    expect(input).toBeRequired()
+    expect(screen.getByRole('textbox')).toBeRequired()
   })
 })
