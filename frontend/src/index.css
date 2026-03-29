@@ -1,16 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light;
-  color: rgba(55, 65, 81, 1);
-  /* Matches Tailwind gray-100 for consistency with App.tsx */
-  background-color: #f3f4f6;
+  color: #0f172a;
+  background-color: #cbd5e1;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
