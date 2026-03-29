@@ -6,6 +6,11 @@ export interface FamilyStatistics {
     id: number
     name: string
     role: string
+    stats: {
+      totalAssigned: number
+      completed: number
+      completionRate: number
+    }
   }>
   choreStats: {
     totalAssigned: number
@@ -25,6 +30,12 @@ export interface FamilyStatistics {
     choreTitle: string
     points: number
     date: string
+  }>
+  categoryBreakdown: Array<{
+    categoryId: number | null
+    categoryName: string
+    completed: number
+    total: number
   }>
   dateRange: {
     startDate: string

@@ -1681,7 +1681,9 @@ docker-compose up -d
 - Individual rates for each family member are shown
 - Visual chart or graph is present
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [ ] Pass [X] Fail
+
+> **Notes (2026-03-29):** Overall rate (46.7%) shown correctly and Point Trends chart present. FAIL: Individual per-member completion rates not displayed — Family Members section shows name/role only. Backend `familyMembers` response lacks per-member stats.
 
 ---
 
@@ -1705,7 +1707,9 @@ docker-compose up -d
 - Charts and metrics refresh
 - Date range is clearly indicated
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
+
+> **Notes (2026-03-29):** "Last 30 Days" button correctly triggers `GET /api/statistics/family?startDate=...&endDate=...`. Date inputs and filter state management verified in source. Date range is clearly shown in the UI inputs.
 
 ---
 
@@ -1729,7 +1733,9 @@ docker-compose up -d
 - Y-axis shows points
 - Multiple family members may be shown with different colors
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
+
+> **Notes (2026-03-29):** Bar chart (Recharts BarChart) present. X-axis shows dates (3/21, 3/22, 3/25, 3/28), Y-axis shows point values. Only aggregate "Points Earned" shown (no per-member breakdown); multi-member view is optional per expected result.
 
 ---
 
@@ -1753,7 +1759,9 @@ docker-compose up -d
 - Point awards are displayed
 - Activities are in chronological order
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [ ] Pass [X] Fail
+
+> **Notes (2026-03-29):** Completions listed ✓, point awards shown ✓, newest-first order ✓. FAIL: New assignments not shown — confirmed missing feature. Backend `activityFeed` only tracks completion events; assignment creation events not tracked. To be implemented.
 
 ---
 
@@ -1776,7 +1784,9 @@ docker-compose up -d
 - Categories may be shown as pie chart or bar chart
 - Most/least completed categories are identifiable
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [ ] Pass [X] Fail
+
+> **Notes (2026-03-29):** No category breakdown section exists on the Statistics page. `StatisticsPage.tsx` has no such section and the backend `/api/statistics/family` response includes no category data. Feature not implemented.
 
 ---
 

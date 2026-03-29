@@ -27,15 +27,30 @@ interface ActivityFeedItem {
   date: Date
 }
 
+interface MemberStats {
+  totalAssigned: number
+  completed: number
+  completionRate: number
+}
+
+interface CategoryBreakdownItem {
+  categoryId: number | null
+  categoryName: string
+  completed: number
+  total: number
+}
+
 interface FamilyStatistics {
   familyMembers: Array<{
     id: number
     name: string
     role: string
+    stats: MemberStats
   }>
   choreStats: ChoreCompletionStats
   pointTrends: DailyPointData[]
   activityFeed: ActivityFeedItem[]
+  categoryBreakdown: CategoryBreakdownItem[]
   dateRange: {
     startDate: Date
     endDate: Date
@@ -69,10 +84,18 @@ export const getFamilyStatistics = async (
   const endDate = dateRange?.endDate || new Date()
 
   // Get all family members
-  const familyMembers = await prisma.user.findMany({
+  const members = await prisma.user.findMany({
     where: { familyId },
     select: { id: true, name: true, role: true },
   })
+
+  // Get per-member stats
+  const familyMembers = await Promise.all(
+    members.map(async (member) => {
+      const memberStats = await getMemberStats(member.id, startDate, endDate)
+      return { ...member, stats: memberStats }
+    })
+  )
 
   // Get chore completion stats
   const choreStats = await getChoreCompletionStats(familyId, startDate, endDate)
@@ -83,11 +106,15 @@ export const getFamilyStatistics = async (
   // Get activity feed
   const activityFeed = await getActivityFeed(familyId, startDate, endDate)
 
+  // Get category breakdown
+  const categoryBreakdown = await getCategoryBreakdown(familyId, startDate, endDate)
+
   return {
     familyMembers,
     choreStats,
     pointTrends,
     activityFeed,
+    categoryBreakdown,
     dateRange: { startDate, endDate },
   }
 }
@@ -173,6 +200,34 @@ const getPointTrends = async (
 }
 
 /**
+ * Get per-member completion stats
+ */
+const getMemberStats = async (
+  userId: number,
+  startDate: Date,
+  endDate: Date
+): Promise<MemberStats> => {
+  const statusCounts = await prisma.choreAssignment.groupBy({
+    by: ['status'],
+    where: {
+      assignedToId: userId,
+      createdAt: { gte: startDate, lte: endDate },
+    },
+    _count: true,
+  })
+
+  const countMap = new Map(statusCounts.map((item) => [item.status, item._count]))
+  const totalAssigned = statusCounts.reduce((sum, item) => sum + item._count, 0)
+  const completed = countMap.get('COMPLETED') || 0
+
+  return {
+    totalAssigned,
+    completed,
+    completionRate: totalAssigned > 0 ? (completed / totalAssigned) * 100 : 0,
+  }
+}
+
+/**
  * Get activity feed for a family
  */
 const getActivityFeed = async (
@@ -195,13 +250,80 @@ const getActivityFeed = async (
     take: 20,
   })
 
-  return recentCompletions.map((c) => ({
+  const completionItems: ActivityFeedItem[] = recentCompletions.map((c) => ({
     type: 'CHORE_COMPLETED',
     user: c.assignedTo.name,
     choreTitle: c.choreTemplate.title,
     points: c.choreTemplate.points,
     date: c.completedAt || c.createdAt,
   }))
+
+  // Recent chore assignments
+  const recentAssignments = await prisma.choreAssignment.findMany({
+    where: {
+      createdAt: { gte: startDate, lte: endDate },
+      assignedTo: { familyId },
+    },
+    include: {
+      assignedTo: { select: { name: true } },
+      choreTemplate: { select: { title: true, points: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+  })
+
+  const assignmentItems: ActivityFeedItem[] = recentAssignments.map((a) => ({
+    type: 'CHORE_ASSIGNED',
+    user: a.assignedTo.name,
+    choreTitle: a.choreTemplate.title,
+    points: a.choreTemplate.points,
+    date: a.createdAt,
+  }))
+
+  // Merge and sort by date descending, take top 20
+  return [...completionItems, ...assignmentItems]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 20)
+}
+
+/**
+ * Get breakdown of chore completions by category
+ */
+const getCategoryBreakdown = async (
+  familyId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<CategoryBreakdownItem[]> => {
+  const assignments = await prisma.choreAssignment.findMany({
+    where: {
+      createdAt: { gte: startDate, lte: endDate },
+      assignedTo: { familyId },
+    },
+    include: {
+      choreTemplate: {
+        include: { category: { select: { id: true, name: true } } },
+      },
+    },
+  })
+
+  const categoryMap = new Map<string, CategoryBreakdownItem>()
+
+  for (const a of assignments) {
+    const cat = a.choreTemplate.category
+    const key = cat ? String(cat.id) : 'uncategorized'
+    const label = cat ? cat.name : 'Uncategorized'
+    const catId = cat ? cat.id : null
+
+    if (!categoryMap.has(key)) {
+      categoryMap.set(key, { categoryId: catId, categoryName: label, completed: 0, total: 0 })
+    }
+
+    const entry = categoryMap.get(key)!
+    entry.total += 1
+    if (a.status === 'COMPLETED') entry.completed += 1
+  }
+
+  return Array.from(categoryMap.values()).sort((a, b) => b.total - a.total)
 }
 
 /**
