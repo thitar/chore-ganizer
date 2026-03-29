@@ -1,6 +1,8 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '../../test/utils'
 import CalendarView from './CalendarView'
+import { assignmentsApi } from '../../api/assignments.api'
+import type { Mock } from 'vitest'
 
 vi.mock('../../api/assignments.api', () => ({
   assignmentsApi: {
@@ -54,5 +56,68 @@ describe('CalendarView — month grid row count', () => {
 
     const dayCells = document.querySelectorAll('[data-testid="cal-cell"]')
     expect(dayCells).toHaveLength(42)
+  })
+})
+
+describe('CalendarView — avatar indicators', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-03-15T12:00:00'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('shows one avatar per unique member with chores on a day', async () => {
+    ;(assignmentsApi.getCalendar as Mock).mockResolvedValue({
+      assignments: [
+        {
+          id: 1,
+          choreTemplate: { id: 1, title: 'Dishes', points: 10 },
+          assignedTo: { id: 2, name: 'Alice', color: '#3b82f6' },
+          dueDate: '2026-03-07T12:00:00.000Z',
+          status: 'PENDING',
+          isOverdue: false,
+        },
+        {
+          id: 2,
+          choreTemplate: { id: 2, title: 'Trash', points: 5 },
+          assignedTo: { id: 3, name: 'Bob', color: '#f97316' },
+          dueDate: '2026-03-07T12:00:00.000Z',
+          status: 'PENDING',
+          isOverdue: false,
+        },
+      ],
+      year: 2026, month: 3, days: {},
+    })
+
+    render(<CalendarView />)
+    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+
+    expect(screen.getByTitle('Alice')).toBeInTheDocument()
+    expect(screen.getByTitle('Bob')).toBeInTheDocument()
+  })
+
+  it('shows overdue outline on avatar when member has an overdue chore', async () => {
+    ;(assignmentsApi.getCalendar as Mock).mockResolvedValue({
+      assignments: [
+        {
+          id: 1,
+          choreTemplate: { id: 1, title: 'Dishes', points: 10 },
+          assignedTo: { id: 2, name: 'Alice', color: '#3b82f6' },
+          dueDate: '2026-03-05T12:00:00.000Z',
+          status: 'PENDING',
+          isOverdue: true,
+        },
+      ],
+      year: 2026, month: 3, days: {},
+    })
+
+    render(<CalendarView />)
+    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+
+    const avatar = screen.getByTitle('Alice — overdue')
+    expect(avatar).toBeInTheDocument()
   })
 })

@@ -130,6 +130,29 @@ function occurrenceToEvent(occurrence: ChoreOccurrence): CalendarEvent {
   }
 }
 
+interface DayMember {
+  id: number
+  name: string
+  color: string | null
+  initial: string
+  isOverdue: boolean
+}
+
+function getMembersForDay(events: CalendarEvent[]): DayMember[] {
+  const memberMap = new Map<number, DayMember>()
+  events.forEach(event => {
+    const existing = memberMap.get(event.assignedTo.id)
+    memberMap.set(event.assignedTo.id, {
+      id: event.assignedTo.id,
+      name: event.assignedTo.name,
+      color: event.assignedTo.color,
+      initial: event.assignedTo.name.charAt(0).toUpperCase(),
+      isOverdue: (existing?.isOverdue ?? false) || event.isOverdue,
+    })
+  })
+  return Array.from(memberMap.values())
+}
+
 export default function CalendarView({ 
   onAssignmentClick, 
   onOccurrenceClick,
@@ -540,87 +563,82 @@ export default function CalendarView({
       ) : (
         /* Month View Grid */
         <div className="grid grid-cols-7 gap-1">
-        {calendarDays.map((calendarDay, index) => (
-          <div
-            key={index}
-            data-testid="cal-cell"
-            onClick={() => handleDateClick(calendarDay)}
-            className={`
-              min-h-[80px] p-1 border rounded-lg
-              ${calendarDay.isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
-              ${calendarDay.isToday ? 'border-blue-500 border-2' : 'border-gray-200'}
-              ${calendarDay.isCurrentMonth && calendarDay.events.length === 0 && onDateClick ? 'cursor-pointer hover:bg-gray-50' : ''}
-            `}
-          >
-            <div className={`
-              text-sm font-medium mb-1
-              ${calendarDay.isToday ? 'text-blue-600' : ''}
-              ${!calendarDay.isCurrentMonth ? 'text-gray-400' : 'text-gray-700'}
-            `}>
-              {calendarDay.day}
-            </div>
-            <div className="space-y-1">
-              {calendarDay.events.slice(0, 2).map((event) => {
-                const bgColor = event.assignedTo.color || '#3B82F6'
-                const textColor = getContrastColor(event.assignedTo.color)
-                const borderColor = getStatusBorderColor(event.status, event.isOverdue)
-                
-                return (
-                  <button
-                    key={`${event.type}-${event.id}`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleEventClick(event)
-                    }}
-                    className="w-full text-xs py-1.5 px-2 rounded truncate text-left font-medium border-l-8"
+        {calendarDays.map((calendarDay, index) => {
+          const members = getMembersForDay(calendarDay.events)
+          const hasOverdue = calendarDay.events.some(e => e.isOverdue)
+
+          return (
+            <div
+              key={index}
+              data-testid="cal-cell"
+              onClick={() => calendarDay.isCurrentMonth && handleDateClick(calendarDay)}
+              className={[
+                'h-14 flex flex-col items-center pt-1 pb-1 rounded-lg border box-border',
+                !calendarDay.isCurrentMonth
+                  ? 'bg-gray-50 border-transparent opacity-45 cursor-default'
+                  : 'bg-white border-gray-200 cursor-pointer hover:bg-gray-50',
+                calendarDay.isToday ? 'border-2 border-blue-500 bg-blue-50' : '',
+              ].join(' ')}
+            >
+              <span className={[
+                'text-xs font-semibold leading-none mb-1',
+                !calendarDay.isCurrentMonth ? 'text-gray-400' :
+                calendarDay.isToday ? 'text-blue-600' :
+                hasOverdue ? 'text-red-600' : 'text-gray-700',
+              ].join(' ')}>
+                {calendarDay.day}
+              </span>
+              <div className="flex flex-wrap justify-center gap-0.5 px-0.5">
+                {members.map((member) => (
+                  <span
+                    key={member.id}
+                    title={member.isOverdue ? `${member.name} — overdue` : member.name}
+                    className="w-3.5 h-3.5 rounded-full inline-flex items-center justify-center text-white font-bold flex-shrink-0"
                     style={{
-                      backgroundColor: bgColor,
-                      color: textColor,
-                      borderLeftColor: borderColor,
+                      backgroundColor: member.color || '#3B82F6',
+                      fontSize: '7px',
+                      outline: member.isOverdue ? '2px solid #EF4444' : 'none',
+                      outlineOffset: '1px',
                     }}
-                    title={`${event.title} - ${event.assignedTo.name}${event.type === 'occurrence' ? ' (Recurring)' : ''}`}
                   >
-                    {event.title}
-                    {event.type === 'occurrence' && (
-                      <span className="ml-1 opacity-75"> recurring</span>
-                    )}
-                  </button>
-                )
-              })}
-              {calendarDay.events.length > 2 && (
-                <div className="text-xs text-gray-500 text-center">
-                  +{calendarDay.events.length - 2} more
-                </div>
-              )}
+                    {member.initial}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
         </div>
       )}
 
       {/* Legend */}
-      <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-3 bg-yellow-500 rounded"></span>
-          <span>Pending</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-3 bg-red-500 rounded"></span>
-          <span>Overdue</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-3 bg-orange-500 rounded"></span>
-          <span>Partial</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-3 bg-green-500 rounded"></span>
-          <span>Completed</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-3 h-3 bg-gray-400 rounded"></span>
-          <span>Skipped</span>
-        </div>
-      </div>
+      {(() => {
+        const legendMembers: { id: number; name: string; color: string | null }[] = []
+        const seen = new Set<number>()
+        events.forEach(e => {
+          if (!seen.has(e.assignedTo.id)) {
+            seen.add(e.assignedTo.id)
+            legendMembers.push({ id: e.assignedTo.id, name: e.assignedTo.name, color: e.assignedTo.color })
+          }
+        })
+        return legendMembers.length > 0 ? (
+          <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+            {legendMembers.map(m => (
+              <div key={m.id} className="flex items-center gap-1.5">
+                <span
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: m.color || '#3B82F6' }}
+                />
+                {m.name}
+              </div>
+            ))}
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full flex-shrink-0 bg-white border-2 border-red-500" />
+              <span className="text-red-600">Overdue</span>
+            </div>
+          </div>
+        ) : null
+      })()}
     </div>
   )
 }
