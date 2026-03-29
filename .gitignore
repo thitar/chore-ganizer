@@ -76,3 +76,4 @@ uploads/*
 
 # Playwright
 playwright-report/
+.worktrees/
