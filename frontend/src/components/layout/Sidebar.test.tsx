@@ -67,6 +67,7 @@ describe('Sidebar', () => {
   })
 
   it('calls onClose when backdrop is clicked (mobile drawer)', () => {
+    expect.hasAssertions()
     mockUseAuth.mockReturnValue({ isParent: false })
     const onClose = vi.fn()
     const { container } = render(<Sidebar isOpen={true} onClose={onClose} />)
