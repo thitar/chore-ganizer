@@ -153,7 +153,113 @@ function getMembersForDay(events: CalendarEvent[]): DayMember[] {
   return Array.from(memberMap.values())
 }
 
-export default function CalendarView({ 
+function statusBadgeClass(status: string, isOverdue: boolean): string {
+  if (isOverdue) return 'bg-red-100 text-red-700'
+  switch (status) {
+    case 'COMPLETED': return 'bg-green-100 text-green-700'
+    case 'PARTIALLY_COMPLETE': return 'bg-orange-100 text-orange-700'
+    case 'SKIPPED': return 'bg-gray-100 text-gray-600'
+    default: return 'bg-yellow-100 text-yellow-700'
+  }
+}
+
+function statusLabel(status: string, isOverdue: boolean): string {
+  if (isOverdue) return 'Overdue'
+  switch (status) {
+    case 'COMPLETED': return 'Done ✓'
+    case 'PARTIALLY_COMPLETE': return 'Partial'
+    case 'SKIPPED': return 'Skipped'
+    default: return 'Pending'
+  }
+}
+
+interface DayDetailPanelProps {
+  date: Date
+  events: CalendarEvent[]
+  onEventClick: (event: CalendarEvent) => void
+  onDateClick?: (date: Date) => void
+  onClose: () => void
+}
+
+function DayDetailPanel({ date, events, onEventClick, onDateClick, onClose }: DayDetailPanelProps) {
+  const isToday = date.toDateString() === new Date().toDateString()
+  const dateLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+
+  return (
+    <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-200">
+        <div>
+          <div className="font-semibold text-gray-900 text-sm">
+            {dateLabel}
+            {isToday && <span className="ml-1 text-blue-600">— Today</span>}
+          </div>
+          <div className="text-xs text-gray-500 mt-0.5">
+            {events.length === 0
+              ? 'No chores'
+              : `${events.length} chore${events.length === 1 ? '' : 's'} assigned`}
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          aria-label="✕"
+          className="text-gray-400 hover:text-gray-600 px-2 py-1 text-sm rounded hover:bg-gray-200"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Chore list */}
+      {events.length > 0 && (
+        <div className="p-2 flex flex-col gap-1.5">
+          {events.map(event => (
+            <button
+              key={`${event.type}-${event.id}`}
+              onClick={() => onEventClick(event)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 text-left w-full"
+            >
+              <span
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
+                style={{ backgroundColor: event.assignedTo.color || '#3B82F6' }}
+              >
+                {event.assignedTo.name.charAt(0).toUpperCase()}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-gray-900 text-sm truncate">
+                  {event.title}
+                  {event.type === 'occurrence' && (
+                    <span className="ml-1 text-gray-400 font-normal text-xs">↻</span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {event.assignedTo.name} · {event.points} pts ·{' '}
+                  {event.type === 'occurrence' ? 'Recurring' : 'One-off'}
+                </div>
+              </div>
+              <span className={`rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${statusBadgeClass(event.status, event.isOverdue)}`}>
+                {statusLabel(event.status, event.isOverdue)}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Add chore — only when onDateClick is provided (parent users) */}
+      {onDateClick && (
+        <div className="px-3 pb-3">
+          <button
+            onClick={() => onDateClick(date)}
+            className="w-full border border-dashed border-gray-300 rounded-lg py-2 text-xs text-gray-400 hover:border-indigo-400 hover:text-indigo-500 hover:bg-indigo-50 transition-colors"
+          >
+            + Add chore on this day
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function CalendarView({
   onAssignmentClick, 
   onOccurrenceClick,
   onEventClick,
@@ -175,6 +281,7 @@ export default function CalendarView({
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null)
 
   useEffect(() => {
     loadCalendar()
@@ -298,21 +405,15 @@ export default function CalendarView({
   }
 
   const goToPrevMonth = () => {
-    if (month === 1) {
-      setMonth(12)
-      setYear(year - 1)
-    } else {
-      setMonth(month - 1)
-    }
+    setSelectedDay(null)
+    if (month === 1) { setMonth(12); setYear(year - 1) }
+    else { setMonth(month - 1) }
   }
 
   const goToNextMonth = () => {
-    if (month === 12) {
-      setMonth(1)
-      setYear(year + 1)
-    } else {
-      setMonth(month + 1)
-    }
+    setSelectedDay(null)
+    if (month === 12) { setMonth(1); setYear(year + 1) }
+    else { setMonth(month + 1) }
   }
 
   const goToToday = () => {
@@ -375,9 +476,10 @@ export default function CalendarView({
   }
 
   const handleDateClick = (calendarDay: CalendarDay) => {
-    if (calendarDay.isCurrentMonth && calendarDay.events.length === 0 && onDateClick) {
-      onDateClick(calendarDay.date)
-    }
+    if (!calendarDay.isCurrentMonth) return
+    setSelectedDay(prev =>
+      prev && prev.toDateString() === calendarDay.date.toDateString() ? prev : calendarDay.date
+    )
   }
 
   const handleEventClick = (event: CalendarEvent) => {
@@ -426,6 +528,17 @@ export default function CalendarView({
     }
     return `${startMonth} ${start.getDate()} - ${endMonth} ${end.getDate()}, ${start.getFullYear()}`
   }
+
+  const selectedDayEvents = selectedDay
+    ? events.filter(event => {
+        const d = new Date(event.dueDate)
+        return (
+          d.getFullYear() === selectedDay.getFullYear() &&
+          d.getMonth() === selectedDay.getMonth() &&
+          d.getDate() === selectedDay.getDate()
+        )
+      })
+    : []
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
@@ -562,10 +675,13 @@ export default function CalendarView({
         </div>
       ) : (
         /* Month View Grid */
+        <>
         <div className="grid grid-cols-7 gap-1">
         {calendarDays.map((calendarDay, index) => {
           const members = getMembersForDay(calendarDay.events)
           const hasOverdue = calendarDay.events.some(e => e.isOverdue)
+          const isSelected = selectedDay !== null &&
+            calendarDay.date.toDateString() === selectedDay.toDateString()
 
           return (
             <div
@@ -577,12 +693,14 @@ export default function CalendarView({
                 !calendarDay.isCurrentMonth
                   ? 'bg-gray-50 border-transparent opacity-45 cursor-default'
                   : 'bg-white border-gray-200 cursor-pointer hover:bg-gray-50',
-                calendarDay.isToday ? 'border-2 border-blue-500 bg-blue-50' : '',
+                calendarDay.isToday && !isSelected ? 'border-2 border-blue-500 bg-blue-50' : '',
+                isSelected ? 'border-2 border-indigo-500 bg-indigo-50' : '',
               ].join(' ')}
             >
               <span className={[
                 'text-xs font-semibold leading-none mb-1',
                 !calendarDay.isCurrentMonth ? 'text-gray-400' :
+                isSelected ? 'text-indigo-600' :
                 calendarDay.isToday ? 'text-blue-600' :
                 hasOverdue ? 'text-red-600' : 'text-gray-700',
               ].join(' ')}>
@@ -609,6 +727,16 @@ export default function CalendarView({
           )
         })}
         </div>
+        {selectedDay && (
+          <DayDetailPanel
+            date={selectedDay}
+            events={selectedDayEvents}
+            onEventClick={handleEventClick}
+            onDateClick={onDateClick}
+            onClose={() => setSelectedDay(null)}
+          />
+        )}
+        </>
       )}
 
       {/* Legend */}

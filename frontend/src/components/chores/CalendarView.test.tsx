@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '../../test/utils'
+import { render, screen, waitFor, fireEvent } from '../../test/utils'
 import CalendarView from './CalendarView'
 import { assignmentsApi } from '../../api/assignments.api'
 import type { Mock } from 'vitest'
@@ -149,5 +149,87 @@ describe('CalendarView — avatar indicators', () => {
 
     // Alice has two chores on March 7 but should only show one avatar
     expect(screen.getAllByTitle('Alice')).toHaveLength(1)
+  })
+})
+
+describe('CalendarView — day detail panel', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-03-15T12:00:00'))
+    ;(assignmentsApi.getCalendar as Mock).mockResolvedValue({
+      assignments: [
+        {
+          id: 1,
+          choreTemplate: { id: 1, title: 'Dishes', points: 15 },
+          assignedTo: { id: 2, name: 'Alice', color: '#3b82f6' },
+          dueDate: '2026-03-15T12:00:00.000Z',
+          status: 'PENDING',
+          isOverdue: false,
+        },
+      ],
+      year: 2026, month: 3, days: {},
+    })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('shows detail panel when a day is clicked', async () => {
+    render(<CalendarView />)
+    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+
+    // Mar 15 2026: firstDay=0 (Sun), so cell index = 14 (0-indexed)
+    const cells = document.querySelectorAll('[data-testid="cal-cell"]')
+    fireEvent.click(cells[14])
+
+    expect(screen.getByText('Sunday, March 15')).toBeInTheDocument()
+    expect(screen.getByText('Dishes')).toBeInTheDocument()
+    expect(screen.getByText('Alice · 15 pts · One-off')).toBeInTheDocument()
+  })
+
+  it('closes the panel when ✕ is clicked', async () => {
+    render(<CalendarView />)
+    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+
+    const cells = document.querySelectorAll('[data-testid="cal-cell"]')
+    fireEvent.click(cells[14])
+    expect(screen.getByText('Dishes')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '✕' }))
+    expect(screen.queryByText('Dishes')).not.toBeInTheDocument()
+  })
+
+  it('calls onEventClick when a chore row in the panel is clicked', async () => {
+    const mockEventClick = vi.fn()
+    render(<CalendarView onEventClick={mockEventClick} />)
+    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+
+    const cells = document.querySelectorAll('[data-testid="cal-cell"]')
+    fireEvent.click(cells[14])
+    fireEvent.click(screen.getByText('Dishes'))
+
+    expect(mockEventClick).toHaveBeenCalledWith(expect.objectContaining({ title: 'Dishes' }))
+  })
+
+  it('shows "+ Add chore" button when onDateClick prop is provided', async () => {
+    const mockDateClick = vi.fn()
+    render(<CalendarView onDateClick={mockDateClick} />)
+    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+
+    const cells = document.querySelectorAll('[data-testid="cal-cell"]')
+    fireEvent.click(cells[14])
+
+    expect(screen.getByText('+ Add chore on this day')).toBeInTheDocument()
+  })
+
+  it('does NOT show "+ Add chore" button when onDateClick is not provided', async () => {
+    render(<CalendarView />)
+    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+
+    const cells = document.querySelectorAll('[data-testid="cal-cell"]')
+    fireEvent.click(cells[14])
+
+    expect(screen.queryByText('+ Add chore on this day')).not.toBeInTheDocument()
   })
 })
