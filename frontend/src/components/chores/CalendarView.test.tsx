@@ -196,7 +196,7 @@ describe('CalendarView — day detail panel', () => {
     fireEvent.click(cells[14])
     expect(screen.getByText('Dishes')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: '✕' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close day detail' }))
     expect(screen.queryByText('Dishes')).not.toBeInTheDocument()
   })
 

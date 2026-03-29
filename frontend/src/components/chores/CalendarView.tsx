@@ -202,7 +202,7 @@ function DayDetailPanel({ date, events, onEventClick, onDateClick, onClose }: Da
         </div>
         <button
           onClick={onClose}
-          aria-label="✕"
+          aria-label="Close day detail"
           className="text-gray-400 hover:text-gray-600 px-2 py-1 text-sm rounded hover:bg-gray-200"
         >
           ✕
@@ -417,6 +417,7 @@ export default function CalendarView({
   }
 
   const goToToday = () => {
+    setSelectedDay(null)
     const today = new Date()
     setYear(today.getFullYear())
     setMonth(today.getMonth() + 1)
@@ -477,9 +478,17 @@ export default function CalendarView({
 
   const handleDateClick = (calendarDay: CalendarDay) => {
     if (!calendarDay.isCurrentMonth) return
-    setSelectedDay(prev =>
-      prev && prev.toDateString() === calendarDay.date.toDateString() ? null : calendarDay.date
-    )
+
+    if (viewMode === 'month') {
+      setSelectedDay(prev =>
+        prev && prev.toDateString() === calendarDay.date.toDateString() ? null : calendarDay.date
+      )
+    } else {
+      // Week view: open new-chore modal on empty days
+      if (calendarDay.events.length === 0 && onDateClick) {
+        onDateClick(calendarDay.date)
+      }
+    }
   }
 
   const handleEventClick = (event: CalendarEvent) => {
