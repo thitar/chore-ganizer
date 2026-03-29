@@ -120,4 +120,34 @@ describe('CalendarView — avatar indicators', () => {
     const avatar = screen.getByTitle('Alice — overdue')
     expect(avatar).toBeInTheDocument()
   })
+
+  it('shows only one avatar when a member has multiple chores on the same day', async () => {
+    ;(assignmentsApi.getCalendar as Mock).mockResolvedValue({
+      assignments: [
+        {
+          id: 1,
+          choreTemplate: { id: 1, title: 'Dishes', points: 10 },
+          assignedTo: { id: 2, name: 'Alice', color: '#3b82f6' },
+          dueDate: '2026-03-07T12:00:00.000Z',
+          status: 'PENDING',
+          isOverdue: false,
+        },
+        {
+          id: 2,
+          choreTemplate: { id: 2, title: 'Vacuum', points: 15 },
+          assignedTo: { id: 2, name: 'Alice', color: '#3b82f6' },
+          dueDate: '2026-03-07T12:00:00.000Z',
+          status: 'PENDING',
+          isOverdue: false,
+        },
+      ],
+      year: 2026, month: 3, days: {},
+    })
+
+    render(<CalendarView />)
+    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+
+    // Alice has two chores on March 7 but should only show one avatar
+    expect(screen.getAllByTitle('Alice')).toHaveLength(1)
+  })
 })

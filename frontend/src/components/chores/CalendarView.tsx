@@ -571,7 +571,7 @@ export default function CalendarView({
             <div
               key={index}
               data-testid="cal-cell"
-              onClick={() => calendarDay.isCurrentMonth && handleDateClick(calendarDay)}
+              onClick={() => handleDateClick(calendarDay)}
               className={[
                 'h-14 flex flex-col items-center pt-1 pb-1 rounded-lg border box-border',
                 !calendarDay.isCurrentMonth
