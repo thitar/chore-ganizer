@@ -12,6 +12,12 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => mockNavigate }
 })
 
+vi.mock('../../api', () => ({
+  notificationsApi: {
+    getAll: vi.fn().mockResolvedValue({ data: { notifications: [] } }),
+  },
+}))
+
 import { useAuth } from '../../hooks'
 const mockUseAuth = useAuth as ReturnType<typeof vi.fn>
 
