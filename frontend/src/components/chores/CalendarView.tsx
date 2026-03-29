@@ -256,8 +256,9 @@ export default function CalendarView({
       })
     }
 
-    // Next month days to fill the grid (6 rows x 7 days = 42)
-    const remainingDays = 42 - days.length
+    const weeksNeeded = Math.ceil((firstDay + daysInMonth) / 7)
+    const totalCells = weeksNeeded * 7
+    const remainingDays = totalCells - days.length
     const nextMonth = month === 12 ? 1 : month + 1
     const nextYear = month === 12 ? year + 1 : year
     for (let day = 1; day <= remainingDays; day++) {
@@ -538,10 +539,11 @@ export default function CalendarView({
         </div>
       ) : (
         /* Month View Grid */
-        <>
+        <div className="grid grid-cols-7 gap-1">
         {calendarDays.map((calendarDay, index) => (
           <div
             key={index}
+            data-testid="cal-cell"
             onClick={() => handleDateClick(calendarDay)}
             className={`
               min-h-[80px] p-1 border rounded-lg
@@ -593,7 +595,7 @@ export default function CalendarView({
             </div>
           </div>
         ))}
-        </>
+        </div>
       )}
 
       {/* Legend */}
