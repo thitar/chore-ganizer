@@ -1816,7 +1816,8 @@ docker-compose up -d
 - Each family member's chores are shown in their assigned color
 - Navigation arrows allow moving between months
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [x] Pass [ ] Fail
+**Status:** PASS (2026-03-30)
 
 ---
 
@@ -1841,7 +1842,8 @@ docker-compose up -d
 - Chores for the displayed month are shown
 - Current month indicator updates
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [x] Pass [ ] Fail
+**Status:** PASS (2026-03-30)
 
 ---
 
@@ -1865,7 +1867,8 @@ docker-compose up -d
 - Shows chore status (pending/completed)
 - Shows point values
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [x] Pass [ ] Fail
+**Status:** PASS (2026-03-30)
 
 ---
 
@@ -1874,9 +1877,9 @@ docker-compose up -d
 | Field | Value |
 |-------|-------|
 | **Test ID** | P-704 |
-| **Test Name** | Filter Calendar by Family Member
-| **Prerequisites** | Parent is logged in, multiple family members with chores exist
-| **Status** | PASS (2026-03-22)
+| **Test Name** | Filter Calendar by Family Member |
+| **Prerequisites** | Parent is logged in, multiple family members with chores exist |
+| **Status** | PASS (2026-03-30)
 
 **Steps:**
 
@@ -1892,27 +1895,6 @@ docker-compose up -d
 - Clearing filter shows all chores again
 
 **Pass/Fail:** [x] Pass [ ] Fail
-
-| Field | Value |
-|-------|-------|
-| **Test ID** | P-704 |
-| **Test Name** | Filter Calendar by Family Member |
-| **Prerequisites** | Parent is logged in, multiple family members with chores exist |
-
-**Steps:**
-
-1. Navigate to Calendar page
-2. Find filter dropdown for family members
-3. Select one family member
-4. Observe the calendar updates
-5. Clear filter to show all
-
-**Expected Result:**
-- Only selected family member's chores are displayed
-- Filter indicator is visible
-- Clearing filter shows all chores again
-
-**Pass/Fail:** [ ] Pass [ ] Fail
 
 ---
 
@@ -1937,6 +1919,7 @@ docker-compose up -d
 - Can navigate between weeks
 
 **Pass/Fail:** [x] Pass [ ] Fail
+**Status:** PASS (2026-03-30)
 
 ---
 
@@ -1959,7 +1942,8 @@ docker-compose up -d
 - Overdue status is clear from the calendar view
 - Due date shows the original due date
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [x] Pass [ ] Fail
+**Status:** PASS (2026-03-30)
 
 ---
 
