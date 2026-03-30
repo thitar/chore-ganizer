@@ -39,7 +39,7 @@ describe('Ntfy Service', () => {
             'Priority': '3',
             'Tags': '',
           }),
-          timeout: 5000,
+          timeout: 10000,
         })
       )
     })
