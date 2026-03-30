@@ -720,10 +720,10 @@ export default function CalendarView({
                   <span
                     key={member.id}
                     title={member.isOverdue ? `${member.name} — overdue` : member.name}
-                    className="w-3.5 h-3.5 rounded-full inline-flex items-center justify-center text-white font-bold flex-shrink-0"
+                    className="w-5 h-5 rounded-full inline-flex items-center justify-center text-white font-bold flex-shrink-0"
                     style={{
                       backgroundColor: member.color || '#3B82F6',
-                      fontSize: '7px',
+                      fontSize: '9px',
                       outline: member.isOverdue ? '2px solid #EF4444' : 'none',
                       outlineOffset: '1px',
                     }}

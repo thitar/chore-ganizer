@@ -650,7 +650,7 @@ export const listOccurrences = async (req: Request, res: Response) => {
         const assignedIds = JSON.parse(occ.assignedUserIds) as number[]
         const assignedUsers = await prisma.user.findMany({
           where: { id: { in: assignedIds } },
-          select: { id: true, name: true },
+          select: { id: true, name: true, color: true },
         })
         return {
           ...occ,
@@ -694,7 +694,7 @@ export const listOccurrences = async (req: Request, res: Response) => {
       const assignedIds = JSON.parse(occ.assignedUserIds) as number[]
       const assignedUsers = await prisma.user.findMany({
         where: { id: { in: assignedIds } },
-        select: { id: true, name: true },
+        select: { id: true, name: true, color: true },
       })
       return {
         ...occ,
