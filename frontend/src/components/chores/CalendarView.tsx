@@ -42,6 +42,7 @@ interface CalendarViewProps {
   refreshTrigger?: number
   userId?: number
   initialView?: CalendarViewMode
+  initialDate?: Date
 }
 
 /**
@@ -266,17 +267,18 @@ export default function CalendarView({
   onDateClick, 
   refreshTrigger,
   userId,
-  initialView = 'month'
+  initialView = 'month',
+  initialDate
 }: CalendarViewProps) {
-  const [year, setYear] = useState(new Date().getFullYear())
-  const [month, setMonth] = useState(new Date().getMonth() + 1)
+  const now = initialDate ?? new Date()
+  const [year, setYear] = useState(now.getFullYear())
+  const [month, setMonth] = useState(now.getMonth() + 1)
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialView)
   const [weekStart, setWeekStart] = useState(() => {
     // Get the start of the current week (Sunday)
-    const today = new Date()
-    const day = today.getDay()
-    const diff = today.getDate() - day
-    return new Date(today.setDate(diff))
+    const day = now.getDay()
+    const diff = now.getDate() - day
+    return new Date(now.getFullYear(), now.getMonth(), diff)
   })
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
@@ -354,10 +356,9 @@ export default function CalendarView({
     const daysInMonth = getDaysInMonth(year, month)
     const firstDay = getFirstDayOfMonth(year, month)
     const days: CalendarDay[] = []
-    const today = new Date()
-    const currentYear = today.getFullYear()
-    const currentMonth = today.getMonth() + 1
-    const currentDay = today.getDate()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth() + 1
+    const currentDay = now.getDate()
 
     // Previous month days
     const prevMonth = month === 1 ? 12 : month - 1
@@ -447,10 +448,9 @@ export default function CalendarView({
 
   const getWeekDays = (): CalendarDay[] => {
     const days: CalendarDay[] = []
-    const today = new Date()
-    const currentYear = today.getFullYear()
-    const currentMonth = today.getMonth() + 1
-    const currentDay = today.getDate()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth() + 1
+    const currentDay = now.getDate()
     
     for (let i = 0; i < 7; i++) {
       const date = new Date(weekStart)
@@ -611,130 +611,136 @@ export default function CalendarView({
       </div>
 
       {/* Day Names Header */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {dayNames.map((day) => (
-          <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
-            {day}
-          </div>
-        ))}
+      <div className="overflow-x-auto sm:overflow-visible -mx-2 px-2">
+        <div className="grid grid-cols-7 gap-1 mb-2 min-w-[560px]">
+          {dayNames.map((day) => (
+            <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
+              {day}
+            </div>
+          ))}
+        </div>
       </div>
 
       {viewMode === 'week' ? (
         /* Week View Grid */
-        <div className="grid grid-cols-7 gap-2">
-          {calendarDays.map((calendarDay, index) => (
-            <div
-              key={index}
-              onClick={() => handleDateClick(calendarDay)}
-              className={`
-                min-h-[150px] p-2 border rounded-lg
-                ${calendarDay.isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
-                ${calendarDay.isToday ? 'border-blue-500 border-2' : 'border-gray-200'}
-                ${calendarDay.isCurrentMonth && calendarDay.events.length === 0 && onDateClick ? 'cursor-pointer hover:bg-gray-50' : ''}
-              `}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <div className={`
-                  text-sm font-semibold
-                  ${calendarDay.isToday ? 'text-blue-600' : ''}
-                  ${!calendarDay.isCurrentMonth ? 'text-gray-400' : 'text-gray-700'}
-                `}>
-                  {calendarDay.day}
-                </div>
-                <div className="text-xs text-gray-400">
-                  {calendarDay.date.toLocaleDateString('en-US', { weekday: 'short' })}
-                </div>
-              </div>
-              <div className="space-y-1">
-                {calendarDay.events.map((event) => {
-                  const bgColor = event.assignedTo.color || '#3B82F6'
-                  const textColor = getContrastColor(event.assignedTo.color)
-                  const borderColor = getStatusBorderColor(event.status, event.isOverdue)
-                  
-                  return (
-                    <button
-                      key={`${event.type}-${event.id}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleEventClick(event)
-                      }}
-                      className="w-full text-xs py-1 px-2 rounded truncate text-left font-medium border-l-4"
-                      style={{
-                        backgroundColor: bgColor,
-                        color: textColor,
-                        borderLeftColor: borderColor,
-                      }}
-                      title={`${event.title} - ${event.assignedTo.name}${event.type === 'occurrence' ? ' (Recurring)' : ''}`}
-                    >
-                      <div className="flex items-center gap-1">
-                        <span className="truncate">{event.title}</span>
-                        <span className="text-xs opacity-75 whitespace-nowrap">({event.assignedTo.name})</span>
-                      </div>
-                    </button>
-                  )
-                })}
-                {calendarDay.events.length === 0 && (
-                  <div className="text-xs text-gray-400 text-center py-2">
-                    No chores
+        <div className="overflow-x-auto sm:overflow-visible -mx-2 px-2">
+          <div className="grid grid-cols-7 gap-2 min-w-[560px]">
+            {calendarDays.map((calendarDay, index) => (
+              <div
+                key={index}
+                onClick={() => handleDateClick(calendarDay)}
+                className={`
+                  min-h-[150px] p-2 border rounded-lg
+                  ${calendarDay.isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
+                  ${calendarDay.isToday ? 'border-blue-500 border-2' : 'border-gray-200'}
+                  ${calendarDay.isCurrentMonth && calendarDay.events.length === 0 && onDateClick ? 'cursor-pointer hover:bg-gray-50' : ''}
+                `}
+              >
+                <div className={`text-center mb-2 pb-2 border-b ${calendarDay.isToday ? 'border-blue-200' : 'border-gray-100'}`}>
+                  <div className={`
+                    text-base font-semibold leading-tight
+                    ${calendarDay.isToday ? 'text-blue-600' : ''}
+                    ${!calendarDay.isCurrentMonth ? 'text-gray-400' : 'text-gray-700'}
+                  `}>
+                    {calendarDay.day}
                   </div>
-                )}
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    {calendarDay.date.toLocaleDateString('en-US', { weekday: 'short' })}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  {calendarDay.events.map((event) => {
+                    const bgColor = event.assignedTo.color || '#3B82F6'
+                    const textColor = getContrastColor(event.assignedTo.color)
+                    const borderColor = getStatusBorderColor(event.status, event.isOverdue)
+                    
+                    return (
+                      <button
+                        key={`${event.type}-${event.id}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEventClick(event)
+                        }}
+                        className="w-full text-xs py-1 px-2 rounded truncate text-left font-medium border-l-4"
+                        style={{
+                          backgroundColor: bgColor,
+                          color: textColor,
+                          borderLeftColor: borderColor,
+                        }}
+                        title={`${event.title} - ${event.assignedTo.name}${event.type === 'occurrence' ? ' (Recurring)' : ''}`}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span className="truncate">{event.title}</span>
+                          <span className="text-xs opacity-75 whitespace-nowrap">({event.assignedTo.name})</span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                  {calendarDay.events.length === 0 && (
+                    <div className="text-xs text-gray-400 text-center py-2">
+                      No chores
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ) : (
         /* Month View Grid */
         <>
-        <div className="grid grid-cols-7 gap-1">
-        {calendarDays.map((calendarDay, index) => {
-          const members = getMembersForDay(calendarDay.events)
-          const hasOverdue = calendarDay.events.some(e => e.isOverdue)
-          const isSelected = selectedDay !== null &&
-            calendarDay.date.toDateString() === selectedDay.toDateString()
+        <div className="overflow-x-auto sm:overflow-visible -mx-2 px-2">
+          <div className="grid grid-cols-7 gap-1 min-w-[560px]">
+          {calendarDays.map((calendarDay, index) => {
+            const members = getMembersForDay(calendarDay.events)
+            const hasOverdue = calendarDay.events.some(e => e.isOverdue)
+            const isSelected = selectedDay !== null &&
+              calendarDay.date.toDateString() === selectedDay.toDateString()
 
-          return (
-            <div
-              key={index}
-              data-testid="cal-cell"
-              onClick={() => handleDateClick(calendarDay)}
-              className={[
-                'h-14 flex flex-col items-center pt-1 pb-1 rounded-lg border box-border',
-                !calendarDay.isCurrentMonth
-                  ? 'bg-gray-50 border-transparent opacity-45 cursor-default'
-                  : 'bg-white border-gray-200 cursor-pointer hover:bg-gray-50',
-                calendarDay.isToday && !isSelected ? 'border-2 border-blue-500 bg-blue-50' : '',
-                isSelected ? 'border-2 border-indigo-500 bg-indigo-50' : '',
-              ].join(' ')}
-            >
-              <span className={[
-                'text-xs font-semibold leading-none mb-1',
-                !calendarDay.isCurrentMonth ? 'text-gray-400' :
-                isSelected ? 'text-indigo-600' :
-                calendarDay.isToday ? 'text-blue-600' :
-                hasOverdue ? 'text-red-600' : 'text-gray-700',
-              ].join(' ')}>
-                {calendarDay.day}
-              </span>
-              <div className="flex flex-wrap justify-center gap-0.5 px-0.5">
-                {members.map((member) => (
-                  <span
-                    key={member.id}
-                    title={member.isOverdue ? `${member.name} — overdue` : member.name}
-                    className="w-5 h-5 rounded-full inline-flex items-center justify-center text-white font-bold flex-shrink-0"
-                    style={{
-                      backgroundColor: member.color || '#3B82F6',
-                      fontSize: '9px',
-                      outline: member.isOverdue ? '2px solid #EF4444' : 'none',
-                      outlineOffset: '1px',
-                    }}
-                  >
-                    {member.initial}
-                  </span>
-                ))}
+            return (
+              <div
+                key={index}
+                data-testid="cal-cell"
+                onClick={() => handleDateClick(calendarDay)}
+                className={[
+                  'h-20 sm:h-14 flex flex-col items-center pt-1 pb-1 rounded-lg border box-border',
+                  !calendarDay.isCurrentMonth
+                    ? 'bg-gray-50 border-transparent opacity-45 cursor-default'
+                    : 'bg-white border-gray-200 cursor-pointer hover:bg-gray-50',
+                  calendarDay.isToday && !isSelected ? 'border-2 border-blue-500 bg-blue-50' : '',
+                  isSelected ? 'border-2 border-indigo-500 bg-indigo-50' : '',
+                ].join(' ')}
+              >
+                <span className={[
+                  'text-xs font-semibold leading-none mb-1',
+                  !calendarDay.isCurrentMonth ? 'text-gray-400' :
+                  isSelected ? 'text-indigo-600' :
+                  calendarDay.isToday ? 'text-blue-600' :
+                  hasOverdue ? 'text-red-600' : 'text-gray-700',
+                ].join(' ')}>
+                  {calendarDay.day}
+                </span>
+                <div className="flex flex-wrap justify-center gap-0.5 px-0.5">
+                  {members.map((member) => (
+                    <span
+                      key={member.id}
+                      title={member.isOverdue ? `${member.name} — overdue` : member.name}
+                      className="w-6 h-6 sm:w-5 sm:h-5 rounded-full inline-flex items-center justify-center text-white font-bold flex-shrink-0"
+                      style={{
+                        backgroundColor: member.color || '#3B82F6',
+                        fontSize: '10px',
+                        outline: member.isOverdue ? '2px solid #EF4444' : 'none',
+                        outlineOffset: '1px',
+                      }}
+                    >
+                      {member.initial}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
+          </div>
         </div>
         {selectedDay && (
           <DayDetailPanel

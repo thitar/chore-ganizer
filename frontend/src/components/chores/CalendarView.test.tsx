@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '../../test/utils'
 import CalendarView from './CalendarView'
 import { assignmentsApi } from '../../api/assignments.api'
@@ -16,18 +16,27 @@ vi.mock('../../api/recurring-chores.api', () => ({
   },
 }))
 
+/**
+ * Wait for the calendar to finish loading by polling for cal-cell elements.
+ * The Loading component renders only a spinner (no text), so we can't
+ * wait for "Loading..." to disappear — it never appears.
+ */
+const waitForCalendar = async () => {
+  await waitFor(() => {
+    const cells = document.querySelectorAll('[data-testid="cal-cell"]')
+    if (cells.length === 0) throw new Error('Calendar not rendered yet')
+  })
+}
+
 describe('CalendarView — month grid row count', () => {
   afterEach(() => {
-    vi.useRealTimers()
+    vi.clearAllMocks()
   })
 
   it('renders 4 rows for February 2026 (starts Sunday, 28 days)', async () => {
     // Feb 1 2026 is a Sunday: firstDay=0, daysInMonth=28 → ceil((0+28)/7)=4 rows → 28 day cells
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-02-15T12:00:00'))
-
-    render(<CalendarView />)
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    render(<CalendarView initialDate={new Date('2026-02-15T12:00:00')} />)
+    await waitForCalendar()
 
     const dayCells = document.querySelectorAll('[data-testid="cal-cell"]')
     expect(dayCells).toHaveLength(28)
@@ -36,11 +45,8 @@ describe('CalendarView — month grid row count', () => {
   it('renders 5 rows for March 2026 (starts Sunday, 31 days)', async () => {
     // Mar 1 2026 is a Sunday: firstDay=0, daysInMonth=31 → ceil((0+31)/7)=5 rows → 35 cells
     // 31 current-month + 4 next-month overflow = 35
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-03-15T12:00:00'))
-
-    render(<CalendarView />)
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    render(<CalendarView initialDate={new Date('2026-03-15T12:00:00')} />)
+    await waitForCalendar()
 
     const dayCells = document.querySelectorAll('[data-testid="cal-cell"]')
     expect(dayCells).toHaveLength(35)
@@ -48,11 +54,8 @@ describe('CalendarView — month grid row count', () => {
 
   it('renders 6 rows for May 2026 (starts Friday, 31 days)', async () => {
     // May 1 2026 is a Friday: firstDay=5, daysInMonth=31 → ceil((5+31)/7)=ceil(5.14)=6 rows → 42 cells
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-05-15T12:00:00'))
-
-    render(<CalendarView />)
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    render(<CalendarView initialDate={new Date('2026-05-15T12:00:00')} />)
+    await waitForCalendar()
 
     const dayCells = document.querySelectorAll('[data-testid="cal-cell"]')
     expect(dayCells).toHaveLength(42)
@@ -60,13 +63,8 @@ describe('CalendarView — month grid row count', () => {
 })
 
 describe('CalendarView — avatar indicators', () => {
-  beforeEach(() => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-03-15T12:00:00'))
-  })
-
   afterEach(() => {
-    vi.useRealTimers()
+    vi.clearAllMocks()
   })
 
   it('shows one avatar per unique member with chores on a day', async () => {
@@ -92,8 +90,8 @@ describe('CalendarView — avatar indicators', () => {
       year: 2026, month: 3, days: {},
     })
 
-    render(<CalendarView />)
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    render(<CalendarView initialDate={new Date('2026-03-15T12:00:00')} />)
+    await waitForCalendar()
 
     expect(screen.getByTitle('Alice')).toBeInTheDocument()
     expect(screen.getByTitle('Bob')).toBeInTheDocument()
@@ -114,8 +112,8 @@ describe('CalendarView — avatar indicators', () => {
       year: 2026, month: 3, days: {},
     })
 
-    render(<CalendarView />)
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    render(<CalendarView initialDate={new Date('2026-03-15T12:00:00')} />)
+    await waitForCalendar()
 
     const avatar = screen.getByTitle('Alice — overdue')
     expect(avatar).toBeInTheDocument()
@@ -144,8 +142,8 @@ describe('CalendarView — avatar indicators', () => {
       year: 2026, month: 3, days: {},
     })
 
-    render(<CalendarView />)
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    render(<CalendarView initialDate={new Date('2026-03-15T12:00:00')} />)
+    await waitForCalendar()
 
     // Alice has two chores on March 7 but should only show one avatar
     expect(screen.getAllByTitle('Alice')).toHaveLength(1)
@@ -153,9 +151,13 @@ describe('CalendarView — avatar indicators', () => {
 })
 
 describe('CalendarView — day detail panel', () => {
-  beforeEach(() => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-03-15T12:00:00'))
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const marchProps = { initialDate: new Date('2026-03-15T12:00:00') }
+
+  const setupMarch = async (extraProps = {}) => {
     ;(assignmentsApi.getCalendar as Mock).mockResolvedValue({
       assignments: [
         {
@@ -169,15 +171,13 @@ describe('CalendarView — day detail panel', () => {
       ],
       year: 2026, month: 3, days: {},
     })
-  })
 
-  afterEach(() => {
-    vi.useRealTimers()
-  })
+    render(<CalendarView {...marchProps} {...extraProps} />)
+    await waitForCalendar()
+  }
 
   it('shows detail panel when a day is clicked', async () => {
-    render(<CalendarView />)
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    await setupMarch()
 
     // Mar 15 2026: firstDay=0 (Sun), so cell index = 14 (0-indexed)
     const cells = document.querySelectorAll('[data-testid="cal-cell"]')
@@ -189,8 +189,7 @@ describe('CalendarView — day detail panel', () => {
   })
 
   it('closes the panel when ✕ is clicked', async () => {
-    render(<CalendarView />)
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    await setupMarch()
 
     const cells = document.querySelectorAll('[data-testid="cal-cell"]')
     fireEvent.click(cells[14])
@@ -202,8 +201,7 @@ describe('CalendarView — day detail panel', () => {
 
   it('calls onEventClick when a chore row in the panel is clicked', async () => {
     const mockEventClick = vi.fn()
-    render(<CalendarView onEventClick={mockEventClick} />)
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    await setupMarch({ onEventClick: mockEventClick })
 
     const cells = document.querySelectorAll('[data-testid="cal-cell"]')
     fireEvent.click(cells[14])
@@ -214,8 +212,7 @@ describe('CalendarView — day detail panel', () => {
 
   it('shows "+ Add chore" button when onDateClick prop is provided', async () => {
     const mockDateClick = vi.fn()
-    render(<CalendarView onDateClick={mockDateClick} />)
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    await setupMarch({ onDateClick: mockDateClick })
 
     const cells = document.querySelectorAll('[data-testid="cal-cell"]')
     fireEvent.click(cells[14])
@@ -224,8 +221,7 @@ describe('CalendarView — day detail panel', () => {
   })
 
   it('deselects the day when the same cell is clicked again', async () => {
-    render(<CalendarView />)
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    await setupMarch()
 
     const cells = document.querySelectorAll('[data-testid="cal-cell"]')
     // First click — opens panel
@@ -238,8 +234,7 @@ describe('CalendarView — day detail panel', () => {
   })
 
   it('does NOT show "+ Add chore" button when onDateClick is not provided', async () => {
-    render(<CalendarView />)
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    await setupMarch()
 
     const cells = document.querySelectorAll('[data-testid="cal-cell"]')
     fireEvent.click(cells[14])
