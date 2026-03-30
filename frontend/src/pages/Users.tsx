@@ -78,11 +78,13 @@ export const Users: React.FC = () => {
   const handleLock = async (user: User) => {
     setIsSubmitting(true)
     try {
-      await lockUser(user.id)
-      showSuccess('User locked successfully')
-      refresh()
-    } catch (err: any) {
-      showError(err.message || 'Failed to lock user')
+      const result = await lockUser(user.id)
+      if (result.success) {
+        showSuccess('User locked successfully')
+        refresh()
+      } else {
+        showError(result.error || 'Failed to lock user')
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -91,11 +93,13 @@ export const Users: React.FC = () => {
   const handleUnlock = async (user: User) => {
     setIsSubmitting(true)
     try {
-      await unlockUser(user.id)
-      showSuccess('User unlocked successfully')
-      refresh()
-    } catch (err: any) {
-      showError(err.message || 'Failed to unlock user')
+      const result = await unlockUser(user.id)
+      if (result.success) {
+        showSuccess('User unlocked successfully')
+        refresh()
+      } else {
+        showError(result.error || 'Failed to unlock user')
+      }
     } finally {
       setIsSubmitting(false)
     }
