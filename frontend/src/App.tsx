@@ -153,7 +153,7 @@ function AppContentWithKey() {
 function App() {
   return (
     <>
-      <Toaster position="top-right" dismissButton />
+      <Toaster position="top-right" closeButton />
       <AuthProvider>
         <AppContentWithKey />
       </AuthProvider>
