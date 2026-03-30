@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../hooks'
 import { Loading } from '../components/common'
 import { notificationSettingsApi, NotificationSettings, UpdateNotificationSettingsData } from '../api/notification-settings.api'
+import { showSuccess, showError } from '../utils/toast'
 
 export const Profile: React.FC = () => {
   const { user, loading } = useAuth()
@@ -9,8 +10,6 @@ export const Profile: React.FC = () => {
   const [settingsLoading, setSettingsLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
 
   // Form state
   const [ntfyServerUrl, setNtfyServerUrl] = useState('')
@@ -39,7 +38,6 @@ export const Profile: React.FC = () => {
   const loadSettings = async () => {
     try {
       setSettingsLoading(true)
-      setError(null)
       const data = await notificationSettingsApi.get()
       setSettings(data)
       
@@ -61,7 +59,7 @@ export const Profile: React.FC = () => {
       setOverduePenaltyMultiplier(data.overduePenaltyMultiplier)
       setNotifyParentOnOverdue(data.notifyParentOnOverdue)
     } catch (err: any) {
-      setError(err?.error?.message || 'Failed to load notification settings')
+      showError(err?.error?.message || 'Failed to load notification settings')
     } finally {
       setSettingsLoading(false)
     }
@@ -70,8 +68,6 @@ export const Profile: React.FC = () => {
   const handleSave = async () => {
     try {
       setSaving(true)
-      setError(null)
-      setSuccess(null)
 
       const updateData: UpdateNotificationSettingsData = {
         ntfyServerUrl: ntfyServerUrl.trim() || 'https://ntfy.sh',
@@ -96,12 +92,9 @@ export const Profile: React.FC = () => {
 
       const updated = await notificationSettingsApi.update(updateData)
       setSettings(updated)
-      setSuccess('Notification settings saved successfully!')
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(null), 3000)
+      showSuccess('Notification settings saved successfully!')
     } catch (err: any) {
-      setError(err?.error?.message || 'Failed to save notification settings')
+      showError(err?.error?.message || 'Failed to save notification settings')
     } finally {
       setSaving(false)
     }
@@ -109,27 +102,22 @@ export const Profile: React.FC = () => {
 
   const handleTestNotification = async () => {
     if (!ntfyTopic.trim()) {
-      setError('Please enter a ntfy topic before sending a test notification')
+      showError('Please enter a ntfy topic before sending a test notification')
       return
     }
 
     try {
       setTesting(true)
-      setError(null)
-      setSuccess(null)
 
       const result = await notificationSettingsApi.sendTest()
-      
+
       if (result.success) {
-        setSuccess('Test notification sent successfully! Check your ntfy app.')
+        showSuccess('Test notification sent successfully! Check your ntfy app.')
       } else {
-        setError(result.message || 'Failed to send test notification')
+        showError(result.message || 'Failed to send test notification')
       }
-      
-      // Clear success message after 5 seconds
-      setTimeout(() => setSuccess(null), 5000)
     } catch (err: any) {
-      setError(err?.error?.message || 'Failed to send test notification')
+      showError(err?.error?.message || 'Failed to send test notification')
     } finally {
       setTesting(false)
     }
@@ -145,18 +133,6 @@ export const Profile: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
         <p className="text-gray-600">View your profile and notification settings</p>
       </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-          {success}
-        </div>
-      )}
 
       {/* User Info Section */}
       <div className="bg-white rounded-lg shadow-md p-6">

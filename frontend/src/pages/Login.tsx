@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from '../hooks'
 import { Input, Button, Loading, PasswordStrengthIndicator } from '../components/common'
+import { showError, showSuccess } from '../utils/toast'
 
 type AuthMode = 'login' | 'register'
 
@@ -20,7 +21,6 @@ export const Login: React.FC = () => {
   const [name, setName] = useState('')
   const [passwordStrength, setPasswordStrength] = useState(0)
   const [errors, setErrors] = useState<ValidationErrors>({})
-  const [success, setSuccess] = useState('')
 
   const validateForm = (): boolean => {
     const newErrors: ValidationErrors = {}
@@ -61,7 +61,6 @@ export const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
-    setSuccess('')
 
     if (!validateForm()) {
       return
@@ -71,12 +70,12 @@ export const Login: React.FC = () => {
       if (mode === 'login') {
         const result = await login({ email, password })
         if (!result.success) {
-          setErrors({ general: result.error || 'Login failed' })
+          showError(result.error || 'Login failed')
         }
       } else {
         const result = await register({ email, password, name })
         if (result.success) {
-          setSuccess('Registration successful! You can now log in.')
+          showSuccess('Registration successful! You can now log in.')
           setMode('login')
           setPassword('')
           setConfirmPassword('')
@@ -99,7 +98,6 @@ export const Login: React.FC = () => {
   const toggleMode = () => {
     setMode(mode === 'login' ? 'register' : 'login')
     setErrors({})
-    setSuccess('')
   }
 
   if (loading) {
@@ -201,13 +199,6 @@ export const Login: React.FC = () => {
           {errors.general && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
               <p className="text-sm text-red-600">{errors.general}</p>
-            </div>
-          )}
-
-          {/* Success message */}
-          {success && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-              <p className="text-sm text-green-600">{success}</p>
             </div>
           )}
 

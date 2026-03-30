@@ -7,8 +7,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
   Legend,
 } from 'recharts'
 import { useAuth } from '../hooks'
@@ -178,15 +176,19 @@ export const StatisticsPage: React.FC = () => {
               className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
             >
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 ${
                   member.role === 'PARENT' ? 'bg-purple-500' : 'bg-blue-500'
                 }`}
               >
                 {member.name.charAt(0).toUpperCase()}
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="font-medium">{member.name}</p>
                 <p className="text-sm text-gray-500">{member.role}</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {member.stats.completed}/{member.stats.totalAssigned} chores &mdash;{' '}
+                  <span className="font-medium">{member.stats.completionRate.toFixed(0)}%</span>
+                </p>
               </div>
             </div>
           ))}
@@ -237,32 +239,67 @@ export const StatisticsPage: React.FC = () => {
         <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
         {stats?.activityFeed && stats.activityFeed.length > 0 ? (
           <ul className="space-y-2">
-            {stats.activityFeed.map((activity, i) => (
-              <li
-                key={i}
-                className="flex justify-between items-center py-2 border-b last:border-b-0"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-green-500">✓</span>
-                  <span>
-                    <strong>{activity.user}</strong> completed{' '}
-                    <strong>{activity.choreTitle}</strong>
-                  </span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-green-600 font-medium">
-                    +{activity.points} pts
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    {new Date(activity.date).toLocaleDateString()}
-                  </span>
-                </div>
-              </li>
-            ))}
+            {stats.activityFeed.map((activity, i) => {
+              const isCompletion = activity.type === 'CHORE_COMPLETED'
+              return (
+                <li
+                  key={i}
+                  className="flex justify-between items-center py-2 border-b last:border-b-0"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={isCompletion ? 'text-green-500' : 'text-blue-500'}>
+                      {isCompletion ? '✓' : '📋'}
+                    </span>
+                    <span>
+                      <strong>{activity.user}</strong>{' '}
+                      {isCompletion ? 'completed' : 'was assigned'}{' '}
+                      <strong>{activity.choreTitle}</strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {isCompletion && (
+                      <span className="text-green-600 font-medium">
+                        +{activity.points} pts
+                      </span>
+                    )}
+                    <span className="text-sm text-gray-500">
+                      {new Date(activity.date).toLocaleDateString()}
+                    </span>
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         ) : (
           <div className="py-8 text-center text-gray-500">
             No recent activity to display
+          </div>
+        )}
+      </div>
+
+      {/* Category Breakdown */}
+      <div className="bg-white p-4 rounded-lg shadow">
+        <h3 className="text-lg font-semibold mb-4">Category Breakdown</h3>
+        {stats?.categoryBreakdown && stats.categoryBreakdown.length > 0 ? (
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={stats.categoryBreakdown} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" allowDecimals={false} />
+              <YAxis type="category" dataKey="categoryName" width={120} tick={{ fontSize: 13 }} />
+              <Tooltip
+                formatter={(value, name) => [
+                  value,
+                  name === 'completed' ? 'Completed' : 'Total',
+                ]}
+              />
+              <Legend />
+              <Bar dataKey="total" fill="#CBD5E1" name="Total" />
+              <Bar dataKey="completed" fill="#4F46E5" name="Completed" />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="py-8 text-center text-gray-500">
+            No category data available for the selected period
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@ import { useAuth, AuthProvider } from './hooks'
 import { ErrorBoundary, Loading } from './components/common'
 import OfflineIndicator from './components/common/OfflineIndicator'
 import { Navbar, Sidebar, Footer } from './components/layout'
+import { Toaster } from 'sonner'
 
 // Lazy load pages for code splitting
 const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })))
@@ -151,9 +152,12 @@ function AppContentWithKey() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContentWithKey />
-    </AuthProvider>
+    <>
+      <Toaster position="top-right" />
+      <AuthProvider>
+        <AppContentWithKey />
+      </AuthProvider>
+    </>
   )
 }
 
