@@ -16,7 +16,7 @@ const passwordRequirements: PasswordRequirement[] = [
   { label: 'At least one uppercase letter', test: (p) => /[A-Z]/.test(p) },
   { label: 'At least one lowercase letter', test: (p) => /[a-z]/.test(p) },
   { label: 'At least one number', test: (p) => /[0-9]/.test(p) },
-  { label: 'At least one special character', test: (p) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+  { label: 'At least one special character', test: (p) => /[!@#$%^&*()_+\-=\[\]{}|;:'"<>,.?/~\\]/.test(p) },
 ]
 
 export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({

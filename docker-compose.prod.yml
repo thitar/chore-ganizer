@@ -15,7 +15,7 @@
 services:
   # Frontend service
   frontend:
-    image: ghcr.io/thitar/chore-ganizer-frontend:${APP_VERSION:-latest}
+    image: ghcr.io/thitar/chore-ganizer/chore-ganizer-frontend:latest
     container_name: chore-ganizer-frontend
     restart: unless-stopped
     ports:
@@ -41,7 +41,7 @@ services:
 
   # Backend service (standard - without cron)
   backend:
-    image: ghcr.io/thitar/chore-ganizer-backend:${APP_VERSION:-latest}
+    image: ghcr.io/thitar/chore-ganizer/chore-ganizer-backend:latest
     container_name: chore-ganizer-backend
     restart: unless-stopped
     ports:
@@ -87,7 +87,7 @@ services:
   # Backend service with cron for automated backups
   # Use: docker compose -f docker-compose.prod.yml --profile with-backup up
   backend-with-backup:
-    image: ghcr.io/thitar/chore-ganizer-backend:${APP_VERSION:-latest}
+    image: ghcr.io/thitar/chore-ganizer/chore-ganizer-backend:${APP_VERSION:-latest}
     container_name: chore-ganizer-backend-with-backup
     restart: unless-stopped
     ports:
