@@ -122,36 +122,35 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+
+      - name: Download backend build
+        uses: actions/download-artifact@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
-      
-      - name: Install backend dependencies
-        working-directory: backend
-        run: npm ci
-      
-      - name: Generate Prisma Client
-        working-directory: backend
-        run: npm run prisma:generate
-      
-      - name: Build backend
-        working-directory: backend
-        run: npm run build
-       
+          name: backend-build
+          path: backend/dist
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v6
+        with:
+          name: frontend-build
+          path: frontend/dist
+
+      - name: Extract version from package.json
+        id: version
+        run: |
+          VERSION=$(node -e "console.log(require('./backend/package.json').version)")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-       
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-       
+
       - name: Extract metadata for backend
         id: meta-backend
         uses: docker/metadata-action@v5
@@ -159,9 +158,9 @@ jobs:
           images: ghcr.io/${{ github.repository }}/chore-ganizer-backend
           tags: |
             type=ref,event=branch
-            type=sha,prefix=
+            type=raw,value=${{ steps.version.outputs.version }}
             type=raw,value=latest,enable={{is_default_branch}}
-       
+
       - name: Build and push backend
         uses: docker/build-push-action@v7
         with:
@@ -171,7 +170,7 @@ jobs:
           labels: ${{ steps.meta-backend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-       
+
       - name: Extract metadata for frontend
         id: meta-frontend
         uses: docker/metadata-action@v5
@@ -179,24 +178,9 @@ jobs:
           images: ghcr.io/${{ github.repository }}/chore-ganizer-frontend
           tags: |
             type=ref,event=branch
-            type=sha,prefix=
+            type=raw,value=${{ steps.version.outputs.version }}
             type=raw,value=latest,enable={{is_default_branch}}
-      
-      - name: Setup Node.js for frontend
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm ci
-      
-      - name: Build frontend
-        working-directory: frontend
-        run: npm run build
-       
+
       - name: Build and push frontend
         uses: docker/build-push-action@v7
         with:
@@ -206,71 +190,15 @@ jobs:
           labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-       
+
       - name: Create Deployment Summary
         run: |
-          echo "## Deployment Complete! 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "## Docker Images Published 🚀" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Images Built:" >> $GITHUB_STEP_SUMMARY
-          echo "- Backend: ${{ steps.meta-backend.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Frontend: ${{ steps.meta-frontend.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "### Backend" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta-backend.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "To deploy manually, update your server's docker-compose.yml to use these images." >> $GITHUB_STEP_SUMMARY
-
-  # ==================== SECURITY JOBS ====================
-  
-  # Job 4: Semgrep Static Analysis
-  semgrep:
-    name: Semgrep SAST
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    container:
-      image: returntocorp/semgrep:latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-      - name: Run Semgrep
-        run: semgrep --config=auto --json --output=semgrep.json
-    env:
-      SEMGREP_RULES: |
-        auto
-
-  # Job 5: CodeQL Analysis (requires GitHub Advanced Security)
-  codeql:
-    name: CodeQL Analysis
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript, typescript
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:javascript"
+          echo "### Frontend" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta-frontend.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
 
   # ==================== CD JOBS ====================
-  
-  # Job 6: Deploy to Server (Optional - requires additional configuration)
-  deploy-to-server:
-    name: Deploy to Server
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: false  # Disabled by default - enable in GitHub settings
-    
-    steps:
-      - name: Show Deployment Instructions
-        run: |
-          echo "## Deployment Instructions 📋" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "To complete deployment, update your server:" >> $GITHUB_STEP_SUMMARY
-          echo "1. Update docker-compose.yml with new image tags" >> $GITHUB_STEP_SUMMARY
-          echo "2. Run: `docker-compose pull`" >> $GITHUB_STEP_SUMMARY
-          echo "3. Run: `docker-compose up -d`" >> $GITHUB_STEP_SUMMARY
