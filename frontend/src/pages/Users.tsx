@@ -8,7 +8,7 @@ import type { User, CreateUserData, UpdateUserData } from '../types'
 
 export const Users: React.FC = () => {
   const { isParent } = useAuth()
-  const { users, loading, error, createUser, updateUser, deleteUser, lockUser, unlockUser, refresh } = useUsers()
+  const { users, loading, error, createUser, updateUser, deleteUser, lockUser, unlockUser, refresh, parentCount } = useUsers()
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -167,6 +167,7 @@ export const Users: React.FC = () => {
             onSubmit={handleEditSubmit}
             onCancel={() => setEditingUser(null)}
             loading={isSubmitting}
+            parentCount={parentCount}
           />
         )}
       </Modal>

@@ -7,6 +7,8 @@ export function useUsers() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const parentCount = users.filter((u) => u.role === 'PARENT').length
+
   const fetchUsers = useCallback(async () => {
     try {
       setError(null)
@@ -94,6 +96,7 @@ export function useUsers() {
     users,
     loading,
     error,
+    parentCount,
     createUser,
     updateUser,
     deleteUser,

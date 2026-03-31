@@ -23,6 +23,7 @@ jest.mock('../../config/database', () => ({
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      count: jest.fn(),
     },
     choreAssignment: {
       findMany: jest.fn(),
@@ -361,6 +362,27 @@ describe('Users Service', () => {
       })
 
       expect(result).toEqual(newUser)
+    })
+  })
+
+  describe('getParentCount', () => {
+    it('should return the correct count of parent users', async () => {
+      ;(prisma.user.count as jest.Mock).mockResolvedValue(3)
+
+      const result = await usersService.getParentCount()
+
+      expect(result).toBe(3)
+      expect(prisma.user.count).toHaveBeenCalledWith({
+        where: { role: 'PARENT' },
+      })
+    })
+
+    it('should return 0 when no parent users exist', async () => {
+      ;(prisma.user.count as jest.Mock).mockResolvedValue(0)
+
+      const result = await usersService.getParentCount()
+
+      expect(result).toBe(0)
     })
   })
 
