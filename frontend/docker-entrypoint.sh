@@ -7,6 +7,7 @@ set -e
 echo "Generating runtime configuration..."
 
 # Create config.js with environment variables
+BUILD_DATE=$(date +%Y-%m-%d)
 cat > /usr/share/nginx/html/config.js << EOF
 // Runtime configuration generated at container startup
 // This file is regenerated each time the container starts
@@ -16,14 +17,17 @@ window.APP_CONFIG = {
   // Debug mode - enable console logging
   debug: ${VITE_DEBUG:-false},
   // Application version
-  appVersion: '${VITE_APP_VERSION:-1.5.0}'
+  appVersion: '${VITE_APP_VERSION:-1.5.0}',
+  // Build date (container startup date)
+  buildDate: '${BUILD_DATE}'
 };
 EOF
 
 echo "Configuration generated:"
 echo "  - API URL: ${VITE_API_URL:-'(empty - using nginx proxy)'}"
 echo "  - Debug: ${VITE_DEBUG:-false}"
-echo "  - Version: ${VITE_APP_VERSION:-1.2.3}"
+echo "  - Version: ${VITE_APP_VERSION:-1.5.0}"
+echo "  - Build Date: ${BUILD_DATE}"
 
 # NOTE: BACKEND_PORT env var is NOT read by nginx. The backend port is hardcoded
 # to 3010 in nginx.conf via a literal `set` directive. Change it there directly.

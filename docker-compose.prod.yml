@@ -24,7 +24,7 @@ services:
       # Runtime configuration (injected at container start)
       - VITE_API_URL=${VITE_API_URL:-}
       - VITE_DEBUG=${VITE_DEBUG:-false}
-      - VITE_APP_VERSION=${APP_VERSION:-2.1.9}
+      - VITE_APP_VERSION=${APP_VERSION}
       # NOTE: BACKEND_PORT has no effect - nginx hardcodes port 3010 in nginx.conf
       # To change the backend port, edit frontend/nginx.conf directly.
       - BACKEND_PORT=${BACKEND_PORT:-3010}

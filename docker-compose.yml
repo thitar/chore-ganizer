@@ -3,6 +3,12 @@
 #
 # Configuration is read from the .env file in the same directory.
 # Changes to .env take effect on container restart (no rebuild needed).
+#
+# APP_VERSION: The version shown in the frontend console and backend headers.
+# This MUST match the version in backend/package.json and frontend/package.json
+# To automatically set APP_VERSION before running docker-compose:
+#   export APP_VERSION=$(grep '"version"' backend/package.json | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
+#   docker compose up --build -d
 
 services:
   # Frontend service
@@ -11,8 +17,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # Build-time args (only for initial build)
-        - VITE_APP_VERSION=${APP_VERSION:-2.1.9}
+        # Build-time args (version is read from backend/package.json)
+        - VITE_APP_VERSION=${APP_VERSION}
     container_name: chore-ganizer-frontend
     restart: unless-stopped
     ports:
@@ -21,7 +27,7 @@ services:
       # Runtime configuration (injected at container start)
       - VITE_API_URL=${VITE_API_URL:-}
       - VITE_DEBUG=${VITE_DEBUG:-false}
-      - VITE_APP_VERSION=${APP_VERSION:-2.1.9}
+      - VITE_APP_VERSION=${APP_VERSION}
     depends_on:
       - backend
     networks:
@@ -46,7 +52,7 @@ services:
       # Core configuration
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3010
-      - APP_VERSION=${APP_VERSION:-2.1.9}
+      - APP_VERSION=${APP_VERSION}
       - DATABASE_URL=${DATABASE_URL:-file:/app/data/chore-ganizer.db}
       - SESSION_SECRET=${SESSION_SECRET:-your-super-secret-session-key-change-in-production}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}
@@ -93,7 +99,7 @@ services:
       # Core configuration
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3010
-      - APP_VERSION=${APP_VERSION:-2.1.9}
+      - APP_VERSION=${APP_VERSION}
       - DATABASE_URL=${DATABASE_URL:-file:/app/data/chore-ganizer.db}
       - SESSION_SECRET=${SESSION_SECRET:-your-super-secret-session-key-change-in-production}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}

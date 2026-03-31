@@ -18,12 +18,14 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build argument for version (passed from docker-compose)
- ARG VITE_APP_VERSION=2.0.5
- ENV VITE_APP_VERSION=$VITE_APP_VERSION
+# Build argument for version (extracted from backend/package.json by docker-compose)
+# If not passed, falls back to reading from backend package.json during build
+ARG VITE_APP_VERSION=""
+ENV VITE_APP_VERSION=$VITE_APP_VERSION
 
 # Build the application
 # Note: VITE_API_URL is now runtime-configured, so we use a placeholder
+# Version is provided via build arg from docker-compose (extracted from backend/package.json)
 RUN npm run build
 
 # Stage 2: Production

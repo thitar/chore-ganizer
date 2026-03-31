@@ -10,6 +10,31 @@ When the user asks to run, execute, or retest any manual test case — including
 
 Chore-Ganizer is a family chore management app with a React frontend and Express/TypeScript backend. It uses SQLite via Prisma ORM and session-based auth with CSRF protection.
 
+## Version Management
+
+**Single source of truth**: `backend/package.json` and `frontend/package.json` define the version (must be identical).
+
+**How APP_VERSION is used**:
+- **Backend**: Included in API responses (metrics endpoint, logs, health checks) so clients know what version they're talking to
+- **Frontend**: Displayed in browser console on startup as `Chore-Ganizer Frontend v{VERSION}+{BUILD_DATE}` 
+- **Docker images**: Tagged with the version for the registry (`ghcr.io/thitar/chore-ganizer-backend:2.1.9`)
+
+**Keeping versions in sync**:
+When you update the version in `backend/package.json` and `frontend/package.json`, you **must** also update:
+- `APP_VERSION` in `.env` file (or set it before running docker-compose)
+- CI/CD workflows use `APP_VERSION` to tag Docker images
+
+**Recommended workflow**:
+```bash
+# 1. Update version in package.json files
+# 2. Use the helper script which auto-reads from backend/package.json:
+./docker-compose.sh up --build -d
+
+# Or manually set APP_VERSION before running:
+export APP_VERSION=$(grep '"version"' backend/package.json | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
+docker compose up --build -d
+```
+
 ## Building & Running
 
 The app is built and run exclusively via Docker Compose. There are three compose files:
@@ -133,6 +158,7 @@ npx playwright test -g "pattern"
 ### Notable Environment Variables
 | Variable | Purpose |
 |---|---|
+| `APP_VERSION` | **Required** — must match `backend/package.json` version; set via `./docker-compose.sh` or export before running `docker compose` |
 | `SESSION_SECRET` | **No default in `docker-compose.prod.yml`** — must be explicitly set; staging has a fallback default |
 | `OVERDUE_PENALTY_*` | Enable/configure automatic overdue point deductions |
 | `SLOW_REQUEST_THRESHOLD_MS` | Log requests slower than this threshold |
