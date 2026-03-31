@@ -38,10 +38,13 @@ if [ "$(id -u)" = "0" ]; then
     fi
     
     # Ensure database path is absolute
-    if [ "${DB_FILE:0:1}" != "/" ]; then
-        echo "ERROR: Database path must be absolute: $DB_FILE"
-        exit 1
-    fi
+    case "$DB_FILE" in
+        /*) ;;
+        *)
+            echo "ERROR: Database path must be absolute: $DB_FILE"
+            exit 1
+            ;;
+    esac
     
     # Validate path doesn't contain suspicious characters
     if echo "$DB_FILE" | grep -qE '[][$\`"\\|;&><[:space:]]'; then
@@ -127,7 +130,7 @@ fi
 
 # Start supercronic in the background for cron jobs (optional for testing)
 # Use setsid to create a new process group for proper cleanup
-if command -v supercronic &> /dev/null && [ -f /app/supercronic.conf ]; then
+if command -v supercronic > /dev/null 2>&1 && [ -f /app/supercronic.conf ]; then
     echo "Starting supercronic for scheduled backup jobs..."
     setsid supercronic /app/supercronic.conf &
     SUPERCRONIC_PID=$!
