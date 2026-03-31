@@ -143,11 +143,11 @@ export const UserForm: React.FC<UserFormProps> = ({
               value="CHILD"
               checked={formData.role === 'CHILD'}
               onChange={(e) => setFormData({ ...formData, role: e.target.value as 'CHILD' })}
-              disabled={isEdit && user?.role === 'PARENT' && (parentCount ?? 999) <= 1}
+              disabled={isEdit && user?.role === 'PARENT' && parentCount !== undefined && parentCount <= 1}
               className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <span className="ml-2 text-sm text-gray-700">Child</span>
-            {isEdit && user?.role === 'PARENT' && (parentCount ?? 999) <= 1 && (
+            {isEdit && user?.role === 'PARENT' && parentCount !== undefined && parentCount <= 1 && (
               <span className="ml-1 text-xs text-red-500">(last parent)</span>
             )}
           </label>
