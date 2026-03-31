@@ -28,11 +28,18 @@ if [ "$(id -u)" = "0" ]; then
     
     # Parse database file path from DATABASE_URL (supports file: and sqlite: prefixes)
     # Handle various formats: file:/path, file:///path, sqlite:/path, sqlite://path
-    DB_FILE=$(echo "$DB_PATH" | sed -E 's#^(file|sqlite):/{1,3}(.*)#\2#')
+    # The regex removes the protocol and normalizes slashes to a single leading /
+    DB_FILE=$(echo "$DB_PATH" | sed -E 's#^(file|sqlite):/*#/#')
     
     # Validate database path was parsed correctly
     if [ -z "$DB_FILE" ]; then
         echo "ERROR: Could not parse database path from DATABASE_URL: $DB_PATH"
+        exit 1
+    fi
+    
+    # Ensure database path is absolute
+    if [ "${DB_FILE:0:1}" != "/" ]; then
+        echo "ERROR: Database path must be absolute: $DB_FILE"
         exit 1
     fi
     
