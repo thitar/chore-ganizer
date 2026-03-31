@@ -82,10 +82,11 @@ function checkMemory(): { status: 'ok' | 'warning' | 'critical'; used: number; t
  * Check disk usage for the data directory
  */
 function checkDisk(): { status: 'ok' | 'warning' | 'critical'; used: number; total: number; percentage: number; path: string } {
+  // Get the database path
+  const dbPath = process.env.DATABASE_URL?.replace('file:', '') || '/opt/app-data/chore-ganizer/chore-ganizer.db'
+  const dataDir = path.dirname(dbPath)
+  
   try {
-    // Get the database path
-    const dbPath = process.env.DATABASE_URL?.replace('file:', '') || '/app/data/chore-ganizer.db'
-    
     // Get file stats for the database
     let dbSize = 0
     try {
@@ -97,7 +98,6 @@ function checkDisk(): { status: 'ok' | 'warning' | 'critical'; used: number; tot
 
     // For Docker containers, we'll use a simplified approach
     // Check if we can write to the data directory
-    const dataDir = path.dirname(dbPath)
     let totalDisk = 10 * 1024 * 1024 * 1024 // Assume 10GB default
     let usedDisk = dbSize
 
@@ -138,7 +138,7 @@ function checkDisk(): { status: 'ok' | 'warning' | 'critical'; used: number; tot
       used: 0,
       total: 0,
       percentage: 0,
-      path: '/app/data',
+      path: dataDir,
     }
   }
 }
