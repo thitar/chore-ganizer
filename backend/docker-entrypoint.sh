@@ -24,7 +24,7 @@ if [ "$(id -u)" = "0" ]; then
 
     # Run seed if database is empty
     echo "Checking if database needs seeding..."
-    DB_PATH=${DATABASE_URL:-file:/app/data/chore-ganizer.db}
+    DB_PATH=${DATABASE_URL:-file:/opt/app-data/chore-ganizer/chore-ganizer.db}
     
     # Parse database file path from DATABASE_URL (supports file: and sqlite: prefixes)
     # Handle various formats: file:/path, file:///path, sqlite:/path, sqlite://path
@@ -42,34 +42,9 @@ if [ "$(id -u)" = "0" ]; then
         exit 1
     fi
     
-    # Check if database file exists (handle both absolute paths and file: URLs)
-    # After db push, the file will be at /app/data/chore-ganizer.db or the staging variant
-    # Use NODE_ENV to determine which database to prefer
+    # Check if database file exists
     if [ ! -f "$DB_FILE" ]; then
-        # Check environment to determine database preference
-        if [ "$NODE_ENV" = "staging" ]; then
-            # Staging environment - prefer staging database
-            if [ -f "/app/data/chore-ganizer-staging.db" ]; then
-                DB_FILE="/app/data/chore-ganizer-staging.db"
-                echo "Database found at /app/data/chore-ganizer-staging.db (staging mode)"
-            elif [ -f "/app/data/chore-ganizer.db" ]; then
-                DB_FILE="/app/data/chore-ganizer.db"
-                echo "Database found at /app/data/chore-ganizer.db (staging fallback)"
-            else
-                echo "WARNING: Database file not found at $DB_FILE or /app/data/chore-ganizer*.db"
-            fi
-        else
-            # Production/other environment - prefer production database
-            if [ -f "/app/data/chore-ganizer.db" ]; then
-                DB_FILE="/app/data/chore-ganizer.db"
-                echo "Database found at /app/data/chore-ganizer.db"
-            elif [ -f "/app/data/chore-ganizer-staging.db" ]; then
-                DB_FILE="/app/data/chore-ganizer-staging.db"
-                echo "Database found at /app/data/chore-ganizer-staging.db (production fallback)"
-            else
-                echo "WARNING: Database file not found at $DB_FILE or /app/data/chore-ganizer*.db"
-            fi
-        fi
+        echo "WARNING: Database file not found at $DB_FILE"
     fi
     
     # Check if we need to seed - only if the database exists and is empty
@@ -106,8 +81,9 @@ if [ "$(id -u)" = "0" ]; then
     fi
     
     # Also fix permissions on the data directory
-    chown appuser:appuser /app/data
-    chmod 775 /app/data
+    DATA_DIR=$(dirname "$DB_FILE")
+    chown appuser:appuser "$DATA_DIR"
+    chmod 775 "$DATA_DIR"
     
     # Ensure backup directory exists and has correct permissions for appuser
     # This handles the case where /backups is mounted from host with different ownership

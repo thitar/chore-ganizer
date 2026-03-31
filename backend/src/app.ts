@@ -112,9 +112,10 @@ const isSecureCookie = isProduction && process.env.SECURE_COOKIES !== 'false'
 
 // Create SQLite session store
 const SQLiteStoreFactory = SQLiteStore(session)
+const sessionDir = process.env.SESSION_STORE_DIR || './data'
 const sessionStore = new SQLiteStoreFactory({
   db: 'sessions.db',
-  dir: './data',
+  dir: sessionDir,
   table: 'sessions',
 })
 
