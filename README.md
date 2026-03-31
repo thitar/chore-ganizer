@@ -225,7 +225,38 @@ For public internet access with HTTPS, use a reverse proxy like Caddy:
    docker compose restart
    ```
 
-### 1. Initial Setup
+### Option 1: Quick Setup with Pre-built Images (Recommended)
+
+For fastest deployment using pre-built Docker images from GitHub Container Registry:
+
+```bash
+# On your homelab server, create a directory
+mkdir -p chore-ganizer
+cd chore-ganizer
+
+# Download docker-compose.prod.yml and .env.example
+curl -o docker-compose.yml https://raw.githubusercontent.com/thitar/chore-ganizer/main/docker-compose.prod.yml
+curl -o .env https://raw.githubusercontent.com/thitar/chore-ganizer/main/.env.example
+
+# Edit the .env file with your settings
+nano .env
+
+# Generate secure session secret and add to .env
+openssl rand -base64 32  # Copy output to SESSION_SECRET in .env
+
+# Create required directories
+mkdir -p data uploads data/backups
+
+# Start the application
+docker compose up -d
+
+# Verify deployment
+curl http://localhost:3002/api/health
+```
+
+### Option 2: Full Setup with Git Clone
+
+For development or if you need to build from source:
 
 ```bash
 # On your homelab server
@@ -243,10 +274,10 @@ nano .env  # Edit with your settings
 openssl rand -base64 32  # Copy output to SESSION_SECRET in .env
 ```
 
-### 2. Deploy with Docker Compose
+### Option 2 Continued: Deploy with Docker Compose
 
 ```bash
-# Build and start containers
+# Build and start containers (from git clone)
 docker compose up -d --build
 
 # The database is automatically migrated and seeded on first run
@@ -255,7 +286,7 @@ docker compose ps
 docker compose logs -f
 ```
 
-### 3. Verify Deployment
+### Verify Deployment
 
 ```bash
 # Check backend health (includes version)
@@ -264,11 +295,15 @@ curl http://localhost:3002/api/health
 # Check frontend
 curl http://localhost:3002/
 
+# View logs
+docker compose logs -f backend
+docker compose logs -f frontend
+
 # Access from browser
 # Navigate to: http://YOUR_SERVER_IP:3002
 ```
 
-### 4. Backups
+### Automated Backups
 
 Backups are automatically scheduled via cron inside the Docker container. The default schedule runs daily at 2 AM.
 
@@ -331,7 +366,7 @@ The application uses a single `.env` file at the project root for all configurat
 
 ```bash
 # Application Version
-APP_VERSION=1.6.1
+APP_VERSION=2.1.9
 
 # Backend Configuration
 NODE_ENV=production
