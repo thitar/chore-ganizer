@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { usersApi } from '../api'
 import type { User, CreateUserData, UpdateUserData } from '../types'
 
@@ -6,6 +6,8 @@ export function useUsers() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const parentCount = useMemo(() => users.filter((u) => u.role === 'PARENT').length, [users])
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -94,6 +96,7 @@ export function useUsers() {
     users,
     loading,
     error,
+    parentCount,
     createUser,
     updateUser,
     deleteUser,
