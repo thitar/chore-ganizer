@@ -580,13 +580,28 @@ chore-ganizer/
 
 ### Volume Permissions
 
+When using bind mounts, the container creates files with its internal `appuser` (default UID/GID: 1001). On the host, this shows as a numeric UID unless a matching user exists.
+
+To have files owned by your host user, set `PUID` and `PGID` in your `.env`:
+
+```bash
+# Find your host UID and GID
+id -u && id -g
+
+# Set them in .env
+PUID=1000
+PGID=1000
+```
+
+The container adjusts the `appuser` UID/GID at startup to match. This ensures bind-mounted files appear with your host user's ownership.
+
 ```bash
 # Create directories with correct permissions
 mkdir -p data/backups data/uploads
 chmod 755 data data/backups data/uploads
 
-# For Docker containers running as user 1000
-chown -R 1000:1000 data
+# If not using PUID/PGID, set ownership to match container's default appuser (1001)
+chown -R 1001:1001 data
 ```
 
 ### Backup Volume Strategy

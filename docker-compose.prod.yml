@@ -52,6 +52,9 @@ services:
       - PORT=3010
       - APP_VERSION=${APP_VERSION:-2.1.9}
       - DATABASE_URL=${DATABASE_URL:-file:/opt/app-data/chore-ganizer/chore-ganizer.db}
+      # User/group IDs for bind mount ownership (match host user)
+      - PUID=${PUID:-1001}
+      - PGID=${PGID:-1001}
       # IMPORTANT: SESSION_SECRET must be set in .env file - no default for security!
       - SESSION_SECRET=${SESSION_SECRET}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}
@@ -77,7 +80,7 @@ services:
       - BACKUP_DIR=/backups
       - RETENTION_DAYS=7
     volumes:
-      - backend-data:/opt/app-data/chore-ganizer/
+      - /opt/app-data/chore-ganizer:/opt/app-data/chore-ganizer/
       - ./backups:/backups
     networks:
       - chore-ganizer-network
@@ -92,12 +95,6 @@ services:
     # 2. Switching to appuser
     # 3. Starting supercronic for backup cron jobs
     # 4. Starting the Node.js server
-
-# Named volumes for persistent data
-volumes:
-  backend-data:
-    driver: local
-    name: chore-ganizer-data
 
 # Network configuration
 networks:

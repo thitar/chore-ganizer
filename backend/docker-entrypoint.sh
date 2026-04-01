@@ -11,6 +11,20 @@ set -e
 if [ "$(id -u)" = "0" ]; then
     # We're running as root - run migrations first
     
+    # Adjust appuser UID/GID if PUId/PGID are set
+    CURRENT_UID=$(id -u appuser 2>/dev/null || echo "1001")
+    CURRENT_GID=$(id -g appuser 2>/dev/null || echo "1001")
+    TARGET_UID=${PUID:-$CURRENT_UID}
+    TARGET_GID=${PGID:-$CURRENT_GID}
+    
+    if [ "$TARGET_UID" != "$CURRENT_UID" ] || [ "$TARGET_GID" != "$CURRENT_GID" ]; then
+        echo "Adjusting appuser UID from $CURRENT_UID to $TARGET_UID and GID from $CURRENT_GID to $TARGET_GID..."
+        groupmod -o -g "$TARGET_GID" appuser 2>/dev/null || true
+        usermod -o -u "$TARGET_UID" -g "$TARGET_GID" appuser 2>/dev/null || true
+        # Fix ownership of app directories
+        chown -R appuser:appuser /app /backup-scripts /opt/app-data/chore-ganizer 2>/dev/null || true
+    fi
+    
     # Create log directory for backup logs
     # Note: Logs are now redirected to stdout/stderr in supercronic.conf
     # for Docker's log management
