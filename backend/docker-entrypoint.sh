@@ -21,10 +21,17 @@ if [ "$(id -u)" = "0" ]; then
     if [ "$TARGET_UID" != "$CURRENT_UID" ] || [ "$TARGET_GID" != "$CURRENT_GID" ]; then
         echo "Adjusting appuser UID from $CURRENT_UID to $TARGET_UID and GID from $CURRENT_GID to $TARGET_GID..."
         
-        # If the target GID is already taken by another group, remove it first
+        # If the target GID is already taken by another group, remove it first.
+        # Must delete the user before the group — can't delete a group that's still
+        # a user's primary group (e.g., 'node' user owns 'node' group in node:* images).
         EXISTING_GROUP=$(getent group "$TARGET_GID" | cut -d: -f1)
         if [ -n "$EXISTING_GROUP" ] && [ "$EXISTING_GROUP" != "appuser" ]; then
             echo "Removing existing group '$EXISTING_GROUP' (GID $TARGET_GID) to free up the GID..."
+            EXISTING_USER=$(getent passwd | awk -F: "\$4 == $TARGET_GID {print \$1}")
+            if [ -n "$EXISTING_USER" ] && [ "$EXISTING_USER" != "appuser" ]; then
+                echo "Removing user '$EXISTING_USER' (owns group '$EXISTING_GROUP')..."
+                userdel "$EXISTING_USER" 2>/dev/null || true
+            fi
             groupdel "$EXISTING_GROUP" 2>/dev/null || true
         fi
         
