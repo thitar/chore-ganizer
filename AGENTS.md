@@ -112,7 +112,7 @@ npx playwright test -g "pattern"
 - **`pages/`** — One file per route, lazy-loaded via `React.lazy()`
 - **`App.tsx`** — Route definitions; parent-only routes wrapped in `ProtectedRoute`
 
-**Runtime config**: The frontend Dockerfile builds with a placeholder API URL. At container start, `docker-entrypoint.sh` generates `/usr/share/nginx/html/config.js` which sets `window.APP_CONFIG.apiUrl` from the `VITE_API_URL` env var. If `VITE_API_URL` is empty (default), the frontend uses relative URLs and nginx proxies `/api/*` to the backend. The backend port is **hardcoded to 3010 in `frontend/nginx.conf`** — the `BACKEND_PORT` env var is ignored by nginx. Config changes only need a container restart, not a rebuild.
+**Runtime config**: The frontend Dockerfile builds with a placeholder API URL. At container start, `docker-entrypoint.sh` generates `/usr/share/nginx/html/config.js` which sets `window.APP_CONFIG.apiUrl` from the `VITE_API_URL` env var. If `VITE_API_URL` is empty (default), the frontend uses relative URLs and nginx proxies `/api/*` to the backend. The backend port is configurable via `BACKEND_PORT` env var (default: `3010`) — `nginx.conf.template` uses `envsubst` at startup to substitute the port. Config changes only need a container restart, not a rebuild.
 
 ### Auth Flow
 1. `POST /api/auth/login` → sets session cookie

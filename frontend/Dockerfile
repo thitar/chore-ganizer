@@ -33,8 +33,8 @@ RUN echo "$(cat /app/package.json | grep '"version"' | head -1 | sed 's/.*"\([^"
 # Stage 2: Production
 FROM nginx:alpine AS production
 
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy custom nginx configuration template (envsubst at runtime)
+COPY nginx.conf.template /etc/nginx/conf.d/default.conf.template
 
 # Copy entrypoint script for runtime config generation
 COPY docker-entrypoint.sh /docker-entrypoint.sh

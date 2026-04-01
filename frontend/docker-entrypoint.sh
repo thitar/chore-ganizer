@@ -35,9 +35,22 @@ echo "  - Debug: ${VITE_DEBUG:-false}"
 echo "  - Version: ${VERSION}"
 echo "  - Build Date: ${BUILD_DATE}"
 
-# NOTE: BACKEND_PORT env var is NOT read by nginx. The backend port is hardcoded
-# to 3010 in nginx.conf via a literal `set` directive. Change it there directly.
-echo "Backend port is hardcoded to 3010 in nginx.conf (BACKEND_PORT env var is ignored)"
+# Substitute BACKEND_PORT in nginx configuration template
+# Default to 3010 if not set
+export BACKEND_PORT="${BACKEND_PORT:-3010}"
+
+TEMPLATE="/etc/nginx/conf.d/default.conf.template"
+OUTPUT="/etc/nginx/conf.d/default.conf"
+
+if [ -f "$TEMPLATE" ]; then
+  echo "Applying nginx configuration template (BACKEND_PORT=$BACKEND_PORT)..."
+  # Only substitute $BACKEND_PORT - all other $variables are nginx-native ($host, $remote_addr, etc.)
+  envsubst '${BACKEND_PORT}' < "$TEMPLATE" > "$OUTPUT"
+  echo "  - Backend port: $BACKEND_PORT"
+else
+  echo "ERROR: nginx template not found at $TEMPLATE"
+  exit 1
+fi
 
 # Start nginx
 exec nginx -g 'daemon off;'
