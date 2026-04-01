@@ -11,10 +11,42 @@ set -e
 if [ "$(id -u)" = "0" ]; then
     # We're running as root - run migrations first
     
+    # Adjust appuser UID/GID if PUID/PGID are set
+    DATA_DIR=${DATA_DIR:-/opt/app-data/chore-ganizer}
+    CURRENT_UID=$(id -u appuser 2>/dev/null || echo "1001")
+    CURRENT_GID=$(id -g appuser 2>/dev/null || echo "1001")
+    TARGET_UID=${PUID:-$CURRENT_UID}
+    TARGET_GID=${PGID:-$CURRENT_GID}
+    
+    if [ "$TARGET_UID" != "$CURRENT_UID" ] || [ "$TARGET_GID" != "$CURRENT_GID" ]; then
+        echo "Adjusting appuser UID from $CURRENT_UID to $TARGET_UID and GID from $CURRENT_GID to $TARGET_GID..."
+        if ! groupmod -g "$TARGET_GID" appuser; then
+            echo "ERROR: Failed to change appuser GID from $CURRENT_GID to $TARGET_GID" >&2
+            exit 1
+        fi
+        if ! usermod -u "$TARGET_UID" -g "$TARGET_GID" appuser; then
+            echo "ERROR: Failed to change appuser UID from $CURRENT_UID to $TARGET_UID" >&2
+            exit 1
+        fi
+    fi
+    
+    # Ensure data directory exists and has correct ownership (always, regardless of UID/GID change)
+    mkdir -p "$DATA_DIR"
+    if ! chown -R appuser:appuser /app /backup-scripts "$DATA_DIR"; then
+        echo "ERROR: Failed to set ownership on app directories" >&2
+        exit 1
+    fi
+    
     # Create log directory for backup logs
     # Note: Logs are now redirected to stdout/stderr in supercronic.conf
     # for Docker's log management
     # mkdir -p /var/log
+    
+    # Validate required environment
+    if [ -z "$SESSION_SECRET" ]; then
+        echo "ERROR: SESSION_SECRET is not set" >&2
+        exit 1
+    fi
     
     # Run Prisma migrations
     # Use db push instead of migrate deploy for reliable schema creation
@@ -90,10 +122,16 @@ if [ "$(id -u)" = "0" ]; then
         chmod 664 "$DB_FILE"
     fi
     
-    # Also fix permissions on the data directory
-    DATA_DIR=$(dirname "$DB_FILE")
-    chown appuser:appuser "$DATA_DIR"
-    chmod 775 "$DATA_DIR"
+    # Also fix permissions on the database directory
+    DB_DIR=$(dirname "$DB_FILE")
+    if ! chown appuser:appuser "$DB_DIR" 2>/dev/null; then
+        echo "ERROR: Failed to set ownership on database directory $DB_DIR" >&2
+        exit 1
+    fi
+    if ! chmod 775 "$DB_DIR" 2>/dev/null; then
+        echo "ERROR: Failed to set permissions on database directory $DB_DIR" >&2
+        exit 1
+    fi
     
     # Ensure backup directory exists and has correct permissions for appuser
     # This handles the case where /backups is mounted from host with different ownership

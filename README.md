@@ -234,8 +234,8 @@ For fastest deployment using pre-built Docker images from GitHub Container Regis
 mkdir -p chore-ganizer
 cd chore-ganizer
 
-# Download docker-compose.prod.yml and .env.example
-curl -o docker-compose.yml https://raw.githubusercontent.com/thitar/chore-ganizer/main/docker-compose.prod.yml
+# Download docker-compose.yml and .env.example
+curl -o docker-compose.yml https://raw.githubusercontent.com/thitar/chore-ganizer/main/docker-compose.yml
 curl -o .env https://raw.githubusercontent.com/thitar/chore-ganizer/main/.env.example
 
 # Edit the .env file with your settings
@@ -245,7 +245,7 @@ nano .env
 openssl rand -base64 32  # Copy output to SESSION_SECRET in .env
 
 # Create required directories
-mkdir -p data uploads data/backups
+mkdir -p /opt/app-data/chore-ganizer backups
 
 # Start the application
 docker compose up -d

@@ -617,14 +617,14 @@ Since some user management features are not available in the UI, you can perform
 docker exec -it chore-ganizer-backend /bin/bash
 
 # Open the database
-sqlite3 /app/data/chore-ganizer.db
+sqlite3 /opt/app-data/chore-ganizer/chore-ganizer.db
 ```
 
 Or from the host machine:
 
 ```bash
 # If you have sqlite3 installed locally
-sqlite3 /var/lib/docker/volumes/chore-ganizer-data/_data/chore-ganizer.db
+sqlite3 "${DATA_DIR:-/opt/app-data/chore-ganizer}/chore-ganizer.db"
 ```
 
 ### Useful SQL Queries

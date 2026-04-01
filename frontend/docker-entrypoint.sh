@@ -6,7 +6,13 @@ set -e
 
 echo "Generating runtime configuration..."
 
-# Create config.js with environment variables
+# Read baked version from image, fall back to env var
+BAKED_VERSION=""
+if [ -f /usr/share/nginx/html/.image-version ]; then
+  BAKED_VERSION=$(cat /usr/share/nginx/html/.image-version | tr -d '[:space:]')
+fi
+VERSION="${VITE_APP_VERSION:-$BAKED_VERSION}"
+
 BUILD_DATE=$(date +%Y-%m-%d)
 cat > /usr/share/nginx/html/config.js << EOF
 // Runtime configuration generated at container startup
@@ -17,7 +23,7 @@ window.APP_CONFIG = {
   // Debug mode - enable console logging
   debug: ${VITE_DEBUG:-false},
   // Application version
-  appVersion: '${VITE_APP_VERSION:-1.5.0}',
+  appVersion: '${VERSION}',
   // Build date (container startup date)
   buildDate: '${BUILD_DATE}'
 };
@@ -26,7 +32,7 @@ EOF
 echo "Configuration generated:"
 echo "  - API URL: ${VITE_API_URL:-'(empty - using nginx proxy)'}"
 echo "  - Debug: ${VITE_DEBUG:-false}"
-echo "  - Version: ${VITE_APP_VERSION:-1.5.0}"
+echo "  - Version: ${VERSION}"
 echo "  - Build Date: ${BUILD_DATE}"
 
 # NOTE: BACKEND_PORT env var is NOT read by nginx. The backend port is hardcoded

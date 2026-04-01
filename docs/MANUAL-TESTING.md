@@ -148,13 +148,13 @@ If you need to reset the database to a clean state:
 
 ```bash
 # Stop the application
-docker-compose down
+docker compose down
 
-# Remove the database volume
-docker volume rm chore-ganizer-data
+# Remove the database
+rm -f "${DATA_DIR:-/opt/app-data/chore-ganizer}/chore-ganizer.db"
 
 # Restart the application (will re-seed)
-docker-compose up -d
+docker compose up -d
 ```
 
 ---

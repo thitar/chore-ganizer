@@ -128,7 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - Fixed Dockerfile non-root user configuration to prevent privilege escalation
-- Removed hardcoded session secret from docker-compose.prod.yml (now requires environment variable)
+- Removed hardcoded session secret from docker-compose.yml (now requires environment variable)
 - Fixed nginx H2C smuggling vulnerability by disabling HTTP/2 cleartext
 - Fixed nginx request-host validation to prevent host header injection
 

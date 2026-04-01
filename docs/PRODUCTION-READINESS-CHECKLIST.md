@@ -25,7 +25,7 @@
 - **Status**: Implemented (verified in recent commits: `e3c4ad8`, `d767f6e`)
 - **Checkpoint**: Verify DB schema includes `PocketMoneyConfig` and `PointTransaction`
   ```bash
-  docker-compose exec backend npx prisma studio
+  docker compose exec backend npx prisma studio
   # Check: PocketMoneyConfig table exists with payout period settings
   ```
 - **Tests**:
@@ -55,7 +55,7 @@
 - **Status**: Implemented
 - **Checkpoint**: Verify `RecurringChore` model exists
   ```bash
-  docker-compose exec backend npx prisma studio
+  docker compose exec backend npx prisma studio
   # Check: RecurringChore table with recurrenceRule field
   ```
 - **Tests**:
@@ -86,7 +86,7 @@
 - **Status**: Implemented
 - **Checkpoint**: Verify environment variables set
   ```bash
-  docker-compose exec backend printenv | grep OVERDUE
+  docker compose exec backend printenv | grep OVERDUE
   # Should show: OVERDUE_PENALTY_ENABLED=true (or false)
   ```
 - **Tests**:
@@ -193,7 +193,7 @@
 - **Status**: Implemented with Prisma
 - **Checkpoint**: Database file verified
   ```bash
-  docker-compose exec backend sqlite3 /app/data/chore-ganizer.db "PRAGMA integrity_check;"
+  docker compose exec backend sqlite3 /opt/app-data/chore-ganizer/chore-ganizer.db "PRAGMA integrity_check;"
   # Should output: ok
   ```
 - **Tests**:
@@ -310,7 +310,7 @@
 - [ ] All family members can login
 - [ ] Family tested on 2+ devices
 - [ ] No console errors in browser (F12)
-- [ ] No error logs in `docker-compose logs`
+- [ ] No error logs in `docker compose logs`
 - [ ] .env file configured with unique SESSION_SECRET
 - [ ] Database backed up before deployment
 
@@ -318,11 +318,10 @@
 ```bash
 # Final steps
 cd ~/chore-ganizer
-docker-compose down
-docker volume backup chore-ganizer-data
-docker-compose pull  # or: docker-compose build
-docker-compose up -d
-docker-compose logs -f backend
+docker compose down
+docker compose pull
+docker compose up -d
+docker compose logs -f backend
 ```
 
 ### Post-Deployment (Week 1)

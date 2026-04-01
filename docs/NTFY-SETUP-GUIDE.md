@@ -195,12 +195,10 @@ NOTIFY_PARENT_ON_OVERDUE=true
 ### Step 2: Restart Chore-Ganizer backend
 
 ```bash
-docker-compose restart backend
-# OR if using prod file:
-docker-compose -f docker-compose.prod.yml restart backend
+docker compose restart backend
 
 # Verify backend can reach ntfy
-docker-compose logs backend | grep -i ntfy
+docker compose logs backend | grep -i ntfy
 ```
 
 ---
