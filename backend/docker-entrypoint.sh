@@ -20,6 +20,14 @@ if [ "$(id -u)" = "0" ]; then
     
     if [ "$TARGET_UID" != "$CURRENT_UID" ] || [ "$TARGET_GID" != "$CURRENT_GID" ]; then
         echo "Adjusting appuser UID from $CURRENT_UID to $TARGET_UID and GID from $CURRENT_GID to $TARGET_GID..."
+        
+        # If the target GID is already taken by another group, remove it first
+        EXISTING_GROUP=$(getent group "$TARGET_GID" | cut -d: -f1)
+        if [ -n "$EXISTING_GROUP" ] && [ "$EXISTING_GROUP" != "appuser" ]; then
+            echo "Removing existing group '$EXISTING_GROUP' (GID $TARGET_GID) to free up the GID..."
+            groupdel "$EXISTING_GROUP" 2>/dev/null || true
+        fi
+        
         if ! groupmod -g "$TARGET_GID" appuser; then
             echo "ERROR: Failed to change appuser GID from $CURRENT_GID to $TARGET_GID" >&2
             exit 1
