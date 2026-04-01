@@ -4,7 +4,6 @@ import session from 'express-session'
 import dotenv from 'dotenv'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
-import SQLiteStore from 'connect-sqlite3'
 import crypto from 'crypto'
 import routes from './routes/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
@@ -110,17 +109,7 @@ const sameSitePolicy = (process.env.SAMESITE_POLICY || 'strict') as 'strict' | '
 const isProduction = process.env.NODE_ENV === 'production'
 const isSecureCookie = isProduction && process.env.SECURE_COOKIES !== 'false'
 
-// Create SQLite session store
-const SQLiteStoreFactory = SQLiteStore(session)
-const sessionDir = process.env.SESSION_STORE_DIR || './data'
-const sessionStore = new SQLiteStoreFactory({
-  db: 'sessions.db',
-  dir: sessionDir,
-  table: 'sessions',
-})
-
 app.use(session({
-  store: sessionStore,
   secret: sessionSecret,
   resave: false,
   saveUninitialized: false,  // Don't create empty sessions
