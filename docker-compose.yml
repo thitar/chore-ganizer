@@ -1,24 +1,16 @@
 # Docker Compose configuration for Chore-Ganizer
-# Family-friendly chore management system for homelab deployment
+# This file uses pre-built Docker images from the registry.
+#
+# Usage:
+#   docker compose up -d
 #
 # Configuration is read from the .env file in the same directory.
 # Changes to .env take effect on container restart (no rebuild needed).
-#
-# APP_VERSION: The version shown in the frontend console and backend headers.
-# This MUST match the version in backend/package.json and frontend/package.json
-# To automatically set APP_VERSION before running docker-compose:
-#   export APP_VERSION=$(grep '"version"' backend/package.json | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
-#   docker compose up --build -d
 
 services:
   # Frontend service
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        # Build-time args (version is read from backend/package.json)
-        - VITE_APP_VERSION=${APP_VERSION}
+    image: ghcr.io/thitar/chore-ganizer/chore-ganizer-frontend:${APP_VERSION:-latest}
     container_name: chore-ganizer-frontend
     restart: unless-stopped
     ports:
@@ -28,6 +20,9 @@ services:
       - VITE_API_URL=${VITE_API_URL:-}
       - VITE_DEBUG=${VITE_DEBUG:-false}
       - VITE_APP_VERSION=${APP_VERSION}
+      # NOTE: BACKEND_PORT has no effect - nginx hardcodes port 3010 in nginx.conf
+      # To change the backend port, edit frontend/nginx.conf directly.
+      - BACKEND_PORT=${BACKEND_PORT:-3010}
     depends_on:
       - backend
     networks:
@@ -39,11 +34,9 @@ services:
       retries: 3
       start_period: 10s
 
-  # Backend service (standard - without cron)
+  # Backend service with cron for automated backups
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/thitar/chore-ganizer/chore-ganizer-backend:${APP_VERSION:-latest}
     container_name: chore-ganizer-backend
     restart: unless-stopped
     ports:
@@ -53,55 +46,14 @@ services:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3010
       - APP_VERSION=${APP_VERSION}
-      - DATABASE_URL=${DATABASE_URL:-file:/app/data/chore-ganizer.db}
-      - SESSION_SECRET=${SESSION_SECRET:-your-super-secret-session-key-change-in-production}
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}
-      - SECURE_COOKIES=${SECURE_COOKIES:-false}
-      - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      # Ntfy notification defaults
-      - NTFY_DEFAULT_SERVER_URL=${NTFY_DEFAULT_SERVER_URL:-https://ntfy.sh}
-      - NTFY_DEFAULT_TOPIC=${NTFY_DEFAULT_TOPIC:-}
-      - NTFY_DEFAULT_NOTIFY_CHORE_ASSIGNED=${NTFY_DEFAULT_NOTIFY_CHORE_ASSIGNED:-true}
-      - NTFY_DEFAULT_NOTIFY_CHORE_DUE_SOON=${NTFY_DEFAULT_NOTIFY_CHORE_DUE_SOON:-true}
-      - NTFY_DEFAULT_NOTIFY_CHORE_COMPLETED=${NTFY_DEFAULT_NOTIFY_CHORE_COMPLETED:-true}
-      - NTFY_DEFAULT_NOTIFY_CHORE_OVERDUE=${NTFY_DEFAULT_NOTIFY_CHORE_OVERDUE:-true}
-      - NTFY_DEFAULT_NOTIFY_POINTS_EARNED=${NTFY_DEFAULT_NOTIFY_POINTS_EARNED:-true}
-      - NTFY_DEFAULT_REMINDER_HOURS=${NTFY_DEFAULT_REMINDER_HOURS:-2}
-      - NTFY_DEFAULT_QUIET_HOURS_START=${NTFY_DEFAULT_QUIET_HOURS_START:-}
-      - NTFY_DEFAULT_QUIET_HOURS_END=${NTFY_DEFAULT_QUIET_HOURS_END:-}
-      # Overdue penalty settings
-      - OVERDUE_PENALTY_ENABLED=${OVERDUE_PENALTY_ENABLED:-true}
-      - OVERDUE_PENALTY_MULTIPLIER=${OVERDUE_PENALTY_MULTIPLIER:-2}
-      - NOTIFY_PARENT_ON_OVERDUE=${NOTIFY_PARENT_ON_OVERDUE:-true}
-    volumes:
-      - backend-data:/app/data
-    networks:
-      - chore-ganizer-network
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3010/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-
-  # Backend service with cron for automated backups
-  # Use: docker-compose --profile with-backup up
-  backend-with-backup:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: chore-ganizer-backend-with-backup
-    restart: unless-stopped
-    ports:
-      - "${PORT:-3010}:3010"
-    environment:
-      # Core configuration
-      - NODE_ENV=${NODE_ENV:-production}
-      - PORT=3010
-      - APP_VERSION=${APP_VERSION}
-      - DATABASE_URL=${DATABASE_URL:-file:/app/data/chore-ganizer.db}
-      - SESSION_SECRET=${SESSION_SECRET:-your-super-secret-session-key-change-in-production}
+      # Data directory (host path mounted into container)
+      - DATA_DIR=${DATA_DIR:-/opt/app-data/chore-ganizer}
+      - DATABASE_URL=${DATABASE_URL:-file:${DATA_DIR:-/opt/app-data/chore-ganizer}/chore-ganizer.db}
+      # User/group IDs for bind mount ownership (match host user)
+      - PUID=${PUID:-1001}
+      - PGID=${PGID:-1001}
+      # IMPORTANT: SESSION_SECRET must be set in .env file - no default for security!
+      - SESSION_SECRET=${SESSION_SECRET}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}
       - SECURE_COOKIES=${SECURE_COOKIES:-false}
       - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}
@@ -125,7 +77,7 @@ services:
       - BACKUP_DIR=/backups
       - RETENTION_DAYS=7
     volumes:
-      - backend-data:/app/data
+      - ${DATA_DIR:-/opt/app-data/chore-ganizer}:${DATA_DIR:-/opt/app-data/chore-ganizer}
       - ./backups:/backups
     networks:
       - chore-ganizer-network
@@ -135,19 +87,12 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
-    profiles:
-      - with-backup
     # Uses docker-entrypoint.sh from Dockerfile which handles:
-    # 1. Database migrations (as root)
-    # 2. Switching to appuser
-    # 3. Starting supercronic for backup cron jobs
-    # 4. Starting the Node.js server
-
-# Named volumes for persistent data
-volumes:
-  backend-data:
-    driver: local
-    name: chore-ganizer-data
+    # 1. Adjust appuser UID/GID to match host (as root)
+    # 2. Database migrations and seeding (as root)
+    # 3. Switching to appuser
+    # 4. Starting supercronic for backup cron jobs
+    # 5. Starting the Node.js server
 
 # Network configuration
 networks:

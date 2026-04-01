@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { register } from '../utils/metrics.js';
+import { getVersion } from '../version.js';
 
 export const getMetrics = async (_req: Request, res: Response) => {
   try {
@@ -15,6 +16,6 @@ export const getHealth = async (_req: Request, res: Response) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    version: process.env.APP_VERSION || '2.1.9'
+    version: getVersion()
   });
 };

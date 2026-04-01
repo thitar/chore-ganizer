@@ -16,18 +16,17 @@ You're currently on the **`test/phase1-auth`** branch - perfect!
 
 ## What to Do Right Now
 
-### 1. Start Staging (to test manually)
+### 1. Start the Application
 ```bash
-# IMPORTANT: The .env file overrides docker-compose defaults!
-# You MUST pass these env vars explicitly:
-NODE_ENV=staging SECURE_COOKIES=false docker compose -f docker-compose.staging.yml up -d --build
+# Start with docker compose
+docker compose up -d
 
 # Check it's running
-docker compose -f docker-compose.staging.yml ps
+docker compose ps
 ```
 
 ### 2. Open Browser
-Go to: **http://localhost:3003**
+Go to: **http://localhost:3002**
 
 ### 3. Login with Test Accounts
 

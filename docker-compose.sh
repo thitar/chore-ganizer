@@ -1,7 +1,6 @@
 #!/bin/bash
 # Helper script to run docker-compose with the correct APP_VERSION from package.json
 # Usage: ./docker-compose.sh up -d
-#        ./docker-compose.sh -f docker-compose.prod.yml up -d
 
 # Extract version from backend/package.json
 APP_VERSION=$(grep '"version"' backend/package.json | head -1 | sed 's/.*"\([^"]*\)".*/\1/')

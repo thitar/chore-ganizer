@@ -58,6 +58,9 @@ RUN npx prisma generate
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
+# Bake version from package.json into the image
+RUN echo "APP_VERSION=$(node -p "require('./package.json').version")" > /app/.image-version
+
 # Copy entrypoint scripts and config
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 COPY cron-entrypoint.sh /app/cron-entrypoint.sh

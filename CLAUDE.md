@@ -37,29 +37,15 @@ docker compose up --build -d
 
 ## Building & Running
 
-The app is built and run exclusively via Docker Compose. There are three compose files:
+The app is built and run via Docker Compose. There is a single compose file:
 
 | File | Purpose | Ports |
 |---|---|---|
-| `docker-compose.yml` | Build from source (development) | Frontend: 3002, Backend: 3010 |
-| `docker-compose.prod.yml` | Pull pre-built images from `ghcr.io/thitar/` | Frontend: 3002, Backend: 3010 |
-| `docker-compose.staging.yml` | Build from source, separate volumes/network | Frontend: 3003, Backend: 3010/3011 |
+| `docker-compose.yml` | Pull pre-built images from `ghcr.io/thitar/` | Frontend: 3002, Backend: 3010 |
 
 ```bash
-# Build from source and start (after code changes)
-docker compose up --build -d
-
-# Start without rebuilding (config/env changes only)
+# Start (pre-built images from registry)
 docker compose up -d
-
-# Start with automated backup cron jobs
-docker compose --profile with-backup up -d
-
-# Staging (builds from source, separate DB, runs alongside production)
-docker compose -f docker-compose.staging.yml up --build -d
-
-# Production (pre-built images from registry)
-docker compose -f docker-compose.prod.yml up -d
 
 # View logs
 docker compose logs -f backend
@@ -67,9 +53,9 @@ docker compose logs -f frontend
 ```
 
 ### What happens on container start
-- **Backend entrypoint** (`docker-entrypoint.sh`): runs as root → `prisma db push` (auto-applies schema) → seeds DB if empty → drops to `appuser` via `gosu` → starts `node dist/server.js`
+- **Backend entrypoint** (`docker-entrypoint.sh`): runs as root → adjusts appuser UID/GID if PUID/PGID set → `prisma db push` (auto-applies schema) → seeds DB if empty → drops to `appuser` via `gosu` → starts `node dist/server.js`
 - **Frontend entrypoint** (`docker-entrypoint.sh`): generates `/usr/share/nginx/html/config.js` with runtime env vars → starts nginx
-- DB migrations and seeding are **automatic** — no manual steps needed on first run or after schema changes
+- DB migrations and seeding are **automatic** — no manual steps needed on first run or after schema changes. The `DATA_DIR` path must exist on the host before starting (Docker creates it as root if missing).
 
 ### Default credentials (auto-seeded on first start)
 - Parents: `dad@home.local`, `mom@home.local` | Children: `alice@home.local`, `bob@home.local`
@@ -159,7 +145,9 @@ npx playwright test -g "pattern"
 | Variable | Purpose |
 |---|---|
 | `APP_VERSION` | **Required** — must match `backend/package.json` version; set via `./docker-compose.sh` or export before running `docker compose` |
-| `SESSION_SECRET` | **No default in `docker-compose.prod.yml`** — must be explicitly set; staging has a fallback default |
+| `SESSION_SECRET` | **No default** — must be explicitly set in `.env` |
+| `DATA_DIR` | Host path for persistent data (default: `/opt/app-data/chore-ganizer`) |
+| `PUID` / `PGID` | Host UID/GID for bind mount file ownership (default: `1001`) |
 | `OVERDUE_PENALTY_*` | Enable/configure automatic overdue point deductions |
 | `SLOW_REQUEST_THRESHOLD_MS` | Log requests slower than this threshold |
 | `COMPRESSION_ENABLED` | Toggle gzip/brotli response compression |
