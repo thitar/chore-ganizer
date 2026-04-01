@@ -2,86 +2,160 @@
 
 This file provides guidance to agents when working with code in this repository.
 
-## Project Structure
+## Manual Testing
 
-- **Backend**: Express/TypeScript API in `backend/` (controllers → services → routes)
-- **Frontend**: React/Vite SPA in `frontend/` (components, hooks, pages, api client)
-- **Database**: SQLite via Prisma ORM (`backend/prisma/schema.prisma`)
-- **E2E Tests**: Playwright in `e2e/` directory
+When the user asks to run, execute, or retest any manual test case — including prompts like "run P-312", "retest P-312", "test phase 1", or any reference to test IDs in P-XXX or C-XXX format — **always invoke the `cg-tester` skill** before doing anything else. This skill handles all chore-ganizer QA using the Playwright MCP server.
 
-## Commands
+## Project Overview
 
-### Running the Application
-- Backend: `cd backend && npm run dev` (port 3000)
-- Frontend: `cd frontend && npm run dev` (port 5173)
-- Both must run simultaneously for full functionality
+Chore-Ganizer is a family chore management app with a React frontend and Express/TypeScript backend. It uses SQLite via Prisma ORM and session-based auth with CSRF protection.
 
-### Testing — Single Test
-- Backend by file: `cd backend && npx jest src/__tests__/services/chore-assignments.service.test.ts`
-- Backend by name: `cd backend && npx jest -t "should return all assignments"`
-- Backend by pattern: `cd backend && npx jest --testPathPattern="auth" --testNamePattern="login"`
-- Frontend by file: `cd frontend && npx vitest run src/components/common/Button.test.tsx`
-- Frontend by name: `cd frontend && npx vitest run -t "renders children correctly"`
-- E2E: `npm run test:e2e` or `npm run test:e2e:debug`
+## Version Management
 
-### Testing — Full Suites
-- Backend unit: `cd backend && npm run test:unit`
-- Backend integration: `cd backend && npm run test:integration`
-- Backend all: `cd backend && npm run test:all`
-- Frontend: `cd frontend && npm run test`
-- E2E: `npm run test:e2e` (auto-starts backend)
+**Single source of truth**: `backend/package.json` and `frontend/package.json` define the version (must be identical).
 
-### Building
-- Backend: `cd backend && npm run build` (outputs to `backend/dist/`)
-- Frontend: `cd frontend && npm run build`
-- Lint frontend: `cd frontend && npm run lint`
+**How APP_VERSION is used**:
+- **Backend**: Included in API responses (metrics endpoint, logs, health checks) so clients know what version they're talking to
+- **Frontend**: Displayed in browser console on startup as `Chore-Ganizer Frontend v{VERSION}+{BUILD_DATE}` 
+- **Docker images**: Tagged with the version for the registry (`ghcr.io/thitar/chore-ganizer-backend:2.1.9`)
 
-### Database
-- Generate Prisma client: `cd backend && npm run prisma:generate`
-- Run migrations: `cd backend && npm run prisma:migrate`
-- Seed: `cd backend && npm run prisma:seed`
-- GUI: `cd backend && npm run prisma:studio`
+**Keeping versions in sync**:
+When you update the version in `backend/package.json` and `frontend/package.json`, you **must** also update:
+- `APP_VERSION` in `.env` file (or set it before running docker-compose)
+- CI/CD workflows use `APP_VERSION` to tag Docker images
 
-## Code Style
+**Recommended workflow**:
+```bash
+# 1. Update version in package.json files
+# 2. Use the helper script which auto-reads from backend/package.json:
+./docker-compose.sh up --build -d
 
-### Formatting
-- 2-space indentation, single quotes, no semicolons, trailing commas
-- No ESLint or Prettier config files — follow existing code patterns
+# Or manually set APP_VERSION before running:
+export APP_VERSION=$(grep '"version"' backend/package.json | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
+docker compose up --build -d
+```
 
-### Imports
-- **Backend**: Use `.js` extension on relative imports (e.g., `from '../services/foo.service.js'`). Group external imports first, then relative. Use `import * as` namespace imports for services.
-- **Frontend**: No file extensions on relative imports. Use `import type` for type-only imports. Barrel exports via `index.ts` in `hooks/` and `components/`.
+## Building & Running
 
-### Naming Conventions
-- Files: kebab-case in backend (`chore-assignments.controller.ts`), PascalCase for frontend components (`Button.tsx`), camelCase for hooks (`useAuth.ts`)
-- Tests: `.test.ts` (backend), `.test.tsx` (frontend React), `.integration.test.ts` (backend integration), `.spec.ts` (E2E)
-- Variables/functions: camelCase. Classes/interfaces/components: PascalCase. Constants: UPPER_SNAKE_CASE
-- Interfaces use descriptive suffixes: `CreateAssignmentData`, `ButtonProps`, `AssignmentFilters`
+The app is built and run via Docker Compose. There is a single compose file:
 
-### Types
-- Strict TypeScript in backend (`noUnusedLocals`, `noUnusedParameters`, `noImplicitReturns`, `noFallthroughCasesInSwitch`)
-- Frontend relaxed: `noUnusedLocals: false`, `noUnusedParameters: false`
-- Frontend uses `@/` path alias (maps to `./src`)
+| File | Purpose | Ports |
+|---|---|---|
+| `docker-compose.yml` | Pull pre-built images from `ghcr.io/thitar/` | Frontend: 3002, Backend: 3010 |
 
-### Error Handling
-- **Backend**: Custom `AppError` class with `statusCode` and `code`. All route handlers MUST use `asyncHandler` from `backend/src/utils/asyncHandler.ts`. Global error handler catches all errors. Prisma errors mapped (P2002→409, P2025→404).
-- **Frontend**: Error Boundary wrapping app. API client throws `{ success: false, error: { message, code } }`. User-facing messages via Sonner toast. Custom `auth:unauthorized` event for session expiry.
+```bash
+# Start (pre-built images from registry)
+docker compose up -d
 
-### API Response Pattern
-All API responses: `{ success: true, data: { ... } }` or `{ success: false, error: { message, code } }`
+# View logs
+docker compose logs -f backend
+docker compose logs -f frontend
+```
 
-## Non-Obvious Patterns
+### What happens on container start
+- **Backend entrypoint** (`docker-entrypoint.sh`): runs as root → adjusts appuser UID/GID if PUID/PGID set → `prisma db push` (auto-applies schema) → seeds DB if empty → drops to `appuser` via `gosu` → starts `node dist/server.js`
+- **Frontend entrypoint** (`docker-entrypoint.sh`): generates `/usr/share/nginx/html/config.js` with runtime env vars → starts nginx
+- DB migrations and seeding are **automatic** — no manual steps needed on first run or after schema changes. The `DATA_DIR` path must exist on the host before starting (Docker creates it as root if missing).
 
-1. **Version Synchronization**: Version in 4 places: `package.json` (root), `backend/package.json`, `frontend/package.json`, and `backend/src/version.ts` reads `APP_VERSION` env var
-2. **Session Storage**: Sessions in SQLite at `backend/data/sessions.db` (not in memory), with CSRF protection
-3. **API Prefix**: All routes have `/api` prefix (e.g., `/api/users`, `/api/chores`)
-4. **Controller-Service Separation**: Controllers handle HTTP layer only; business logic lives in services
-5. **Zod Validation**: Request validation via Zod schemas in middleware
-6. **Background Jobs**: `node-cron` for recurring chore occurrence generation
-7. **PUID/PGID**: Container adjusts `appuser` UID/GID at startup via env vars for bind mount ownership
+### Default credentials (auto-seeded on first start)
+- Parents: `dad@home.local`, `mom@home.local` | Children: `alice@home.local`, `bob@home.local`
+- Password: `password123`
 
-## Test Patterns
+### Tests (CI only — not run via Docker)
+```bash
+# Backend (cd backend)
+npm test                        # Unit tests
+npm run test:unit               # Excludes integration tests
+npm run test:integration        # Integration tests (serial, real DB)
+npm test -- path/to/file.test.ts
+npm test -- --testNamePattern="pattern"
 
-- **Backend (Jest)**: Mock Prisma at module level with `jest.mock()`. Shared fixtures in `__tests__/test-helpers.ts`. Integration tests use real DB with global setup/teardown, run serially (`--runInBand`).
-- **Frontend (Vitest)**: Globals enabled but imports are explicit (`describe`, `it`, `expect`, `vi`). Use `@testing-library/react`. Custom render wrapper with `BrowserRouter` from `test/utils.tsx`.
-- **E2E (Playwright)**: Setup via API fixtures. Cleanup in `afterEach`. Mix of API and UI testing.
+# Frontend (cd frontend)
+npm test                             # All tests
+npm test -- path/to/file.test.tsx
+
+# E2E (root, requires running app)
+npm run test:e2e
+npx playwright test e2e/auth.spec.ts
+npx playwright test -g "pattern"
+```
+
+## Architecture
+
+### Stack
+- **Backend**: Express.js + TypeScript, Prisma ORM, SQLite, Jest
+- **Frontend**: React 18 + TypeScript, Vite, Tailwind CSS, Vitest
+- **Auth**: Express sessions (SQLite store), bcrypt, CSRF tokens
+- **Roles**: `PARENT` and `CHILD` — many routes are parent-only
+
+### Backend Structure (`backend/src/`)
+- **`app.ts`** — Express app config; middleware ordering is security-critical (Helmet → rate limiter → CORS → session → CSRF → routes)
+- **`routes/index.ts`** — Central router mounting all `/api/*` routes
+- **`controllers/`** — Thin HTTP layer; delegates to services
+- **`services/`** — All business logic lives here
+- **`middleware/`** — auth.ts, csrf.ts, errorHandler.ts, rateLimiter.ts, validator.ts
+- **`schemas/`** — Zod validation schemas used by `validate()` middleware
+- **`jobs/`** — Cron jobs (recurring chore occurrence generation)
+- **`prisma/schema.prisma`** — Single source of truth for DB models
+
+**API response envelope:**
+```json
+{ "success": true, "data": { ... }, "error": null }
+```
+
+**Error handling**: `AppError` class with `statusCode` and `code` fields; caught by global error handler in `middleware/errorHandler.ts`.
+
+### Frontend Structure (`frontend/src/`)
+- **`api/`** — One file per domain (auth, chores, users, etc.) using Axios. `client.ts` handles CSRF token injection and 401/403 error events.
+- **`hooks/`** — Domain logic hooks (useChores, useAuth, etc.); auth state lives in `useAuth.tsx` context, not Zustand.
+- **`components/`** — Organized by domain: `common/`, `layout/`, `chores/`, `users/`, `notifications/`, `recurring-chores/`, `pocket-money/`
+- **`pages/`** — One file per route, lazy-loaded via `React.lazy()`
+- **`App.tsx`** — Route definitions; parent-only routes wrapped in `ProtectedRoute`
+
+**Runtime config**: The frontend Dockerfile builds with a placeholder API URL. At container start, `docker-entrypoint.sh` generates `/usr/share/nginx/html/config.js` which sets `window.APP_CONFIG.apiUrl` from the `VITE_API_URL` env var. If `VITE_API_URL` is empty (default), the frontend uses relative URLs and nginx proxies `/api/*` to the backend. The backend port is **hardcoded to 3010 in `frontend/nginx.conf`** — the `BACKEND_PORT` env var is ignored by nginx. Config changes only need a container restart, not a rebuild.
+
+### Auth Flow
+1. `POST /api/auth/login` → sets session cookie
+2. `GET /api/csrf-token` → frontend stores CSRF token
+3. All mutating requests include `X-CSRF-Token` header (injected by Axios interceptor in `client.ts`)
+4. `middleware/auth.ts` → `authenticate` validates session; `authorize(...roles)` gates routes
+
+### Testing Patterns
+- **Backend unit tests**: Mock Prisma via `src/__tests__/__mocks__/`; import `{ prismaMock }` from test-helpers
+- **Backend integration tests**: Use a real test database; run serially (`--runInBand`); global setup/teardown in `jest.integration.config.js`
+- **Frontend tests**: `src/test/utils.tsx` provides mock data factories and a `renderWithRouter` helper; API calls mocked via `vi.mock()`
+
+### Key Domain Concepts
+- **ChoreTemplate** — Reusable chore definition; **ChoreAssignment** — one-off instance assigned to a user
+- **RecurringChore** — Defines recurrence rule with JSON `recurrenceRule` field; **ChoreOccurrence** — instances pre-generated daily by background job
+- **RecurringChore assignment modes**: `FIXED` (same person), `ROUND_ROBIN` (rotation via `roundRobinIndex`), `MIXED`
+- **Chore statuses**: `PENDING`, `COMPLETED`, `PARTIALLY_COMPLETE` (a distinct state, not just progress)
+- **PointTransaction types**: `EARNED`, `BONUS`, `DEDUCTION`, `PENALTY`, `PAYOUT`, `ADVANCE`, `ADJUSTMENT`
+- **Pocket money is stored in cents** (integer), not floats — `pointValueInCents` converts points to currency
+- **OverduePenalty** — Auto point deduction for overdue chores; uses `penaltyApplied` flag to prevent double-penalizing
+
+### Non-Obvious Conventions
+- **Frontend API parameter mapping**: frontend uses `userId`/`templateId` internally, but backend expects `assignedToId`/`choreTemplateId` — mapping happens in the `api/` layer
+- **Children accessing parent-only routes** are silently redirected to dashboard (no error page)
+- **401 responses** trigger auto-logout via a `auth:unauthorized` custom DOM event (see `client.ts`)
+- **Integration test DB** lives at `test-db/integration-test.db` — created/destroyed per test run by global setup/teardown
+- **E2E tests** use `.spec.ts` suffix; unit/integration tests use `.test.ts`
+
+### Notable Environment Variables
+| Variable | Purpose |
+|---|---|
+| `APP_VERSION` | **Required** — must match `backend/package.json` version; set via `./docker-compose.sh` or export before running `docker compose` |
+| `SESSION_SECRET` | **No default** — must be explicitly set in `.env` |
+| `DATA_DIR` | Host path for persistent data (default: `/opt/app-data/chore-ganizer`) |
+| `PUID` / `PGID` | Host UID/GID for bind mount file ownership (default: `1001`) |
+| `OVERDUE_PENALTY_*` | Enable/configure automatic overdue point deductions |
+| `SLOW_REQUEST_THRESHOLD_MS` | Log requests slower than this threshold |
+| `COMPRESSION_ENABLED` | Toggle gzip/brotli response compression |
+| `ERROR_WEBHOOK_*` | ntfy.sh webhook URL for 500-error alerts |
+| `SMTP_*` / `NTFY_*` | Email and push notification config |
+
+### Health & Observability
+- `/api/health` — Full health check (DB, memory, disk)
+- `/api/health/live` — Liveness probe
+- `/api/health/ready` — Readiness probe (DB connectivity)
+- `/api/metrics` — Prometheus metrics endpoint
