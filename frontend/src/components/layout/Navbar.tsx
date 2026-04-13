@@ -83,7 +83,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuOpen }) => {
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => navigate('/profile')}
             >
-              <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                style={{ backgroundColor: user?.color || '#3B82F6' }}
+              >
                 {user?.name.charAt(0).toUpperCase()}
               </div>
               <span className="hidden sm:block text-sm font-medium text-sidebar-foreground hover:text-sidebar-active">

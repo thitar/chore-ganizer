@@ -19,6 +19,22 @@ export const getAllUsers = async (_req: Request, res: Response) => {
 }
 
 /**
+ * PATCH /api/users/me
+ * Update current user's own profile (color, name)
+ */
+export const updateMyProfile = async (req: Request, res: Response) => {
+  const userId = req.user!.id
+  const { name, color } = req.body
+
+  const user = await usersService.updateUser(userId, { name, color })
+
+  res.json({
+    success: true,
+    data: { user },
+  })
+}
+
+/**
  * POST /api/users
  * Create a new user
  */

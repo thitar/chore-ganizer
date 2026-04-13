@@ -56,6 +56,18 @@ router.get(
 )
 
 /**
+ * @route   PATCH /api/users/me
+ * @desc    Update current user's profile (color, name)
+ * @access  Private (All authenticated users)
+ */
+router.patch(
+  '/me',
+  authenticate,
+  validate(updateUserSchema),
+  asyncHandler(usersController.updateMyProfile)
+)
+
+/**
  * @route   PUT /api/users/:id
  * @desc    Update user
  * @access  Private (Parents only)
