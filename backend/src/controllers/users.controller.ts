@@ -19,6 +19,22 @@ export const getAllUsers = async (_req: Request, res: Response) => {
 }
 
 /**
+ * PATCH /api/users/me
+ * Update current user's own profile (color, name)
+ */
+export const updateMyProfile = async (req: Request, res: Response) => {
+  const userId = req.user!.id
+  const { name, color } = req.body
+
+  const user = await usersService.updateUser(userId, { name, color })
+
+  res.json({
+    success: true,
+    data: { user },
+  })
+}
+
+/**
  * POST /api/users
  * Create a new user
  */
@@ -120,6 +136,17 @@ export const updateUser = async (req: Request, res: Response) => {
     throw new AppError('Invalid user ID', 400, 'VALIDATION_ERROR')
   }
 
+  // Prevent demoting the last parent
+  if (role === 'CHILD') {
+    const targetUser = await usersService.getUserById(userId)
+    if (targetUser.role === 'PARENT') {
+      const parentCount = await usersService.getParentCount()
+      if (parentCount <= 1) {
+        throw new AppError('Cannot demote the last parent account', 400, 'VALIDATION_ERROR')
+      }
+    }
+  }
+
   const user = await usersService.updateUser(userId, { name, role, color, email, basePocketMoney })
 
   // Log user update
@@ -154,6 +181,15 @@ export const deleteUser = async (req: Request, res: Response) => {
   // Check if trying to delete self
   if (userId === req.user!.id) {
     throw new AppError('You cannot delete your own account', 400, 'VALIDATION_ERROR')
+  }
+
+  // Check if deleting the last parent
+  const targetUser = await usersService.getUserById(userId)
+  if (targetUser.role === 'PARENT') {
+    const parentCount = await usersService.getParentCount()
+    if (parentCount <= 1) {
+      throw new AppError('Cannot delete the last parent account', 400, 'VALIDATION_ERROR')
+    }
   }
 
   // Check if user has active assignments

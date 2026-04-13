@@ -45,6 +45,10 @@ export function RecurringChoresPage() {
   const [deletingChore, setDeletingChore] = useState<RecurringChore | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  // Skip confirmation state
+  const [skippingOccurrence, setSkippingOccurrence] = useState<ChoreOccurrence | null>(null)
+  const [skipReason, setSkipReason] = useState('')
+
   // Get family children (users with CHILD role)
   const familyChildren = users.filter((u) => u.role === 'CHILD')
 
@@ -118,15 +122,24 @@ export function RecurringChoresPage() {
     }
   }
 
-  // Handle skipping an occurrence
-  const handleSkipOccurrence = async (occurrence: ChoreOccurrence) => {
-    if (!user) return
+  // Handle skipping an occurrence — opens confirmation dialog
+  const handleSkipOccurrence = (occurrence: ChoreOccurrence) => {
+    setSkipReason('')
+    setSkippingOccurrence(occurrence)
+  }
+
+  // Confirm skip with optional reason
+  const handleSkipConfirm = async () => {
+    if (!user || !skippingOccurrence) return
 
     try {
-      setProcessingId(occurrence.id)
-      await recurringChoresApi.skipOccurrence(occurrence.id, {
+      setProcessingId(skippingOccurrence.id)
+      await recurringChoresApi.skipOccurrence(skippingOccurrence.id, {
         skippedById: user.id,
+        reason: skipReason.trim() || undefined,
       })
+      setSkippingOccurrence(null)
+      setSkipReason('')
       await fetchOccurrences()
     } catch (error) {
       console.error('Failed to skip occurrence:', error)
@@ -312,6 +325,48 @@ export function RecurringChoresPage() {
         templates={templates}
         isSubmitting={isSubmitting}
       />
+
+      {/* Skip Confirmation Modal */}
+      {skippingOccurrence && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Skip Occurrence</h3>
+            <p className="text-gray-600 mb-4">
+              Skip "{skippingOccurrence.recurringChore?.title}"?
+            </p>
+            <div className="mb-4">
+              <label htmlFor="skipReason" className="block text-sm font-medium text-gray-700 mb-1">
+                Reason <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input
+                id="skipReason"
+                type="text"
+                value={skipReason}
+                onChange={(e) => setSkipReason(e.target.value)}
+                placeholder="e.g. Away on holiday"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => setSkippingOccurrence(null)}
+                disabled={processingId !== null}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleSkipConfirm}
+                disabled={processingId !== null}
+              >
+                {processingId !== null ? 'Skipping...' : 'Skip'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {deletingChore && (

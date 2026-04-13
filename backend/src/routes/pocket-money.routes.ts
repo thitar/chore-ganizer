@@ -75,6 +75,18 @@ router.post(
 )
 
 /**
+ * @route   POST /api/pocket-money/advance
+ * @desc    Grant an advance (negative balance) to a user
+ * @access  Private (Parents only)
+ */
+router.post(
+  '/advance',
+  authenticate,
+  requireParent,
+  asyncHandler(pocketMoneyController.addAdvance)
+)
+
+/**
  * @route   GET /api/pocket-money/payouts/:userId
  * @desc    Get payout history for a user
  * @access  Private (User or Parent)

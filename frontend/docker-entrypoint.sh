@@ -6,7 +6,14 @@ set -e
 
 echo "Generating runtime configuration..."
 
-# Create config.js with environment variables
+# Read baked version from image, fall back to env var
+BAKED_VERSION=""
+if [ -f /usr/share/nginx/html/.image-version ]; then
+  BAKED_VERSION=$(cat /usr/share/nginx/html/.image-version | tr -d '[:space:]')
+fi
+VERSION="${VITE_APP_VERSION:-$BAKED_VERSION}"
+
+BUILD_DATE=$(date +%Y-%m-%d)
 cat > /usr/share/nginx/html/config.js << EOF
 // Runtime configuration generated at container startup
 // This file is regenerated each time the container starts
@@ -16,20 +23,34 @@ window.APP_CONFIG = {
   // Debug mode - enable console logging
   debug: ${VITE_DEBUG:-false},
   // Application version
-  appVersion: '${VITE_APP_VERSION:-1.5.0}'
+  appVersion: '${VERSION}',
+  // Build date (container startup date)
+  buildDate: '${BUILD_DATE}'
 };
 EOF
 
 echo "Configuration generated:"
 echo "  - API URL: ${VITE_API_URL:-'(empty - using nginx proxy)'}"
 echo "  - Debug: ${VITE_DEBUG:-false}"
-echo "  - Version: ${VITE_APP_VERSION:-1.2.3}"
+echo "  - Version: ${VERSION}"
+echo "  - Build Date: ${BUILD_DATE}"
 
-# Configure nginx backend port based on environment (default: 3011 for staging, 3010 for production)
-BACKEND_PORT=${BACKEND_PORT:-3011}
-sed -i "s|backend:3010|backend:${BACKEND_PORT}|g" /etc/nginx/conf.d/default.conf 2>/dev/null || true
-sed -i "s|Host \"backend:3010\"|Host \"backend:${BACKEND_PORT}\"|g" /etc/nginx/conf.d/default.conf 2>/dev/null || true
-echo "Nginx configured to proxy to backend:${BACKEND_PORT}"
+# Substitute BACKEND_PORT in nginx configuration template
+# Default to 3010 if not set
+export BACKEND_PORT="${BACKEND_PORT:-3010}"
+
+TEMPLATE="/etc/nginx/conf.d/default.conf.template"
+OUTPUT="/etc/nginx/conf.d/default.conf"
+
+if [ -f "$TEMPLATE" ]; then
+  echo "Applying nginx configuration template (BACKEND_PORT=$BACKEND_PORT)..."
+  # Only substitute $BACKEND_PORT - all other $variables are nginx-native ($host, $remote_addr, etc.)
+  envsubst '${BACKEND_PORT}' < "$TEMPLATE" > "$OUTPUT"
+  echo "  - Backend port: $BACKEND_PORT"
+else
+  echo "ERROR: nginx template not found at $TEMPLATE"
+  exit 1
+fi
 
 # Start nginx
 exec nginx -g 'daemon off;'

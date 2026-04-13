@@ -11,10 +11,57 @@ set -e
 if [ "$(id -u)" = "0" ]; then
     # We're running as root - run migrations first
     
+    # Adjust appuser UID/GID if PUID/PGID are set
+    DATA_DIR=${DATA_DIR:-/opt/app-data/chore-ganizer}
+    CURRENT_UID=$(id -u appuser 2>/dev/null || echo "1001")
+    CURRENT_GID=$(id -g appuser 2>/dev/null || echo "1001")
+    TARGET_UID=${PUID:-$CURRENT_UID}
+    TARGET_GID=${PGID:-$CURRENT_GID}
+    
+    if [ "$TARGET_UID" != "$CURRENT_UID" ] || [ "$TARGET_GID" != "$CURRENT_GID" ]; then
+        echo "Adjusting appuser UID from $CURRENT_UID to $TARGET_UID and GID from $CURRENT_GID to $TARGET_GID..."
+        
+        # If the target GID is already taken by another group, remove it first.
+        # Must delete the user before the group — can't delete a group that's still
+        # a user's primary group (e.g., 'node' user owns 'node' group in node:* images).
+        EXISTING_GROUP=$(getent group "$TARGET_GID" | cut -d: -f1)
+        if [ -n "$EXISTING_GROUP" ] && [ "$EXISTING_GROUP" != "appuser" ]; then
+            echo "Removing existing group '$EXISTING_GROUP' (GID $TARGET_GID) to free up the GID..."
+            EXISTING_USER=$(getent passwd | awk -F: "\$4 == $TARGET_GID {print \$1}")
+            if [ -n "$EXISTING_USER" ] && [ "$EXISTING_USER" != "appuser" ]; then
+                echo "Removing user '$EXISTING_USER' (owns group '$EXISTING_GROUP')..."
+                userdel "$EXISTING_USER" 2>/dev/null || true
+            fi
+            groupdel "$EXISTING_GROUP" 2>/dev/null || true
+        fi
+        
+        if ! groupmod -g "$TARGET_GID" appuser; then
+            echo "ERROR: Failed to change appuser GID from $CURRENT_GID to $TARGET_GID" >&2
+            exit 1
+        fi
+        if ! usermod -u "$TARGET_UID" -g "$TARGET_GID" appuser; then
+            echo "ERROR: Failed to change appuser UID from $CURRENT_UID to $TARGET_UID" >&2
+            exit 1
+        fi
+    fi
+    
+    # Ensure data directory exists and has correct ownership (always, regardless of UID/GID change)
+    mkdir -p "$DATA_DIR"
+    if ! chown -R appuser:appuser /app /backup-scripts "$DATA_DIR"; then
+        echo "ERROR: Failed to set ownership on app directories" >&2
+        exit 1
+    fi
+    
     # Create log directory for backup logs
     # Note: Logs are now redirected to stdout/stderr in supercronic.conf
     # for Docker's log management
     # mkdir -p /var/log
+    
+    # Validate required environment
+    if [ -z "$SESSION_SECRET" ]; then
+        echo "ERROR: SESSION_SECRET is not set" >&2
+        exit 1
+    fi
     
     # Run Prisma migrations
     # Use db push instead of migrate deploy for reliable schema creation
@@ -24,11 +71,12 @@ if [ "$(id -u)" = "0" ]; then
 
     # Run seed if database is empty
     echo "Checking if database needs seeding..."
-    DB_PATH=${DATABASE_URL:-file:/app/data/chore-ganizer.db}
+    DB_PATH=${DATABASE_URL:-file:/opt/app-data/chore-ganizer/chore-ganizer.db}
     
     # Parse database file path from DATABASE_URL (supports file: and sqlite: prefixes)
     # Handle various formats: file:/path, file:///path, sqlite:/path, sqlite://path
-    DB_FILE=$(echo "$DB_PATH" | sed -E 's#^(file|sqlite):/{1,3}(.*)#\2#')
+    # The regex removes the protocol and normalizes slashes to a single leading /
+    DB_FILE=$(echo "$DB_PATH" | sed -E 's#^(file|sqlite):/*#/#')
     
     # Validate database path was parsed correctly
     if [ -z "$DB_FILE" ]; then
@@ -36,40 +84,24 @@ if [ "$(id -u)" = "0" ]; then
         exit 1
     fi
     
+    # Ensure database path is absolute
+    case "$DB_FILE" in
+        /*) ;;
+        *)
+            echo "ERROR: Database path must be absolute: $DB_FILE"
+            exit 1
+            ;;
+    esac
+    
     # Validate path doesn't contain suspicious characters
     if echo "$DB_FILE" | grep -qE '[][$\`"\\|;&><[:space:]]'; then
         echo "ERROR: Database path contains invalid characters: $DB_FILE"
         exit 1
     fi
     
-    # Check if database file exists (handle both absolute paths and file: URLs)
-    # After db push, the file will be at /app/data/chore-ganizer.db or the staging variant
-    # Use NODE_ENV to determine which database to prefer
+    # Check if database file exists
     if [ ! -f "$DB_FILE" ]; then
-        # Check environment to determine database preference
-        if [ "$NODE_ENV" = "staging" ]; then
-            # Staging environment - prefer staging database
-            if [ -f "/app/data/chore-ganizer-staging.db" ]; then
-                DB_FILE="/app/data/chore-ganizer-staging.db"
-                echo "Database found at /app/data/chore-ganizer-staging.db (staging mode)"
-            elif [ -f "/app/data/chore-ganizer.db" ]; then
-                DB_FILE="/app/data/chore-ganizer.db"
-                echo "Database found at /app/data/chore-ganizer.db (staging fallback)"
-            else
-                echo "WARNING: Database file not found at $DB_FILE or /app/data/chore-ganizer*.db"
-            fi
-        else
-            # Production/other environment - prefer production database
-            if [ -f "/app/data/chore-ganizer.db" ]; then
-                DB_FILE="/app/data/chore-ganizer.db"
-                echo "Database found at /app/data/chore-ganizer.db"
-            elif [ -f "/app/data/chore-ganizer-staging.db" ]; then
-                DB_FILE="/app/data/chore-ganizer-staging.db"
-                echo "Database found at /app/data/chore-ganizer-staging.db (production fallback)"
-            else
-                echo "WARNING: Database file not found at $DB_FILE or /app/data/chore-ganizer*.db"
-            fi
-        fi
+        echo "WARNING: Database file not found at $DB_FILE"
     fi
     
     # Check if we need to seed - only if the database exists and is empty
@@ -80,12 +112,16 @@ if [ "$(id -u)" = "0" ]; then
           # Try to run seed, but don't fail if not configured - just create default users
           npx prisma db seed 2>/dev/null || {
             echo "Seed not configured, creating default users manually..."
+            # Create default family first
+            sqlite3 "$DB_FILE" "INSERT OR IGNORE INTO Family (id, name, createdAt, updatedAt) VALUES ('default-family', 'The Family', datetime('now'), datetime('now'));"
             # Create default users matching the seed file: dad, mom, alice, bob
             # bcrypt hash of 'password123'
-            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points) VALUES ('dad@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Dad', 'PARENT', 0);"
-            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points) VALUES ('mom@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Mom', 'PARENT', 0);"
-            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points) VALUES ('alice@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Alice', 'CHILD', 0);"
-            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points) VALUES ('bob@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Bob', 'CHILD', 0);"
+            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points, familyId) VALUES ('dad@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Dad', 'PARENT', 0, 'default-family');"
+            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points, familyId) VALUES ('mom@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Mom', 'PARENT', 0, 'default-family');"
+            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points, familyId) VALUES ('alice@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Alice', 'CHILD', 0, 'default-family');"
+            sqlite3 "$DB_FILE" "INSERT INTO User (email, password, name, role, points, familyId) VALUES ('bob@home.local', '\$2b\$10\$bkyJ7xor27r27AuHxE3HPOAxxnPiFXyJ7/bfywomtsK.s7vN8UkP2', 'Bob', 'CHILD', 0, 'default-family');"
+            # Create pocket money config
+            sqlite3 "$DB_FILE" "INSERT OR IGNORE INTO PocketMoneyConfig (familyId, pointValue, currency, payoutPeriod, payoutDay, allowAdvance, maxAdvancePoints, createdAt, updatedAt) VALUES ('default-family', 10, 'EUR', 'MONTHLY', 15, 1, 50, datetime('now'), datetime('now'));"
           }
         else
           echo "Database already seeded ($USER_COUNT users found)"
@@ -101,9 +137,16 @@ if [ "$(id -u)" = "0" ]; then
         chmod 664 "$DB_FILE"
     fi
     
-    # Also fix permissions on the data directory
-    chown appuser:appuser /app/data
-    chmod 775 /app/data
+    # Also fix permissions on the database directory
+    DB_DIR=$(dirname "$DB_FILE")
+    if ! chown appuser:appuser "$DB_DIR" 2>/dev/null; then
+        echo "ERROR: Failed to set ownership on database directory $DB_DIR" >&2
+        exit 1
+    fi
+    if ! chmod 775 "$DB_DIR" 2>/dev/null; then
+        echo "ERROR: Failed to set permissions on database directory $DB_DIR" >&2
+        exit 1
+    fi
     
     # Ensure backup directory exists and has correct permissions for appuser
     # This handles the case where /backups is mounted from host with different ownership
@@ -140,7 +183,7 @@ fi
 
 # Start supercronic in the background for cron jobs (optional for testing)
 # Use setsid to create a new process group for proper cleanup
-if command -v supercronic &> /dev/null && [ -f /app/supercronic.conf ]; then
+if command -v supercronic > /dev/null 2>&1 && [ -f /app/supercronic.conf ]; then
     echo "Starting supercronic for scheduled backup jobs..."
     setsid supercronic /app/supercronic.conf &
     SUPERCRONIC_PID=$!

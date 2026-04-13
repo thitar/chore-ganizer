@@ -1,5 +1,6 @@
 # Nginx configuration for Chore-Ganizer frontend
 # Handles SPA routing and API proxy
+# NOTE: $BACKEND_PORT is substituted at container startup via envsubst
 
 server {
     listen 80;
@@ -29,9 +30,13 @@ server {
     }
 
     # Proxy API requests to backend
-    # Note: The port (3010) gets replaced at runtime via BACKEND_PORT env var in docker-entrypoint.sh
     location /api {
-        proxy_pass http://backend:3010/api;
+        # Use variable + resolver so DNS lookup happens at request time, not startup.
+        # This prevents "host not found in upstream 'backend'" when backend starts slower than frontend.
+        resolver 127.0.0.11 valid=10s ipv6=off;
+        set $upstream_backend http://backend:$BACKEND_PORT;
+        proxy_pass $upstream_backend;
+        
         proxy_http_version 1.1;
         
         # Pass original Host header to preserve origin information
@@ -39,6 +44,7 @@ server {
         
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
         # CRITICAL: Preserve X-Forwarded-Proto from upstream proxy (Caddy/Traefik).
         # Do NOT change to $scheme - this breaks TLS detection behind reverse proxies.
         # The upstream proxy (e.g., Caddy) sets X-Forwarded-Proto to https when handling TLS.

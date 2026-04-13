@@ -1,9 +1,10 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth, AuthProvider } from './hooks'
 import { ErrorBoundary, Loading } from './components/common'
 import OfflineIndicator from './components/common/OfflineIndicator'
 import { Navbar, Sidebar, Footer } from './components/layout'
+import { Toaster } from 'sonner'
 
 // Lazy load pages for code splitting
 const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })))
@@ -17,6 +18,7 @@ const Calendar = lazy(() => import('./pages/Calendar').then(m => ({ default: m.C
 const RecurringChoresPage = lazy(() => import('./pages/RecurringChoresPage').then(m => ({ default: m.RecurringChoresPage })))
 const PocketMoney = lazy(() => import('./pages/PocketMoney').then(m => ({ default: m.PocketMoney })))
 const StatisticsPage = lazy(() => import('./pages/StatisticsPage').then(m => ({ default: m.StatisticsPage })))
+const Notifications = lazy(() => import('./pages/Notifications').then(m => ({ default: m.Notifications })))
 const NotFound = lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })))
 
 // Loading fallback for lazy-loaded components
@@ -39,6 +41,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 function AppContent() {
   const { isAuthenticated, loading } = useAuth()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   if (loading) {
     return (
@@ -61,11 +64,11 @@ function AppContent() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen flex flex-col bg-gray-50">
+      <div className="min-h-screen flex flex-col bg-gray-100">
         <OfflineIndicator />
-        <Navbar />
+        <Navbar onMenuOpen={() => setSidebarOpen(true)} />
         <div className="flex flex-1">
-          <Sidebar />
+          <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
           <main className="flex-1 p-6 overflow-y-auto">
             <div className="max-w-7xl mx-auto">
               <Routes>
@@ -111,14 +114,15 @@ function AppContent() {
                   </ProtectedRoute>
                 } />
                 <Route path="/pocket-money" element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}><PocketMoney /></Suspense>
-                  </ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}><PocketMoney /></Suspense>
                 } />
                 <Route path="/statistics" element={
                   <ProtectedRoute>
                     <Suspense fallback={<PageLoader />}><StatisticsPage /></Suspense>
                   </ProtectedRoute>
+                } />
+                <Route path="/notifications" element={
+                  <Suspense fallback={<PageLoader />}><Notifications /></Suspense>
                 } />
                 <Route path="*" element={
                   <Suspense fallback={<PageLoader />}><NotFound /></Suspense>
@@ -148,9 +152,23 @@ function AppContentWithKey() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContentWithKey />
-    </AuthProvider>
+    <>
+      <Toaster
+        position="top-right"
+        closeButton
+        toastOptions={{
+          classNames: {
+            success: 'bg-green-50 border border-green-200 text-green-800',
+            error: 'bg-red-50 border border-red-200 text-red-800',
+            warning: 'bg-yellow-50 border border-yellow-200 text-yellow-800',
+            info: 'bg-blue-50 border border-blue-200 text-blue-800',
+          },
+        }}
+      />
+      <AuthProvider>
+        <AppContentWithKey />
+      </AuthProvider>
+    </>
   )
 }
 

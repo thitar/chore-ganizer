@@ -200,6 +200,17 @@ export const userHasActiveAssignments = async (userId: number): Promise<boolean>
 }
 
 /**
+ * Get count of parent users
+ */
+export const getParentCount = async (): Promise<number> => {
+  const count = await prisma.user.count({
+    where: { role: 'PARENT' },
+  })
+
+  return count
+}
+
+/**
  * Update user
  */
 export const updateUser = async (userId: number, data: { name?: string; role?: string; color?: string; email?: string; basePocketMoney?: number }) => {

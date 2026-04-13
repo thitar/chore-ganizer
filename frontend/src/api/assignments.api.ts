@@ -39,17 +39,19 @@ export const assignmentsApi = {
     return response.data?.assignments || []
   },
 
-  getCalendar: async (year?: number, month?: number): Promise<{
+  getCalendar: async (year?: number, month?: number, userId?: number): Promise<{
     year: number
     month: number
     assignments: ChoreAssignment[]
     days: Record<number, ChoreAssignment[]>
   }> => {
+    const params: any = { year, month }
+    if (userId) params.userId = userId
     const response = await client.get<{
       year: number
       month: number
       assignments: ChoreAssignment[]
-    }>('/chore-assignments/calendar', { params: { year, month } })
+    }>('/chore-assignments/calendar', { params })
     const result = response.data || { assignments: [], year: year || new Date().getFullYear(), month: month || new Date().getMonth() + 1 }
     
     // Group assignments by day

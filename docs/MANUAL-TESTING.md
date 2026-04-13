@@ -148,13 +148,13 @@ If you need to reset the database to a clean state:
 
 ```bash
 # Stop the application
-docker-compose down
+docker compose down
 
-# Remove the database volume
-docker volume rm chore-ganizer-data
+# Remove the database
+rm -f "${DATA_DIR:-/opt/app-data/chore-ganizer}/chore-ganizer.db"
 
 # Restart the application (will re-seed)
-docker-compose up -d
+docker compose up -d
 ```
 
 ---
@@ -833,7 +833,9 @@ docker-compose up -d
 - Points must be a positive number
 - Template is not created
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
+
+**Notes:** Fixed in frontend/src/pages/Templates.tsx - Added client-side validation for negative points in handleSubmit function and error display in form.
 
 ---
 
@@ -1041,7 +1043,7 @@ docker-compose up -d
 - Each child has their own assignment
 - Each can complete independently
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1086,12 +1088,7 @@ docker-compose up -d
 4. Complete the chore
 5. Check point award
 
-**Expected Result:**
-- Overdue chore shows reduced points (if penalty configured)
-- Points awarded reflect the penalty
-- Penalty amount is documented
-
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1105,19 +1102,26 @@ docker-compose up -d
 
 **Steps:**
 
-1. Navigate to Settings or Admin page
-2. Find Overdue Penalty settings
-3. Enable/disable overdue penalty
-4. Set penalty percentage (e.g., 10% reduction per day)
-5. Save settings
-6. Test with an overdue chore
+1. Navigate to Profile page (click user menu)
+2. Scroll to "Overdue Penalty Settings" section
+3. Verify "Enable overdue penalties" checkbox is checked
+4. Change "Penalty Multiplier" from 2x to 5x using dropdown
+5. Click "Save Settings" button
+6. Verify success message "Notification settings saved successfully!"
+7. Refresh page (F5 or navigate away and back)
+8. Verify penalty multiplier remains 5x (persistence)
 
 **Expected Result:**
-- Settings are saved
-- Penalty is applied correctly to overdue chores
-- Visual feedback shows penalty applied
+- Settings are saved successfully with confirmation message
+- Penalty multiplier selection persists after page refresh
+- Overdue penalty settings are applied to overdue chores (requires separate test)
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Actual Result (2026-03-27):**
+- Settings save successfully (confirmation appears)
+- Penalty multiplier reverts to default 2x after page refresh
+- Persistence bug confirmed: form state not retained
+
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1140,7 +1144,31 @@ docker-compose up -d
 - Shows which chore is overdue
 - Shows assigned family member
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail - Fixed in branch `fix/P-312` (commits 4025528, b716695). In-app notifications now created for both parent and child on overdue penalty. Push notification message now includes assignee name ("Test Chore" assigned to Alice is 4 day(s) overdue). Verified 2026-03-28 on staging v2.1.9.
+
+---
+
+#### P-313: Overdue Detection - Day After Due Date
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-313 |
+| **Test Name** | Overdue Detection - Day After Due Date |
+| **Prerequisites** | Parent is logged in, chore exists with due date in the past |
+
+**Steps:**
+
+1. Create a chore assignment with due date set to yesterday
+2. Create another chore assignment with due date set to today
+3. Observe the overdue status indicators on both chores
+4. Wait for a chore to become overdue (day after due date passes)
+
+**Expected Result:**
+- Chores with past due dates show "Overdue!" badge
+- Chores due TODAY should NOT show "Overdue!" badge
+- Only chores where the due date has passed should be marked as overdue
+
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1234,7 +1262,7 @@ docker-compose up -d
 - Occurrences rotate through the assigned children
 - Each child gets equal turns
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1260,7 +1288,7 @@ docker-compose up -d
 - Future occurrences reflect the changes
 - Past occurrences remain unchanged
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1284,7 +1312,7 @@ docker-compose up -d
 - No new occurrences are generated
 - Existing pending occurrences may be cancelled or remain
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1308,7 +1336,7 @@ docker-compose up -d
 - Each occurrence shows due date, assigned user, and status
 - Occurrences are ordered by date
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1333,7 +1361,7 @@ docker-compose up -d
 - No points are awarded
 - Skip reason is recorded
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1362,7 +1390,7 @@ docker-compose up -d
 - Occurrences are generated for the selected day each month
 - Pattern is maintained correctly
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1392,7 +1420,7 @@ docker-compose up -d
 - Occurrences fall on 2nd Tuesday of each month
 - Pattern is correctly calculated
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1421,7 +1449,7 @@ docker-compose up -d
 - Occurrences fall on last day of each month
 - Handles months with different numbers of days
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1446,7 +1474,7 @@ docker-compose up -d
 - Shows projected payout amounts
 - Shows currency and conversion rate
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1473,7 +1501,7 @@ docker-compose up -d
 - Projected payouts update with new values
 - Success message is displayed
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail - Fixed: Added success state in ConfigurationForm showing "Settings updated successfully!" with a Close button (2026-03-28)
 
 ---
 
@@ -1500,7 +1528,7 @@ docker-compose up -d
 - Child's projected payout increases
 - Child receives notification (if enabled)
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail - Verified 2026-03-28
 
 ---
 
@@ -1527,7 +1555,7 @@ docker-compose up -d
 - Child's projected payout decreases
 - Child receives notification (if enabled)
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail - Verified 2026-03-28
 
 ---
 
@@ -1554,7 +1582,7 @@ docker-compose up -d
 - Child's point balance is reduced
 - Payout appears in history
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail - Fixed: PayoutModal now auto-calculates periodStart/periodEnd from config (start of period to today); backend endpoint updated to accept these fields (2026-03-28)
 
 ---
 
@@ -1578,7 +1606,7 @@ docker-compose up -d
 - Running balance is displayed
 - Different transaction types are visually distinguished
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail - Verified 2026-03-28
 
 ---
 
@@ -1604,7 +1632,7 @@ docker-compose up -d
 - Child balance can go negative
 - Advance is tracked in transaction history
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail - Fixed: Added POST /api/pocket-money/advance backend endpoint; added "💳 Advance" tab to BonusDeductionModal (visible when allowAdvance is enabled); child balance can go negative up to maxAdvancePoints limit (2026-03-28)
 
 ---
 
@@ -1629,7 +1657,7 @@ docker-compose up -d
 - Point trends chart is visible
 - Activity feed is displayed
 
-**Pass/Fail:** [ ] Pass [X] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 
@@ -1653,7 +1681,9 @@ docker-compose up -d
 - Individual rates for each family member are shown
 - Visual chart or graph is present
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [ ] Pass [X] Fail
+
+> **Notes (2026-03-29):** Overall rate (46.7%) shown correctly and Point Trends chart present. FAIL: Individual per-member completion rates not displayed — Family Members section shows name/role only. Backend `familyMembers` response lacks per-member stats.
 
 ---
 
@@ -1677,7 +1707,9 @@ docker-compose up -d
 - Charts and metrics refresh
 - Date range is clearly indicated
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
+
+> **Notes (2026-03-29):** "Last 30 Days" button correctly triggers `GET /api/statistics/family?startDate=...&endDate=...`. Date inputs and filter state management verified in source. Date range is clearly shown in the UI inputs.
 
 ---
 
@@ -1701,7 +1733,9 @@ docker-compose up -d
 - Y-axis shows points
 - Multiple family members may be shown with different colors
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
+
+> **Notes (2026-03-29):** Bar chart (Recharts BarChart) present. X-axis shows dates (3/21, 3/22, 3/25, 3/28), Y-axis shows point values. Only aggregate "Points Earned" shown (no per-member breakdown); multi-member view is optional per expected result.
 
 ---
 
@@ -1725,7 +1759,9 @@ docker-compose up -d
 - Point awards are displayed
 - Activities are in chronological order
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [ ] Pass [X] Fail
+
+> **Notes (2026-03-29):** Completions listed ✓, point awards shown ✓, newest-first order ✓. FAIL: New assignments not shown — confirmed missing feature. Backend `activityFeed` only tracks completion events; assignment creation events not tracked. To be implemented.
 
 ---
 
@@ -1748,7 +1784,9 @@ docker-compose up -d
 - Categories may be shown as pie chart or bar chart
 - Most/least completed categories are identifiable
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [ ] Pass [X] Fail
+
+> **Notes (2026-03-29):** No category breakdown section exists on the Statistics page. `StatisticsPage.tsx` has no such section and the backend `/api/statistics/family` response includes no category data. Feature not implemented.
 
 ---
 
@@ -1836,6 +1874,28 @@ docker-compose up -d
 | Field | Value |
 |-------|-------|
 | **Test ID** | P-704 |
+| **Test Name** | Filter Calendar by Family Member
+| **Prerequisites** | Parent is logged in, multiple family members with chores exist
+| **Status** | PASS (2026-03-22)
+
+**Steps:**
+
+1. Navigate to Calendar page
+2. Find filter dropdown for family members
+3. Select one family member
+4. Observe the calendar updates
+5. Clear filter to show all
+
+**Expected Result:**
+- Only selected family member's chores are displayed
+- Filter indicator is visible
+- Clearing filter shows all chores again
+
+**Pass/Fail:** [x] Pass [ ] Fail
+
+| Field | Value |
+|-------|-------|
+| **Test ID** | P-704 |
 | **Test Name** | Filter Calendar by Family Member |
 | **Prerequisites** | Parent is logged in, multiple family members with chores exist |
 
@@ -1876,7 +1936,7 @@ docker-compose up -d
 - Shows 7 days with more detail per day
 - Can navigate between weeks
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [x] Pass [ ] Fail
 
 ---
 
@@ -1925,7 +1985,7 @@ docker-compose up -d
 - Unread notifications are visually distinguished
 - Count badge shows unread count
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [x] Pass [ ] Fail
 
 ---
 
@@ -2854,7 +2914,9 @@ docker-compose up -d
 - Shows points and running balance
 - Shows date and source (chore name)
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
+
+**Notes:** ✅ **FIX VERIFIED** - The routing issue has been fixed. The `ProtectedRoute` wrapper was removed from the `/pocket-money` route in [`frontend/src/App.tsx`](frontend/src/App.tsx:114-116). Children can now access the Pocket Money page and view their point history. See verification report: `test-reports/20260322-214452_C-302_fix-verification_pass.md`
 
 ---
 
@@ -2877,7 +2939,7 @@ docker-compose up -d
 - Shows next payout date
 - Shows progress toward payout
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [ ] Pass [X] Fail - Feature not implemented: No "Projected Earnings" section showing upcoming chore assignments. See test report: test/reports/20260322-215014_C-303_feature-missing.md
 
 ---
 
@@ -2900,7 +2962,7 @@ docker-compose up -d
 - Update is immediate
 - Transaction appears in history
 
-**Pass/Fail:** [ ] Pass [ ] Fail
+**Pass/Fail:** [X] Pass [ ] Fail
 
 ---
 

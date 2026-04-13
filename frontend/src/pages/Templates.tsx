@@ -62,6 +62,7 @@ const TemplateForm: React.FC<{
   const [categoryId, setCategoryId] = useState<number | undefined>(template?.categoryId || undefined)
   const [color, setColor] = useState(template?.color || '#4CAF50')
   const [icon, setIcon] = useState(template?.icon || '')
+  const [pointsError, setPointsError] = useState<string | null>(null)
 
   React.useEffect(() => {
     if (template) {
@@ -79,12 +80,21 @@ const TemplateForm: React.FC<{
       setColor('#4CAF50')
       setIcon('')
     }
+    setPointsError(null)
   }, [template, isOpen])
 
   if (!isOpen) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate points
+    if (points < 0) {
+      setPointsError('Points must be a positive number')
+      return
+    }
+    setPointsError(null)
+    
     await onSubmit({
       title,
       description: description || undefined,
@@ -128,11 +138,17 @@ const TemplateForm: React.FC<{
               <input
                 type="number"
                 value={points}
-                onChange={(e) => setPoints(Number(e.target.value))}
+                onChange={(e) => {
+                  setPoints(Number(e.target.value))
+                  setPointsError(null)
+                }}
                 min="0"
                 required
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
               />
+              {pointsError && (
+                <p className="mt-1 text-sm text-red-600">{pointsError}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Category</label>

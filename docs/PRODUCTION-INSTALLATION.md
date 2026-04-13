@@ -58,8 +58,6 @@ docker compose version
 
 ## ⚡ Quick Start (Docker)
 
-### Option 1: Using Pre-built Images (Recommended)
-
 This option downloads pre-built Docker images from the registry. No source code or build process required.
 
 ```bash
@@ -67,10 +65,8 @@ This option downloads pre-built Docker images from the registry. No source code 
 mkdir -p ~/chore-ganizer
 cd ~/chore-ganizer
 
-# Download docker-compose.prod.yml (for pre-built images)
-curl -O https://raw.githubusercontent.com/thitar/chore-ganizer/main/docker-compose.prod.yml
-
-# Download environment template
+# Download docker-compose.yml and .env.example
+curl -O https://raw.githubusercontent.com/thitar/chore-ganizer/main/docker-compose.yml
 curl -O https://raw.githubusercontent.com/thitar/chore-ganizer/main/.env.example
 mv .env.example .env
 
@@ -78,41 +74,15 @@ mv .env.example .env
 nano .env
 # At minimum, change SESSION_SECRET to a random 32+ character string
 
+# Create the data directory (must exist before starting)
+mkdir -p /opt/app-data/chore-ganizer backups
+
 # Pull and start the application
-docker compose -f docker-compose.prod.yml up -d
-
-# Check status
-docker compose -f docker-compose.prod.yml ps
-```
-
-### Option 2: Building from Source
-
-This option clones the repository and builds the Docker images locally. Use this if you want to customize the code or don't have access to the image registry.
-
-```bash
-# Clone the repository
-git clone https://github.com/thitar/chore-ganizer.git
-cd chore-ganizer
-
-# Copy environment template
-cp .env.example .env
-
-# Edit configuration
-nano .env
-
-# Build and start (uses docker-compose.yml which builds from source)
-docker compose up -d --build
+docker compose up -d
 
 # Check status
 docker compose ps
 ```
-
-### Docker Compose Files Explained
-
-| File | Purpose | Use Case |
-|------|---------|----------|
-| `docker-compose.yml` | Builds from source | Development, customization, offline builds |
-| `docker-compose.prod.yml` | Pre-built images | Production, quick deployment, no build required |
 
 ### Access the Application
 
@@ -154,8 +124,12 @@ NODE_ENV=production
 PORT=3010
 FRONTEND_PORT=3002
 
-# Database (SQLite, stored in volume)
-DATABASE_URL=file:/app/data/chore-ganizer.db
+# Data directory (host path for bind mount)
+DATA_DIR=/opt/app-data/chore-ganizer
+
+# Container user/group IDs (match your host user to avoid permission issues)
+PUID=1000
+PGID=1000
 
 # Logging level (error, warn, info, debug)
 LOG_LEVEL=info
@@ -199,30 +173,35 @@ OVERDUE_PENALTY_MULTIPLIER=2
 NOTIFY_PARENT_ON_OVERDUE=true
 ```
 
-### Step 2: Volume Configuration for Data Persistence
+### Step 2: Data Directory Configuration
 
-The default configuration uses Docker named volumes. For custom paths:
+The application uses a bind mount for persistent data. By default, data is stored at `/opt/app-data/chore-ganizer`. To use a custom path, set `DATA_DIR` in your `.env`:
 
-```yaml
-# In docker-compose.yml, modify the volumes section:
-volumes:
-  backend-data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /path/to/your/data
+```bash
+# Custom data directory
+DATA_DIR=/srv/chore-ganizer/data
 ```
 
-Or use bind mounts directly:
+The bind mount maps the host path to the same path inside the container. Ensure the directory exists and is accessible before starting:
 
-```yaml
-services:
-  backend:
-    volumes:
-      - /your/custom/path/data:/app/data
-      - /your/custom/path/backups:/backups
+```bash
+mkdir -p "${DATA_DIR:-/opt/app-data/chore-ganizer}"
 ```
+
+#### Volume Permissions
+
+When using bind mounts, files created by the container will be owned by your host user if you set `PUID` and `PGID` to match:
+
+```bash
+# Find your host UID and GID
+id -u && id -g
+
+# Set them in .env
+PUID=1000
+PGID=1000
+```
+
+The container adjusts the internal `appuser` UID/GID at startup to match your host user.
 
 ### Step 3: SSL/TLS Configuration (Reverse Proxy)
 
@@ -425,41 +404,20 @@ rsync -avz ~/chore-ganizer/backups/ user@backup-server:/backups/chore-ganizer/
 
 ## 🔄 Upgrading
 
-### Standard Upgrade (Pre-built Images)
-
-If using `docker-compose.prod.yml` with pre-built images:
+### Standard Upgrade
 
 ```bash
 # Navigate to application directory
 cd ~/chore-ganizer
 
 # Pull new Docker images
-docker compose -f docker-compose.prod.yml pull
+docker compose pull
 
 # Stop current containers
-docker compose -f docker-compose.prod.yml down
+docker compose down
 
 # Start with new images
-docker compose -f docker-compose.prod.yml up -d
-
-# Check logs
-docker compose -f docker-compose.prod.yml logs -f
-```
-
-### Standard Upgrade (Building from Source)
-
-If using `docker-compose.yml` and building from source:
-
-```bash
-# Navigate to application directory
-cd ~/chore-ganizer
-
-# Pull latest changes
-git pull origin main
-
-# Rebuild and restart
-docker compose down
-docker compose up -d --build
+docker compose up -d
 
 # Check logs
 docker compose logs -f
@@ -473,14 +431,10 @@ If the upgrade includes database schema changes:
 # Backup before upgrading
 docker compose exec backend /app/backup.sh
 
-# Upgrade (pre-built images)
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml down
-docker compose -f docker-compose.prod.yml up -d
-
-# OR Upgrade (building from source)
+# Upgrade
+docker compose pull
 docker compose down
-docker compose up -d --build
+docker compose up -d
 
 # Check migration logs
 docker compose logs backend | grep -i migration
@@ -493,15 +447,12 @@ If something goes wrong:
 ```bash
 # Stop containers
 docker compose down
-# OR if using prod file:
-# docker compose -f docker-compose.prod.yml down
 
 # Restore database from backup
-gunzip -c backups/chore-ganizer_YYYYMMDD_HHMMSS.db.gz > data/chore-ganizer.db
+gunzip -c backups/chore-ganizer_YYYYMMDD_HHMMSS.db.gz > "${DATA_DIR:-/opt/app-data/chore-ganizer}/chore-ganizer.db"
 
-# Start with previous version (adjust command based on your setup)
+# Start with previous version
 docker compose up -d
-# OR: docker compose -f docker-compose.prod.yml up -d
 ```
 
 ---
@@ -527,10 +478,10 @@ docker compose logs frontend
 
 ```bash
 # Check database file
-docker compose exec backend ls -la /app/data/
+docker compose exec backend ls -la "${DATA_DIR:-/opt/app-data/chore-ganizer}/"
 
 # Check database integrity
-docker compose exec backend sqlite3 /app/data/chore-ganizer.db "PRAGMA integrity_check;"
+docker compose exec backend sqlite3 "${DATA_DIR:-/opt/app-data/chore-ganizer}/chore-ganizer.db" "PRAGMA integrity_check;"
 
 # Re-run migrations
 docker compose exec backend npx prisma migrate deploy
@@ -608,11 +559,8 @@ docker compose restart
 # Stop containers
 docker compose down
 
-# Remove volumes
-docker volume rm chore-ganizer-data
-
-# Remove database file (if using bind mount)
-rm -f data/chore-ganizer.db
+# Remove data directory
+rm -rf "${DATA_DIR:-/opt/app-data/chore-ganizer}"/*
 
 # Start fresh
 docker compose up -d
@@ -643,87 +591,4 @@ docker compose up -d
 
 ---
 
-## 📝 Example docker-compose.yml for Production
-
-```yaml
-# Production docker-compose.yml
-# Save as docker-compose.prod.yml for production overrides
-
-services:
-  frontend:
-    image: chore-ganizer/frontend:latest
-    # Or build from source:
-    # build:
-    #   context: ./frontend
-    #   dockerfile: Dockerfile
-    restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT:-3002}:80"
-    environment:
-      - VITE_API_URL=${VITE_API_URL:-}
-      - VITE_DEBUG=${VITE_DEBUG:-false}
-      - VITE_APP_VERSION=${APP_VERSION:-1.8.0}
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - chore-ganizer-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    security_opt:
-      - no-new-privileges:true
-
-  backend:
-    image: chore-ganizer/backend:latest
-    # Or build from source:
-    # build:
-    #   context: ./backend
-    #   dockerfile: Dockerfile
-    restart: unless-stopped
-    ports:
-      - "${PORT:-3010}:3010"
-    environment:
-      - NODE_ENV=production
-      - PORT=3010
-      - APP_VERSION=${APP_VERSION:-1.8.0}
-      - DATABASE_URL=${DATABASE_URL:-file:/app/data/chore-ganizer.db}
-      - SESSION_SECRET=${SESSION_SECRET}
-      - CORS_ORIGIN=${CORS_ORIGIN}
-      - SECURE_COOKIES=${SECURE_COOKIES:-false}
-      - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - NTFY_DEFAULT_SERVER_URL=${NTFY_DEFAULT_SERVER_URL:-https://ntfy.sh}
-      - NTFY_DEFAULT_TOPIC=${NTFY_DEFAULT_TOPIC:-}
-      - OVERDUE_PENALTY_ENABLED=${OVERDUE_PENALTY_ENABLED:-true}
-      - OVERDUE_PENALTY_MULTIPLIER=${OVERDUE_PENALTY_MULTIPLIER:-2}
-    volumes:
-      - backend-data:/app/data
-    networks:
-      - chore-ganizer-network
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3010/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-    security_opt:
-      - no-new-privileges:true
-
-volumes:
-  backend-data:
-    driver: local
-    name: chore-ganizer-data
-
-networks:
-  chore-ganizer-network:
-    driver: bridge
-    name: chore-ganizer-network
-```
-
----
-
-*Last updated: 2026-02-23*
+*Last updated: 2026-04-01*

@@ -80,6 +80,7 @@ export interface CompleteOccurrenceRequest {
 
 export interface SkipOccurrenceRequest {
   skippedById: number
+  reason?: string
 }
 
 // Response types

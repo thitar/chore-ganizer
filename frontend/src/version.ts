@@ -17,11 +17,13 @@ declare global {
       apiUrl?: string;
       debug?: boolean;
       appVersion?: string;
+      buildDate?: string;
     };
   }
 }
 
 // Get version from runtime config (production) or build-time env (development)
-export const VERSION = window.APP_CONFIG?.appVersion || import.meta.env.VITE_APP_VERSION || '2.1.9';
-export const BUILD_DATE = '2026-03-11';
+export const VERSION = window.APP_CONFIG?.appVersion || import.meta.env.VITE_APP_VERSION || 'dev';
+// Get build date from runtime config (production) or use current date (development)
+export const BUILD_DATE = window.APP_CONFIG?.buildDate || new Date().toISOString().split('T')[0];
 export const FULL_VERSION = `${VERSION}+${BUILD_DATE.replace(/-/g, '')}`;

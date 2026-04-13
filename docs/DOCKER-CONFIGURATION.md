@@ -79,105 +79,65 @@ graph TB
 ### docker-compose.yml
 
 ```yaml
-version: '3.8'
-
 services:
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: chore-backend
+  frontend:
+    image: ghcr.io/thitar/chore-ganizer/chore-ganizer-frontend:${APP_VERSION:-latest}
+    container_name: chore-ganizer-frontend
     restart: unless-stopped
     ports:
-      - "3010:3000"
+      - "${FRONTEND_PORT:-3002}:80"
     environment:
-      - NODE_ENV=production
-      - DATABASE_URL=file:/app/data/chore-ganizer.db
-      - SESSION_SECRET=${SESSION_SECRET}
-      - PORT=3000
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-    volumes:
-      - ./data:/app/data
-      - ./data/backups:/app/data/backups
-      - ./data/uploads:/app/data/uploads
+      - VITE_API_URL=${VITE_API_URL:-}
+      - VITE_DEBUG=${VITE_DEBUG:-false}
+      - VITE_APP_VERSION=${APP_VERSION}
+    depends_on:
+      - backend
     networks:
-      - chore-network
+      - chore-ganizer-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 10s
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: chore-frontend
+  backend:
+    image: ghcr.io/thitar/chore-ganizer/chore-ganizer-backend:${APP_VERSION:-latest}
+    container_name: chore-ganizer-backend
     restart: unless-stopped
     ports:
-      - "3002:80"
+      - "${PORT:-3010}:3010"
     environment:
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:3010}
-    depends_on:
-      backend:
-        condition: service_healthy
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3010
+      - APP_VERSION=${APP_VERSION:-2.1.9}
+      - DATA_DIR=${DATA_DIR:-/opt/app-data/chore-ganizer}
+      - DATABASE_URL=file:${DATA_DIR:-/opt/app-data/chore-ganizer}/chore-ganizer.db
+      - PUID=${PUID:-1001}
+      - PGID=${PGID:-1001}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}
+      - SECURE_COOKIES=${SECURE_COOKIES:-false}
+      - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - BACKUP_DIR=/backups
+      - RETENTION_DAYS=7
+    volumes:
+      - ${DATA_DIR:-/opt/app-data/chore-ganizer}:${DATA_DIR:-/opt/app-data/chore-ganizer}
+      - ./backups:/backups
     networks:
-      - chore-network
+      - chore-ganizer-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3010/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
 networks:
-  chore-network:
+  chore-ganizer-network:
     driver: bridge
-
-volumes:
-  chore-data:
-    driver: local
-```
-
-### docker-compose.dev.yml (Optional)
-
-For development with hot-reload:
-
-```yaml
-version: '3.8'
-
-services:
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.dev
-    container_name: chore-backend-dev
-    restart: "no"
-    ports:
-      - "3010:3000"
-    environment:
-      - NODE_ENV=development
-      - DATABASE_URL=file:/app/dev.db
-      - SESSION_SECRET=dev-secret-not-secure
-      - PORT=3000
-      - CORS_ORIGIN=http://localhost:5173
-      - LOG_LEVEL=debug
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-      - ./backend/dev.db:/app/dev.db
-    command: npm run dev
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    container_name: chore-frontend-dev
-    restart: "no"
-    ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:3000
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: npm run dev
+    name: chore-ganizer-network
 ```
 
 ---
@@ -558,35 +518,48 @@ VITE_API_URL=http://localhost:3000
 
 ## 💾 Volumes and Data Persistence
 
-### Volume Types
+### Data Directory
 
-| Volume | Purpose | Persistence |
-|--------|---------|-------------|
-| `./data` | Database and uploads | Host mount (persistent) |
-| `./data/backups` | Database backups | Host mount (persistent) |
-| `./data/uploads` | User uploads | Host mount (persistent) |
+All persistent data is stored in a single directory controlled by `DATA_DIR` (default: `/opt/app-data/chore-ganizer`). This directory is bind-mounted from the host into the container at the same path.
+
+| Data | Location |
+|------|----------|
+| Database | `${DATA_DIR}/chore-ganizer.db` |
+| Session store | `${DATA_DIR}/sessions.db` |
 
 ### Directory Structure
 
 ```
-chore-ganizer/
-├── data/
-│   ├── chore-ganizer.db              # SQLite database
-│   ├── chore-ganizer.db-journal      # SQLite journal file
-│   ├── backups/               # Database backups
-│   │   └── chores_*.db.gz     # Compressed backups
-│   └── uploads/               # User uploaded files
+/opt/app-data/chore-ganizer/
+├── chore-ganizer.db              # SQLite database
+├── chore-ganizer.db-journal      # SQLite journal file
+└── sessions.db                   # Session store
 ```
 
 ### Volume Permissions
+
+When using bind mounts, the container creates files with its internal `appuser` (default UID/GID: 1001). On the host, this shows as a numeric UID unless a matching user exists.
+
+To have files owned by your host user, set `PUID` and `PGID` in your `.env`:
+
+```bash
+# Find your host UID and GID
+id -u && id -g
+
+# Set them in .env
+PUID=1000
+PGID=1000
+```
+
+The container adjusts the `appuser` UID/GID at startup to match. This ensures bind-mounted files appear with your host user's ownership.
 
 ```bash
 # Create directories with correct permissions
 mkdir -p data/backups data/uploads
 chmod 755 data data/backups data/uploads
 
-# For Docker containers running as user 1000
-chown -R 1000:1000 data
+# If not using PUID/PGID, set ownership to match container's default appuser (1001)
+chown -R 1001:1001 data
 ```
 
 ### Backup Volume Strategy
@@ -652,64 +625,34 @@ networks:
 
 ---
 
-## 🔄 Development vs Production
+## 🔄 Deployment Workflow
 
-### Comparison Table
-
-| Aspect | Development | Production |
-|--------|-------------|------------|
-| Docker Compose | `docker-compose.dev.yml` | `docker-compose.yml` |
-| Frontend Port | 5173 (Vite) | 3001 (Nginx) |
-| Backend Port | 3000 | 3000 |
-| Build | On-the-fly | Pre-built |
-| Hot Reload | Yes | No |
-| Source Mounting | Yes | No |
-| Database | `dev.db` | `chore-ganizer.db` |
-| Environment | `development` | `production` |
-| Logging | Debug | Info |
-
-### Development Workflow
+### Starting the Application
 
 ```bash
-# Start development environment
-docker-compose -f docker-compose.dev.yml up
-
-# Build and start
-docker-compose -f docker-compose.dev.yml up --build
+# Pull latest images and start
+docker compose pull
+docker compose up -d
 
 # View logs
-docker-compose -f docker-compose.dev.yml logs -f
+docker compose logs -f
 
 # Stop
-docker-compose -f docker-compose.dev.yml down
-```
-
-### Production Workflow
-
-```bash
-# Build and start production environment
-docker-compose up -d --build
-
-# View logs
-docker-compose logs -f
-
-# Stop
-docker-compose down
+docker compose down
 
 # Restart
-docker-compose restart
+docker compose restart
 ```
 
-### Switching Between Environments
+### Upgrading
 
 ```bash
-# From development to production
-docker-compose -f docker-compose.dev.yml down
-docker-compose up -d --build
+# Pull new images
+docker compose pull
 
-# From production to development
-docker-compose down
-docker-compose -f docker-compose.dev.yml up
+# Stop and restart with new images
+docker compose down
+docker compose up -d
 ```
 
 ---
@@ -768,39 +711,40 @@ docker image prune -a -f
 docker rmi chore-ganizer-backend:latest
 ```
 
-### Managing Volumes
+### Managing Data
 
 ```bash
-# List volumes
-docker volume ls
+# List data directory contents
+ls -la "${DATA_DIR:-/opt/app-data/chore-ganizer}/"
 
-# Remove unused volumes
-docker volume prune -f
+# Check database integrity
+sqlite3 "${DATA_DIR:-/opt/app-data/chore-ganizer}/chore-ganizer.db" "PRAGMA integrity_check;"
 
-# Inspect volume
-docker volume inspect chore-ganizer_chore-data
+# Backup database
+cp "${DATA_DIR:-/opt/app-data/chore-ganizer}/chore-ganizer.db" ./chore-ganizer.db.backup
 ```
 
 ### Troubleshooting
 
 ```bash
 # View container details
-docker inspect chore-backend
+docker inspect chore-ganizer-backend
 
 # View container resource usage
-docker stats chore-backend chore-frontend
+docker stats chore-ganizer-backend chore-ganizer-frontend
 
 # View container processes
-docker top chore-backend
+docker top chore-ganizer-backend
 
 # Access container shell
-docker-compose exec backend sh
+docker compose exec backend sh
+docker compose exec frontend sh
 
 # Copy files from container
-docker cp chore-backend:/app/data/chore-ganizer.db ./chore-ganizer.db.backup
+docker cp chore-ganizer-backend:/opt/app-data/chore-ganizer/chore-ganizer.db ./chore-ganizer.db.backup
 
 # Copy files to container
-docker cp ./local-file.txt chore-backend:/app/data/
+docker cp ./local-file.txt chore-ganizer-backend:/opt/app-data/chore-ganizer/
 ```
 
 ---
@@ -842,5 +786,5 @@ services:
 
 ---
 
-**Last Updated:** February 2026  
-**Version:** 2.0.0
+**Last Updated:** April 2026  
+**Version:** 2.1.9

@@ -58,6 +58,9 @@ RUN npx prisma generate
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
+# Bake version from package.json into the image
+RUN echo "APP_VERSION=$(node -p "require('./package.json').version")" > /app/.image-version
+
 # Copy entrypoint scripts and config
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 COPY cron-entrypoint.sh /app/cron-entrypoint.sh
@@ -69,7 +72,7 @@ RUN chmod +x /app/docker-entrypoint.sh
 RUN mkdir -p /backup-scripts
 
 # Create directory for SQLite database
-RUN mkdir -p /app/data
+RUN mkdir -p /opt/app-data/chore-ganizer
 
 # Set environment variables
 ENV NODE_ENV=production
@@ -86,7 +89,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 RUN groupadd -r appuser && useradd -r -g appuser -u 1001 appuser \
     && chown -R appuser:appuser /app \
     && chown -R appuser:appuser /backup-scripts \
-    && chown -R appuser:appuser /app/data
+    && chown -R appuser:appuser /opt/app-data/chore-ganizer
 
 # Switch to non-root user (must be after CMD for security)
 # Note: USER appuser removed - entrypoint runs as root first to run migrations,

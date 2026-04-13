@@ -4,7 +4,6 @@ import session from 'express-session'
 import dotenv from 'dotenv'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
-import SQLiteStore from 'connect-sqlite3'
 import crypto from 'crypto'
 import routes from './routes/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
@@ -35,10 +34,10 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:"],
       connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
       objectSrc: ["'none'"],
       frameSrc: ["'none'"],
     },
@@ -57,13 +56,14 @@ const generalLimiter = process.env.DISABLE_RATE_LIMIT === 'true'
   ? noOpMiddleware
   : rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 100, // limit each IP to 100 requests per window
+      max: 300, // limit each IP to 300 requests per window
       message: {
         success: false,
         error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' }
       },
       standardHeaders: true,
       legacyHeaders: false,
+      // Use default keyGenerator to handle IPv4/IPv6 correctly
     })
 
 // Apply general rate limiter to all API routes
@@ -110,16 +110,7 @@ const sameSitePolicy = (process.env.SAMESITE_POLICY || 'strict') as 'strict' | '
 const isProduction = process.env.NODE_ENV === 'production'
 const isSecureCookie = isProduction && process.env.SECURE_COOKIES !== 'false'
 
-// Create SQLite session store
-const SQLiteStoreFactory = SQLiteStore(session)
-const sessionStore = new SQLiteStoreFactory({
-  db: 'sessions.db',
-  dir: './data',
-  table: 'sessions',
-})
-
 app.use(session({
-  store: sessionStore,
   secret: sessionSecret,
   resave: false,
   saveUninitialized: false,  // Don't create empty sessions

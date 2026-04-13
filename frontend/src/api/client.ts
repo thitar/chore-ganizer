@@ -8,6 +8,7 @@ declare global {
       apiUrl?: string;
       debug?: boolean;
       appVersion?: string;
+      buildDate?: string;
     };
   }
 }

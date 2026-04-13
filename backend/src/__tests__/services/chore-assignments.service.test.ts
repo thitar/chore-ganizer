@@ -42,6 +42,9 @@ jest.mock('../../config/database', () => ({
         user: {
           update: jest.fn().mockResolvedValue({ ...mockUsers.child, points: 60 }),
         },
+        pointTransaction: {
+          create: jest.fn().mockResolvedValue({ id: 1 }),
+        },
       }
       return callback(mockTx)
     }),
@@ -153,6 +156,24 @@ describe('Chore Assignments Service', () => {
       const result = await assignmentsService.getAllAssignments()
 
       expect((result[0] as any).isOverdue).toBe(true)
+    })
+
+    it('should not mark a chore due today as overdue', async () => {
+      const startOfToday = new Date()
+      startOfToday.setUTCHours(0, 0, 0, 0)
+      const dueTodayAssignment = {
+        ...mockAssignments.pending,
+        dueDate: startOfToday,
+        status: 'PENDING',
+        choreTemplate: mockTemplates.dishes,
+        assignedTo: { id: 2, name: 'Test Child', color: '#10B981' },
+        assignedBy: { id: 1, name: 'Test Parent' },
+      }
+      ;(prisma.choreAssignment.findMany as jest.Mock).mockResolvedValue([dueTodayAssignment])
+
+      const result = await assignmentsService.getAllAssignments()
+
+      expect((result[0] as any).isOverdue).toBe(false)
     })
   })
 

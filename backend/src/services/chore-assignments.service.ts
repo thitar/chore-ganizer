@@ -1,5 +1,6 @@
 import prisma from '../config/database.js'
 import { AppError } from '../middleware/errorHandler.js'
+import { getFamilyPenaltySettings } from './overdue-penalty.service.js'
 
 export interface CreateAssignmentData {
   choreTemplateId: number
@@ -116,10 +117,11 @@ export const getAllAssignments = async (
   })
 
   // Add isOverdue computed field to each assignment
-  const now = new Date()
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
   const assignmentsWithOverdue = assignments.map((assignment) => ({
     ...assignment,
-    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < now,
+    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < startOfToday,
   }))
 
   return assignmentsWithOverdue as AssignmentWithDetails[]
@@ -203,11 +205,12 @@ export const createAssignment = async (
     },
   })
 
-  const now = new Date()
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
   // Add isOverdue computed field
   const assignmentWithOverdue = {
     ...assignment,
-    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < now,
+    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < startOfToday,
   }
 
   return assignmentWithOverdue as AssignmentWithDetails
@@ -288,11 +291,28 @@ export const completeAssignment = async (
     throw new AppError('You can only complete your own assignments', 403, 'FORBIDDEN')
   }
 
+  // Check if overdue penalty should be applied
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
+  const isOverdue = assignment.dueDate < startOfToday
+  let penaltySettings = null
+  let pointsToDeduct = 0
+  
+  if (isOverdue) {
+    // Get penalty settings from first parent's notification settings
+    penaltySettings = await getFamilyPenaltySettings()
+    
+    if (penaltySettings?.overduePenaltyEnabled) {
+      pointsToDeduct = Math.abs(assignment.choreTemplate.points * penaltySettings.overduePenaltyMultiplier)
+    }
+  }
+
   // Determine status and points
   const status = options?.status || 'COMPLETED'
   
   // Calculate points: use custom points if provided (parent), otherwise use template points
   // For PARTIALLY_COMPLETE, award half the points by default (unless custom points provided)
+  // If overdue with penalty enabled, deduct penalty from points
   let pointsToAward: number
   if (options?.customPoints !== undefined) {
     pointsToAward = options.customPoints
@@ -300,6 +320,11 @@ export const completeAssignment = async (
     pointsToAward = Math.floor(assignment.choreTemplate.points / 2)
   } else {
     pointsToAward = assignment.choreTemplate.points
+  }
+  
+  // Apply overdue penalty if applicable (floor at 0 to prevent negative points)
+  if (isOverdue && penaltySettings?.overduePenaltyEnabled && pointsToDeduct > 0) {
+    pointsToAward = Math.max(0, pointsToAward - pointsToDeduct)
   }
 
   // Use transaction to update assignment and award points
@@ -347,6 +372,32 @@ export const completeAssignment = async (
         },
       },
     })
+
+    // Create point transaction record
+    // Use DEDUCTION type if penalty was applied, otherwise EARNED
+    const transactionType = (isOverdue && penaltySettings?.overduePenaltyEnabled && pointsToDeduct > 0) ? 'DEDUCTION' : 'EARNED'
+    await tx.pointTransaction.create({
+      data: {
+        userId: assignment.assignedToId,
+        type: transactionType,
+        amount: pointsToAward,
+        description: isOverdue && penaltySettings?.overduePenaltyEnabled && pointsToDeduct > 0
+          ? `Completed: ${assignment.choreTemplate.title} (penalty: -${pointsToDeduct} pts)`
+          : `Completed: ${assignment.choreTemplate.title}`,
+        choreAssignmentId: assignmentId,
+      },
+    })
+
+    // Mark penalty as applied on the assignment
+    if (isOverdue && penaltySettings?.overduePenaltyEnabled && pointsToDeduct > 0) {
+      await tx.choreAssignment.update({
+        where: { id: assignmentId },
+        data: {
+          penaltyApplied: true,
+          penaltyPoints: -pointsToDeduct,
+        },
+      })
+    }
 
     return { assignment: updated, pointsAwarded: pointsToAward }
   })
@@ -577,10 +628,11 @@ export const getAssignmentsForMonth = async (
   })
 
   // Add isOverdue computed field to each assignment
-  const now = new Date()
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
   const assignmentsWithOverdue = assignments.map((assignment) => ({
     ...assignment,
-    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < now,
+    isOverdue: assignment.status === 'PENDING' && new Date(assignment.dueDate) < startOfToday,
   }))
 
   return assignmentsWithOverdue as AssignmentWithDetails[]

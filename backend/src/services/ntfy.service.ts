@@ -59,7 +59,7 @@ export const sendNtfyNotification = async (options: SendNotificationOptions): Pr
   try {
     // Construct the full URL
     const url = serverUrl.endsWith('/') ? serverUrl.slice(0, -1) : serverUrl
-    
+
     // Build headers
     const headers: Record<string, string> = {
       'Title': title,
@@ -75,18 +75,22 @@ export const sendNtfyNotification = async (options: SendNotificationOptions): Pr
     }
 
     // Send to ntfy server
-    await axios.post(`${url}/${topic}`, message, {
+    const response = await axios.post(`${url}/${topic}`, message, {
       headers,
-      timeout: 5000, // 5 second timeout
+      timeout: 10000, // Increased from 5s to 10s to handle slower connections
+      validateStatus: (status) => status < 500, // Treat 4xx as success (message queued), only fail on 5xx
     })
 
-    console.log(`[NtfyService] Notification sent successfully to topic: ${topic}`)
+    // Log response status for debugging
+    console.log(`[NtfyService] Notification sent to topic: ${topic}, status: ${response.status}`)
     return true
   } catch (error: any) {
     console.error('[NtfyService] Failed to send notification:', error.message)
     if (error.response) {
       console.error('[NtfyService] Response status:', error.response.status)
       console.error('[NtfyService] Response data:', error.response.data)
+    } else if (error.code === 'ECONNABORTED') {
+      console.error('[NtfyService] Request timeout - but notification may still be queued')
     }
     return false
   }

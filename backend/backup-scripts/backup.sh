@@ -14,7 +14,7 @@ if [ -f "/app/.backup_dir" ]; then
 else
     BACKUP_DIR="${BACKUP_DIR:-/backups}"
 fi
-DB_PATH="${DB_PATH:-/app/data/chore-ganizer.db}"
+DB_PATH="${DB_PATH:-/opt/app-data/chore-ganizer/chore-ganizer.db}"
 RETENTION_DAYS="${RETENTION_DAYS:-7}"
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_NAME="chore-ganizer_${DATE}.db"

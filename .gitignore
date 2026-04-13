@@ -38,6 +38,8 @@ build/
 coverage/
 test/
 test-results/
+test-reports/
+test/reports/
 
 # IDE
 .vscode/
@@ -68,3 +70,11 @@ uploads/*
 
 # KiloCode
 .kilocode/
+
+# Claude Code
+.claude/
+
+# Playwright
+playwright-report/
+.worktrees/
+.superpowers/

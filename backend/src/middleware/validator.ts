@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { ZodError, ZodSchema } from 'zod'
+import { ZodError, ZodSchema, ZodIssue } from 'zod'
 
 /**
  * Validation middleware using Zod schemas
@@ -20,7 +20,7 @@ export const validate = (schema: ZodSchema, property: 'body' | 'query' | 'params
           error: {
             message: 'Validation failed',
             code: 'VALIDATION_ERROR',
-            details: error.errors.map((err) => ({
+            details: error.issues.map((err: ZodIssue) => ({
               field: err.path.join('.'),
               message: err.message,
             })),

@@ -14,6 +14,7 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string }>
   register: (credentials: RegisterCredentials) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
+  refreshUser: () => Promise<void>
   isAuthenticated: boolean
   isParent: boolean
   isChild: boolean
@@ -145,6 +146,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const refreshUser = async () => {
+    try {
+      if (debugEnabled) {
+        console.log('[AuthProvider] refreshUser called')
+      }
+      const response = await authApi.getCurrentUser()
+      setUser(response.data.user)
+    } catch (err) {
+      if (debugEnabled) {
+        console.error('[AuthProvider] refreshUser error:', err)
+      }
+    }
+  }
+
   const value: AuthContextType = {
     user,
     loading,
@@ -152,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     register,
     logout,
+    refreshUser,
     isAuthenticated: !!user,
     isParent: user?.role === 'PARENT',
     isChild: user?.role === 'CHILD',

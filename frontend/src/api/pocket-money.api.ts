@@ -69,12 +69,31 @@ export const pocketMoneyApi = {
     return response.data?.payouts || []
   },
 
-  createPayout: async (userId: number, points: number): Promise<Payout> => {
+  createPayout: async (
+    userId: number,
+    points: number,
+    periodStart: string,
+    periodEnd: string
+  ): Promise<Payout> => {
     const response = await apiClient.post<{ payout: Payout }>('/pocket-money/payout', {
       userId,
       points,
+      periodStart,
+      periodEnd,
     })
     return response.data?.payout
+  },
+
+  addAdvance: async (
+    userId: number,
+    amount: number,
+    description?: string
+  ): Promise<PointTransaction> => {
+    const response = await apiClient.post<{ transaction: PointTransaction }>(
+      '/pocket-money/advance',
+      { userId, amount, description }
+    )
+    return response.data?.transaction
   },
 
   // Projected

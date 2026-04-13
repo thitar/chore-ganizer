@@ -19,7 +19,7 @@ describe('ChoreFilters', () => {
   it('highlights the current filter with primary variant', () => {
     render(<ChoreFilters currentFilter="all" onFilterChange={mockOnFilterChange} />)
     const allButton = screen.getByText('All Chores').closest('button')
-    expect(allButton).toHaveClass('bg-blue-600')
+    expect(allButton).toHaveClass('bg-primary')
   })
 
   it('applies ghost variant to non-active filters', () => {
@@ -40,7 +40,7 @@ describe('ChoreFilters', () => {
     )
     
     let allButton = screen.getByText('All Chores').closest('button')
-    expect(allButton).toHaveClass('bg-blue-600')
+    expect(allButton).toHaveClass('bg-primary')
     
     // Simulate filter change
     rerender(
@@ -51,7 +51,7 @@ describe('ChoreFilters', () => {
     const pendingButton = screen.getByText('Pending').closest('button')
     
     expect(allButton).toHaveClass('bg-transparent')
-    expect(pendingButton).toHaveClass('bg-blue-600')
+    expect(pendingButton).toHaveClass('bg-primary')
   })
 
   it('renders filters in a flex container', () => {

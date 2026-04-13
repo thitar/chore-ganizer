@@ -18,19 +18,23 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build argument for version (passed from docker-compose)
- ARG VITE_APP_VERSION=2.0.5
- ENV VITE_APP_VERSION=$VITE_APP_VERSION
+# Build argument for version (extracted from backend/package.json at build time)
+ARG VITE_APP_VERSION=""
+ENV VITE_APP_VERSION=$VITE_APP_VERSION
 
 # Build the application
 # Note: VITE_API_URL is now runtime-configured, so we use a placeholder
+# Version is provided via build arg from docker-compose (extracted from backend/package.json)
 RUN npm run build
+
+# Bake version into image as a simple text file
+RUN echo "$(cat /app/package.json | grep '"version"' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')" > /app/.image-version
 
 # Stage 2: Production
 FROM nginx:alpine AS production
 
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy custom nginx configuration template (envsubst at runtime)
+COPY nginx.conf.template /etc/nginx/conf.d/default.conf.template
 
 # Copy entrypoint script for runtime config generation
 COPY docker-entrypoint.sh /docker-entrypoint.sh
@@ -38,6 +42,9 @@ RUN chmod +x /docker-entrypoint.sh
 
 # Copy built files from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy baked version
+COPY --from=builder /app/.image-version /usr/share/nginx/html/.image-version
 
 # nginx:alpine already has 'nginx' user/group (UID 101) - just set permissions
 RUN chown -R nginx:nginx /usr/share/nginx/html \

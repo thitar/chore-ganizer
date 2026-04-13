@@ -1,6 +1,7 @@
 import prisma from '../config/database.js'
 import { getOrCreateSettings, sendPushNotification } from './notification-settings.service.js'
 import { AppError } from '../middleware/errorHandler.js'
+import { createNotification } from './notifications.service.js'
 
 /**
  * Get all parents in the system
@@ -34,11 +35,12 @@ export const getFamilyPenaltySettings = async () => {
  * Find all overdue chores that haven't had a penalty applied yet
  */
 export const findOverdueChoresWithoutPenalty = async () => {
-  const now = new Date()
-  
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
+
   return prisma.choreAssignment.findMany({
     where: {
-      dueDate: { lt: now },
+      dueDate: { lt: startOfToday },
       status: 'PENDING',
       penaltyApplied: false,
     },
@@ -108,23 +110,36 @@ export const notifyParentOfOverdue = async (
     penaltyPoints: number
   }
 ): Promise<boolean> => {
+  const penaltyAbs = Math.abs(context.penaltyPoints)
+
+  // Always create in-app notification for parent
+  try {
+    await createNotification({
+      userId: parentId,
+      type: 'CHORE_OVERDUE',
+      title: `Overdue: ${context.choreTitle}`,
+      message: `"${context.choreTitle}" assigned to ${context.childName} is ${context.daysOverdue} day(s) overdue. Penalty of ${penaltyAbs} points applied.`,
+    })
+  } catch (err) {
+    console.warn('[OverduePenalty] Failed to create in-app notification for parent', parentId, err)
+  }
+
   const settings = await getOrCreateSettings(parentId)
-  
+
   if (!settings.notifyParentOnOverdue) {
     return false
   }
-  
-  // Check if parent has ntfy configured
+
   const defaults = {
     ntfyTopic: process.env.NTFY_DEFAULT_TOPIC || null,
   }
-  
+
   const ntfyTopic = settings.ntfyTopic || defaults.ntfyTopic
-  
+
   if (!ntfyTopic) {
     return false
   }
-  
+
   return sendPushNotification(parentId, 'CHORE_OVERDUE', {
     userName: context.childName,
     choreTitle: context.choreTitle,
@@ -143,10 +158,24 @@ export const notifyChildOfPenalty = async (
     penaltyPoints: number
   }
 ): Promise<boolean> => {
+  const penaltyAbs = Math.abs(context.penaltyPoints)
+
+  // Always create in-app notification for child
+  try {
+    await createNotification({
+      userId,
+      type: 'PENALTY',
+      title: 'Penalty Applied',
+      message: `You received a penalty of ${penaltyAbs} points for overdue chore: ${context.choreTitle}`,
+    })
+  } catch (err) {
+    console.warn('[OverduePenalty] Failed to create in-app notification for child', userId, err)
+  }
+
   return sendPushNotification(userId, 'POINTS_EARNED', {
     choreTitle: context.choreTitle,
     points: context.penaltyPoints,
-    totalPoints: 0, // We don't have the updated total here
+    totalPoints: 0,
   })
 }
 
@@ -271,7 +300,9 @@ export const getAssignmentPenaltyStatus = async (assignmentId: number) => {
     return null
   }
   
-  const isOverdue = new Date() > assignment.dueDate && assignment.status === 'PENDING'
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
+  const isOverdue = startOfToday > assignment.dueDate && assignment.status === 'PENDING'
   const daysOverdue = isOverdue ? calculateDaysOverdue(assignment.dueDate) : 0
   
   return {

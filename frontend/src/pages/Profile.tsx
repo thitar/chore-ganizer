@@ -111,7 +111,7 @@ export const Profile: React.FC = () => {
     }
   }
 
-  const handleResetDefaults = async () => {
+const handleResetDefaults = async () => {
     try {
       setSaving(true)
 

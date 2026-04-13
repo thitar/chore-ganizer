@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { pocketMoneyApi } from '../../api'
 import type { User } from '../../types'
 import type { PointBalance, PocketMoneyConfig, PointTransaction, Payout } from '../../types/pocket-money'
@@ -29,11 +29,11 @@ export const PocketMoneyDashboard: React.FC<PocketMoneyDashboardProps> = ({ chil
   const [payouts, setPayouts] = useState<Payout[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  const loadData = async () => {
+  // Note: We intentionally omit stable references (API methods, setState functions) from
+  // the dependency array to prevent unnecessary re-renders. The function correctly
+  // re-runs when 'children' changes, which is the only external dependency that matters.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally omitting stable references (pocketMoneyApi, setState) to prevent unnecessary re-renders; depends only on `children`
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true)
       // Load config
@@ -67,7 +67,13 @@ export const PocketMoneyDashboard: React.FC<PocketMoneyDashboardProps> = ({ chil
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [children])
+
+  useEffect(() => {
+    if (children.length > 0) {
+      loadData()
+    }
+  }, [loadData, children])
 
   const handleChildSelect = async (child: User) => {
     setSelectedChild(child)
@@ -249,6 +255,7 @@ export const PocketMoneyDashboard: React.FC<PocketMoneyDashboardProps> = ({ chil
         <BonusDeductionModal
           children={children}
           selectedChild={selectedChild}
+          config={config}
           onClose={() => setShowBonusDeduction(false)}
           onSuccess={() => {
             setShowBonusDeduction(false)
@@ -261,6 +268,7 @@ export const PocketMoneyDashboard: React.FC<PocketMoneyDashboardProps> = ({ chil
         <PayoutModal
           child={selectedChild}
           balance={childBalances.find((b) => b.user.id === selectedChild.id)?.balance || null}
+          config={config}
           onClose={() => setShowPayout(false)}
           onSuccess={() => {
             setShowPayout(false)

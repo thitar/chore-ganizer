@@ -3,18 +3,17 @@ import { Link } from 'react-router-dom'
 import { useAuth, useUsers } from '../hooks'
 import { Button, Modal, ErrorDisplay } from '../components/common'
 import { UserTable, UserForm, ConfirmDialog } from '../components/users'
+import { showSuccess, showError } from '../utils/toast'
 import type { User, CreateUserData, UpdateUserData } from '../types'
 
 export const Users: React.FC = () => {
   const { isParent } = useAuth()
-  const { users, loading, error, createUser, updateUser, deleteUser, lockUser, unlockUser, refresh } = useUsers()
+  const { users, loading, error, createUser, updateUser, deleteUser, lockUser, unlockUser, refresh, parentCount } = useUsers()
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleEdit = (user: User) => {
     setEditingUser(user)
@@ -26,16 +25,14 @@ export const Users: React.FC = () => {
     try {
       const result = await updateUser(editingUser.id, data as UpdateUserData)
       if (result.success) {
-        setSuccessMessage('User updated successfully')
+        showSuccess('User updated successfully')
         setEditingUser(null)
         refresh()
-        setTimeout(() => setSuccessMessage(null), 3000)
       } else {
-        setErrorMessage(result.error || 'Failed to update user')
+        showError(result.error || 'Failed to update user')
       }
     } finally {
       setIsSubmitting(false)
-      setTimeout(() => setErrorMessage(null), 3000)
     }
   }
 
@@ -44,16 +41,14 @@ export const Users: React.FC = () => {
     try {
       const result = await createUser(data as CreateUserData)
       if (result.success) {
-        setSuccessMessage('User created successfully')
+        showSuccess('User created successfully')
         setShowCreateModal(false)
         refresh()
-        setTimeout(() => setSuccessMessage(null), 3000)
       } else {
-        setErrorMessage(result.error || 'Failed to create user')
+        showError(result.error || 'Failed to create user')
       }
     } finally {
       setIsSubmitting(false)
-      setTimeout(() => setErrorMessage(null), 3000)
     }
   }
 
@@ -68,47 +63,45 @@ export const Users: React.FC = () => {
     try {
       const result = await deleteUser(userToDelete.id)
       if (result.success) {
-        setSuccessMessage('User deleted successfully')
+        showSuccess('User deleted successfully')
         refresh()
-        setTimeout(() => setSuccessMessage(null), 3000)
       } else {
-        setErrorMessage(result.error || 'Failed to delete user')
+        showError(result.error || 'Failed to delete user')
       }
     } finally {
       setIsSubmitting(false)
       setShowDeleteConfirm(false)
       setUserToDelete(null)
-      setTimeout(() => setErrorMessage(null), 3000)
     }
   }
 
   const handleLock = async (user: User) => {
     setIsSubmitting(true)
     try {
-      await lockUser(user.id)
-      setSuccessMessage('User locked successfully')
-      refresh()
-      setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to lock user')
+      const result = await lockUser(user.id)
+      if (result.success) {
+        showSuccess('User locked successfully')
+        refresh()
+      } else {
+        showError(result.error || 'Failed to lock user')
+      }
     } finally {
       setIsSubmitting(false)
-      setTimeout(() => setErrorMessage(null), 3000)
     }
   }
 
   const handleUnlock = async (user: User) => {
     setIsSubmitting(true)
     try {
-      await unlockUser(user.id)
-      setSuccessMessage('User unlocked successfully')
-      refresh()
-      setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to unlock user')
+      const result = await unlockUser(user.id)
+      if (result.success) {
+        showSuccess('User unlocked successfully')
+        refresh()
+      } else {
+        showError(result.error || 'Failed to unlock user')
+      }
     } finally {
       setIsSubmitting(false)
-      setTimeout(() => setErrorMessage(null), 3000)
     }
   }
 
@@ -150,25 +143,6 @@ export const Users: React.FC = () => {
         )}
       </div>
 
-      {/* Messages */}
-      {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
-          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          {successMessage}
-        </div>
-      )}
-
-      {errorMessage && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center">
-          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-          </svg>
-          {errorMessage}
-        </div>
-      )}
-
       {/* Users Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <UserTable
@@ -193,6 +167,7 @@ export const Users: React.FC = () => {
             onSubmit={handleEditSubmit}
             onCancel={() => setEditingUser(null)}
             loading={isSubmitting}
+            parentCount={parentCount}
           />
         )}
       </Modal>

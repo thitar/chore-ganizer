@@ -4,7 +4,7 @@
  * Tests all CRUD operations for users
  */
 
-import { setupTestDatabase, seedTestDatabase, teardownTestDatabase, getPrisma, TestData } from './db-setup.js'
+import { setupTestDatabase, seedTestDatabase, teardownTestDatabase, clearDatabase, getPrisma, TestData } from './db-setup.js'
 import { createApiClient, ApiClient } from './api-helpers.js'
 
 describe('Users API Integration Tests', () => {
@@ -13,14 +13,15 @@ describe('Users API Integration Tests', () => {
 
   beforeAll(async () => {
     await setupTestDatabase()
-    testData = await seedTestDatabase()
   })
 
   afterAll(async () => {
     await teardownTestDatabase()
   })
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await clearDatabase()
+    testData = await seedTestDatabase()
     api = createApiClient()
   })
 
@@ -420,6 +421,87 @@ describe('Users API Integration Tests', () => {
       expect(response.status).toBe(400)
       expect(response.body.success).toBe(false)
       expect(response.body.error.message).toContain('active assignments')
+    })
+
+    it('should not delete the last parent account', async () => {
+      await api.login(testData.users.parent)
+
+      // Create a second parent
+      const createResponse = await api.createUser({
+        email: 'parent2@test.com',
+        password: 'SecurePass123!',
+        name: 'Second Parent',
+        role: 'PARENT',
+      })
+      expect(createResponse.status).toBe(201)
+      const secondParentId = createResponse.body.data.user.id
+
+      // Delete second parent (original parent still exists, so this should work)
+      const deleteSecondResponse = await api.deleteUser(secondParentId)
+      expect(deleteSecondResponse.status).toBe(200)
+
+      // Now only original parent remains. Try to delete it.
+      const response = await api.deleteUser(testData.users.parent.id)
+
+      expect(response.status).toBe(400)
+      expect(response.body.success).toBe(false)
+      // Could be either self-delete check or last-parent check - both are valid guards
+      expect(response.body.error.message.toLowerCase()).toMatch(/last parent|own account/)
+    })
+
+    it('should allow deleting a parent when other parents exist', async () => {
+      await api.login(testData.users.parent)
+
+      // Create a second parent
+      const createResponse = await api.createUser({
+        email: 'parent2b@test.com',
+        password: 'SecurePass123!',
+        name: 'Second Parent B',
+        role: 'PARENT',
+      })
+      expect(createResponse.status).toBe(201)
+      const secondParentId = createResponse.body.data.user.id
+
+      // Should be able to delete second parent because original parent still exists
+      const response = await api.deleteUser(secondParentId)
+
+      expect(response.status).toBe(200)
+    })
+  })
+
+  describe('PUT /api/users/:id - Last Parent Guards', () => {
+    it('should not demote the last parent to child', async () => {
+      await api.login(testData.users.parent)
+
+      const response = await api.updateUser(testData.users.parent.id, {
+        role: 'CHILD',
+      })
+
+      expect(response.status).toBe(400)
+      expect(response.body.success).toBe(false)
+      expect(response.body.error.message).toContain('Cannot demote the last parent account')
+    })
+
+    it('should allow demoting a parent to child when other parents exist', async () => {
+      await api.login(testData.users.parent)
+
+      // Create a second parent
+      const createResponse = await api.createUser({
+        email: 'parent2c@test.com',
+        password: 'SecurePass123!',
+        name: 'Second Parent C',
+        role: 'PARENT',
+      })
+      expect(createResponse.status).toBe(201)
+      const secondParentId = createResponse.body.data.user.id
+
+      // Demote the second parent
+      const response = await api.updateUser(secondParentId, {
+        role: 'CHILD',
+      })
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.user.role).toBe('CHILD')
     })
   })
 })

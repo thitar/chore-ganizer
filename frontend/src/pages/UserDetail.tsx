@@ -10,7 +10,7 @@ type TabType = 'overview' | 'assignments' | 'pocket-money'
 export const UserDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const { isParent } = useAuth()
-  const { users, updateUser, deleteUser, lockUser, unlockUser, refresh } = useUsers()
+  const { users, updateUser, deleteUser, lockUser, unlockUser, refresh, parentCount } = useUsers()
 
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [isEditing, setIsEditing] = useState(false)
@@ -287,9 +287,13 @@ export const UserDetail: React.FC = () => {
                       value="CHILD"
                       checked={editRole === 'CHILD'}
                       onChange={(e) => setEditRole(e.target.value as 'CHILD')}
-                      className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      disabled={user.role === 'PARENT' && parentCount <= 1}
+                      className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <span className="ml-2 text-sm text-gray-700">Child</span>
+                    {user.role === 'PARENT' && parentCount <= 1 && (
+                      <span className="ml-1 text-xs text-red-500">(last parent)</span>
+                    )}
                   </label>
                   <label className="flex items-center">
                     <input

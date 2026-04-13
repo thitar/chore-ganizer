@@ -146,6 +146,7 @@ export class ApiClient {
     color?: string
     basePocketMoney?: number
     points?: number
+    role?: string
   }) {
     return this.agent.put(`/api/users/${id}`).send(data)
   }

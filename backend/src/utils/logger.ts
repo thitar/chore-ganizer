@@ -1,5 +1,6 @@
 import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
+import { getVersion } from '../version.js';
 
 // Create format with correlation ID
 const correlationFormat = winston.format((info) => {
@@ -17,7 +18,7 @@ export const logger = winston.createLogger({
   ),
   defaultMeta: { 
     service: 'chore-ganizer-backend',
-    version: process.env.APP_VERSION || '1.5.0'
+    version: getVersion()
   },
   transports: [
     new winston.transports.Console({

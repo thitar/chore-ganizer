@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import * as authService from '../services/auth.service.js'
+import * as usersService from '../services/users.service.js'
 import { unlockAccount, isLocked } from '../utils/lockout.js'
 import { AppError } from '../middleware/errorHandler.js'
 import * as auditService from '../services/audit.service.js'
@@ -110,17 +111,20 @@ export const logout = async (req: Request, res: Response) => {
 
 /**
  * GET /api/auth/me
- * Get current authenticated user
+ * Get current authenticated user (fetched fresh from database)
  */
 export const getCurrentUser = async (req: Request, res: Response) => {
   if (!req.user) {
     throw new AppError('User not authenticated', 401, 'UNAUTHORIZED')
   }
 
+  // Fetch fresh user data from database to ensure we have latest changes
+  const user = await usersService.getUserById(req.user.id)
+
   res.json({
     success: true,
     data: {
-      user: req.user,
+      user,
     },
   })
 }

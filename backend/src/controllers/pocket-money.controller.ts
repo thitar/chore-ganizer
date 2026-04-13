@@ -24,6 +24,12 @@ interface AddDeductionBody {
   description?: string
 }
 
+interface AddAdvanceBody {
+  userId: number
+  amount: number
+  description?: string
+}
+
 interface CreatePayoutBody {
   userId: number
   points: number
@@ -357,25 +363,99 @@ export const getTransactionHistory = async (req: Request, res: Response) => {
   const limitNum = Math.min(100, Math.max(1, parseInt(limit)))
   const skip = (pageNum - 1) * limitNum
 
-  const [transactions, total] = await Promise.all([
-    prisma.pointTransaction.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: limitNum,
-      include: {
-        relatedUser: {
-          select: { id: true, name: true },
+  // Get total count only - lightweight query instead of loading all records
+  const total = await prisma.pointTransaction.count({ where: { userId: targetUserId } })
+
+  // Calculate starting balance before the visible page
+  // Get the timestamp of the first transaction in our page (oldest in descending order)
+  const pageBoundaryTx = await prisma.pointTransaction.findMany({
+    where: { userId: targetUserId },
+    orderBy: { createdAt: 'desc' },
+    skip,
+    take: 1,
+    select: { createdAt: true },
+  })
+
+  let startingBalance = 0
+
+  // If not first page, calculate balance up to the page boundary
+  if (skip > 0 && pageBoundaryTx.length > 0) {
+    const cutoffDate = pageBoundaryTx[0].createdAt
+    
+    // Get all transactions before the cutoff to calculate starting balance
+    const priorTransactions = await prisma.pointTransaction.findMany({
+      where: {
+        userId: targetUserId,
+        createdAt: { lt: cutoffDate },
+      },
+      orderBy: { createdAt: 'asc' },
+      select: { type: true, amount: true },
+    })
+
+    // Calculate cumulative balance up to the boundary
+    for (const tx of priorTransactions) {
+      if (tx.type === 'EARNED' || tx.type === 'BONUS' || tx.type === 'ADJUSTMENT') {
+        startingBalance += tx.amount
+      } else {
+        startingBalance -= tx.amount
+      }
+    }
+  }
+
+  // Get paginated transactions in descending order (newest first)
+  // This matches user expectations for viewing transaction history
+  const transactions = await prisma.pointTransaction.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    skip,
+    take: limitNum,
+    include: {
+      relatedUser: {
+        select: { id: true, name: true },
+      },
+      choreAssignment: {
+        include: {
+          choreTemplate: {
+            select: { id: true, title: true },
+          },
         },
       },
-    }),
-    prisma.pointTransaction.count({ where }),
-  ])
+    },
+  })
+
+  // Calculate running balance by fetching all transactions up to this page
+  const allPriorTx = await prisma.pointTransaction.findMany({
+    where: { userId: targetUserId },
+    orderBy: { createdAt: 'asc' },
+    take: skip + limitNum,
+    select: { type: true, amount: true },
+  })
+
+  let runningBalance = 0
+  for (const tx of allPriorTx) {
+    if (tx.type === 'EARNED' || tx.type === 'BONUS' || tx.type === 'ADJUSTMENT') {
+      runningBalance += tx.amount
+    } else {
+      runningBalance -= tx.amount
+    }
+  }
+
+  const transactionsWithBalance = transactions.map((tx) => {
+    if (tx.type === 'EARNED' || tx.type === 'BONUS' || tx.type === 'ADJUSTMENT') {
+      runningBalance += tx.amount
+    } else {
+      runningBalance -= tx.amount
+    }
+    return {
+      ...tx,
+      runningBalance,
+    }
+  })
 
   res.json({
     success: true,
     data: {
-      transactions,
+      transactions: transactionsWithBalance,
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -470,6 +550,64 @@ export const addDeduction = async (req: Request, res: Response) => {
     -amount,
     {
       description: description || 'Points deducted',
+      relatedUserId: parentUserId,
+    }
+  )
+
+  res.status(201).json({
+    success: true,
+    data: { transaction },
+  })
+}
+
+/**
+ * POST /api/pocket-money/advance
+ * Grant an advance (negative balance) to a user (parents only)
+ */
+export const addAdvance = async (req: Request, res: Response) => {
+  const { userId, amount, description }: AddAdvanceBody = req.body
+
+  if (!userId || isNaN(Number(userId))) {
+    throw new AppError('Invalid userId', 400, 'VALIDATION_ERROR')
+  }
+
+  if (!amount || amount <= 0) {
+    throw new AppError('Amount must be a positive number', 400, 'VALIDATION_ERROR')
+  }
+
+  const targetUserId = Number(userId)
+  const parentUserId = req.user!.id
+
+  const targetUser = await prisma.user.findUnique({
+    where: { id: targetUserId },
+    include: { family: { include: { pocketMoneyConfig: true } } },
+  })
+
+  if (!targetUser) {
+    throw new AppError('Target user not found', 404, 'NOT_FOUND')
+  }
+
+  const config = targetUser.family?.pocketMoneyConfig
+  if (!config?.allowAdvance) {
+    throw new AppError('Advance payments are not enabled', 400, 'VALIDATION_ERROR')
+  }
+
+  const { totalPoints } = await calculatePointBalance(targetUserId)
+  const newBalance = totalPoints - amount
+  if (newBalance < -(config.maxAdvancePoints)) {
+    throw new AppError(
+      `Advance would exceed the maximum of ${config.maxAdvancePoints} points`,
+      400,
+      'VALIDATION_ERROR'
+    )
+  }
+
+  const transaction = await createTransaction(
+    targetUserId,
+    TransactionTypes.ADVANCE,
+    -amount,
+    {
+      description: description || 'Advance payment',
       relatedUserId: parentUserId,
     }
   )
