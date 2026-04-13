@@ -111,28 +111,32 @@ export const Profile: React.FC = () => {
     }
   }
 
-  const handleResetDefaults = async () => {
+const handleResetDefaults = async () => {
     try {
       setSaving(true)
 
+      // Fetch defaults from the API (reads from environment variables)
+      const defaults = await notificationSettingsApi.getDefaults()
+
+      // Map the defaults to the update format
       const defaultData: UpdateNotificationSettingsData = {
-        ntfyServerUrl: 'https://ntfy.sh',
-        ntfyTopic: null,
-        ntfyUsername: null,
-        ntfyPassword: null,
-        notifyChoreAssigned: true,
-        notifyChoreDueSoon: true,
-        notifyChoreCompleted: true,
-        notifyChoreOverdue: true,
-        notifyPointsEarned: true,
-        reminderHoursBefore: 2,
-        quietHoursStart: null,
-        quietHoursEnd: null,
+        ntfyServerUrl: defaults.ntfyServerUrl,
+        ntfyTopic: defaults.ntfyTopic,
+        ntfyUsername: defaults.ntfyUsername,
+        ntfyPassword: defaults.ntfyPassword,
+        notifyChoreAssigned: defaults.notifyChoreAssigned,
+        notifyChoreDueSoon: defaults.notifyChoreDueSoon,
+        notifyChoreCompleted: defaults.notifyChoreCompleted,
+        notifyChoreOverdue: defaults.notifyChoreOverdue,
+        notifyPointsEarned: defaults.notifyPointsEarned,
+        reminderHoursBefore: defaults.reminderHoursBefore,
+        quietHoursStart: defaults.quietHoursStart,
+        quietHoursEnd: defaults.quietHoursEnd,
         // Overdue penalty settings (only for parents)
         ...(user?.role === 'PARENT' && {
-          overduePenaltyEnabled: true,
-          overduePenaltyMultiplier: 2,
-          notifyParentOnOverdue: true,
+          overduePenaltyEnabled: defaults.overduePenaltyEnabled,
+          overduePenaltyMultiplier: defaults.overduePenaltyMultiplier,
+          notifyParentOnOverdue: defaults.notifyParentOnOverdue,
         }),
       }
 

@@ -47,10 +47,35 @@ export interface TestNotificationResponse {
   message: string
 }
 
+export interface NotificationDefaults {
+  ntfyServerUrl: string
+  ntfyTopic: string | null
+  ntfyUsername: string | null
+  ntfyPassword: string | null
+  emailNotifications: boolean
+  notificationEmail: string | null
+  notifyChoreAssigned: boolean
+  notifyChoreDueSoon: boolean
+  notifyChoreCompleted: boolean
+  notifyChoreOverdue: boolean
+  notifyPointsEarned: boolean
+  reminderHoursBefore: number
+  quietHoursStart: number | null
+  quietHoursEnd: number | null
+  overduePenaltyEnabled: boolean
+  overduePenaltyMultiplier: number
+  notifyParentOnOverdue: boolean
+}
+
 export const notificationSettingsApi = {
   get: async (): Promise<NotificationSettings> => {
     const response = await apiClient.get<{ settings: NotificationSettings }>('/notification-settings')
     return response.data?.settings
+  },
+
+  getDefaults: async (): Promise<NotificationDefaults> => {
+    const response = await apiClient.get<{ defaults: NotificationDefaults }>('/notification-settings/defaults')
+    return response.data?.defaults
   },
 
   update: async (data: UpdateNotificationSettingsData): Promise<NotificationSettings> => {
