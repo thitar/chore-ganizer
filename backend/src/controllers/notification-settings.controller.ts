@@ -18,6 +18,19 @@ export const getSettings = async (req: Request, res: Response) => {
 }
 
 /**
+ * GET /api/notification-settings/defaults
+ * Get default notification settings from environment variables
+ */
+export const getDefaults = async (_req: Request, res: Response) => {
+  const defaults = notificationSettingsService.getDefaultSettings()
+
+  res.json({
+    success: true,
+    data: { defaults },
+  })
+}
+
+/**
  * PUT /api/notification-settings
  * Update notification settings for current user
  */

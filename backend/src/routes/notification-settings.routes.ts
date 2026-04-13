@@ -17,6 +17,17 @@ router.get(
 )
 
 /**
+ * @route   GET /api/notification-settings/defaults
+ * @desc    Get default notification settings from environment variables
+ * @access  Private
+ */
+router.get(
+  '/defaults',
+  authenticate,
+  asyncHandler(notificationSettingsController.getDefaults)
+)
+
+/**
  * @route   PUT /api/notification-settings
  * @desc    Update notification settings for current user
  * @access  Private
