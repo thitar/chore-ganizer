@@ -22,6 +22,7 @@ export interface AuthResult {
     name: string
     role: string
     points: number
+    color: string | null
     createdAt: Date
   }
 }
@@ -62,6 +63,7 @@ export const register = async (credentials: RegisterCredentials): Promise<AuthRe
       name: user.name,
       role: user.role,
       points: user.points,
+      color: user.color,
       createdAt: user.createdAt,
     },
   }
@@ -110,6 +112,7 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResult> 
       name: user.name,
       role: user.role,
       points: user.points,
+      color: user.color,
       createdAt: user.createdAt,
     },
   }
@@ -134,6 +137,7 @@ export const getUserById = async (userId: number): Promise<AuthResult> => {
       name: user.name,
       role: user.role,
       points: user.points,
+      color: user.color,
       createdAt: user.createdAt,
     },
   }
