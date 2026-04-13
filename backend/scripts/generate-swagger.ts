@@ -5,7 +5,12 @@ import { swaggerOptions } from '../src/swagger.config.js'
 
 const outputPath = path.resolve(__dirname, '../../docs/swagger.json')
 
-const spec = swaggerJSDoc(swaggerOptions)
+interface SwaggerSpec {
+  paths?: Record<string, unknown>
+  [key: string]: unknown
+}
+
+const spec = swaggerJSDoc(swaggerOptions) as SwaggerSpec
 const json = JSON.stringify(spec, null, 2) + '\n'
 
 const isValidate = process.argv.includes('--validate')
