@@ -1,0 +1,560 @@
+import type { Options } from 'swagger-jsdoc'
+import { VERSION } from './version.js'
+
+const swaggerDefinition = {
+  openapi: '3.0.3',
+  info: {
+    title: 'Chore-Ganizer API',
+    description: 'Family-friendly chore management system API',
+    version: VERSION,
+    contact: { name: 'Chore-Ganizer' },
+  },
+  servers: [
+    { url: '/api', description: 'Relative path (via nginx proxy)' },
+    { url: 'http://localhost:3010/api', description: 'Local development server' },
+  ],
+  tags: [
+    { name: 'Health', description: 'Health check endpoints' },
+    { name: 'Auth', description: 'Authentication endpoints' },
+    { name: 'Users', description: 'User management endpoints' },
+    { name: 'Chore Templates', description: 'Chore template management (Parent-only: create, update, delete)' },
+    { name: 'Chore Assignments', description: 'Chore assignment management with due dates and completion tracking' },
+    { name: 'Chore Categories', description: 'Chore category management (Parent-only: create, update, delete)' },
+    { name: 'Notifications', description: 'Notification endpoints' },
+    { name: 'Notification Settings', description: 'User notification preferences and ntfy push notification configuration' },
+    { name: 'Overdue Penalty', description: 'Overdue chore penalty management (Parent-only: configure settings, process penalties)' },
+    { name: 'Recurring Chores', description: 'Recurring chore management with flexible recurrence patterns and occurrence tracking' },
+    { name: 'Pocket Money', description: 'Pocket money management endpoints for points-to-currency conversion, payouts, and transactions' },
+    { name: 'Statistics', description: 'Family and child statistics endpoints' },
+    { name: 'Audit Logs', description: 'Audit log viewing (Parent-only)' },
+    { name: 'Metrics', description: 'Prometheus metrics endpoint' },
+    { name: 'Security', description: 'Security disclosure and vulnerability reporting endpoints' },
+  ],
+  components: {
+    securitySchemes: {
+      cookieAuth: {
+        type: 'apiKey',
+        in: 'cookie',
+        name: 'connect.sid',
+        description: 'Session cookie set by POST /api/auth/login',
+      },
+    },
+    schemas: {
+      UserRole: { type: 'string', enum: ['PARENT', 'CHILD'] },
+      ChoreStatus: { type: 'string', enum: ['PENDING', 'COMPLETED', 'PARTIALLY_COMPLETE'] },
+      RecurrenceFrequency: { type: 'string', enum: ['DAILY', 'WEEKLY', 'MONTHLY'] },
+      AssignmentMode: { type: 'string', enum: ['FIXED', 'ROUND_ROBIN', 'MIXED'] },
+      OccurrenceStatus: { type: 'string', enum: ['PENDING', 'COMPLETED', 'SKIPPED'] },
+      TransactionType: { type: 'string', enum: ['EARNED', 'BONUS', 'DEDUCTION', 'PENALTY', 'PAYOUT', 'ADVANCE', 'ADJUSTMENT'] },
+      ApiResponse: {
+        type: 'object',
+        properties: { success: { type: 'boolean' }, data: { type: 'object', nullable: true }, error: { type: 'string', nullable: true } },
+      },
+      ErrorResponse: {
+        type: 'object',
+        properties: { success: { type: 'boolean', example: false }, error: { type: 'string', example: 'Something went wrong' } },
+      },
+      SuccessResponse: {
+        type: 'object',
+        properties: { success: { type: 'boolean', example: true }, message: { type: 'string' } },
+      },
+      LivenessResponse: { type: 'object', properties: { status: { type: 'string', example: 'ok' } } },
+      ReadinessResponse: { type: 'object', properties: { status: { type: 'string', example: 'ok' }, error: { type: 'string', nullable: true } } },
+      DatabaseCheck: {
+        type: 'object',
+        properties: {
+          status: { type: 'string', enum: ['ok', 'degraded', 'error'] },
+          latency: { type: 'integer', description: 'Latency in ms' },
+          error: { type: 'string', nullable: true },
+        },
+      },
+      MemoryCheck: {
+        type: 'object',
+        properties: {
+          status: { type: 'string', enum: ['ok', 'degraded', 'error'] },
+          used: { type: 'integer' },
+          total: { type: 'integer' },
+          percentage: { type: 'number' },
+        },
+      },
+      DiskCheck: {
+        type: 'object',
+        properties: {
+          status: { type: 'string', enum: ['ok', 'degraded', 'error'] },
+          used: { type: 'integer' },
+          total: { type: 'integer' },
+          percentage: { type: 'number' },
+          path: { type: 'string' },
+        },
+      },
+      EnhancedHealthResponse: {
+        type: 'object',
+        properties: {
+          status: { type: 'string', enum: ['ok', 'degraded', 'error'] },
+          timestamp: { type: 'string', format: 'date-time' },
+          version: { type: 'string' },
+          uptime: { type: 'number' },
+          checks: {
+            type: 'object',
+            properties: {
+              database: { $ref: '#/components/schemas/DatabaseCheck' },
+              memory: { $ref: '#/components/schemas/MemoryCheck' },
+              disk: { $ref: '#/components/schemas/DiskCheck' },
+            },
+          },
+        },
+      },
+      RegisterRequest: {
+        type: 'object',
+        required: ['email', 'password', 'name'],
+        properties: {
+          email: { type: 'string', format: 'email' },
+          password: { type: 'string', minLength: 8 },
+          name: { type: 'string' },
+          role: { $ref: '#/components/schemas/UserRole' },
+        },
+      },
+      LoginRequest: {
+        type: 'object',
+        required: ['email', 'password'],
+        properties: { email: { type: 'string', format: 'email' }, password: { type: 'string' } },
+      },
+      AuthResponse: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean' },
+          data: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              email: { type: 'string' },
+              name: { type: 'string' },
+              role: { $ref: '#/components/schemas/UserRole' },
+              points: { type: 'integer' },
+              color: { type: 'string', nullable: true },
+            },
+          },
+        },
+      },
+      User: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          email: { type: 'string', format: 'email' },
+          name: { type: 'string' },
+          role: { $ref: '#/components/schemas/UserRole' },
+          points: { type: 'integer' },
+          color: { type: 'string', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      CreateUserRequest: {
+        type: 'object',
+        required: ['email', 'password', 'name', 'role'],
+        properties: {
+          email: { type: 'string', format: 'email' },
+          password: { type: 'string', minLength: 8 },
+          name: { type: 'string' },
+          role: { $ref: '#/components/schemas/UserRole' },
+        },
+      },
+      UpdateUserRequest: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          email: { type: 'string', format: 'email' },
+          password: { type: 'string', minLength: 8 },
+          role: { $ref: '#/components/schemas/UserRole' },
+        },
+      },
+      UpdateMyProfileRequest: {
+        type: 'object',
+        properties: { name: { type: 'string' }, color: { type: 'string', description: 'Hex color code e.g. #3B82F6' } },
+      },
+      ChoreTemplate: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          title: { type: 'string' },
+          description: { type: 'string', nullable: true },
+          points: { type: 'integer' },
+          icon: { type: 'string', nullable: true },
+          color: { type: 'string', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      CreateChoreTemplateRequest: {
+        type: 'object',
+        required: ['title', 'points'],
+        properties: {
+          title: { type: 'string' },
+          description: { type: 'string' },
+          points: { type: 'integer', minimum: 0 },
+          icon: { type: 'string' },
+          color: { type: 'string' },
+        },
+      },
+      UpdateChoreTemplateRequest: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          description: { type: 'string' },
+          points: { type: 'integer', minimum: 0 },
+          icon: { type: 'string' },
+          color: { type: 'string' },
+        },
+      },
+      ChoreAssignment: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          templateId: { type: 'string' },
+          template: { $ref: '#/components/schemas/ChoreTemplate' },
+          assignedToId: { type: 'string' },
+          assignedTo: { $ref: '#/components/schemas/User' },
+          dueDate: { type: 'string', format: 'date-time' },
+          status: { $ref: '#/components/schemas/ChoreStatus' },
+          completedAt: { type: 'string', format: 'date-time', nullable: true },
+        },
+      },
+      CreateChoreAssignmentRequest: {
+        type: 'object',
+        required: ['templateId', 'assignedToId', 'dueDate'],
+        properties: {
+          templateId: { type: 'string' },
+          assignedToId: { type: 'string' },
+          dueDate: { type: 'string', format: 'date-time' },
+        },
+      },
+      UpdateChoreAssignmentRequest: {
+        type: 'object',
+        properties: {
+          assignedToId: { type: 'string' },
+          dueDate: { type: 'string', format: 'date-time' },
+          status: { $ref: '#/components/schemas/ChoreStatus' },
+        },
+      },
+      ChoreCategory: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' },
+          description: { type: 'string', nullable: true },
+          icon: { type: 'string', nullable: true },
+          color: { type: 'string', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+          _count: { type: 'object', properties: { templates: { type: 'integer' } } },
+        },
+      },
+      CreateChoreCategoryRequest: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: { type: 'string' },
+          description: { type: 'string' },
+          icon: { type: 'string' },
+          color: { type: 'string' },
+        },
+      },
+      UpdateChoreCategoryRequest: {
+        type: 'object',
+        properties: { name: { type: 'string' }, description: { type: 'string' }, icon: { type: 'string' }, color: { type: 'string' } },
+      },
+      Notification: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          userId: { type: 'string' },
+          type: { type: 'string' },
+          title: { type: 'string' },
+          message: { type: 'string' },
+          read: { type: 'boolean' },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      NotificationSettings: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          userId: { type: 'string' },
+          ntfyTopic: { type: 'string', nullable: true },
+          ntfyServerUrl: { type: 'string', nullable: true },
+          ntfyUsername: { type: 'string', nullable: true },
+          ntfyPassword: { type: 'string', nullable: true },
+          notifyChoreAssigned: { type: 'boolean' },
+          notifyChoreDueSoon: { type: 'boolean' },
+          notifyChoreCompleted: { type: 'boolean' },
+          notifyChoreOverdue: { type: 'boolean' },
+        },
+      },
+      UpdateNotificationSettingsRequest: {
+        type: 'object',
+        properties: {
+          ntfyTopic: { type: 'string' },
+          ntfyServerUrl: { type: 'string' },
+          ntfyUsername: { type: 'string' },
+          ntfyPassword: { type: 'string' },
+          notifyChoreAssigned: { type: 'boolean' },
+          notifyChoreDueSoon: { type: 'boolean' },
+          notifyChoreCompleted: { type: 'boolean' },
+          notifyChoreOverdue: { type: 'boolean' },
+        },
+      },
+      OverdueChore: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          dueDate: { type: 'string', format: 'date-time' },
+          status: { $ref: '#/components/schemas/ChoreStatus' },
+          daysOverdue: { type: 'integer' },
+          choreTemplate: { $ref: '#/components/schemas/ChoreTemplate' },
+          assignedTo: { $ref: '#/components/schemas/User' },
+        },
+      },
+      PenaltyRecord: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          dueDate: { type: 'string', format: 'date-time' },
+          penaltyApplied: { type: 'boolean' },
+          penaltyPoints: { type: 'integer' },
+          choreTemplate: { $ref: '#/components/schemas/ChoreTemplate' },
+          assignedTo: { $ref: '#/components/schemas/User' },
+        },
+      },
+      UpdatePenaltySettingsRequest: {
+        type: 'object',
+        properties: {
+          overduePenaltyEnabled: { type: 'boolean' },
+          overduePenaltyMultiplier: { type: 'number' },
+          notifyParentOnOverdue: { type: 'boolean' },
+        },
+      },
+      RecurrenceRule: {
+        type: 'object',
+        required: ['frequency', 'interval', 'startDate'],
+        properties: {
+          frequency: { $ref: '#/components/schemas/RecurrenceFrequency' },
+          interval: { type: 'integer', minimum: 1 },
+          startDate: { type: 'string', format: 'date' },
+          byDayOfWeek: { type: 'array', items: { type: 'integer', minimum: 0, maximum: 6 } },
+          byDayOfMonth: { type: 'array', items: { type: 'integer', minimum: 1, maximum: 31 } },
+          byNthWeekday: {
+            type: 'object',
+            properties: { n: { type: 'integer' }, weekday: { type: 'integer', minimum: 0, maximum: 6 } },
+          },
+        },
+      },
+      RecurringChore: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          title: { type: 'string' },
+          description: { type: 'string', nullable: true },
+          points: { type: 'integer' },
+          icon: { type: 'string', nullable: true },
+          color: { type: 'string', nullable: true },
+          categoryId: { type: 'string', nullable: true },
+          category: { $ref: '#/components/schemas/ChoreCategory' },
+          assignmentMode: { $ref: '#/components/schemas/AssignmentMode' },
+          isActive: { type: 'boolean' },
+          recurrenceRule: { $ref: '#/components/schemas/RecurrenceRule' },
+        },
+      },
+      ChoreOccurrence: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          recurringChoreId: { type: 'string' },
+          recurringChore: { $ref: '#/components/schemas/RecurringChore' },
+          dueDate: { type: 'string', format: 'date-time' },
+          status: { $ref: '#/components/schemas/OccurrenceStatus' },
+          assignedUserIds: { type: 'array', items: { type: 'string' } },
+          assignedUsers: { type: 'array', items: { $ref: '#/components/schemas/User' } },
+          completedById: { type: 'string', nullable: true },
+        },
+      },
+      CreateRecurringChoreRequest: {
+        type: 'object',
+        required: ['title', 'recurrenceRule', 'assignmentMode'],
+        properties: {
+          title: { type: 'string' },
+          description: { type: 'string' },
+          points: { type: 'integer', minimum: 0 },
+          icon: { type: 'string' },
+          color: { type: 'string' },
+          categoryId: { type: 'string' },
+          assignmentMode: { $ref: '#/components/schemas/AssignmentMode' },
+          fixedAssigneeIds: { type: 'array', items: { type: 'string' } },
+          roundRobinPoolIds: { type: 'array', items: { type: 'string' } },
+          recurrenceRule: { $ref: '#/components/schemas/RecurrenceRule' },
+        },
+      },
+      UpdateRecurringChoreRequest: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          description: { type: 'string' },
+          points: { type: 'integer', minimum: 0 },
+          categoryId: { type: 'string' },
+          assignmentMode: { $ref: '#/components/schemas/AssignmentMode' },
+          fixedAssigneeIds: { type: 'array', items: { type: 'string' } },
+          roundRobinPoolIds: { type: 'array', items: { type: 'string' } },
+          recurrenceRule: { $ref: '#/components/schemas/RecurrenceRule' },
+        },
+      },
+      CompleteOccurrenceRequest: {
+        type: 'object',
+        required: ['completedById'],
+        properties: { completedById: { type: 'string' } },
+      },
+      SkipOccurrenceRequest: {
+        type: 'object',
+        required: ['skippedById'],
+        properties: { skippedById: { type: 'string' } },
+      },
+      ToggleActiveRequest: {
+        type: 'object',
+        required: ['isActive'],
+        properties: { isActive: { type: 'boolean' } },
+      },
+      PointTransaction: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          userId: { type: 'string' },
+          type: { $ref: '#/components/schemas/TransactionType' },
+          points: { type: 'integer' },
+          reason: { type: 'string', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      AddBonusRequest: {
+        type: 'object',
+        required: ['userId', 'points'],
+        properties: {
+          userId: { type: 'string' },
+          points: { type: 'integer', minimum: 1 },
+          reason: { type: 'string' },
+        },
+      },
+      AddDeductionRequest: {
+        type: 'object',
+        required: ['userId', 'points'],
+        properties: {
+          userId: { type: 'string' },
+          points: { type: 'integer', minimum: 1 },
+          reason: { type: 'string' },
+        },
+      },
+      AddAdvanceRequest: {
+        type: 'object',
+        required: ['userId', 'points'],
+        properties: {
+          userId: { type: 'string' },
+          points: { type: 'integer', minimum: 1 },
+          reason: { type: 'string' },
+        },
+      },
+      CreatePayoutRequest: {
+        type: 'object',
+        required: ['userId', 'points'],
+        properties: {
+          userId: { type: 'string' },
+          points: { type: 'integer', minimum: 1 },
+          note: { type: 'string' },
+        },
+      },
+      TransactionResponse: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean' },
+          data: {
+            type: 'object',
+            properties: {
+              transaction: { $ref: '#/components/schemas/PointTransaction' },
+              newBalance: { type: 'integer' },
+            },
+          },
+        },
+      },
+      PocketMoneyConfig: {
+        type: 'object',
+        properties: {
+          pointValueInCents: { type: 'integer', description: 'Value of 1 point in cents' },
+          currency: { type: 'string', example: 'USD' },
+        },
+      },
+      FamilyStatistics: {
+        type: 'object',
+        properties: {
+          totalChores: { type: 'integer' },
+          completedChores: { type: 'integer' },
+          overdueChores: { type: 'integer' },
+          completionRate: { type: 'number' },
+          topPerformer: { $ref: '#/components/schemas/User' },
+          childStats: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                user: { $ref: '#/components/schemas/User' },
+                totalChores: { type: 'integer' },
+                completedChores: { type: 'integer' },
+                points: { type: 'integer' },
+              },
+            },
+          },
+        },
+      },
+      ChildStatistics: {
+        type: 'object',
+        properties: {
+          user: { $ref: '#/components/schemas/User' },
+          totalChores: { type: 'integer' },
+          completedChores: { type: 'integer' },
+          overdueChores: { type: 'integer' },
+          points: { type: 'integer' },
+          completionRate: { type: 'number' },
+          recentActivity: { type: 'array', items: { $ref: '#/components/schemas/ChoreAssignment' } },
+        },
+      },
+      AuditLog: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          userId: { type: 'string' },
+          action: { type: 'string' },
+          entityType: { type: 'string' },
+          entityId: { type: 'string', nullable: true },
+          oldValue: { type: 'object', nullable: true },
+          newValue: { type: 'object', nullable: true },
+          ipAddress: { type: 'string', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+    },
+  },
+}
+
+export const swaggerOptions: Options = {
+  definition: swaggerDefinition,
+  apis: [
+    './src/routes/index.ts',
+    './src/routes/auth.routes.ts',
+    './src/routes/users.routes.ts',
+    './src/routes/chore-templates.routes.ts',
+    './src/routes/chore-assignments.routes.ts',
+    './src/routes/chore-categories.routes.ts',
+    './src/routes/notifications.routes.ts',
+    './src/routes/notification-settings.routes.ts',
+    './src/routes/overdue-penalty.routes.ts',
+    './src/routes/recurring-chores.routes.ts',
+    './src/routes/pocket-money.routes.ts',
+    './src/routes/statistics.routes.ts',
+    './src/routes/audit.routes.ts',
+    './src/routes/metrics.routes.ts',
+  ],
+}
