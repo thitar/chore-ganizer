@@ -63,11 +63,7 @@ const generalLimiter = process.env.DISABLE_RATE_LIMIT === 'true'
       },
       standardHeaders: true,
       legacyHeaders: false,
-      keyGenerator: (req) => {
-        const key = req.ip || req.socket.remoteAddress || 'unknown'
-        logger.debug(`Rate limit key: ${key} for ${req.method} ${req.originalUrl}`)
-        return key
-      },
+      // Use default keyGenerator to handle IPv4/IPv6 correctly
     })
 
 // Apply general rate limiter to all API routes

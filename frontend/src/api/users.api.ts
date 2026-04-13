@@ -45,6 +45,11 @@ export const usersApi = {
     return response.data?.user
   },
 
+  updateMe: async (data: Partial<UpdateUserData>): Promise<User> => {
+    const response = await apiClient.patch<{ user: User }>('/users/me', data)
+    return response.data?.user
+  },
+
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/users/${id}`)
   },
