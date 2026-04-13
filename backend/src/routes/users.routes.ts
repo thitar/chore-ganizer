@@ -2,7 +2,7 @@ import { Router } from 'express'
 import * as usersController from '../controllers/users.controller.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authenticate, authorize, requireParent } from '../middleware/auth.js'
-import { validate, updateUserSchema, idParamSchema, createUserSchema } from '../middleware/validator.js'
+import { validate, updateUserSchema, updateMyProfileSchema, idParamSchema, createUserSchema } from '../middleware/validator.js'
 
 const router = Router()
 
@@ -63,7 +63,7 @@ router.get(
 router.patch(
   '/me',
   authenticate,
-  validate(updateUserSchema),
+  validate(updateMyProfileSchema),
   asyncHandler(usersController.updateMyProfile)
 )
 
