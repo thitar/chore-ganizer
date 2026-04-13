@@ -10,6 +10,20 @@ When the user asks to run, execute, or retest any manual test case — including
 
 Chore-Ganizer is a family chore management app with a React frontend and Express/TypeScript backend. It uses SQLite via Prisma ORM and session-based auth with CSRF protection.
 
+## Quick Start
+
+```bash
+# Start with pre-built Docker images (easiest)
+docker compose up -d
+
+# View logs
+docker compose logs -f backend
+docker compose logs -f frontend
+
+# Access at http://localhost:3002 (frontend) or http://localhost:3010 (backend)
+# Default credentials: dad@home.local / password123 (or alice@home.local for child)
+```
+
 ## Version Management
 
 **Single source of truth**: `backend/package.json` and `frontend/package.json` define the version (must be identical).
@@ -33,6 +47,28 @@ When you update the version in `backend/package.json` and `frontend/package.json
 # Or manually set APP_VERSION before running:
 export APP_VERSION=$(grep '"version"' backend/package.json | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
 docker compose up --build -d
+```
+
+## Environment Setup
+
+Create a `.env` file in the project root (copy from `.env.example` if available):
+
+```bash
+# Required
+SESSION_SECRET=<generate-a-random-string-for-session-encryption>
+APP_VERSION=2.1.9
+
+# Optional
+DATA_DIR=/opt/app-data/chore-ganizer
+PUID=1001
+PGID=1001
+VITE_API_URL=
+BACKEND_PORT=3010
+```
+
+**Generating SESSION_SECRET:**
+```bash
+openssl rand -base64 32
 ```
 
 ## Building & Running
@@ -60,6 +96,50 @@ docker compose logs -f frontend
 ### Default credentials (auto-seeded on first start)
 - Parents: `dad@home.local`, `mom@home.local` | Children: `alice@home.local`, `bob@home.local`
 - Password: `password123`
+
+## Local Development
+
+Run frontend and backend dev servers locally (requires Node.js 18+):
+
+```bash
+# Install dependencies (in each directory)
+cd backend && npm install && cd ..
+cd frontend && npm install && cd ..
+
+# Terminal 1: Backend dev server (watches for changes)
+cd backend
+npm run dev
+
+# Terminal 2: Frontend dev server (with Vite HMR)
+cd frontend
+npm run dev
+```
+
+Backend runs on `http://localhost:3010`, frontend on `http://localhost:5173`. The frontend automatically proxies `/api/*` requests to the backend.
+
+### Available npm Scripts
+
+**Backend** (`backend/`):
+```bash
+npm run dev              # Start dev server with auto-reload
+npm run build            # Compile TypeScript to dist/
+npm run start            # Run built server
+npm test                 # Run all tests
+npm run test:unit        # Unit tests only
+npm run test:integration # Integration tests (requires real DB)
+npm run lint             # Run ESLint
+npm run format           # Format with Prettier
+```
+
+**Frontend** (`frontend/`):
+```bash
+npm run dev              # Start Vite dev server
+npm run build            # Build for production
+npm run preview          # Preview production build locally
+npm test                 # Run Vitest
+npm run lint             # Run ESLint
+npm run format           # Format with Prettier
+```
 
 ### Tests (CI only — not run via Docker)
 ```bash
@@ -140,6 +220,13 @@ npx playwright test -g "pattern"
 - **401 responses** trigger auto-logout via a `auth:unauthorized` custom DOM event (see `client.ts`)
 - **Integration test DB** lives at `test-db/integration-test.db` — created/destroyed per test run by global setup/teardown
 - **E2E tests** use `.spec.ts` suffix; unit/integration tests use `.test.ts`
+
+### Monorepo Structure
+This is a monorepo with two independent npm packages:
+- **`backend/`** — Express.js server; produces Docker image `ghcr.io/thitar/chore-ganizer-backend:VERSION`
+- **`frontend/`** — React + Vite web app; produces Docker image `ghcr.io/thitar/chore-ganizer-frontend:VERSION`
+
+Both must have identical version numbers in their `package.json` files. Docker Compose orchestrates both containers, nginx in frontend proxies `/api/*` to backend.
 
 ### Notable Environment Variables
 | Variable | Purpose |
