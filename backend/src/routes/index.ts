@@ -17,16 +17,86 @@ import { VERSION, BUILD_DATE, FULL_VERSION } from '../version.js'
 
 const router = Router()
 
-// Health check endpoints (no authentication required)
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     tags: [Health]
+ *     summary: Full health check
+ *     description: Returns DB, memory, and disk health. Returns 503 if degraded or error.
+ *     responses:
+ *       200:
+ *         description: API is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/EnhancedHealthResponse'
+ */
 router.get('/health', asyncHandler(healthController.healthCheck))
+
+/**
+ * @swagger
+ * /health/live:
+ *   get:
+ *     tags: [Health]
+ *     summary: Liveness probe
+ *     description: Kubernetes-style liveness probe — checks if server is running.
+ *     responses:
+ *       200:
+ *         description: Server is alive
+ */
 router.get('/health/live', healthController.livenessCheck)
+
+/**
+ * @swagger
+ * /health/ready:
+ *   get:
+ *     tags: [Health]
+ *     summary: Readiness probe
+ *     description: Returns 503 if database is not reachable.
+ *     responses:
+ *       200:
+ *         description: API is ready
+ *       503:
+ *         description: Not ready
+ */
 router.get('/health/ready', asyncHandler(healthController.readinessCheck))
+
+/**
+ * @swagger
+ * /health/cache:
+ *   get:
+ *     tags: [Health]
+ *     summary: Cache statistics
+ *     description: Returns template and category cache stats.
+ *     responses:
+ *       200:
+ *         description: Cache statistics
+ */
 router.get('/health/cache', healthController.getCacheStatsHandler)
 
-// Security.txt endpoint (RFC 9116, no authentication required)
+/**
+ * @swagger
+ * /.well-known/security.txt:
+ *   get:
+ *     tags: [Security]
+ *     summary: Security contact information (RFC 9116)
+ *     responses:
+ *       200:
+ *         description: Security disclosure info
+ */
 router.get('/.well-known/security.txt', healthController.getSecurityTxt)
 
-// Version endpoint (no authentication required)
+/**
+ * @swagger
+ * /version:
+ *   get:
+ *     tags: [Health]
+ *     summary: Get API version
+ *     responses:
+ *       200:
+ *         description: Version information
+ */
 router.get('/version', (_req: Request, res: Response) => {
   res.json({
     version: VERSION,
