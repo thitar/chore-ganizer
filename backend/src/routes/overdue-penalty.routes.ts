@@ -13,19 +13,152 @@ const router = Router()
 // All routes require authentication
 router.use(authenticate)
 
-// GET /api/overdue-penalty/settings - Get penalty settings
+/**
+ * @swagger
+ * /overdue-penalty/settings:
+ *   get:
+ *     tags: [Overdue Penalty]
+ *     summary: Get penalty settings
+ *     description: Retrieve overdue penalty configuration settings (Parent-only)
+ *     operationId: getPenaltySettings
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Penalty settings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/UpdatePenaltySettingsRequest'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (parent-only)
+ */
 router.get('/settings', getPenaltySettings)
 
-// PUT /api/overdue-penalty/settings - Update penalty settings
+/**
+ * @swagger
+ * /overdue-penalty/settings:
+ *   put:
+ *     tags: [Overdue Penalty]
+ *     summary: Update penalty settings
+ *     description: Update overdue penalty configuration settings (Parent-only)
+ *     operationId: updatePenaltySettings
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdatePenaltySettingsRequest'
+ *     responses:
+ *       200:
+ *         description: Settings updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (parent-only)
+ */
 router.put('/settings', updatePenaltySettings)
 
-// POST /api/overdue-penalty/process - Manually trigger overdue processing
+/**
+ * @swagger
+ * /overdue-penalty/process:
+ *   post:
+ *     tags: [Overdue Penalty]
+ *     summary: Process overdue chores
+ *     description: Manually trigger overdue penalty processing (Parent-only)
+ *     operationId: processOverdue
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Overdue processing completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (parent-only)
+ */
 router.post('/process', processOverdue)
 
-// GET /api/overdue-penalty/chores - Get list of overdue chores
+/**
+ * @swagger
+ * /overdue-penalty/chores:
+ *   get:
+ *     tags: [Overdue Penalty]
+ *     summary: Get overdue chores
+ *     description: Retrieve a list of overdue chores with penalty information
+ *     operationId: getOverdueChores
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Overdue chores list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/OverdueChore'
+ *       401:
+ *         description: Unauthorized
+ */
 router.get('/chores', getOverdueChores)
 
-// GET /api/overdue-penalty/history - Get penalty history
+/**
+ * @swagger
+ * /overdue-penalty/history:
+ *   get:
+ *     tags: [Overdue Penalty]
+ *     summary: Get penalty history
+ *     description: Retrieve the history of applied overdue penalties
+ *     operationId: getPenaltyHistory
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Penalty history
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/PenaltyRecord'
+ *       401:
+ *         description: Unauthorized
+ */
 router.get('/history', getPenaltyHistory)
 
 export default router

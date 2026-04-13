@@ -6,9 +6,31 @@ import { authenticate } from '../middleware/auth.js'
 const router = Router()
 
 /**
- * @route   GET /api/notifications
- * @desc    Get all notifications for current user
- * @access  Private
+ * @swagger
+ * /notifications:
+ *   get:
+ *     tags: [Notifications]
+ *     summary: Get all notifications
+ *     description: Retrieve all notifications for the current user
+ *     operationId: getNotifications
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: List of notifications
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Notification'
+ *       401:
+ *         description: Unauthorized
  */
 router.get(
   '/',
@@ -17,9 +39,32 @@ router.get(
 )
 
 /**
- * @route   PUT /api/notifications/:id/read
- * @desc    Mark notification as read
- * @access  Private
+ * @swagger
+ * /notifications/{id}/read:
+ *   put:
+ *     tags: [Notifications]
+ *     summary: Mark notification as read
+ *     description: Mark a specific notification as read
+ *     operationId: markAsRead
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification marked as read
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Notification not found
  */
 router.put(
   '/:id/read',
@@ -28,9 +73,24 @@ router.put(
 )
 
 /**
- * @route   PUT /api/notifications/read-all
- * @desc    Mark all notifications as read
- * @access  Private
+ * @swagger
+ * /notifications/read-all:
+ *   put:
+ *     tags: [Notifications]
+ *     summary: Mark all notifications as read
+ *     description: Mark all notifications for current user as read
+ *     operationId: markAllAsRead
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: All notifications marked as read
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         description: Unauthorized
  */
 router.put(
   '/read-all',
@@ -39,9 +99,29 @@ router.put(
 )
 
 /**
- * @route   POST /api/notifications/check-overdue
- * @desc    Check for overdue chores and create notifications
- * @access  Private
+ * @swagger
+ * /notifications/check-overdue:
+ *   post:
+ *     tags: [Notifications]
+ *     summary: Check for overdue chores
+ *     description: Check for overdue chores and create notifications
+ *     operationId: checkOverdue
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Overdue check completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *       401:
+ *         description: Unauthorized
  */
 router.post(
   '/check-overdue',

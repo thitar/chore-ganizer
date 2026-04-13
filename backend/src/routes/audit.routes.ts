@@ -6,9 +6,33 @@ import { authenticate, authorize } from '../middleware/auth.js'
 const router = Router()
 
 /**
- * @route   GET /api/audit
- * @desc    Get audit logs
- * @access  Private (Parents only)
+ * @swagger
+ * /audit:
+ *   get:
+ *     tags: [Audit Logs]
+ *     summary: Get audit logs
+ *     description: Retrieve audit logs for all system actions (Parent-only)
+ *     operationId: getAuditLogs
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Audit logs
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/AuditLog'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (parent-only)
  */
 router.get(
   '/',
