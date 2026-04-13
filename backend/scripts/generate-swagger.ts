@@ -1,7 +1,7 @@
 import swaggerJSDoc from 'swagger-jsdoc'
 import fs from 'fs'
 import path from 'path'
-import { swaggerOptions } from '../src/swagger.config.js'
+import { swaggerOptions } from '../src/swagger.config'
 
 const outputPath = path.resolve(__dirname, '../../docs/swagger.json')
 
