@@ -24,6 +24,7 @@ const router = Router()
  *     tags: [Health]
  *     summary: Full health check
  *     description: Returns DB, memory, and disk health. Returns 503 if degraded or error.
+ *     operationId: healthCheck
  *     responses:
  *       200:
  *         description: API is healthy
@@ -41,6 +42,7 @@ router.get('/health', asyncHandler(healthController.healthCheck))
  *     tags: [Health]
  *     summary: Liveness probe
  *     description: Kubernetes-style liveness probe — checks if server is running.
+ *     operationId: livenessCheck
  *     responses:
  *       200:
  *         description: Server is alive
@@ -54,6 +56,7 @@ router.get('/health/live', healthController.livenessCheck)
  *     tags: [Health]
  *     summary: Readiness probe
  *     description: Returns 503 if database is not reachable.
+ *     operationId: readinessCheck
  *     responses:
  *       200:
  *         description: API is ready
@@ -69,6 +72,7 @@ router.get('/health/ready', asyncHandler(healthController.readinessCheck))
  *     tags: [Health]
  *     summary: Cache statistics
  *     description: Returns template and category cache stats.
+ *     operationId: getCacheStats
  *     responses:
  *       200:
  *         description: Cache statistics
@@ -81,6 +85,7 @@ router.get('/health/cache', healthController.getCacheStatsHandler)
  *   get:
  *     tags: [Security]
  *     summary: Security contact information (RFC 9116)
+ *     operationId: getSecurityTxt
  *     responses:
  *       200:
  *         description: Security disclosure info
@@ -93,6 +98,7 @@ router.get('/.well-known/security.txt', healthController.getSecurityTxt)
  *   get:
  *     tags: [Health]
  *     summary: Get API version
+ *     operationId: getVersion
  *     responses:
  *       200:
  *         description: Version information

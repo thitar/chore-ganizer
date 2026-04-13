@@ -1340,6 +1340,7 @@
         ],
         "summary": "Full health check",
         "description": "Returns DB, memory, and disk health. Returns 503 if degraded or error.",
+        "operationId": "healthCheck",
         "responses": {
           "200": {
             "description": "API is healthy",
@@ -1361,6 +1362,7 @@
         ],
         "summary": "Liveness probe",
         "description": "Kubernetes-style liveness probe — checks if server is running.",
+        "operationId": "livenessCheck",
         "responses": {
           "200": {
             "description": "Server is alive"
@@ -1375,6 +1377,7 @@
         ],
         "summary": "Readiness probe",
         "description": "Returns 503 if database is not reachable.",
+        "operationId": "readinessCheck",
         "responses": {
           "200": {
             "description": "API is ready"
@@ -1392,6 +1395,7 @@
         ],
         "summary": "Cache statistics",
         "description": "Returns template and category cache stats.",
+        "operationId": "getCacheStats",
         "responses": {
           "200": {
             "description": "Cache statistics"
@@ -1405,6 +1409,7 @@
           "Security"
         ],
         "summary": "Security contact information (RFC 9116)",
+        "operationId": "getSecurityTxt",
         "responses": {
           "200": {
             "description": "Security disclosure info"
@@ -1418,6 +1423,7 @@
           "Health"
         ],
         "summary": "Get API version",
+        "operationId": "getVersion",
         "responses": {
           "200": {
             "description": "Version information"
