@@ -63,6 +63,12 @@ export const updateUserSchema = z.object({
   basePocketMoney: z.number().min(0, 'Base pocket money must be at least 0').optional(),
 })
 
+// Schema for users updating their own profile (limited fields)
+export const updateMyProfileSchema = z.object({
+  name: optionalString(z.string().min(1, 'Name cannot be empty').max(100, 'Name must be 100 characters or less')),
+  color: optionalString(z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Color must be a valid hex color (e.g., #FF5733)')),
+})
+
 // ============================================
 // Chore Template Schemas
 // ============================================
@@ -129,6 +135,7 @@ export type RegisterInput = z.infer<typeof registerSchema>
 export type LoginInput = z.infer<typeof loginSchema>
 export type CreateUserInput = z.infer<typeof createUserSchema>
 export type UpdateUserInput = z.infer<typeof updateUserSchema>
+export type UpdateMyProfileInput = z.infer<typeof updateMyProfileSchema>
 export type CreateChoreTemplateInput = z.infer<typeof createChoreTemplateSchema>
 export type UpdateChoreTemplateInput = z.infer<typeof updateChoreTemplateSchema>
 export type CreateChoreAssignmentInput = z.infer<typeof createChoreAssignmentSchema>
