@@ -4,18 +4,19 @@ This document describes the swagger-jsdoc setup and provides step-by-step instru
 
 ## Current Status
 
-✅ **Implemented:**
-- `swagger-jsdoc` installed as devDependency
-- `backend/src/swagger.config.ts` with complete OpenAPI 3.0 base definition (all schemas, servers, tags, security schemes)
-- `backend/scripts/generate-swagger.ts` generation script (working correctly)
-- `npm run docs:generate` script to regenerate docs
-- `npm run docs:validate` script to verify docs are up-to-date
-- `@swagger` JSDoc annotations for health/version routes (6 routes)
-- Metrics route documented
-- Full `docs/swagger.json` with 55 documented routes (will be regenerated once JSDoc is complete)
+✅ **Complete** — all routes documented end-to-end. The generated `docs/swagger.json` covers **61 paths / 79 operations** across 14 route files, with 0 missing operationIds, summaries, responses, or tags. CI runs `npm run docs:validate` on every backend build and fails if `swagger.json` is stale relative to the source JSDoc.
 
-⏳ **In Progress:**
-- Adding `@swagger` JSDoc to remaining 47 routes across 13 files
+**What's wired up:**
+
+- `swagger-jsdoc` + `@types/swagger-jsdoc` installed as devDependencies (`backend/package.json`)
+- `backend/src/swagger.config.ts` — OpenAPI 3.0.3 base definition (15 tags, 55 schemas, `cookieAuth` security scheme)
+- `backend/scripts/generate-swagger.ts` — generation script with `--validate` mode for CI
+- `npm run docs:generate` — regenerate `docs/swagger.json`
+- `npm run docs:validate` — fail if `docs/swagger.json` doesn't match what the source would generate
+- `@swagger` JSDoc on every route in `backend/src/routes/` (auth, users, chore-templates, chore-assignments, chore-categories, recurring-chores, notifications, notification-settings, overdue-penalty, pocket-money, statistics, audit, metrics, health/version in `index.ts`)
+- CI step `Validate Swagger documentation` in `.github/workflows/ci-cd.yml`
+
+**When you add or change a route**, add/update its `@swagger` block (template below), run `npm run docs:generate`, and commit `docs/swagger.json` alongside the route change. The CI gate will catch you if you forget.
 
 ## How swagger-jsdoc Works
 

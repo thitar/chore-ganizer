@@ -129,6 +129,8 @@ npm run test:unit        # Unit tests only
 npm run test:integration # Integration tests (requires real DB)
 npm run lint             # Run ESLint
 npm run format           # Format with Prettier
+npm run docs:generate    # Regenerate docs/swagger.json from @swagger JSDoc
+npm run docs:validate    # Verify docs/swagger.json matches source (CI gate)
 ```
 
 **Frontend** (`frontend/`):
@@ -246,3 +248,14 @@ Both must have identical version numbers in their `package.json` files. Docker C
 - `/api/health/live` — Liveness probe
 - `/api/health/ready` — Readiness probe (DB connectivity)
 - `/api/metrics` — Prometheus metrics endpoint
+
+### API Documentation (auto-generated)
+
+The OpenAPI spec at `docs/swagger.json` is **generated** from `@swagger` JSDoc blocks co-located with each route in `backend/src/routes/*.ts`. Do not hand-edit `swagger.json` — changes will be overwritten.
+
+- **Base definition** (info, servers, tags, all schemas): `backend/src/swagger.config.ts`
+- **Generator script**: `backend/scripts/generate-swagger.ts` (uses `swagger-jsdoc`)
+- **Regenerate**: `cd backend && npm run docs:generate` — commit the updated `docs/swagger.json` alongside the route changes
+- **CI gate**: the `Validate Swagger documentation` step in `.github/workflows/ci-cd.yml` runs `npm run docs:validate` and fails the build if `swagger.json` is stale
+
+When adding a route or changing its request/response shape, add or update the `@swagger` block above the `router.*()` call (use OpenAPI `{id}` paths, not Express `:id`), regenerate, and commit. See `SWAGGER_JSDOC_GUIDE.md` for the JSDoc template and available `$ref` schema names.
