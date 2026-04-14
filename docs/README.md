@@ -60,8 +60,9 @@ Welcome to the Chore-Ganizer documentation. This index helps you find the right 
 
 | Document | Description |
 |----------|-------------|
-| [API-DOCUMENTATION.md](./API-DOCUMENTATION.md) | REST API reference |
-| [swagger.json](./swagger.json) | OpenAPI specification |
+| [swagger.json](./swagger.json) | **OpenAPI 3.0 spec — authoritative API reference, auto-generated from `@swagger` JSDoc in `backend/src/routes/*.ts` via `npm run docs:generate`. Do not hand-edit.** |
+| [API-DOCUMENTATION.md](./API-DOCUMENTATION.md) | Hand-written REST API guide with examples (may lag behind `swagger.json`) |
+| [../SWAGGER_JSDOC_GUIDE.md](../SWAGGER_JSDOC_GUIDE.md) | How to add `@swagger` JSDoc blocks when adding/changing routes |
 | [DATABASE-SCHEMA.md](./DATABASE-SCHEMA.md) | Database schema documentation |
 | [SECURITY.md](./SECURITY.md) | Security overview |
 

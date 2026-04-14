@@ -1,6 +1,12 @@
 # 📡 Chore-Ganizer API Documentation
 
-> **⚠️ Notice:** This API documentation may be outdated. The OpenAPI specification in [`swagger.json`](swagger.json) is the authoritative and most up-to-date API reference.
+> **⚠️ Authoritative source: [`swagger.json`](swagger.json).**
+> This hand-written guide may lag behind the implementation. The OpenAPI 3.0 spec in [`swagger.json`](swagger.json) is **auto-generated** from `@swagger` JSDoc annotations co-located with the route handlers in `backend/src/routes/*.ts` (base definition: `backend/src/swagger.config.ts`). It always reflects the current code.
+>
+> - **Regenerate**: `cd backend && npm run docs:generate`
+> - **Validate (CI gate)**: `cd backend && npm run docs:validate`
+> - **Adding/changing routes?** See [`../SWAGGER_JSDOC_GUIDE.md`](../SWAGGER_JSDOC_GUIDE.md) for the JSDoc template.
+> - **Do not hand-edit `swagger.json`** — changes will be overwritten on the next regeneration.
 
 Complete REST API reference for Chore-Ganizer backend.
 

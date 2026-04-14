@@ -7,9 +7,31 @@ import { validate, updateUserSchema, updateMyProfileSchema, idParamSchema, creat
 const router = Router()
 
 /**
- * @route   GET /api/users
- * @desc    Get all users
- * @access  Private (All authenticated users - needed for child users to see family members)
+ * @swagger
+ * /users:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get all users
+ *     description: Retrieve all users in the family. Children can see all family members.
+ *     operationId: getAllUsers
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
  */
 router.get(
   '/',
@@ -18,9 +40,39 @@ router.get(
 )
 
 /**
- * @route   POST /api/users
- * @desc    Create a new user
- * @access  Private (Parents only)
+ * @swagger
+ * /users:
+ *   post:
+ *     tags: [Users]
+ *     summary: Create a new user
+ *     description: Create a new user account (Parent-only)
+ *     operationId: createUser
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateUserRequest'
+ *     responses:
+ *       200:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (parent-only)
  */
 router.post(
   '/',
@@ -31,9 +83,37 @@ router.post(
 )
 
 /**
- * @route   GET /api/users/:id
- * @desc    Get user by ID
- * @access  Private (Parents only)
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get user by ID
+ *     description: Retrieve a specific user's details (Parent-only)
+ *     operationId: getUserById
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 router.get(
   '/:id',
@@ -44,9 +124,37 @@ router.get(
 )
 
 /**
- * @route   GET /api/users/:id/assignments
- * @desc    Get assignments assigned to a user
- * @access  Private
+ * @swagger
+ * /users/{id}/assignments:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get user assignments
+ *     description: Retrieve all chore assignments for a specific user
+ *     operationId: getUserAssignments
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User's chore assignments
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/ChoreAssignment'
+ *       401:
+ *         description: Unauthorized
  */
 router.get(
   '/:id/assignments',
@@ -56,9 +164,37 @@ router.get(
 )
 
 /**
- * @route   PATCH /api/users/me
- * @desc    Update current user's profile (color, name)
- * @access  Private (All authenticated users)
+ * @swagger
+ * /users/me:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Update my profile
+ *     description: Update the current user's profile (name and color only)
+ *     operationId: updateMyProfile
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateMyProfileRequest'
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
  */
 router.patch(
   '/me',
@@ -68,9 +204,43 @@ router.patch(
 )
 
 /**
- * @route   PUT /api/users/:id
- * @desc    Update user
- * @access  Private (Parents only)
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     tags: [Users]
+ *     summary: Update user
+ *     description: Update a user's details (Parent-only)
+ *     operationId: updateUser
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateUserRequest'
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (parent-only)
  */
 router.put(
   '/:id',
@@ -82,9 +252,32 @@ router.put(
 )
 
 /**
- * @route   DELETE /api/users/:id
- * @desc    Delete user
- * @access  Private (Parents only)
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     tags: [Users]
+ *     summary: Delete user
+ *     description: Delete a user account (Parent-only)
+ *     operationId: deleteUser
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (parent-only)
  */
 router.delete(
   '/:id',
@@ -95,9 +288,32 @@ router.delete(
 )
 
 /**
- * @route   POST /api/users/:id/lock
- * @desc    Lock a user account
- * @access  Private (Parents only)
+ * @swagger
+ * /users/{id}/lock:
+ *   post:
+ *     tags: [Users]
+ *     summary: Lock a user account
+ *     description: Lock a user account to prevent login (Parent-only)
+ *     operationId: lockUser
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Account locked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (parent-only)
  */
 router.post(
   '/:id/lock',
@@ -108,9 +324,32 @@ router.post(
 )
 
 /**
- * @route   POST /api/users/:id/unlock
- * @desc    Unlock a user account
- * @access  Private (Parents only)
+ * @swagger
+ * /users/{id}/unlock:
+ *   post:
+ *     tags: [Users]
+ *     summary: Unlock a user account
+ *     description: Unlock a user account to allow login (Parent-only)
+ *     operationId: unlockUser
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Account unlocked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (parent-only)
  */
 router.post(
   '/:id/unlock',

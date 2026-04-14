@@ -599,7 +599,10 @@ npx playwright test
 - **[Docker Configuration](./docs/DOCKER-CONFIGURATION.md)** - Docker setup, Dockerfiles, and docker-compose reference
 
 ### API Reference
-- **[API Documentation](./docs/API-DOCUMENTATION.md)** - Complete REST API reference with all endpoints
+
+- **[OpenAPI Spec (`docs/swagger.json`)](./docs/swagger.json)** - Authoritative API reference, **auto-generated** from `@swagger` JSDoc annotations on the route handlers in `backend/src/routes/*.ts`. Regenerate with `cd backend && npm run docs:generate`; CI gates with `npm run docs:validate`. Base definition (schemas, tags, servers) lives in `backend/src/swagger.config.ts`.
+- **[API Documentation](./docs/API-DOCUMENTATION.md)** - Hand-written REST API guide with examples (may lag behind `swagger.json`)
+- **[swagger-jsdoc Guide](./SWAGGER_JSDOC_GUIDE.md)** - How to add/update `@swagger` JSDoc blocks when adding routes
 
 ### Operations
 - **[Post-Deployment Guide](./docs/POST-DEPLOYMENT-GUIDE.md)** - User management, updates, rollbacks, and monitoring

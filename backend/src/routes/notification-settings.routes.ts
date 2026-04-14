@@ -6,9 +6,29 @@ import { authenticate } from '../middleware/auth.js'
 const router = Router()
 
 /**
- * @route   GET /api/notification-settings
- * @desc    Get notification settings for current user
- * @access  Private
+ * @swagger
+ * /notification-settings:
+ *   get:
+ *     tags: [Notification Settings]
+ *     summary: Get notification settings
+ *     description: Retrieve notification settings for the current user
+ *     operationId: getSettings
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Notification settings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/NotificationSettings'
+ *       401:
+ *         description: Unauthorized
  */
 router.get(
   '/',
@@ -17,9 +37,29 @@ router.get(
 )
 
 /**
- * @route   GET /api/notification-settings/defaults
- * @desc    Get default notification settings from environment variables
- * @access  Private
+ * @swagger
+ * /notification-settings/defaults:
+ *   get:
+ *     tags: [Notification Settings]
+ *     summary: Get default notification settings
+ *     description: Retrieve default notification settings from environment variables
+ *     operationId: getDefaults
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Default notification settings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/NotificationSettings'
+ *       401:
+ *         description: Unauthorized
  */
 router.get(
   '/defaults',
@@ -28,9 +68,37 @@ router.get(
 )
 
 /**
- * @route   PUT /api/notification-settings
- * @desc    Update notification settings for current user
- * @access  Private
+ * @swagger
+ * /notification-settings:
+ *   put:
+ *     tags: [Notification Settings]
+ *     summary: Update notification settings
+ *     description: Update notification settings for the current user
+ *     operationId: updateSettings
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateNotificationSettingsRequest'
+ *     responses:
+ *       200:
+ *         description: Settings updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/NotificationSettings'
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
  */
 router.put(
   '/',
@@ -39,9 +107,26 @@ router.put(
 )
 
 /**
- * @route   POST /api/notification-settings/test
- * @desc    Send test notification to verify ntfy configuration
- * @access  Private
+ * @swagger
+ * /notification-settings/test:
+ *   post:
+ *     tags: [Notification Settings]
+ *     summary: Send test notification
+ *     description: Send a test notification to verify ntfy configuration
+ *     operationId: sendTestNotification
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Test notification sent
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Failed to send test notification
  */
 router.post(
   '/test',
