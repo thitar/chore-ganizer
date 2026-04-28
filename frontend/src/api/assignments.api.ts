@@ -117,12 +117,12 @@ export const assignmentsApi = {
     // Handle possible response structures - check both nested and flat formats
     const responseData = response?.data
     const data = responseData?.data ?? responseData
-    if (data?.assignment || data?.pointsAwarded !== undefined) {
-      return { 
-        assignment: data.assignment || {} as ChoreAssignment, 
-        pointsAwarded: data.pointsAwarded ?? 0 
-      }
+    if (!data?.assignment) {
+      throw new Error('Invalid response: missing assignment data')
     }
-    return { assignment: {} as ChoreAssignment, pointsAwarded: 0 }
+    return {
+      assignment: data.assignment,
+      pointsAwarded: data.pointsAwarded ?? 0,
+    }
   },
 }
