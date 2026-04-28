@@ -2,28 +2,6 @@
 
 This file provides guidance to agents when working with code in this repository.
 
-## Manual Testing
-
-When the user asks to run, execute, or retest any manual test case — including prompts like "run P-312", "retest P-312", "test phase 1", or any reference to test IDs in P-XXX or C-XXX format — **always invoke the `cg-tester` skill** before doing anything else. This skill handles all chore-ganizer QA using the Playwright MCP server.
-
-## Project Overview
-
-Chore-Ganizer is a family chore management app with a React frontend and Express/TypeScript backend. It uses SQLite via Prisma ORM and session-based auth with CSRF protection.
-
-## Quick Start
-
-```bash
-# Start with pre-built Docker images (easiest)
-docker compose up -d
-
-# View logs
-docker compose logs -f backend
-docker compose logs -f frontend
-
-# Access at http://localhost:3002 (frontend) or http://localhost:3010 (backend)
-# Default credentials: dad@home.local / password123 (or alice@home.local for child)
-```
-
 ## Version Management
 
 **Single source of truth**: `backend/package.json` and `frontend/package.json` define the version (must be identical).
@@ -31,7 +9,7 @@ docker compose logs -f frontend
 **How APP_VERSION is used**:
 - **Backend**: Included in API responses (metrics endpoint, logs, health checks) so clients know what version they're talking to
 - **Frontend**: Displayed in browser console on startup as `Chore-Ganizer Frontend v{VERSION}+{BUILD_DATE}` 
-- **Docker images**: Tagged with the version for the registry (`ghcr.io/thitar/chore-ganizer-backend:2.1.9`)
+- **Docker images**: Tagged with the version for the registry (`ghcr.io/thitar/chore-ganizer-backend:2.1.10`)
 
 **Keeping versions in sync**:
 When you update the version in `backend/package.json` and `frontend/package.json`, you **must** also update:
@@ -56,7 +34,7 @@ Create a `.env` file in the project root (copy from `.env.example` if available)
 ```bash
 # Required
 SESSION_SECRET=<generate-a-random-string-for-session-encryption>
-APP_VERSION=2.1.9
+APP_VERSION=2.1.10
 
 # Optional
 DATA_DIR=/opt/app-data/chore-ganizer
