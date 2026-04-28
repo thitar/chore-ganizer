@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { AppError } from '../middleware/errorHandler.js'
 import { logger } from '../utils/logger.js'
 
 interface NtfyMessage {
@@ -33,6 +34,39 @@ interface SendNotificationOptions {
 }
 
 /**
+ * Validate ntfy server URL to prevent SSRF attacks.
+ * Rejects private/internal IPs and non-HTTP(S) protocols.
+ */
+export const validateNtfyServerUrl = (serverUrl: string): void => {
+  const allowedProtocols = ['http:', 'https:']
+  let url: URL
+  try {
+    url = new URL(serverUrl)
+  } catch {
+    throw new AppError('Invalid notification server URL', 400, 'VALIDATION_ERROR')
+  }
+
+  if (!allowedProtocols.includes(url.protocol)) {
+    throw new AppError('Invalid notification server URL: only HTTP and HTTPS are allowed', 400, 'VALIDATION_ERROR')
+  }
+
+  // Block private IP ranges and localhost
+  const hostname = url.hostname
+  if (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.startsWith('10.') ||
+    hostname.startsWith('172.') ||
+    hostname.startsWith('192.168.') ||
+    hostname.startsWith('169.254.') ||
+    hostname === '0.0.0.0' ||
+    hostname === '::1'
+  ) {
+    throw new AppError('Invalid notification server URL: private/internal addresses are not allowed', 400, 'VALIDATION_ERROR')
+  }
+}
+
+/**
  * Send a push notification via ntfy
  */
 export const sendNtfyNotification = async (options: SendNotificationOptions): Promise<boolean> => {
@@ -43,6 +77,9 @@ export const sendNtfyNotification = async (options: SendNotificationOptions): Pr
     logger.warn('Missing required fields for notification', { component: 'NtfyService' })
     return false
   }
+
+  // Validate server URL to prevent SSRF
+  validateNtfyServerUrl(serverUrl)
 
   // Build the ntfy message
   const ntfyMessage: NtfyMessage = {
@@ -101,6 +138,9 @@ export const sendNtfyNotification = async (options: SendNotificationOptions): Pr
  */
 export const checkNtfyConnection = async (serverUrl: string, username?: string, password?: string): Promise<boolean> => {
   try {
+    // Validate server URL to prevent SSRF
+    validateNtfyServerUrl(serverUrl)
+
     const url = serverUrl.endsWith('/') ? serverUrl.slice(0, -1) : serverUrl
     
     const headers: Record<string, string> = {}

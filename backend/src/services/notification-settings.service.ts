@@ -1,6 +1,6 @@
 import prisma from '../config/database.js'
 import { logger } from '../utils/logger.js'
-import { sendNtfyNotification, NotificationPriorities, NotificationTags, NotificationType } from './ntfy.service.js'
+import { sendNtfyNotification, validateNtfyServerUrl, NotificationPriorities, NotificationTags, NotificationType } from './ntfy.service.js'
 
 export interface UserNotificationSettingsData {
   ntfyTopic?: string
@@ -123,6 +123,11 @@ export const updateSettings = async (
   userId: number,
   data: UserNotificationSettingsData
 ): Promise<NotificationSettings> => {
+  // Validate ntfy server URL to prevent SSRF
+  if (data.ntfyServerUrl) {
+    validateNtfyServerUrl(data.ntfyServerUrl)
+  }
+
   // Check if settings exist, create if not
   const existing = await prisma.userNotificationSettings.findUnique({
     where: { userId },
