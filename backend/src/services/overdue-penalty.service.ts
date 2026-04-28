@@ -68,9 +68,15 @@ export const applyOverduePenalty = async (
   if (!assignment) {
     throw new AppError(`Assignment ${assignmentId} not found`, 404, 'NOT_FOUND')
   }
-  
-  // Calculate penalty (negative points)
-  const penaltyPoints = -Math.abs(assignment.choreTemplate.points * multiplier)
+
+  // Guard against double-penalty
+  if (assignment.penaltyApplied) {
+    throw new AppError('Penalty has already been applied to this assignment', 409, 'ALREADY_PENALIZED')
+  }
+
+  // Calculate penalty (negative points) using integer math
+  const rawPenalty = assignment.choreTemplate.points * multiplier
+  const penaltyPoints = -Math.round(Math.abs(rawPenalty))
   
   // Update user's points
   await prisma.user.update({
