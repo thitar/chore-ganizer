@@ -88,23 +88,27 @@ export const login = async (req: Request, res: Response) => {
 export const logout = async (req: Request, res: Response) => {
   const userId = req.user?.id
 
-  req.session.destroy((err) => {
-    if (err) {
-      throw new AppError('Failed to logout', 500, 'INTERNAL_ERROR')
-    }
-
-    // Log successful logout
-    if (userId) {
-      auditService.logLogout(req, userId)
-    }
-
-    res.clearCookie('connect.sid')
-    res.json({
-      success: true,
-      data: {
-        message: 'Logged out successfully',
-      },
+  await new Promise<void>((resolve, reject) => {
+    req.session.destroy((err) => {
+      if (err) {
+        reject(new AppError('Failed to logout', 500, 'INTERNAL_ERROR'))
+      } else {
+        resolve()
+      }
     })
+  })
+
+  // Log successful logout
+  if (userId) {
+    auditService.logLogout(req, userId)
+  }
+
+  res.clearCookie('connect.sid')
+  res.json({
+    success: true,
+    data: {
+      message: 'Logged out successfully',
+    },
   })
 }
 
