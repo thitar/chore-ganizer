@@ -31,7 +31,7 @@ interface CsrfTokenResponse {
   csrfToken: string
 }
 
-class ApiClient {
+export class ApiClient {
   private client: AxiosInstance
   private csrfToken: string | null = null
   private csrfInitialized: boolean = false
@@ -111,17 +111,28 @@ class ApiClient {
         if (status === 403 && error.response) {
           const errorData = error.response.data as any
           if (errorData?.error?.code === 'CSRF_TOKEN_INVALID' || errorData?.error?.code === 'CSRF_TOKEN_MISSING') {
-            if (debugEnabled) {
-              console.log('[ApiClient] CSRF token error, refreshing token...')
-            }
-            // Reset and re-fetch CSRF token
-            this.csrfToken = null
-            this.csrfInitialized = false
-            await this.initCsrfToken()
-            
             // Retry the original request once
             const originalRequest = error.config
             if (originalRequest) {
+              // Check if we've already retried this request
+              const retryCount = (originalRequest as any)._csrfRetryCount || 0
+              if (retryCount >= 1) {
+                if (debugEnabled) {
+                  console.log('[ApiClient] CSRF retry limit reached, propagating error')
+                }
+                throw error.response.data
+              }
+              (originalRequest as any)._csrfRetryCount = retryCount + 1
+
+              if (debugEnabled) {
+                console.log('[ApiClient] CSRF token error, refreshing token...')
+              }
+              // Reset and re-fetch CSRF token
+              this.csrfToken = null
+              this.csrfInitialized = false
+              await this.initCsrfToken()
+
+              // Retry the original request with new token
               originalRequest.headers['X-CSRF-Token'] = this.csrfToken
               return this.client.request(originalRequest)
             }

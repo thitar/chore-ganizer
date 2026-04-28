@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import { logger } from '../utils/logger.js'
 import * as overduePenaltyService from '../services/overdue-penalty.service.js'
 import * as notificationSettingsService from '../services/notification-settings.service.js'
 import prisma from '../config/database.js'
@@ -24,26 +25,26 @@ export const getPenaltySettings = async (req: AuthenticatedRequest, res: Respons
     const user = req.user
     
     if (!user) {
-      res.status(401).json({ error: 'Not authenticated' })
+      res.status(401).json({ success: false, error: { message: 'Not authenticated', code: 'UNAUTHORIZED' } })
       return
     }
     
     if (user.role !== 'PARENT') {
-      res.status(403).json({ error: 'Only parents can access penalty settings' })
+      res.status(403).json({ success: false, error: { message: 'Only parents can access penalty settings', code: 'FORBIDDEN' } })
       return
     }
     
     const settings = await overduePenaltyService.getFamilyPenaltySettings()
     
     if (!settings) {
-      res.status(404).json({ error: 'No family settings found' })
+      res.status(404).json({ success: false, error: { message: 'No family settings found', code: 'NOT_FOUND' } })
       return
     }
     
-    res.json(settings)
+    res.json({ success: true, data: settings })
   } catch (error) {
-    console.error('[OverduePenaltyController] Error getting penalty settings:', error)
-    res.status(500).json({ error: 'Failed to get penalty settings' })
+    logger.error('Failed to get penalty settings', { component: 'OverduePenaltyController', action: 'getPenaltySettings', error: String(error) })
+    res.status(500).json({ success: false, error: { message: 'Failed to get penalty settings', code: 'INTERNAL_ERROR' } })
   }
 }
 
@@ -56,12 +57,12 @@ export const updatePenaltySettings = async (req: AuthenticatedRequest, res: Resp
     const user = req.user
     
     if (!user) {
-      res.status(401).json({ error: 'Not authenticated' })
+      res.status(401).json({ success: false, error: { message: 'Not authenticated', code: 'UNAUTHORIZED' } })
       return
     }
     
     if (user.role !== 'PARENT') {
-      res.status(403).json({ error: 'Only parents can update penalty settings' })
+      res.status(403).json({ success: false, error: { message: 'Only parents can update penalty settings', code: 'FORBIDDEN' } })
       return
     }
     
@@ -71,7 +72,7 @@ export const updatePenaltySettings = async (req: AuthenticatedRequest, res: Resp
     if (overduePenaltyMultiplier !== undefined) {
       const multiplier = parseInt(overduePenaltyMultiplier, 10)
       if (isNaN(multiplier) || multiplier < 0 || multiplier > 10) {
-        res.status(400).json({ error: 'Penalty multiplier must be a number between 0 and 10' })
+        res.status(400).json({ success: false, error: { message: 'Penalty multiplier must be a number between 0 and 10', code: 'VALIDATION_ERROR' } })
         return
       }
     }
@@ -79,18 +80,21 @@ export const updatePenaltySettings = async (req: AuthenticatedRequest, res: Resp
     // Update the user's notification settings (which contain penalty settings)
     const settings = await notificationSettingsService.updateSettings(user.id, {
       overduePenaltyEnabled,
-      overduePenaltyMultiplier: overduePenaltyMultiplier ? parseInt(overduePenaltyMultiplier, 10) : undefined,
+      overduePenaltyMultiplier: overduePenaltyMultiplier !== undefined ? parseInt(overduePenaltyMultiplier, 10) : undefined,
       notifyParentOnOverdue,
     })
     
     res.json({
-      overduePenaltyEnabled: settings.overduePenaltyEnabled,
-      overduePenaltyMultiplier: settings.overduePenaltyMultiplier,
-      notifyParentOnOverdue: settings.notifyParentOnOverdue,
+      success: true,
+      data: {
+        overduePenaltyEnabled: settings.overduePenaltyEnabled,
+        overduePenaltyMultiplier: settings.overduePenaltyMultiplier,
+        notifyParentOnOverdue: settings.notifyParentOnOverdue,
+      },
     })
   } catch (error) {
-    console.error('[OverduePenaltyController] Error updating penalty settings:', error)
-    res.status(500).json({ error: 'Failed to update penalty settings' })
+    logger.error('Failed to update penalty settings', { component: 'OverduePenaltyController', action: 'updatePenaltySettings', error: String(error) })
+    res.status(500).json({ success: false, error: { message: 'Failed to update penalty settings', code: 'INTERNAL_ERROR' } })
   }
 }
 
@@ -103,24 +107,27 @@ export const processOverdue = async (req: AuthenticatedRequest, res: Response): 
     const user = req.user
     
     if (!user) {
-      res.status(401).json({ error: 'Not authenticated' })
+      res.status(401).json({ success: false, error: { message: 'Not authenticated', code: 'UNAUTHORIZED' } })
       return
     }
     
     if (user.role !== 'PARENT') {
-      res.status(403).json({ error: 'Only parents can process overdue chores' })
+      res.status(403).json({ success: false, error: { message: 'Only parents can process overdue chores', code: 'FORBIDDEN' } })
       return
     }
     
     const result = await overduePenaltyService.processOverdueChores()
     
     res.json({
-      message: `Processed ${result.processed} overdue chores`,
-      ...result,
+      success: true,
+      data: {
+        message: `Processed ${result.processed} overdue chores`,
+        ...result,
+      },
     })
   } catch (error) {
-    console.error('[OverduePenaltyController] Error processing overdue chores:', error)
-    res.status(500).json({ error: 'Failed to process overdue chores' })
+    logger.error('Failed to process overdue chores', { component: 'OverduePenaltyController', action: 'processOverdue', error: String(error) })
+    res.status(500).json({ success: false, error: { message: 'Failed to process overdue chores', code: 'INTERNAL_ERROR' } })
   }
 }
 
@@ -132,7 +139,7 @@ export const getOverdueChores = async (req: AuthenticatedRequest, res: Response)
     const user = req.user
     
     if (!user) {
-      res.status(401).json({ error: 'Not authenticated' })
+      res.status(401).json({ success: false, error: { message: 'Not authenticated', code: 'UNAUTHORIZED' } })
       return
     }
     
@@ -167,10 +174,10 @@ export const getOverdueChores = async (req: AuthenticatedRequest, res: Response)
       daysOverdue: overduePenaltyService.calculateDaysOverdue(chore.dueDate),
     }))
     
-    res.json(choresWithDaysOverdue)
+    res.json({ success: true, data: choresWithDaysOverdue })
   } catch (error) {
-    console.error('[OverduePenaltyController] Error getting overdue chores:', error)
-    res.status(500).json({ error: 'Failed to get overdue chores' })
+    logger.error('Failed to get overdue chores', { component: 'OverduePenaltyController', action: 'getOverdueChores', error: String(error) })
+    res.status(500).json({ success: false, error: { message: 'Failed to get overdue chores', code: 'INTERNAL_ERROR' } })
   }
 }
 
@@ -182,7 +189,7 @@ export const getPenaltyHistory = async (req: AuthenticatedRequest, res: Response
     const user = req.user
     
     if (!user) {
-      res.status(401).json({ error: 'Not authenticated' })
+      res.status(401).json({ success: false, error: { message: 'Not authenticated', code: 'UNAUTHORIZED' } })
       return
     }
     
@@ -210,9 +217,9 @@ export const getPenaltyHistory = async (req: AuthenticatedRequest, res: Response
       take: 50,
     })
     
-    res.json(penalties)
+    res.json({ success: true, data: penalties })
   } catch (error) {
-    console.error('[OverduePenaltyController] Error getting penalty history:', error)
-    res.status(500).json({ error: 'Failed to get penalty history' })
+    logger.error('Failed to get penalty history', { component: 'OverduePenaltyController', action: 'getPenaltyHistory', error: String(error) })
+    res.status(500).json({ success: false, error: { message: 'Failed to get penalty history', code: 'INTERNAL_ERROR' } })
   }
 }

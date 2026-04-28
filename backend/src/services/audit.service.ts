@@ -1,5 +1,6 @@
 import prisma from '../config/database.js'
 import { Request } from 'express'
+import { logger } from '../utils/logger.js'
 import { AUDIT_ACTIONS, AuditAction } from '../constants/audit-actions.js'
 
 interface AuditLogParams {
@@ -34,7 +35,7 @@ export const createAuditLog = async (params: AuditLogParams): Promise<void> => {
     })
   } catch (error) {
     // Don't throw - audit logging should not break main functionality
-    console.error('Failed to create audit log:', error)
+    logger.error('Failed to create audit log', { component: 'AuditService', error })
   }
 }
 

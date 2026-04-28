@@ -12,7 +12,7 @@ jest.mock('uuid', () => ({
   v4: () => 'test-uuid-1234-5678-9012-345678901234',
 }))
 
-// Suppress console.log in tests unless DEBUG is set
+// Suppress standard output in tests unless DEBUG is set
 if (!process.env.DEBUG) {
   global.console = {
     ...console,
@@ -24,5 +24,6 @@ if (!process.env.DEBUG) {
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason)
+  console.error('Unhandled Rejection', { promise, reason })
+  throw reason // Ensure tests fail
 })

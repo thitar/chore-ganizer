@@ -1,10 +1,11 @@
 import { PrismaClient } from '@prisma/client'
 import * as bcrypt from 'bcrypt'
+import { logger } from '../utils/logger.js'
 
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('🌱 Starting database seed...')
+  logger.info('Starting database seed...')
 
   // Hash passwords
   const passwordHash = await bcrypt.hash('password123', 10)
@@ -19,7 +20,7 @@ async function main() {
     },
   })
 
-  console.log('✅ Family created:', { family: family.id, name: family.name })
+  logger.info('Family created', { family: family.id, name: family.name })
 
   // Create parent users (assigned to family)
   const dad = await prisma.user.upsert({
@@ -75,7 +76,7 @@ async function main() {
     },
   })
 
-  console.log('✅ Users created:', { dad: dad.id, mom: mom.id, alice: alice.id, bob: bob.id })
+  logger.info('Users created', { dad: dad.id, mom: mom.id, alice: alice.id, bob: bob.id })
 
   // Create chore categories
   const cleaning = await prisma.choreCategory.upsert({
@@ -122,7 +123,7 @@ async function main() {
     },
   })
 
-  console.log('✅ Categories created:', { cleaning: cleaning.id, kitchen: kitchen.id, outdoor: outdoor.id, personal: personal.id })
+  logger.info('Categories created', { cleaning: cleaning.id, kitchen: kitchen.id, outdoor: outdoor.id, personal: personal.id })
 
   // Create chore templates
   const template1 = await prisma.choreTemplate.upsert({
@@ -169,7 +170,7 @@ async function main() {
     },
   })
 
-  console.log('✅ Templates created:', { 
+  logger.info('Templates created', { 
     template1: template1.id, 
     template2: template2.id, 
     template3: template3.id, 
@@ -220,19 +221,19 @@ async function main() {
     },
   })
 
-  console.log('✅ Assignments created:', { 
+  logger.info('Assignments created', { 
     assignment1: assignment1.id, 
     assignment2: assignment2.id, 
     assignment3: assignment3.id, 
     assignment4: assignment4.id 
   })
 
-  console.log('🎉 Database seed completed successfully!')
+  logger.info('Database seed completed successfully')
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error seeding database:', e)
+    logger.error('Error seeding database', { error: e })
     process.exit(1)
   })
   .finally(async () => {

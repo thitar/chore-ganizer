@@ -7,7 +7,8 @@ import usersRoutes from './users.routes.js'
 import notificationsRoutes from './notifications.routes.js'
 import notificationSettingsRoutes from './notification-settings.routes.js'
 import overduePenaltyRoutes from './overdue-penalty.routes.js'
-import recurringChoresRoutes from './recurring-chores.routes.js'
+import recurringChoresCrudRoutes from './recurring-chores-crud.routes.js'
+import recurringChoresOccurrencesRoutes from './recurring-chores-occurrences.routes.js'
 import pocketMoneyRoutes from './pocket-money.routes.js'
 import auditRoutes from './audit.routes.js'
 import statisticsRoutes from './statistics.routes.js'
@@ -47,7 +48,7 @@ router.get('/health', asyncHandler(healthController.healthCheck))
  *       200:
  *         description: Server is alive
  */
-router.get('/health/live', healthController.livenessCheck)
+router.get('/health/live', asyncHandler(healthController.livenessCheck))
 
 /**
  * @swagger
@@ -77,7 +78,7 @@ router.get('/health/ready', asyncHandler(healthController.readinessCheck))
  *       200:
  *         description: Cache statistics
  */
-router.get('/health/cache', healthController.getCacheStatsHandler)
+router.get('/health/cache', asyncHandler(healthController.getCacheStatsHandler))
 
 /**
  * @swagger
@@ -90,7 +91,7 @@ router.get('/health/cache', healthController.getCacheStatsHandler)
  *       200:
  *         description: Security disclosure info
  */
-router.get('/.well-known/security.txt', healthController.getSecurityTxt)
+router.get('/.well-known/security.txt', asyncHandler(healthController.getSecurityTxt))
 
 /**
  * @swagger
@@ -120,7 +121,8 @@ router.use('/users', usersRoutes)
 router.use('/notifications', notificationsRoutes)
 router.use('/notification-settings', notificationSettingsRoutes)
 router.use('/overdue-penalty', overduePenaltyRoutes)
-router.use('/recurring-chores', recurringChoresRoutes)
+router.use('/recurring-chores', recurringChoresOccurrencesRoutes)
+router.use('/recurring-chores', recurringChoresCrudRoutes)
 router.use('/pocket-money', pocketMoneyRoutes)
 router.use('/audit', auditRoutes)
 router.use('/statistics', statisticsRoutes)

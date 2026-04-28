@@ -1,28 +1,32 @@
 import { Request, Response } from 'express'
+import prisma from '../config/database.js'
+import { AppError } from '../middleware/errorHandler.js'
+import { logger } from '../utils/logger.js'
 import * as authService from '../services/auth.service.js'
+import * as auditService from '../services/audit.service.js'
 import * as usersService from '../services/users.service.js'
 import { unlockAccount, isLocked } from '../utils/lockout.js'
-import { AppError } from '../middleware/errorHandler.js'
-import * as auditService from '../services/audit.service.js'
 import { AUDIT_ACTIONS } from '../constants/audit-actions.js'
-import prisma from '../config/database.js'
 
 /**
  * POST /api/auth/register
  * Register a new user
  */
 export const register = async (req: Request, res: Response) => {
-  const { email, password, name, role } = req.body
+  const { email, password, name } = req.body
 
   if (!email || !password || !name) {
     throw new AppError('Email, password, and name are required', 400, 'VALIDATION_ERROR')
   }
 
+  // Only allow CHILD registration via public endpoint
+  const effectiveRole = 'CHILD'
+
   const result = await authService.register({ 
     email, 
     password, 
     name, 
-    role: role || 'CHILD' 
+    role: effectiveRole 
   })
 
   // Set session
@@ -56,10 +60,8 @@ export const login = async (req: Request, res: Response) => {
 
     // Debug logging
     if (process.env.LOG_LEVEL === 'debug') {
-      console.log('[Login] Session set for user:', result.user.id)
-      console.log('[Login] Session ID:', req.sessionID)
-      console.log('[Login] X-Forwarded-Proto:', req.headers['x-forwarded-proto'])
-      console.log('[Login] Secure cookies enabled:', process.env.SECURE_COOKIES)
+      logger.debug('Login session set', { userId: result.user.id, sessionId: req.sessionID })
+      logger.debug('Login session details', { proto: req.headers['x-forwarded-proto'], secureCookies: process.env.SECURE_COOKIES })
     }
 
     res.json({
@@ -89,23 +91,27 @@ export const login = async (req: Request, res: Response) => {
 export const logout = async (req: Request, res: Response) => {
   const userId = req.user?.id
 
-  req.session.destroy((err) => {
-    if (err) {
-      throw new AppError('Failed to logout', 500, 'INTERNAL_ERROR')
-    }
-
-    // Log successful logout
-    if (userId) {
-      auditService.logLogout(req, userId)
-    }
-
-    res.clearCookie('connect.sid')
-    res.json({
-      success: true,
-      data: {
-        message: 'Logged out successfully',
-      },
+  await new Promise<void>((resolve, reject) => {
+    req.session.destroy((err) => {
+      if (err) {
+        reject(new AppError('Failed to logout', 500, 'INTERNAL_ERROR'))
+      } else {
+        resolve()
+      }
     })
+  })
+
+  // Log successful logout
+  if (userId) {
+    auditService.logLogout(req, userId)
+  }
+
+  res.clearCookie('connect.sid')
+  res.json({
+    success: true,
+    data: {
+      message: 'Logged out successfully',
+    },
   })
 }
 

@@ -142,10 +142,22 @@ export type CreateChoreAssignmentInput = z.infer<typeof createChoreAssignmentSch
 export type UpdateChoreAssignmentInput = z.infer<typeof updateChoreAssignmentSchema>
 export type CreateChoreCategoryInput = z.infer<typeof createChoreCategorySchema>
 export type UpdateChoreCategoryInput = z.infer<typeof updateChoreCategorySchema>
+export type RecurrenceRuleInput = z.infer<typeof recurrenceRuleSchema>
 
 // ============================================
 // Recurring Chore Schemas
 // ============================================
+
+export const recurrenceRuleSchema = z.object({
+  frequency: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
+  interval: z.number().int().min(1, 'Interval must be at least 1'),
+  dayOfWeek: z.array(z.number().int().min(0).max(6)).optional(),
+  dayOfMonth: z.number().int().min(-1).max(31).optional(),
+  nthWeekday: z.object({
+    week: z.number().int().min(1).max(5),
+    day: z.number().int().min(0).max(6),
+  }).optional(),
+})
 
 export const toggleActiveSchema = z.object({
   isActive: z.boolean(),

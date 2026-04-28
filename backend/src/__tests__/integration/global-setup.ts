@@ -8,7 +8,7 @@ import { mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
 
 export default async function globalSetup() {
-  console.log('🚀 Setting up integration test environment...')
+  console.log('Setting up integration test environment...')
 
   // Create test database directory
   const testDbDir = join(process.cwd(), 'test-db')
@@ -22,5 +22,5 @@ export default async function globalSetup() {
   process.env.SESSION_SECRET = 'test-session-secret-for-integration-tests'
   process.env.PORT = '0' // Use random available port
 
-  console.log('✅ Integration test environment ready')
+  console.log('Integration test environment ready')
 }

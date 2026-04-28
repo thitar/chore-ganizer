@@ -4,10 +4,10 @@ import session from 'express-session'
 import dotenv from 'dotenv'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
-import crypto from 'crypto'
 import routes from './routes/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 import { csrfMiddleware, getCsrfToken } from './middleware/csrf.js'
+import { asyncHandler } from './utils/asyncHandler.js'
 import { requestLogger } from './middleware/requestLogger.js'
 import { metricsMiddleware } from './middleware/metricsMiddleware.js'
 import { shutdownMiddleware } from './middleware/shutdownMiddleware.js'
@@ -19,6 +19,14 @@ import { logger } from './utils/logger.js'
 
 // Load environment variables
 dotenv.config()
+
+// Validate required environment variables
+if (!process.env.SESSION_SECRET) {
+  logger.error('FATAL: SESSION_SECRET environment variable is required but not set.')
+  logger.error('Generate one with: openssl rand -base64 32')
+  logger.error('Then add it to your .env file or environment.')
+  process.exit(1)
+}
 
 // Log server startup banner
 logger.info(`Chore-Ganizer API Server - Version: ${FULL_VERSION}`)
@@ -90,21 +98,17 @@ app.use(requestTimerMiddleware)
 app.use(shutdownMiddleware)
 
 // Session configuration
-// Generate a secure random secret if not provided - DO NOT use in production
-const getSessionSecret = (): string => {
-  if (process.env.SESSION_SECRET) {
-    return process.env.SESSION_SECRET
-  }
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('SESSION_SECRET environment variable must be set in production')
-  }
-  // In development, generate a random secret (note: sessions won't persist across restarts)
-  return crypto.randomBytes(64).toString('hex')
+const sessionSecret = process.env.SESSION_SECRET
+const rawSessionMaxAge = Number(process.env.SESSION_MAX_AGE) || 604800000 // 7 days
+if (isNaN(rawSessionMaxAge) || rawSessionMaxAge <= 0) {
+  logger.error('Invalid SESSION_MAX_AGE value')
+  process.exit(1)
 }
+const sessionMaxAge = rawSessionMaxAge
 
-const sessionSecret = getSessionSecret()
-const sessionMaxAge = Number(process.env.SESSION_MAX_AGE) || 604800000 // 7 days
-const sameSitePolicy = (process.env.SAMESITE_POLICY || 'strict') as 'strict' | 'lax' | 'none' // 'strict', 'lax', or 'none'
+const rawSameSite = process.env.SAMESITE_POLICY || 'strict'
+const validSameSite = ['strict', 'lax', 'none']
+const sameSitePolicy = (validSameSite.includes(rawSameSite) ? rawSameSite : 'strict') as 'strict' | 'lax' | 'none'
 
 // Check if we're behind a trusted proxy
 const isProduction = process.env.NODE_ENV === 'production'
@@ -134,7 +138,7 @@ app.use(requestLogger)
 app.use(metricsMiddleware)
 
 // CSRF token endpoint - must be before routes
-app.get('/api/csrf-token', getCsrfToken)
+app.get('/api/csrf-token', asyncHandler(getCsrfToken))
 
 // API routes
 app.use('/api', routes)

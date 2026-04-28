@@ -1,4 +1,5 @@
 import prisma from '../config/database.js'
+import { logger } from '../utils/logger.js'
 import { getOrCreateSettings, sendPushNotification } from './notification-settings.service.js'
 import { AppError } from '../middleware/errorHandler.js'
 import { createNotification } from './notifications.service.js'
@@ -32,11 +33,20 @@ export const getFamilyPenaltySettings = async () => {
 }
 
 /**
+ * Get the start of today in UTC (00:00:00.000Z).
+ * Using UTC avoids DST transition ambiguity.
+ */
+const getStartOfTodayUTC = (): Date => {
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
+  return startOfToday
+}
+
+/**
  * Find all overdue chores that haven't had a penalty applied yet
  */
 export const findOverdueChoresWithoutPenalty = async () => {
-  const startOfToday = new Date()
-  startOfToday.setUTCHours(0, 0, 0, 0)
+  const startOfToday = getStartOfTodayUTC()
 
   return prisma.choreAssignment.findMany({
     where: {
@@ -53,8 +63,12 @@ export const findOverdueChoresWithoutPenalty = async () => {
 }
 
 /**
- * Apply penalty to a user for an overdue chore
- * Returns the penalty points deducted (negative number)
+ * Apply penalty to a user for an overdue chore.
+ * Returns the penalty points deducted (negative integer).
+ *
+ * Edge case behavior:
+ * - Double-penalty guard: throws if penaltyApplied is already true
+ * - Integer math: penalty is always rounded to nearest integer (no floats)
  */
 export const applyOverduePenalty = async (
   assignmentId: number,
@@ -68,9 +82,15 @@ export const applyOverduePenalty = async (
   if (!assignment) {
     throw new AppError(`Assignment ${assignmentId} not found`, 404, 'NOT_FOUND')
   }
-  
-  // Calculate penalty (negative points)
-  const penaltyPoints = -Math.abs(assignment.choreTemplate.points * multiplier)
+
+  // Guard against double-penalty
+  if (assignment.penaltyApplied) {
+    throw new AppError('Penalty has already been applied to this assignment', 409, 'ALREADY_PENALIZED')
+  }
+
+  // Calculate penalty (negative points) using integer math
+  const rawPenalty = assignment.choreTemplate.points * multiplier
+  const penaltyPoints = -Math.round(Math.abs(rawPenalty))
   
   // Update user's points
   await prisma.user.update({
@@ -121,7 +141,7 @@ export const notifyParentOfOverdue = async (
       message: `"${context.choreTitle}" assigned to ${context.childName} is ${context.daysOverdue} day(s) overdue. Penalty of ${penaltyAbs} points applied.`,
     })
   } catch (err) {
-    console.warn('[OverduePenalty] Failed to create in-app notification for parent', parentId, err)
+    logger.warn('Failed to create in-app notification for parent', { component: 'OverduePenalty', parentId, error: err })
   }
 
   const settings = await getOrCreateSettings(parentId)
@@ -169,10 +189,10 @@ export const notifyChildOfPenalty = async (
       message: `You received a penalty of ${penaltyAbs} points for overdue chore: ${context.choreTitle}`,
     })
   } catch (err) {
-    console.warn('[OverduePenalty] Failed to create in-app notification for child', userId, err)
+    logger.warn('Failed to create in-app notification for child', { component: 'OverduePenalty', userId, error: err })
   }
 
-  return sendPushNotification(userId, 'POINTS_EARNED', {
+  return sendPushNotification(userId, 'PENALTY', {
     choreTitle: context.choreTitle,
     points: context.penaltyPoints,
     totalPoints: 0,
@@ -224,15 +244,18 @@ export const processOverdueChores = async (): Promise<{
   const settings = await getFamilyPenaltySettings()
   
   if (!settings || !settings.overduePenaltyEnabled) {
-    console.log('[OverduePenalty] Penalty system disabled or no parents found')
+    logger.info('Penalty system disabled or no parents found', { component: 'OverduePenalty' })
     return result
   }
   
   // Find overdue chores without penalty
   const overdueChores = await findOverdueChoresWithoutPenalty()
   
-  console.log(`[OverduePenalty] Found ${overdueChores.length} overdue chores to process`)
+  logger.info('Found overdue chores to process', { component: 'OverduePenalty', count: overdueChores.length })
   
+  // Fetch parents once before the loop to avoid N+1 queries
+  const parents = await getAllParents()
+
   for (const assignment of overdueChores) {
     try {
       // Apply penalty
@@ -251,8 +274,7 @@ export const processOverdueChores = async (): Promise<{
       // Calculate days overdue
       const daysOverdue = calculateDaysOverdue(assignment.dueDate)
       
-      // Notify parent
-      const parents = await getAllParents()
+      // Notify parents
       for (const parent of parents) {
         await notifyParentOfOverdue(parent.id, {
           childName: assignment.assignedTo.name,
@@ -270,7 +292,7 @@ export const processOverdueChores = async (): Promise<{
       
       result.processed++
     } catch (error) {
-      console.error(`[OverduePenalty] Error processing assignment ${assignment.id}:`, error)
+      logger.error('Error processing assignment', { component: 'OverduePenalty', assignmentId: assignment.id, error })
       result.errors.push({
         assignmentId: assignment.id,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -300,8 +322,7 @@ export const getAssignmentPenaltyStatus = async (assignmentId: number) => {
     return null
   }
   
-  const startOfToday = new Date()
-  startOfToday.setUTCHours(0, 0, 0, 0)
+  const startOfToday = getStartOfTodayUTC()
   const isOverdue = startOfToday > assignment.dueDate && assignment.status === 'PENDING'
   const daysOverdue = isOverdue ? calculateDaysOverdue(assignment.dueDate) : 0
   

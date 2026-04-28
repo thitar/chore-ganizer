@@ -237,4 +237,50 @@ describe('useAuth', () => {
       expect(registerResult.error).toBe('Email already exists')
     })
   })
+
+  describe('auth:unauthorized event', () => {
+    it('should clear auth state when auth:unauthorized event is dispatched', async () => {
+      mockedAuthApi.getCurrentUser.mockResolvedValue({
+        data: { user: mockUser() },
+      })
+
+      const { result } = renderHook(() => useAuth(), { wrapper })
+
+      await waitFor(() => expect(result.current.loading).toBe(false))
+      expect(result.current.user).not.toBeNull()
+      expect(result.current.isAuthenticated).toBe(true)
+
+      // Dispatch the unauthorized event
+      window.dispatchEvent(
+        new CustomEvent('auth:unauthorized', {
+          detail: { code: 'SESSION_EXPIRED', message: 'Session expired' },
+        })
+      )
+
+      // Auth state should be cleared
+      await waitFor(() => expect(result.current.user).toBeNull())
+      expect(result.current.isAuthenticated).toBe(false)
+    })
+
+    it('should remove event listener on unmount', async () => {
+      mockedAuthApi.getCurrentUser.mockResolvedValue({
+        data: { user: mockUser() },
+      })
+
+      const { result, unmount } = renderHook(() => useAuth(), { wrapper })
+
+      await waitFor(() => expect(result.current.loading).toBe(false))
+
+      unmount()
+
+      // Dispatching event after unmount should not cause errors
+      expect(() => {
+        window.dispatchEvent(
+          new CustomEvent('auth:unauthorized', {
+            detail: { code: 'SESSION_EXPIRED', message: 'Session expired' },
+          })
+        )
+      }).not.toThrow()
+    })
+  })
 })

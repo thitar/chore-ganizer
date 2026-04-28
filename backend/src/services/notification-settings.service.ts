@@ -1,5 +1,6 @@
 import prisma from '../config/database.js'
-import { sendNtfyNotification, NotificationPriorities, NotificationTags, NotificationType } from './ntfy.service.js'
+import { logger } from '../utils/logger.js'
+import { sendNtfyNotification, validateNtfyServerUrl, NotificationPriorities, NotificationTags, NotificationType } from './ntfy.service.js'
 
 export interface UserNotificationSettingsData {
   ntfyTopic?: string
@@ -122,6 +123,11 @@ export const updateSettings = async (
   userId: number,
   data: UserNotificationSettingsData
 ): Promise<NotificationSettings> => {
+  // Validate ntfy server URL to prevent SSRF
+  if (data.ntfyServerUrl) {
+    validateNtfyServerUrl(data.ntfyServerUrl)
+  }
+
   // Check if settings exist, create if not
   const existing = await prisma.userNotificationSettings.findUnique({
     where: { userId },
@@ -217,6 +223,7 @@ export const sendPushNotification = async (
     CHORE_COMPLETED: settings.notifyChoreCompleted,
     CHORE_OVERDUE: settings.notifyChoreOverdue,
     POINTS_EARNED: settings.notifyPointsEarned,
+    PENALTY: settings.notifyChoreOverdue,
   }
 
   if (!typeEnabledMap[type]) {
@@ -225,7 +232,7 @@ export const sendPushNotification = async (
 
   // Check quiet hours
   if (isInQuietHours(settings)) {
-    console.log(`[NotificationSettings] Skipping notification due to quiet hours for user ${userId}`)
+    logger.info('Skipping notification due to quiet hours', { userId, component: 'NotificationSettings' })
     return false
   }
 
@@ -255,6 +262,10 @@ export const sendPushNotification = async (
     case 'POINTS_EARNED':
       title = `You earned ${context.points || 0} points!`
       message = `You earned points for completing "${context.choreTitle || 'Chore'}". Total: ${context.totalPoints || 0} points`
+      break
+    case 'PENALTY':
+      title = `Penalty: ${context.points || 0} points deducted`
+      message = `You received a penalty of ${Math.abs(context.points || 0)} points for overdue chore: ${context.choreTitle || 'Chore'}`
       break
     default:
       return false

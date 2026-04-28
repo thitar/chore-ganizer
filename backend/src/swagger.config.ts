@@ -1,5 +1,5 @@
 import type { Options } from 'swagger-jsdoc'
-import { VERSION } from './version'
+import { VERSION } from './version.js'
 
 const swaggerDefinition = {
   openapi: '3.0.3',
@@ -42,7 +42,7 @@ const swaggerDefinition = {
     schemas: {
       UserRole: { type: 'string', enum: ['PARENT', 'CHILD'] },
       ChoreStatus: { type: 'string', enum: ['PENDING', 'COMPLETED', 'PARTIALLY_COMPLETE'] },
-      RecurrenceFrequency: { type: 'string', enum: ['DAILY', 'WEEKLY', 'MONTHLY'] },
+      RecurrenceFrequency: { type: 'string', enum: ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'] },
       AssignmentMode: { type: 'string', enum: ['FIXED', 'ROUND_ROBIN', 'MIXED'] },
       OccurrenceStatus: { type: 'string', enum: ['PENDING', 'COMPLETED', 'SKIPPED'] },
       TransactionType: { type: 'string', enum: ['EARNED', 'BONUS', 'DEDUCTION', 'PENALTY', 'PAYOUT', 'ADVANCE', 'ADJUSTMENT'] },
@@ -551,7 +551,8 @@ export const swaggerOptions: Options = {
     './src/routes/notifications.routes.ts',
     './src/routes/notification-settings.routes.ts',
     './src/routes/overdue-penalty.routes.ts',
-    './src/routes/recurring-chores.routes.ts',
+    './src/routes/recurring-chores-crud.routes.ts',
+    './src/routes/recurring-chores-occurrences.routes.ts',
     './src/routes/pocket-money.routes.ts',
     './src/routes/statistics.routes.ts',
     './src/routes/audit.routes.ts',
