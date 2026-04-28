@@ -42,7 +42,7 @@ const swaggerDefinition = {
     schemas: {
       UserRole: { type: 'string', enum: ['PARENT', 'CHILD'] },
       ChoreStatus: { type: 'string', enum: ['PENDING', 'COMPLETED', 'PARTIALLY_COMPLETE'] },
-      RecurrenceFrequency: { type: 'string', enum: ['DAILY', 'WEEKLY', 'MONTHLY'] },
+      RecurrenceFrequency: { type: 'string', enum: ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'] },
       AssignmentMode: { type: 'string', enum: ['FIXED', 'ROUND_ROBIN', 'MIXED'] },
       OccurrenceStatus: { type: 'string', enum: ['PENDING', 'COMPLETED', 'SKIPPED'] },
       TransactionType: { type: 'string', enum: ['EARNED', 'BONUS', 'DEDUCTION', 'PENALTY', 'PAYOUT', 'ADVANCE', 'ADJUSTMENT'] },
