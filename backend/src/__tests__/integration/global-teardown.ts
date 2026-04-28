@@ -20,7 +20,7 @@ export default async function globalTeardown() {
       unlinkSync(testDbFile)
       logger.info('Removed test database file')
     } catch (error) {
-      logger.warn({ error }, 'Could not remove test database file')
+      logger.warn('Could not remove test database file', { error })
     }
   }
 

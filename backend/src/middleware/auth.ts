@@ -13,7 +13,7 @@ export const authenticate = async (
   try {
     // Debug logging
     if (process.env.LOG_LEVEL === 'debug') {
-      logger.debug({ sessionId: req.sessionID, cookies: req.headers.cookie, origin: req.headers.origin, host: req.headers.host }, 'Auth middleware session debug')
+      logger.debug('Auth middleware session debug', { sessionId: req.sessionID, cookies: req.headers.cookie, origin: req.headers.origin, host: req.headers.host })
     }
 
     const userId = req.session.userId

@@ -226,7 +226,7 @@ export const sendPushNotification = async (
 
   // Check quiet hours
   if (isInQuietHours(settings)) {
-    logger.info({ userId, component: 'NotificationSettings' }, 'Skipping notification due to quiet hours')
+    logger.info('Skipping notification due to quiet hours', { userId, component: 'NotificationSettings' })
     return false
   }
 

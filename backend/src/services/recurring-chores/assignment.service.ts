@@ -1,5 +1,3 @@
-import { RecurrenceRule } from '../recurrence.service.js'
-
 /**
  * Calculate assigned user IDs based on assignment mode
  */

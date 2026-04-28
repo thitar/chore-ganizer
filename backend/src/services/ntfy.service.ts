@@ -40,7 +40,7 @@ export const sendNtfyNotification = async (options: SendNotificationOptions): Pr
 
   // Validate inputs
   if (!serverUrl || !topic || !title || !message) {
-    logger.warn({ component: 'NtfyService' }, 'Missing required fields for notification')
+    logger.warn('Missing required fields for notification', { component: 'NtfyService' })
     return false
   }
 
@@ -83,14 +83,14 @@ export const sendNtfyNotification = async (options: SendNotificationOptions): Pr
     })
 
     // Log response status for debugging
-    logger.info({ component: 'NtfyService', topic, status: response.status }, 'Notification sent')
+    logger.info('Notification sent', { component: 'NtfyService', topic, status: response.status })
     return true
   } catch (error: any) {
-    logger.error({ component: 'NtfyService', error: error.message }, 'Failed to send notification')
+    logger.error('Failed to send notification', { component: 'NtfyService', error: error.message })
     if (error.response) {
-      logger.error({ component: 'NtfyService', status: error.response.status, data: error.response.data }, 'Notification response error')
+      logger.error('Notification response error', { component: 'NtfyService', status: error.response.status, data: error.response.data })
     } else if (error.code === 'ECONNABORTED') {
-      logger.error({ component: 'NtfyService' }, 'Request timeout - but notification may still be queued')
+      logger.error('Request timeout - but notification may still be queued', { component: 'NtfyService' })
     }
     return false
   }

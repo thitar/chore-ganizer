@@ -35,7 +35,7 @@ export const createAuditLog = async (params: AuditLogParams): Promise<void> => {
     })
   } catch (error) {
     // Don't throw - audit logging should not break main functionality
-    logger.error({ component: 'AuditService', error }, 'Failed to create audit log')
+    logger.error('Failed to create audit log', { component: 'AuditService', error })
   }
 }
 

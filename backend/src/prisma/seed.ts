@@ -20,7 +20,7 @@ async function main() {
     },
   })
 
-  logger.info({ family: family.id, name: family.name }, 'Family created')
+  logger.info('Family created', { family: family.id, name: family.name })
 
   // Create parent users (assigned to family)
   const dad = await prisma.user.upsert({
@@ -76,7 +76,7 @@ async function main() {
     },
   })
 
-  logger.info({ dad: dad.id, mom: mom.id, alice: alice.id, bob: bob.id }, 'Users created')
+  logger.info('Users created', { dad: dad.id, mom: mom.id, alice: alice.id, bob: bob.id })
 
   // Create chore categories
   const cleaning = await prisma.choreCategory.upsert({
@@ -123,7 +123,7 @@ async function main() {
     },
   })
 
-  logger.info({ cleaning: cleaning.id, kitchen: kitchen.id, outdoor: outdoor.id, personal: personal.id }, 'Categories created')
+  logger.info('Categories created', { cleaning: cleaning.id, kitchen: kitchen.id, outdoor: outdoor.id, personal: personal.id })
 
   // Create chore templates
   const template1 = await prisma.choreTemplate.upsert({
@@ -170,12 +170,12 @@ async function main() {
     },
   })
 
-  logger.info({ 
+  logger.info('Templates created', { 
     template1: template1.id, 
     template2: template2.id, 
     template3: template3.id, 
     template4: template4.id 
-  }, 'Templates created')
+  })
 
   // Create sample assignments (due today and tomorrow)
   const today = new Date()
@@ -221,19 +221,19 @@ async function main() {
     },
   })
 
-  logger.info({ 
+  logger.info('Assignments created', { 
     assignment1: assignment1.id, 
     assignment2: assignment2.id, 
     assignment3: assignment3.id, 
     assignment4: assignment4.id 
-  }, 'Assignments created')
+  })
 
   logger.info('Database seed completed successfully')
 }
 
 main()
   .catch((e) => {
-    logger.error({ error: e }, 'Error seeding database')
+    logger.error('Error seeding database', { error: e })
     process.exit(1)
   })
   .finally(async () => {

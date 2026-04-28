@@ -141,7 +141,7 @@ export const notifyParentOfOverdue = async (
       message: `"${context.choreTitle}" assigned to ${context.childName} is ${context.daysOverdue} day(s) overdue. Penalty of ${penaltyAbs} points applied.`,
     })
   } catch (err) {
-    logger.warn({ component: 'OverduePenalty', parentId, error: err }, 'Failed to create in-app notification for parent')
+    logger.warn('Failed to create in-app notification for parent', { component: 'OverduePenalty', parentId, error: err })
   }
 
   const settings = await getOrCreateSettings(parentId)
@@ -189,7 +189,7 @@ export const notifyChildOfPenalty = async (
       message: `You received a penalty of ${penaltyAbs} points for overdue chore: ${context.choreTitle}`,
     })
   } catch (err) {
-    logger.warn({ component: 'OverduePenalty', userId, error: err }, 'Failed to create in-app notification for child')
+    logger.warn('Failed to create in-app notification for child', { component: 'OverduePenalty', userId, error: err })
   }
 
   return sendPushNotification(userId, 'POINTS_EARNED', {
@@ -244,14 +244,14 @@ export const processOverdueChores = async (): Promise<{
   const settings = await getFamilyPenaltySettings()
   
   if (!settings || !settings.overduePenaltyEnabled) {
-    logger.info({ component: 'OverduePenalty' }, 'Penalty system disabled or no parents found')
+    logger.info('Penalty system disabled or no parents found', { component: 'OverduePenalty' })
     return result
   }
   
   // Find overdue chores without penalty
   const overdueChores = await findOverdueChoresWithoutPenalty()
   
-  logger.info({ component: 'OverduePenalty', count: overdueChores.length }, 'Found overdue chores to process')
+  logger.info('Found overdue chores to process', { component: 'OverduePenalty', count: overdueChores.length })
   
   for (const assignment of overdueChores) {
     try {
@@ -290,7 +290,7 @@ export const processOverdueChores = async (): Promise<{
       
       result.processed++
     } catch (error) {
-      logger.error({ component: 'OverduePenalty', assignmentId: assignment.id, error }, 'Error processing assignment')
+      logger.error('Error processing assignment', { component: 'OverduePenalty', assignmentId: assignment.id, error })
       result.errors.push({
         assignmentId: assignment.id,
         error: error instanceof Error ? error.message : 'Unknown error',

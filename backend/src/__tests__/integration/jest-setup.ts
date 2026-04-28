@@ -26,5 +26,5 @@ if (!process.env.DEBUG) {
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error({ promise, reason }, 'Unhandled Rejection')
+  logger.error('Unhandled Rejection', { promise, reason })
 })

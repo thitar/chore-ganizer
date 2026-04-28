@@ -6,10 +6,7 @@ import * as authService from '../services/auth.service.js'
 import * as auditService from '../services/audit.service.js'
 import * as usersService from '../services/users.service.js'
 import { unlockAccount, isLocked } from '../utils/lockout.js'
-import { AppError } from '../middleware/errorHandler.js'
-import * as auditService from '../services/audit.service.js'
 import { AUDIT_ACTIONS } from '../constants/audit-actions.js'
-import prisma from '../config/database.js'
 
 /**
  * POST /api/auth/register
@@ -60,8 +57,8 @@ export const login = async (req: Request, res: Response) => {
 
     // Debug logging
     if (process.env.LOG_LEVEL === 'debug') {
-      logger.debug({ userId: result.user.id, sessionId: req.sessionID }, 'Login session set')
-      logger.debug({ proto: req.headers['x-forwarded-proto'], secureCookies: process.env.SECURE_COOKIES }, 'Login session details')
+      logger.debug('Login session set', { userId: result.user.id, sessionId: req.sessionID })
+      logger.debug('Login session details', { proto: req.headers['x-forwarded-proto'], secureCookies: process.env.SECURE_COOKIES })
     }
 
     res.json({
