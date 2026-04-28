@@ -172,6 +172,7 @@ export const NotificationPriorities = {
   CHORE_COMPLETED: 2,
   CHORE_OVERDUE: 5,
   POINTS_EARNED: 2,
+  PENALTY: 4,
 } as const
 
 export const NotificationTags = {
@@ -180,6 +181,7 @@ export const NotificationTags = {
   CHORE_COMPLETED: ['white_check_mark', 'star'],
   CHORE_OVERDUE: ['x', 'warning'],
   POINTS_EARNED: ['star', 'sparkles'],
+  PENALTY: ['x', 'warning'],
 } as const
 
 export type NotificationType = keyof typeof NotificationPriorities

@@ -223,6 +223,7 @@ export const sendPushNotification = async (
     CHORE_COMPLETED: settings.notifyChoreCompleted,
     CHORE_OVERDUE: settings.notifyChoreOverdue,
     POINTS_EARNED: settings.notifyPointsEarned,
+    PENALTY: settings.notifyChoreOverdue,
   }
 
   if (!typeEnabledMap[type]) {
@@ -261,6 +262,10 @@ export const sendPushNotification = async (
     case 'POINTS_EARNED':
       title = `You earned ${context.points || 0} points!`
       message = `You earned points for completing "${context.choreTitle || 'Chore'}". Total: ${context.totalPoints || 0} points`
+      break
+    case 'PENALTY':
+      title = `Penalty: ${context.points || 0} points deducted`
+      message = `You received a penalty of ${Math.abs(context.points || 0)} points for overdue chore: ${context.choreTitle || 'Chore'}`
       break
     default:
       return false

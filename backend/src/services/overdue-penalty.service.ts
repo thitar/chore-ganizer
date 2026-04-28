@@ -192,7 +192,7 @@ export const notifyChildOfPenalty = async (
     logger.warn('Failed to create in-app notification for child', { component: 'OverduePenalty', userId, error: err })
   }
 
-  return sendPushNotification(userId, 'POINTS_EARNED', {
+  return sendPushNotification(userId, 'PENALTY', {
     choreTitle: context.choreTitle,
     points: context.penaltyPoints,
     totalPoints: 0,
