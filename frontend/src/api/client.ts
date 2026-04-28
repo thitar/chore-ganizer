@@ -31,7 +31,7 @@ interface CsrfTokenResponse {
   csrfToken: string
 }
 
-class ApiClient {
+export class ApiClient {
   private client: AxiosInstance
   private csrfToken: string | null = null
   private csrfInitialized: boolean = false
