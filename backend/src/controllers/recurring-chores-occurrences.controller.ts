@@ -7,6 +7,14 @@ import {
   awardPointsForCompletion,
 } from '../services/recurring-chores/occurrence-management.service.js'
 
+function safeParseAssignedUserIds(assignedUserIds: string): number[] {
+  try {
+    return JSON.parse(assignedUserIds) as number[]
+  } catch {
+    throw new AppError('Invalid occurrence data', 500, 'DATA_INTEGRITY_ERROR')
+  }
+}
+
 const OCCURRENCE_INCLUDE = {
   recurringChore: {
     select: {
@@ -54,7 +62,7 @@ export const listOccurrences = async (req: Request, res: Response) => {
     })
 
     const occurrences = allOccurrences.filter((occ) => {
-      const assignedIds = JSON.parse(occ.assignedUserIds) as number[]
+      const assignedIds = safeParseAssignedUserIds(occ.assignedUserIds)
       return assignedIds.includes(filterUserId)
     })
 
@@ -143,7 +151,7 @@ export const completeOccurrence = async (req: Request, res: Response) => {
 
   await awardPointsForCompletion(req.user!.id, occurrence.assignedUserIds, occurrence.recurringChore.points)
 
-  const assignedIds = JSON.parse(occurrence.assignedUserIds) as number[]
+  const assignedIds = safeParseAssignedUserIds(occurrence.assignedUserIds)
   const assignedUsers = await prisma.user.findMany({
     where: { id: { in: assignedIds } },
     select: { id: true, name: true },
@@ -194,7 +202,7 @@ export const skipOccurrence = async (req: Request, res: Response) => {
     },
   })
 
-  const assignedIds = JSON.parse(occurrence.assignedUserIds) as number[]
+  const assignedIds = safeParseAssignedUserIds(occurrence.assignedUserIds)
   const assignedUsers = await prisma.user.findMany({
     where: { id: { in: assignedIds } },
     select: { id: true, name: true },
@@ -243,7 +251,7 @@ export const unskipOccurrence = async (req: Request, res: Response) => {
     },
   })
 
-  const assignedIds = JSON.parse(occurrence.assignedUserIds) as number[]
+  const assignedIds = safeParseAssignedUserIds(occurrence.assignedUserIds)
   const assignedUsers = await prisma.user.findMany({
     where: { id: { in: assignedIds } },
     select: { id: true, name: true },

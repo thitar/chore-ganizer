@@ -1,4 +1,13 @@
 import prisma from '../../config/database.js'
+import { AppError } from '../../middleware/errorHandler.js'
+
+function safeParseAssignedUserIds(assignedUserIds: string): number[] {
+  try {
+    return JSON.parse(assignedUserIds) as number[]
+  } catch {
+    throw new AppError('Invalid occurrence data', 500, 'DATA_INTEGRITY_ERROR')
+  }
+}
 
 /**
  * Fetch assigned users for a list of occurrences and attach them
@@ -6,7 +15,7 @@ import prisma from '../../config/database.js'
 export async function attachAssignedUsersToOccurrences(occurrences: any[]) {
   return Promise.all(
     occurrences.map(async (occ) => {
-      const assignedIds = JSON.parse(occ.assignedUserIds) as number[]
+      const assignedIds = safeParseAssignedUserIds(occ.assignedUserIds)
       const assignedUsers = await prisma.user.findMany({
         where: { id: { in: assignedIds } },
         select: { id: true, name: true, color: true },
@@ -64,7 +73,7 @@ export async function awardPointsForCompletion(
   assignedUserIds: string,
   points: number
 ): Promise<void> {
-  const assignedIds = JSON.parse(assignedUserIds) as number[]
+  const assignedIds = safeParseAssignedUserIds(assignedUserIds)
   if (assignedIds.includes(userId)) {
     await prisma.user.update({
       where: { id: userId },
