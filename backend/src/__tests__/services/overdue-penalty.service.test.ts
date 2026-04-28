@@ -7,12 +7,12 @@ import * as notificationsService from '../../services/notifications.service'
 import { mockNotificationSettings } from '../test-helpers'
 
 // Mock notifications service
-jest.mock('../../services/notifications.service.js', () => ({
+jest.mock('../../services/notifications.service', () => ({
   createNotification: jest.fn().mockResolvedValue({ id: 1 }),
 }))
 
 // Mock notification-settings service
-jest.mock('../../services/notification-settings.service.js', () => ({
+jest.mock('../../services/notification-settings.service', () => ({
   getOrCreateSettings: jest.fn(),
   sendPushNotification: jest.fn().mockResolvedValue(true),
 }))
