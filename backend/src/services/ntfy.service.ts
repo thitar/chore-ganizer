@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { logger } from '../utils/logger.js'
 
 interface NtfyMessage {
   topic: string
@@ -39,7 +40,7 @@ export const sendNtfyNotification = async (options: SendNotificationOptions): Pr
 
   // Validate inputs
   if (!serverUrl || !topic || !title || !message) {
-    console.warn('[NtfyService] Missing required fields for notification')
+    logger.warn({ component: 'NtfyService' }, 'Missing required fields for notification')
     return false
   }
 
@@ -82,15 +83,14 @@ export const sendNtfyNotification = async (options: SendNotificationOptions): Pr
     })
 
     // Log response status for debugging
-    console.log(`[NtfyService] Notification sent to topic: ${topic}, status: ${response.status}`)
+    logger.info({ component: 'NtfyService', topic, status: response.status }, 'Notification sent')
     return true
   } catch (error: any) {
-    console.error('[NtfyService] Failed to send notification:', error.message)
+    logger.error({ component: 'NtfyService', error: error.message }, 'Failed to send notification')
     if (error.response) {
-      console.error('[NtfyService] Response status:', error.response.status)
-      console.error('[NtfyService] Response data:', error.response.data)
+      logger.error({ component: 'NtfyService', status: error.response.status, data: error.response.data }, 'Notification response error')
     } else if (error.code === 'ECONNABORTED') {
-      console.error('[NtfyService] Request timeout - but notification may still be queued')
+      logger.error({ component: 'NtfyService' }, 'Request timeout - but notification may still be queued')
     }
     return false
   }

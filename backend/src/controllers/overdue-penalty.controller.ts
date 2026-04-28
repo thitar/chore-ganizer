@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import { logger } from '../utils/logger.js'
 import * as overduePenaltyService from '../services/overdue-penalty.service.js'
 import * as notificationSettingsService from '../services/notification-settings.service.js'
 import prisma from '../config/database.js'
@@ -42,7 +43,7 @@ export const getPenaltySettings = async (req: AuthenticatedRequest, res: Respons
     
     res.json(settings)
   } catch (error) {
-    console.error('[OverduePenaltyController] Error getting penalty settings:', error)
+    logger.error({ component: 'OverduePenaltyController', action: 'getPenaltySettings' }, String(error))
     res.status(500).json({ error: 'Failed to get penalty settings' })
   }
 }
@@ -89,7 +90,7 @@ export const updatePenaltySettings = async (req: AuthenticatedRequest, res: Resp
       notifyParentOnOverdue: settings.notifyParentOnOverdue,
     })
   } catch (error) {
-    console.error('[OverduePenaltyController] Error updating penalty settings:', error)
+    logger.error({ component: 'OverduePenaltyController', action: 'updatePenaltySettings' }, String(error))
     res.status(500).json({ error: 'Failed to update penalty settings' })
   }
 }
@@ -119,7 +120,7 @@ export const processOverdue = async (req: AuthenticatedRequest, res: Response): 
       ...result,
     })
   } catch (error) {
-    console.error('[OverduePenaltyController] Error processing overdue chores:', error)
+    logger.error({ component: 'OverduePenaltyController', action: 'processOverdue' }, String(error))
     res.status(500).json({ error: 'Failed to process overdue chores' })
   }
 }
@@ -169,7 +170,7 @@ export const getOverdueChores = async (req: AuthenticatedRequest, res: Response)
     
     res.json(choresWithDaysOverdue)
   } catch (error) {
-    console.error('[OverduePenaltyController] Error getting overdue chores:', error)
+    logger.error({ component: 'OverduePenaltyController', action: 'getOverdueChores' }, String(error))
     res.status(500).json({ error: 'Failed to get overdue chores' })
   }
 }
@@ -212,7 +213,7 @@ export const getPenaltyHistory = async (req: AuthenticatedRequest, res: Response
     
     res.json(penalties)
   } catch (error) {
-    console.error('[OverduePenaltyController] Error getting penalty history:', error)
+    logger.error({ component: 'OverduePenaltyController', action: 'getPenaltyHistory' }, String(error))
     res.status(500).json({ error: 'Failed to get penalty history' })
   }
 }

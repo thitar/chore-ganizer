@@ -1,4 +1,5 @@
 import prisma from '../config/database.js'
+import { logger } from '../utils/logger.js'
 import { sendNtfyNotification, NotificationPriorities, NotificationTags, NotificationType } from './ntfy.service.js'
 
 export interface UserNotificationSettingsData {
@@ -225,7 +226,7 @@ export const sendPushNotification = async (
 
   // Check quiet hours
   if (isInQuietHours(settings)) {
-    console.log(`[NotificationSettings] Skipping notification due to quiet hours for user ${userId}`)
+    logger.info({ userId, component: 'NotificationSettings' }, 'Skipping notification due to quiet hours')
     return false
   }
 

@@ -1,4 +1,5 @@
 import prisma from '../config/database.js'
+import { logger } from '../utils/logger.js'
 import { getOrCreateSettings, sendPushNotification } from './notification-settings.service.js'
 import { AppError } from '../middleware/errorHandler.js'
 import { createNotification } from './notifications.service.js'
@@ -140,7 +141,7 @@ export const notifyParentOfOverdue = async (
       message: `"${context.choreTitle}" assigned to ${context.childName} is ${context.daysOverdue} day(s) overdue. Penalty of ${penaltyAbs} points applied.`,
     })
   } catch (err) {
-    console.warn('[OverduePenalty] Failed to create in-app notification for parent', parentId, err)
+    logger.warn({ component: 'OverduePenalty', parentId, error: err }, 'Failed to create in-app notification for parent')
   }
 
   const settings = await getOrCreateSettings(parentId)
@@ -188,7 +189,7 @@ export const notifyChildOfPenalty = async (
       message: `You received a penalty of ${penaltyAbs} points for overdue chore: ${context.choreTitle}`,
     })
   } catch (err) {
-    console.warn('[OverduePenalty] Failed to create in-app notification for child', userId, err)
+    logger.warn({ component: 'OverduePenalty', userId, error: err }, 'Failed to create in-app notification for child')
   }
 
   return sendPushNotification(userId, 'POINTS_EARNED', {
@@ -243,14 +244,14 @@ export const processOverdueChores = async (): Promise<{
   const settings = await getFamilyPenaltySettings()
   
   if (!settings || !settings.overduePenaltyEnabled) {
-    console.log('[OverduePenalty] Penalty system disabled or no parents found')
+    logger.info({ component: 'OverduePenalty' }, 'Penalty system disabled or no parents found')
     return result
   }
   
   // Find overdue chores without penalty
   const overdueChores = await findOverdueChoresWithoutPenalty()
   
-  console.log(`[OverduePenalty] Found ${overdueChores.length} overdue chores to process`)
+  logger.info({ component: 'OverduePenalty', count: overdueChores.length }, 'Found overdue chores to process')
   
   for (const assignment of overdueChores) {
     try {
@@ -289,7 +290,7 @@ export const processOverdueChores = async (): Promise<{
       
       result.processed++
     } catch (error) {
-      console.error(`[OverduePenalty] Error processing assignment ${assignment.id}:`, error)
+      logger.error({ component: 'OverduePenalty', assignmentId: assignment.id, error }, 'Error processing assignment')
       result.errors.push({
         assignmentId: assignment.id,
         error: error instanceof Error ? error.message : 'Unknown error',

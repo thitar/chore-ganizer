@@ -6,9 +6,10 @@
 
 import { existsSync, unlinkSync, rmdirSync } from 'fs'
 import { join } from 'path'
+import { logger } from '../../utils/logger.js'
 
 export default async function globalTeardown() {
-  console.log('🧹 Cleaning up integration test environment...')
+  logger.info('Cleaning up integration test environment...')
 
   // Clean up test database
   const testDbDir = join(process.cwd(), 'test-db')
@@ -17,9 +18,9 @@ export default async function globalTeardown() {
   if (existsSync(testDbFile)) {
     try {
       unlinkSync(testDbFile)
-      console.log('  ✓ Removed test database file')
+      logger.info('Removed test database file')
     } catch (error) {
-      console.warn('  ⚠ Could not remove test database file:', error)
+      logger.warn({ error }, 'Could not remove test database file')
     }
   }
 
@@ -37,11 +38,11 @@ export default async function globalTeardown() {
   try {
     if (existsSync(testDbDir)) {
       rmdirSync(testDbDir)
-      console.log('  ✓ Removed test database directory')
+      logger.info('Removed test database directory')
     }
   } catch {
     // Directory not empty or other error, ignore
   }
 
-  console.log('✅ Integration test cleanup complete')
+  logger.info('Integration test cleanup complete')
 }
