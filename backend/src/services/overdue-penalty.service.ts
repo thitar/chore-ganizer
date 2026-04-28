@@ -32,11 +32,20 @@ export const getFamilyPenaltySettings = async () => {
 }
 
 /**
+ * Get the start of today in UTC (00:00:00.000Z).
+ * Using UTC avoids DST transition ambiguity.
+ */
+const getStartOfTodayUTC = (): Date => {
+  const startOfToday = new Date()
+  startOfToday.setUTCHours(0, 0, 0, 0)
+  return startOfToday
+}
+
+/**
  * Find all overdue chores that haven't had a penalty applied yet
  */
 export const findOverdueChoresWithoutPenalty = async () => {
-  const startOfToday = new Date()
-  startOfToday.setUTCHours(0, 0, 0, 0)
+  const startOfToday = getStartOfTodayUTC()
 
   return prisma.choreAssignment.findMany({
     where: {
@@ -53,8 +62,12 @@ export const findOverdueChoresWithoutPenalty = async () => {
 }
 
 /**
- * Apply penalty to a user for an overdue chore
- * Returns the penalty points deducted (negative number)
+ * Apply penalty to a user for an overdue chore.
+ * Returns the penalty points deducted (negative integer).
+ *
+ * Edge case behavior:
+ * - Double-penalty guard: throws if penaltyApplied is already true
+ * - Integer math: penalty is always rounded to nearest integer (no floats)
  */
 export const applyOverduePenalty = async (
   assignmentId: number,
@@ -306,8 +319,7 @@ export const getAssignmentPenaltyStatus = async (assignmentId: number) => {
     return null
   }
   
-  const startOfToday = new Date()
-  startOfToday.setUTCHours(0, 0, 0, 0)
+  const startOfToday = getStartOfTodayUTC()
   const isOverdue = startOfToday > assignment.dueDate && assignment.status === 'PENDING'
   const daysOverdue = isOverdue ? calculateDaysOverdue(assignment.dueDate) : 0
   
