@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 01-06-PLAN.md
-last_updated: "2026-04-28T19:07:53.000Z"
+stopped_at: Completed 01-07-PLAN.md
+last_updated: "2026-04-28T19:40:00.000Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 8
-  completed_plans: 6
-  percent: 75
+  completed_plans: 7
+  percent: 87
 ---
 
 # Project State
@@ -40,6 +40,9 @@ Phase 1: Remediate Codebase Concerns
 - TDD mode enabled: Plans 02, 04, 05 use RED→GREEN→REFACTOR
 - Batch inserts for occurrence generation (Plan 06)
 - Controller refactoring into dedicated services (Plan 07)
+- Kept swagger JSDoc in route files to stay under 300-line controller limit
+- Mounted occurrences router before CRUD router to prevent route shadowing
+- Barrel re-exports preserve backward compatibility during controller splits
 - Fatal startup guards required for all security-critical environment variables (Plan 01)
 - Production error responses must sanitize 5xx messages while preserving 4xx user-facing messages (Plan 01)
 - Full error details (including stack traces) must remain in server-side logs even when HTTP responses are sanitized (Plan 01)
@@ -54,8 +57,8 @@ Phase 1: Remediate Codebase Concerns
 
 ### Session
 
-- **Last session:** 2026-04-28T19:07:53Z
-- **Stopped at:** Completed 01-06-PLAN.md
+- **Last session:** 2026-04-28T19:40:00Z
+- **Stopped at:** Completed 01-07-PLAN.md
 - **Resume file:** None
 
 ---
