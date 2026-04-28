@@ -132,8 +132,17 @@ status: partial
 **Reason:** code context differs from review — the "Validate Swagger documentation" step is already properly indented under the `backend` job's `steps:` block in the current codebase. No fix was needed.
 **Original issue:** The step was reported as a top-level YAML list item that would cause GitHub Actions parsing to fail.
 
+### Additional Post-Fixer Fixes (Orchestrator)
+
+| Issue | Files | Commit |
+|-------|-------|--------|
+| asyncHandler type mismatch with sync route handlers | `backend/src/utils/asyncHandler.ts` | 15f6afe |
+| Occurrences router catch-all blocking CRUD routes | `backend/src/routes/recurring-chores-occurrences.routes.ts` | 15f6afe |
+
+**Note:** The gsd-code-fixer agent added `asyncHandler` wrappers to sync route handlers (WR-12 fix), which caused TypeScript compilation errors because `asyncHandler` only accepted `Promise<any>` returning functions. The orchestrator updated `asyncHandler` to accept `any` return type and removed the occurrences router's catch-all middleware that was intercepting all `/recurring-chores/*` requests before they could reach the CRUD router.
+
 ---
 
 _Fixed: 2026-04-28T00:00:00Z_
-_Fixer: the agent (gsd-code-fixer)_
+_Fixer: the agent (gsd-code-fixer) + orchestrator_
 _Iteration: 1_
