@@ -98,8 +98,16 @@ app.use(shutdownMiddleware)
 
 // Session configuration
 const sessionSecret = process.env.SESSION_SECRET
-const sessionMaxAge = Number(process.env.SESSION_MAX_AGE) || 604800000 // 7 days
-const sameSitePolicy = (process.env.SAMESITE_POLICY || 'strict') as 'strict' | 'lax' | 'none' // 'strict', 'lax', or 'none'
+const rawSessionMaxAge = Number(process.env.SESSION_MAX_AGE) || 604800000 // 7 days
+if (isNaN(rawSessionMaxAge) || rawSessionMaxAge <= 0) {
+  logger.error('Invalid SESSION_MAX_AGE value')
+  process.exit(1)
+}
+const sessionMaxAge = rawSessionMaxAge
+
+const rawSameSite = process.env.SAMESITE_POLICY || 'strict'
+const validSameSite = ['strict', 'lax', 'none']
+const sameSitePolicy = (validSameSite.includes(rawSameSite) ? rawSameSite : 'strict') as 'strict' | 'lax' | 'none'
 
 // Check if we're behind a trusted proxy
 const isProduction = process.env.NODE_ENV === 'production'
