@@ -31,6 +31,26 @@ function createMockAxiosInstance() {
     _mocks: mocks,
   }
 
+  // Helper to pass errors through the response interceptor.
+  // For request() we must overwrite error.config with the actual config
+  // so that _csrfRetryCount mutations are visible on subsequent invocations.
+  const handleError = async (error: any, actualConfig?: any) => {
+    if (error && typeof error === 'object' && actualConfig) {
+      error.config = actualConfig
+      if (error.response) {
+        error.response.config = actualConfig
+      }
+    }
+    if (responseErrorHandler) {
+      try {
+        return await responseErrorHandler(error)
+      } catch (handledError) {
+        throw handledError
+      }
+    }
+    throw error
+  }
+
   // Safety guard to detect infinite retry loops in tests
   const originalRequest = mocks.request
   instance.request = async (...args: any[]) => {
@@ -41,14 +61,7 @@ function createMockAxiosInstance() {
     try {
       return await originalRequest(...args)
     } catch (error) {
-      if (responseErrorHandler) {
-        try {
-          return await responseErrorHandler(error)
-        } catch (handledError) {
-          throw handledError
-        }
-      }
-      throw error
+      return handleError(error, args[0])
     }
   }
 
@@ -58,14 +71,9 @@ function createMockAxiosInstance() {
       try {
         return await originalFn(...args)
       } catch (error) {
-        if (responseErrorHandler) {
-          try {
-            return await responseErrorHandler(error)
-          } catch (handledError) {
-            throw handledError
-          }
-        }
-        throw error
+        // Do NOT overwrite error.config here – createCsrfError already provides
+        // a config with headers so the interceptor can mutate it.
+        return handleError(error)
       }
     }
   }
