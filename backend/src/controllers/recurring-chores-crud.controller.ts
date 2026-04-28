@@ -4,6 +4,7 @@ import { RecurrenceService, RecurrenceRule } from '../services/recurrence.servic
 import { AppError } from '../middleware/errorHandler.js'
 import { generateOccurrencesForChore } from '../services/recurring-chores/occurrence.service.js'
 import { transformRecurringChore } from '../services/recurring-chores/transform.service.js'
+import { recurrenceRuleSchema } from '../schemas/validation.schemas.js'
 import {
   RECURRING_CHORE_INCLUDE,
   updateRecurringChoreAssignments,
@@ -36,6 +37,11 @@ export const createRecurringChore = async (req: Request, res: Response) => {
       400,
       'VALIDATION_ERROR'
     )
+  }
+
+  const zodResult = recurrenceRuleSchema.safeParse(recurrenceRule)
+  if (!zodResult.success) {
+    throw new AppError('Invalid recurrence rule format', 400, 'VALIDATION_ERROR')
   }
 
   if (!RecurrenceService.isValidRule(recurrenceRule)) {
@@ -175,8 +181,14 @@ export const updateRecurringChore = async (req: Request, res: Response) => {
   if (!existing) {
     throw new AppError('Recurring chore not found', 404, 'NOT_FOUND')
   }
-  if (recurrenceRule && !RecurrenceService.isValidRule(recurrenceRule)) {
-    throw new AppError('Invalid recurrence rule format', 400, 'VALIDATION_ERROR')
+  if (recurrenceRule) {
+    const zodResult = recurrenceRuleSchema.safeParse(recurrenceRule)
+    if (!zodResult.success) {
+      throw new AppError('Invalid recurrence rule format', 400, 'VALIDATION_ERROR')
+    }
+    if (!RecurrenceService.isValidRule(recurrenceRule)) {
+      throw new AppError('Invalid recurrence rule format', 400, 'VALIDATION_ERROR')
+    }
   }
 
   if (assignmentMode && !['FIXED', 'ROUND_ROBIN', 'MIXED'].includes(assignmentMode)) {
