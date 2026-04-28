@@ -63,11 +63,10 @@ jobs:
         working-directory: backend
         run: npm run prisma:generate
 
-- name: Validate Swagger documentation
-  working-directory: backend
-  run: npm run docs:validate
+      - name: Validate Swagger documentation
+        working-directory: backend
+        run: npm run docs:validate
 
-      
       - name: Run unit tests with coverage
         working-directory: backend
         run: npm run test:coverage

@@ -3675,47 +3675,6 @@
         }
       }
     },
-    "/recurring-chores/occurrences": {
-      "get": {
-        "tags": [
-          "Recurring Chores"
-        ],
-        "summary": "List upcoming occurrences",
-        "description": "Retrieve chore occurrences for the next 30 days",
-        "operationId": "listOccurrences",
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of occurrences",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ChoreOccurrence"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      }
-    },
     "/recurring-chores/{id}": {
       "get": {
         "tags": [
@@ -3922,6 +3881,47 @@
           },
           "403": {
             "description": "Forbidden (parent-only)"
+          }
+        }
+      }
+    },
+    "/recurring-chores/occurrences": {
+      "get": {
+        "tags": [
+          "Recurring Chores"
+        ],
+        "summary": "List upcoming occurrences",
+        "description": "Retrieve chore occurrences for the next 30 days",
+        "operationId": "listOccurrences",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of occurrences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ChoreOccurrence"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         }
       }

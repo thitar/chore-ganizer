@@ -11,6 +11,32 @@ import {
   regenerateFutureOccurrences,
 } from '../services/recurring-chores/recurring-chore-management.service.js'
 
+function validateRecurrenceRule(rule: unknown): void {
+  const zodResult = recurrenceRuleSchema.safeParse(rule)
+  if (!zodResult.success) {
+    throw new AppError('Invalid recurrence rule format', 400, 'VALIDATION_ERROR')
+  }
+  if (!RecurrenceService.isValidRule(rule as RecurrenceRule)) {
+    throw new AppError('Invalid recurrence rule format', 400, 'VALIDATION_ERROR')
+  }
+}
+
+function validateAssignmentMode(mode: unknown): void {
+  if (!['FIXED', 'ROUND_ROBIN', 'MIXED'].includes(mode as string)) {
+    throw new AppError(
+      'assignmentMode must be FIXED, ROUND_ROBIN, or MIXED',
+      400,
+      'VALIDATION_ERROR'
+    )
+  }
+}
+
+function validateId(id: number): void {
+  if (isNaN(id)) {
+    throw new AppError('Invalid recurring chore ID', 400, 'VALIDATION_ERROR')
+  }
+}
+
 export const createRecurringChore = async (req: Request, res: Response) => {
   const {
     title,
@@ -31,22 +57,8 @@ export const createRecurringChore = async (req: Request, res: Response) => {
       'VALIDATION_ERROR'
     )
   }
-  if (!['FIXED', 'ROUND_ROBIN', 'MIXED'].includes(assignmentMode)) {
-    throw new AppError(
-      'assignmentMode must be FIXED, ROUND_ROBIN, or MIXED',
-      400,
-      'VALIDATION_ERROR'
-    )
-  }
-
-  const zodResult = recurrenceRuleSchema.safeParse(recurrenceRule)
-  if (!zodResult.success) {
-    throw new AppError('Invalid recurrence rule format', 400, 'VALIDATION_ERROR')
-  }
-
-  if (!RecurrenceService.isValidRule(recurrenceRule)) {
-    throw new AppError('Invalid recurrence rule format', 400, 'VALIDATION_ERROR')
-  }
+  validateAssignmentMode(assignmentMode)
+  validateRecurrenceRule(recurrenceRule)
   if (assignmentMode === 'FIXED' && fixedAssigneeIds.length === 0) {
     throw new AppError(
       'FIXED assignment mode requires at least one fixed assignee',
@@ -131,9 +143,7 @@ export const listRecurringChores = async (req: Request, res: Response) => {
 
 export const getRecurringChore = async (req: Request, res: Response) => {
   const id = Number(req.params.id)
-  if (isNaN(id)) {
-    throw new AppError('Invalid recurring chore ID', 400, 'VALIDATION_ERROR')
-  }
+  validateId(id)
 
   const recurringChore = await prisma.recurringChore.findFirst({
     where: { id },
@@ -153,9 +163,7 @@ export const getRecurringChore = async (req: Request, res: Response) => {
 export const updateRecurringChore = async (req: Request, res: Response) => {
   const id = Number(req.params.id)
 
-  if (isNaN(id)) {
-    throw new AppError('Invalid recurring chore ID', 400, 'VALIDATION_ERROR')
-  }
+  validateId(id)
 
   const {
     title,
@@ -177,26 +185,16 @@ export const updateRecurringChore = async (req: Request, res: Response) => {
       roundRobinPool: { orderBy: { order: 'asc' } },
     },
   })
-
   if (!existing) {
     throw new AppError('Recurring chore not found', 404, 'NOT_FOUND')
   }
+
   if (recurrenceRule) {
-    const zodResult = recurrenceRuleSchema.safeParse(recurrenceRule)
-    if (!zodResult.success) {
-      throw new AppError('Invalid recurrence rule format', 400, 'VALIDATION_ERROR')
-    }
-    if (!RecurrenceService.isValidRule(recurrenceRule)) {
-      throw new AppError('Invalid recurrence rule format', 400, 'VALIDATION_ERROR')
-    }
+    validateRecurrenceRule(recurrenceRule)
   }
 
-  if (assignmentMode && !['FIXED', 'ROUND_ROBIN', 'MIXED'].includes(assignmentMode)) {
-    throw new AppError(
-      'assignmentMode must be FIXED, ROUND_ROBIN, or MIXED',
-      400,
-      'VALIDATION_ERROR'
-    )
+  if (assignmentMode) {
+    validateAssignmentMode(assignmentMode)
   }
   const updateData: any = {}
   if (title !== undefined) updateData.title = title
@@ -245,9 +243,7 @@ export const updateRecurringChore = async (req: Request, res: Response) => {
 
 export const deleteRecurringChore = async (req: Request, res: Response) => {
   const id = Number(req.params.id)
-  if (isNaN(id)) {
-    throw new AppError('Invalid recurring chore ID', 400, 'VALIDATION_ERROR')
-  }
+  validateId(id)
 
   const existing = await prisma.recurringChore.findFirst({
     where: { id },
@@ -256,20 +252,6 @@ export const deleteRecurringChore = async (req: Request, res: Response) => {
   if (!existing) {
     throw new AppError('Recurring chore not found', 404, 'NOT_FOUND')
   }
-
-  await prisma.recurringChore.update({
-    where: { id },
-    data: { isActive: false },
-  })
-
-  const now = new Date()
-  await prisma.choreOccurrence.deleteMany({
-    where: {
-      recurringChoreId: id,
-      status: 'PENDING',
-      dueDate: { gte: now },
-    },
-  })
 
   res.json({
     success: true,
@@ -281,9 +263,7 @@ export const toggleRecurringChoreActive = async (req: Request, res: Response) =>
   const id = Number(req.params.id)
   const { isActive } = req.body
 
-  if (isNaN(id)) {
-    throw new AppError('Invalid recurring chore ID', 400, 'VALIDATION_ERROR')
-  }
+  validateId(id)
 
   try {
     const updated = await prisma.recurringChore.update({
