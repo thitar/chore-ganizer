@@ -128,6 +128,47 @@ function createForbiddenError(config: { url: string; method: string }) {
   }
 }
 
+function create401Error(config: { url: string; method: string }, code?: string, message?: string) {
+  return {
+    response: {
+      status: 401,
+      data: {
+        success: false,
+        error: {
+          code: code || 'UNAUTHORIZED',
+          message: message || 'Unauthorized',
+        },
+      },
+      config: { ...config, headers: {} },
+    },
+    config: { ...config, headers: {} },
+    message: 'Request failed with status code 401',
+  }
+}
+
+function create500Error(config: { url: string; method: string }) {
+  return {
+    response: {
+      status: 500,
+      data: {
+        success: false,
+        error: { code: 'INTERNAL_SERVER_ERROR', message: 'Internal server error' },
+      },
+      config: { ...config, headers: {} },
+    },
+    config: { ...config, headers: {} },
+    message: 'Request failed with status code 500',
+  }
+}
+
+function createNetworkError(config: { url: string; method: string }) {
+  return {
+    request: {},
+    config: { ...config, headers: {} },
+    message: 'Network Error',
+  }
+}
+
 describe('ApiClient CSRF retry behavior', () => {
   let client: any
   let mockInstance: ReturnType<typeof createMockAxiosInstance>
@@ -246,5 +287,90 @@ describe('ApiClient CSRF retry behavior', () => {
     expect(result.success).toBe(true)
     expect(mockInstance._mocks.post).toHaveBeenCalledTimes(1)
     expect(mockInstance._mocks.request).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('ApiClient error handling', () => {
+  let client: any
+  let mockInstance: ReturnType<typeof createMockAxiosInstance>
+  let dispatchEventSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(async () => {
+    vi.resetModules()
+    vi.clearAllMocks()
+
+    dispatchEventSpy = vi.spyOn(window, 'dispatchEvent')
+
+    mockInstance = createMockAxiosInstance()
+
+    vi.doMock('axios', () => ({
+      default: {
+        create: vi.fn(() => mockInstance),
+      },
+    }))
+
+    const clientModule = await import('./client')
+    client = new clientModule.ApiClient()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.doUnmock('axios')
+  })
+
+  it('should dispatch auth:unauthorized event on 401 response', async () => {
+    mockInstance._mocks.get.mockRejectedValueOnce(
+      create401Error({ url: '/protected', method: 'get' }, 'SESSION_EXPIRED', 'Session expired')
+    )
+
+    await expect(client.get('/protected')).rejects.toBeDefined()
+
+    expect(dispatchEventSpy).toHaveBeenCalledTimes(1)
+    const dispatchedEvent = dispatchEventSpy.mock.calls[0][0] as CustomEvent
+    expect(dispatchedEvent.type).toBe('auth:unauthorized')
+    expect(dispatchedEvent.detail).toEqual({
+      code: 'SESSION_EXPIRED',
+      message: 'Session expired',
+    })
+  })
+
+  it('should throw NETWORK_ERROR on network failure', async () => {
+    mockInstance._mocks.get.mockRejectedValueOnce(
+      createNetworkError({ url: '/api/data', method: 'get' })
+    )
+
+    await expect(client.get('/api/data')).rejects.toEqual({
+      success: false,
+      error: {
+        message: 'No response from server',
+        code: 'NETWORK_ERROR',
+      },
+    })
+  })
+
+  it('should throw server error data on 500 response', async () => {
+    mockInstance._mocks.get.mockRejectedValueOnce(
+      create500Error({ url: '/api/data', method: 'get' })
+    )
+
+    await expect(client.get('/api/data')).rejects.toEqual({
+      success: false,
+      error: { code: 'INTERNAL_SERVER_ERROR', message: 'Internal server error' },
+    })
+  })
+
+  it('should dispatch auth:unauthorized for each 401 request', async () => {
+    mockInstance._mocks.get
+      .mockRejectedValueOnce(create401Error({ url: '/first', method: 'get' }))
+      .mockRejectedValueOnce(create401Error({ url: '/second', method: 'get' }))
+
+    await expect(client.get('/first')).rejects.toBeDefined()
+    await expect(client.get('/second')).rejects.toBeDefined()
+
+    expect(dispatchEventSpy).toHaveBeenCalledTimes(2)
+    const firstEvent = dispatchEventSpy.mock.calls[0][0] as CustomEvent
+    const secondEvent = dispatchEventSpy.mock.calls[1][0] as CustomEvent
+    expect(firstEvent.type).toBe('auth:unauthorized')
+    expect(secondEvent.type).toBe('auth:unauthorized')
   })
 })
