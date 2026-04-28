@@ -80,7 +80,7 @@ export const updatePenaltySettings = async (req: AuthenticatedRequest, res: Resp
     // Update the user's notification settings (which contain penalty settings)
     const settings = await notificationSettingsService.updateSettings(user.id, {
       overduePenaltyEnabled,
-      overduePenaltyMultiplier: overduePenaltyMultiplier ? parseInt(overduePenaltyMultiplier, 10) : undefined,
+      overduePenaltyMultiplier: overduePenaltyMultiplier !== undefined ? parseInt(overduePenaltyMultiplier, 10) : undefined,
       notifyParentOnOverdue,
     })
     
