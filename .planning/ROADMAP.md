@@ -12,7 +12,7 @@
 
 **Plan list:**
 - [x] `01-01-PLAN.md` — Security hardening (session validation, error sanitization)
-- [ ] `01-02-PLAN.md` — CSRF retry loop prevention (TDD)
+- [x] `01-02-PLAN.md` — CSRF retry loop prevention (TDD)
 - [ ] `01-03-PLAN.md` — Bug fixes (access denied toast, version sync)
 - [ ] `01-04-PLAN.md` — Frontend error handling tests (TDD)
 - [ ] `01-05-PLAN.md` — Overdue penalty edge case tests (TDD)

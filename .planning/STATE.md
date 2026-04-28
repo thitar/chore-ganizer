@@ -9,8 +9,8 @@ progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 8
-  completed_plans: 1
-  percent: 13
+  completed_plans: 2
+  percent: 25
 ---
 
 # Project State
@@ -42,11 +42,13 @@ Phase 1: Remediate Codebase Concerns
 - Fatal startup guards required for all security-critical environment variables (Plan 01)
 - Production error responses must sanitize 5xx messages while preserving 4xx user-facing messages (Plan 01)
 - Full error details (including stack traces) must remain in server-side logs even when HTTP responses are sanitized (Plan 01)
+- Exported ApiClient class for testability to enable per-test instantiation (Plan 02)
+- Used config-property (_csrfRetryCount) instead of WeakMap for simplicity and clarity (Plan 02)
 
 ### Session
 
-- **Last session:** 2026-04-28T16:35:12Z
-- **Stopped at:** Completed 01-01-PLAN.md
+- **Last session:** 2026-04-28T17:00:00Z
+- **Stopped at:** Completed 01-02-PLAN.md
 - **Resume file:** None
 
 ---
