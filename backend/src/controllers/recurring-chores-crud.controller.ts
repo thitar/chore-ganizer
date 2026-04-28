@@ -253,6 +253,11 @@ export const deleteRecurringChore = async (req: Request, res: Response) => {
     throw new AppError('Recurring chore not found', 404, 'NOT_FOUND')
   }
 
+  await prisma.recurringChore.update({
+    where: { id },
+    data: { isActive: false },
+  })
+
   res.json({
     success: true,
     data: { message: 'Recurring chore deleted successfully' },
