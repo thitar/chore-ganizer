@@ -14,7 +14,7 @@ import { shutdownMiddleware } from './middleware/shutdownMiddleware.js'
 import { compressionMiddleware } from './middleware/compression.js'
 import { requestTimerMiddleware } from './middleware/requestTimer.js'
 import metricsRoutes from './routes/metrics.routes.js'
-import { FULL_VERSION } from './version.js'
+import { FULL_VERSION } from './version'
 import { logger } from './utils/logger.js'
 
 // Load environment variables

@@ -14,7 +14,7 @@ import auditRoutes from './audit.routes.js'
 import statisticsRoutes from './statistics.routes.js'
 import * as healthController from '../controllers/health.controller.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
-import { VERSION, BUILD_DATE, FULL_VERSION } from '../version.js'
+import { VERSION, BUILD_DATE, FULL_VERSION } from '../version'
 
 const router = Router()
 

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { register } from '../utils/metrics.js';
-import { getVersion } from '../version.js';
+import { getVersion } from '../version';
 
 export const getMetrics = async (_req: Request, res: Response) => {
   try {

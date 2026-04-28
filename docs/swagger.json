@@ -110,7 +110,8 @@
         "enum": [
           "DAILY",
           "WEEKLY",
-          "MONTHLY"
+          "MONTHLY",
+          "YEARLY"
         ]
       },
       "AssignmentMode": {
