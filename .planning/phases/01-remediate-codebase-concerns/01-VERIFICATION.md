@@ -1,8 +1,8 @@
 ---
 phase: 01-remediate-codebase-concerns
 verified: 2026-04-28T20:10:00Z
-status: gaps_found
-score: 27/29 must-haves verified
+status: passed
+score: 29/29 must-haves verified
 overrides_applied: 0
 overrides: []
 gaps:
@@ -49,8 +49,9 @@ deferred:
 **Phase Goal:** Address all concerns raised in the codebase audit (CONCERNS.md) — covering security vulnerabilities, critical bugs, performance bottlenecks, test coverage gaps, and tech debt.
 
 **Verified:** 2026-04-28T20:10:00Z
-**Status:** `gaps_found`
-**Re-verification:** No — initial verification
+**Re-verified:** 2026-04-28T20:30:00Z
+**Status:** `passed`
+**Re-verification:** Yes — all gaps resolved
 
 ---
 
@@ -68,7 +69,7 @@ deferred:
 | 6 | Retry mechanism is verified by automated tests | VERIFIED | `client.test.ts` has 4 CSRF retry tests (lines 197, 218, 238, 262); all 9 client tests pass |
 | 7 | Child users see an "Access Denied" toast when navigating to parent-only routes | VERIFIED | `frontend/src/App.tsx` line 36: `toast.error('Access Denied', { description: 'This page is for parents only.' })` before `<Navigate to="/dashboard" />` |
 | 8 | Backend and frontend package.json versions are identical | VERIFIED | Both `backend/package.json` and `frontend/package.json` have `"version": "2.1.10"` |
-| 9 | CI build fails if backend/frontend versions do not match | PARTIAL | `validate-versions` job exists with correct version comparison logic (`.github/workflows/ci-cd.yml` lines 22-34), but the workflow file has a pre-existing YAML syntax error (line 66) that prevents the entire workflow from parsing |
+| 9 | CI build fails if backend/frontend versions do not match | VERIFIED | `validate-versions` job exists with correct version comparison logic (`.github/workflows/ci-cd.yml` lines 22-34). YAML syntax error at line 66 fixed |
 | 10 | API client interceptors handle 401 responses by dispatching auth:unauthorized event | VERIFIED | `client.test.ts` line 321: test dispatches CustomEvent and asserts on event detail |
 | 11 | Network failures produce proper error objects with NETWORK_ERROR code | VERIFIED | `client.test.ts` line 337: test asserts thrown error has `code: 'NETWORK_ERROR'` |
 | 12 | useAuth hook listens for auth:unauthorized and clears auth state | VERIFIED | `useAuth.test.tsx` line 242: test dispatches event and asserts auth state cleared; all 15 useAuth tests pass |
@@ -82,7 +83,7 @@ deferred:
 | 20 | ESLint no-console rule prevents future console statement regressions | VERIFIED | `backend/eslint.config.cjs` line 34: `'no-console': 'error'`; `npm run lint` passes |
 | 21 | Backend starts and logs correctly via Winston | VERIFIED | `npm run build` passes; backend starts without errors; all logging uses `logger.info/warn/error` with structured metadata |
 | 22 | Recurring-chores controller split into focused route-specific controllers | VERIFIED | Original 1081-line controller split into CRUD (311 lines), occurrences (287 lines), and barrel re-export (7 lines) |
-| 23 | Each new controller is under 300 lines | PARTIAL | Occurrences controller: 287 lines (PASS). CRUD controller: 311 total lines / 276 substantive lines (FAIL by 11 lines). Target was max_lines: 300 |
+| 23 | Each new controller is under 300 lines | VERIFIED | Occurrences controller: 287 lines (PASS). CRUD controller: 291 lines (PASS). Extracted validateRecurrenceRule, validateAssignmentMode, and validateId helpers |
 | 24 | Transform logic lives in a dedicated service file | VERIFIED | `backend/src/services/recurring-chores/transform.service.ts` exports `transformRecurringChore` |
 | 25 | All existing tests pass without modification | VERIFIED | Backend unit tests: 241 passed, 1 skipped, 17 suites. Frontend tests: 191 passed, 17 files. No regressions in unit test suites |
 | 26 | API routes and responses remain unchanged | VERIFIED | `npm run docs:validate` passes ("docs/swagger.json is up to date"); route mounting order in `routes/index.ts` is correct (occurrences before CRUD) |
@@ -90,7 +91,7 @@ deferred:
 | 28 | Recurrence rule JSON storage has been evaluated with clear recommendation | VERIFIED | `docs/JSON-STORAGE-EVALUATION.md` exists with Options A/B/C analyzed and clear recommendation (Option B: keep String with Zod validation) |
 | 29 | Either Json type is adopted or Zod validation is added at DB boundary | VERIFIED | `backend/src/schemas/validation.schemas.ts` line 151: `recurrenceRuleSchema` exported. `backend/src/controllers/recurring-chores-crud.controller.ts` lines 42 and 185: `recurrenceRuleSchema.safeParse()` integrated into create/update handlers |
 
-**Score:** 27/29 truths verified (2 partial, 0 fully failed on intent)
+**Score:** 29/29 truths verified (0 partial, 0 failed)
 
 ---
 
@@ -117,7 +118,7 @@ Items not yet met but explicitly addressed in later milestone phases or acknowle
 | `frontend/src/api/client.ts` | CSRF retry guard | VERIFIED | `_csrfRetryCount` per-request counter |
 | `frontend/src/api/client.test.ts` | CSRF retry tests | VERIFIED | 9 tests, all passing |
 | `frontend/src/App.tsx` | Access denied toast | VERIFIED | `toast.error('Access Denied', ...)` in ProtectedRoute |
-| `.github/workflows/ci-cd.yml` | Version sync CI gate | PARTIAL | Job exists and logic is correct, but workflow has pre-existing YAML parse error at line 66 |
+| `.github/workflows/ci-cd.yml` | Version sync CI gate | VERIFIED | Job exists and logic is correct. YAML syntax error fixed |
 | `docker-compose.sh` | APP_VERSION auto-sync | VERIFIED | Syncs `.env` APP_VERSION from `backend/package.json` |
 | `frontend/src/api/client.test.ts` | Error handling tests | VERIFIED | 4 error handling tests (401, network, 500, multi-401) |
 | `frontend/src/hooks/useAuth.test.tsx` | Event listener tests | VERIFIED | 2 tests (clear auth, remove listener) |
@@ -126,7 +127,7 @@ Items not yet met but explicitly addressed in later milestone phases or acknowle
 | `backend/src/services/recurring-chores/occurrence.service.ts` | Batch inserts | VERIFIED | `createMany` with deduplication via `findMany` + Set |
 | `backend/src/services/recurring-chores/assignment.service.ts` | Assignment calculation | VERIFIED | `calculateAssignedUserIds` exported |
 | `backend/eslint.config.cjs` | no-console lint rule | VERIFIED | `'no-console': 'error'`; lint passes |
-| `backend/src/controllers/recurring-chores-crud.controller.ts` | CRUD under 300 lines | PARTIAL | 311 total lines (276 substantive). Exceeds target by 11 lines due to Plan 08 Zod validation |
+| `backend/src/controllers/recurring-chores-crud.controller.ts` | CRUD under 300 lines | VERIFIED | 291 total lines. Extracted validation helpers |
 | `backend/src/controllers/recurring-chores-occurrences.controller.ts` | Occurrences under 300 lines | VERIFIED | 287 lines |
 | `backend/src/services/recurring-chores/transform.service.ts` | Transform logic extracted | VERIFIED | `transformRecurringChore` exported |
 | `backend/src/routes/index.ts` | Correct mounting order | VERIFIED | Occurrences router mounted before CRUD router |
@@ -172,7 +173,7 @@ Items not yet met but explicitly addressed in later milestone phases or acknowle
 | Swagger docs up to date | `cd backend && npm run docs:validate` | "docs/swagger.json is up to date" | PASS |
 | Client CSRF + error tests pass | `cd frontend && npm test -- client.test.ts` | 9 passed | PASS |
 | useAuth hook tests pass | `cd frontend && npm test -- useAuth.test.tsx` | 15 passed | PASS |
-| Integration tests pass | `cd backend && npm run test:integration` | FAIL — module resolution error in global-setup.ts | FAIL |
+| Integration tests pass | `cd backend && npm run test:integration` | 147 passed, 5 suites | PASS |
 
 ---
 
@@ -205,12 +206,13 @@ Items not yet met but explicitly addressed in later milestone phases or acknowle
 
 ### Anti-Patterns Found
 
-| File | Line | Pattern | Severity | Impact |
-|------|------|---------|----------|--------|
-| `.github/workflows/ci-cd.yml` | 66 | Malformed YAML step (missing indentation) | WARNING | Workflow fails to parse; version sync gate never executes |
-| `backend/src/__tests__/integration/global-setup.ts` | 9 | Import `../../utils/logger.js` fails under ts-node | BLOCKER | Integration tests fail to start (147 tests unreachable) |
-| `backend/src/__tests__/integration/global-teardown.ts` | 9 | Import `../../utils/logger.js` fails under ts-node | BLOCKER | Integration tests fail to start |
-| `backend/src/controllers/recurring-chores-crud.controller.ts` | — | 311 total lines vs. 300-line target | WARNING | Minor deviation; 276 substantive lines |
+| File | Line | Pattern | Severity | Impact | Status |
+|------|------|---------|----------|--------|--------|
+| `.github/workflows/ci-cd.yml` | 66 | Malformed YAML step (missing indentation) | WARNING | Workflow fails to parse; version sync gate never executes | FIXED |
+| `backend/src/__tests__/integration/global-setup.ts` | 9 | Import `../../utils/logger.js` fails under ts-node | BLOCKER | Integration tests fail to start (147 tests unreachable) | FIXED |
+| `backend/src/__tests__/integration/global-teardown.ts` | 9 | Import `../../utils/logger.js` fails under ts-node | BLOCKER | Integration tests fail to start | FIXED |
+| `backend/src/controllers/recurring-chores-crud.controller.ts` | — | 311 total lines vs. 300-line target | WARNING | Minor deviation; 276 substantive lines | FIXED (291 lines) |
+| `backend/src/controllers/recurring-chores-crud.controller.ts` | — | Missing soft-delete prisma call in deleteRecurringChore | BLOCKER | DELETE endpoint returned success without deleting | FIXED |
 
 ---
 
@@ -235,13 +237,15 @@ No items require human verification. All truths are programmatically verifiable.
 
 ### Gaps Summary
 
-**3 gaps identified:**
+**All 3 gaps resolved:**
 
-1. **Integration test regression (BLOCKER)** — Plan 06's console cleanup replaced `console.log` with Winston `logger` imports in `backend/src/__tests__/integration/global-setup.ts` and `global-teardown.ts`. The integration test ts-node configuration cannot resolve `.js` extension imports in global setup/teardown modules, causing all 147 integration tests to fail immediately with `Cannot find module '../../utils/logger.js'`. Before the phase, integration tests passed. This is a regression, not a pre-existing issue. **Fix:** Revert the logger imports in these two test infrastructure files back to `console.log`, or fix the Jest/ts-node module resolution configuration.
+1. **Integration test regression (BLOCKER)** — FIXED. Reverted logger imports in `global-setup.ts`, `global-teardown.ts`, and `jest-setup.ts` back to `console.log`. Integration tests now pass (147/147).
 
-2. **CI workflow YAML syntax error (WARNING)** — The `.github/workflows/ci-cd.yml` file contains a pre-existing malformed step at line 66 (`- name: Validate Swagger documentation` at column 0 instead of `      - name: ...`). While this bug was not introduced by the phase, the phase modified this file (Plan 03 added `validate-versions`) and the broken YAML prevents the version sync gate from ever executing. **Fix:** Indent the step to align with its siblings inside the `steps:` list.
+2. **CI workflow YAML syntax error (WARNING)** — FIXED. Indented the "Validate Swagger documentation" step to align with other steps in the backend job's `steps:` list.
 
-3. **CRUD controller line count (WARNING)** — `backend/src/controllers/recurring-chores-crud.controller.ts` has 311 total lines, exceeding the Plan 07 must-have target of `max_lines: 300`. The overage (11 lines) was introduced by Plan 08 adding Zod validation logic. 276 lines are substantive (non-empty, non-comment). **Fix:** Extract the Zod validation into a small helper function in a service file, or move it to the route level.
+3. **CRUD controller line count (WARNING)** — FIXED. Extracted `validateRecurrenceRule()`, `validateAssignmentMode()`, and `validateId()` helper functions. Controller now 291 lines (under 300 target).
+
+**Additional fix:** Restored missing soft-delete logic in `deleteRecurringChore` (prisma update with `isActive: false`) that was accidentally removed during controller refactoring.
 
 ---
 
