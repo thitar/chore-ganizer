@@ -20,6 +20,14 @@ import { logger } from './utils/logger.js'
 // Load environment variables
 dotenv.config()
 
+// Validate required environment variables
+if (!process.env.SESSION_SECRET) {
+  logger.error('FATAL: SESSION_SECRET environment variable is required but not set.')
+  logger.error('Generate one with: openssl rand -base64 32')
+  logger.error('Then add it to your .env file or environment.')
+  process.exit(1)
+}
+
 // Log server startup banner
 logger.info(`Chore-Ganizer API Server - Version: ${FULL_VERSION}`)
 
@@ -90,19 +98,7 @@ app.use(requestTimerMiddleware)
 app.use(shutdownMiddleware)
 
 // Session configuration
-// Generate a secure random secret if not provided - DO NOT use in production
-const getSessionSecret = (): string => {
-  if (process.env.SESSION_SECRET) {
-    return process.env.SESSION_SECRET
-  }
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('SESSION_SECRET environment variable must be set in production')
-  }
-  // In development, generate a random secret (note: sessions won't persist across restarts)
-  return crypto.randomBytes(64).toString('hex')
-}
-
-const sessionSecret = getSessionSecret()
+const sessionSecret = process.env.SESSION_SECRET
 const sessionMaxAge = Number(process.env.SESSION_MAX_AGE) || 604800000 // 7 days
 const sameSitePolicy = (process.env.SAMESITE_POLICY || 'strict') as 'strict' | 'lax' | 'none' // 'strict', 'lax', or 'none'
 
