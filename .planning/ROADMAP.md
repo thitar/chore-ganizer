@@ -18,7 +18,7 @@
 - [x] `01-05-PLAN.md` — Overdue penalty edge case tests (TDD)
 - [x] `01-06-PLAN.md` — Performance improvements (batch inserts, console cleanup)
 - [x] `01-07-PLAN.md` — Controller refactoring (extract services)
-- [ ] `01-08-PLAN.md` — Documentation & JSON storage evaluation
+- [x] `01-08-PLAN.md` — Documentation & JSON storage evaluation
 
 **Wave Structure:**
 

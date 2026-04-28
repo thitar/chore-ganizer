@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 01-07-PLAN.md
+stopped_at: Completed 01-08-PLAN.md
 last_updated: "2026-04-28T19:40:00.000Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 8
-  completed_plans: 7
-  percent: 87
+  completed_plans: 8
+  percent: 100
 ---
 
 # Project State
@@ -54,11 +54,14 @@ Phase 1: Remediate Codebase Concerns
 - ESLint v10 with flat config format (eslint.config.cjs) for no-console enforcement (Plan 06)
 - Winston structured logging uses (message, metadata) signature for TypeScript compatibility (Plan 06)
 - Test infrastructure files migrated to Winston logging for consistency (Plan 06)
+- Frontend-backend parameter naming convention documented in code comments and AGENTS.md (Plan 08)
+- Recurrence rule JSON storage: recommend Option B (keep String with Zod validation) — no DB queries filter by recurrence properties and SQLite JSON support is limited (Plan 08)
+- Added Zod recurrenceRuleSchema as additional validation layer alongside RecurrenceService.isValidRule() (Plan 08)
 
 ### Session
 
 - **Last session:** 2026-04-28T19:40:00Z
-- **Stopped at:** Completed 01-07-PLAN.md
+- **Stopped at:** Completed 01-08-PLAN.md
 - **Resume file:** None
 
 ---
