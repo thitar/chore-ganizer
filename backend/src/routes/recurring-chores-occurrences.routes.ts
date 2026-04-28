@@ -179,4 +179,15 @@ router.patch('/occurrences/:id/unskip', authenticate, validate(idParamSchema, 'p
  */
 router.post('/trigger-occurrences', authenticate, requireParent, asyncHandler(recurringChoresOccurrencesController.triggerOccurrenceGeneration))
 
+// Catch-all to prevent fall-through to the CRUD router for unmatched occurrence paths
+router.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: {
+      message: 'Not found',
+      code: 'NOT_FOUND',
+    },
+  })
+})
+
 export default router
