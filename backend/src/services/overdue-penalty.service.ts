@@ -253,6 +253,9 @@ export const processOverdueChores = async (): Promise<{
   
   logger.info('Found overdue chores to process', { component: 'OverduePenalty', count: overdueChores.length })
   
+  // Fetch parents once before the loop to avoid N+1 queries
+  const parents = await getAllParents()
+
   for (const assignment of overdueChores) {
     try {
       // Apply penalty
@@ -271,8 +274,7 @@ export const processOverdueChores = async (): Promise<{
       // Calculate days overdue
       const daysOverdue = calculateDaysOverdue(assignment.dueDate)
       
-      // Notify parent
-      const parents = await getAllParents()
+      // Notify parents
       for (const parent of parents) {
         await notifyParentOfOverdue(parent.id, {
           childName: assignment.assignedTo.name,
