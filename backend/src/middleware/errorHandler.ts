@@ -2,6 +2,11 @@ import { Request, Response, NextFunction } from 'express'
 import { logger } from '../utils/logger.js'
 import { notifyServerError } from '../utils/error-webhook.js'
 
+const getSafeErrorMessage = (err: Error | AppError, statusCode: number): string => {
+  if (process.env.NODE_ENV !== 'production') return err.message
+  return statusCode >= 500 ? 'Internal server error' : err.message
+}
+
 export class AppError extends Error {
   statusCode: number
   code: string
@@ -38,7 +43,7 @@ export const errorHandler = (
     res.status(err.statusCode).json({
       success: false,
       error: {
-        message: err.message,
+        message: getSafeErrorMessage(err, err.statusCode),
         code: err.code,
       },
     })
@@ -52,7 +57,7 @@ export const errorHandler = (
       res.status(409).json({
         success: false,
         error: {
-          message: 'Resource already exists',
+          message: getSafeErrorMessage(err, 409),
           code: 'CONFLICT',
         },
       })
@@ -62,7 +67,7 @@ export const errorHandler = (
       res.status(404).json({
         success: false,
         error: {
-          message: 'Resource not found',
+          message: getSafeErrorMessage(err, 404),
           code: 'NOT_FOUND',
         },
       })
@@ -79,7 +84,7 @@ export const errorHandler = (
   res.status(500).json({
     success: false,
     error: {
-      message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
+      message: getSafeErrorMessage(err, 500),
       code: 'INTERNAL_ERROR',
     },
   })
