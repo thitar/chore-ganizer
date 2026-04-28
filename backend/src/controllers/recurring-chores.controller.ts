@@ -2,6 +2,8 @@ import { Request, Response } from 'express'
 import prisma from '../config/database.js'
 import { RecurrenceService, RecurrenceRule } from '../services/recurrence.service.js'
 import { AppError } from '../middleware/errorHandler.js'
+import { generateOccurrencesForChore } from '../services/recurring-chores/occurrence.service.js'
+import { calculateAssignedUserIds } from '../services/recurring-chores/assignment.service.js'
 
 /**
  * Transform recurring chore data for API response
@@ -21,103 +23,6 @@ function transformRecurringChore(dbRecord: any) {
       order: p.order,
       user: p.user,
     })) || [],
-  }
-}
-
-/**
- * Generate occurrences for a recurring chore within the next 30 days
- */
-async function generateOccurrencesForChore(
-  recurringChoreId: number,
-  recurrenceRule: RecurrenceRule,
-  startDate: Date,
-  assignmentMode: string,
-  fixedAssigneeIds: number[],
-  roundRobinPoolIds: number[],
-  initialRoundRobinIndex: number | null
-): Promise<void> {
-  const now = new Date()
-  const endDate = new Date(now)
-  endDate.setDate(endDate.getDate() + 30)
-
-  // Generate occurrence dates
-  const occurrenceDates = RecurrenceService.generateOccurrences(
-    recurrenceRule,
-    startDate,
-    endDate
-  )
-
-  // Create occurrences in database
-  for (let i = 0; i < occurrenceDates.length; i++) {
-    const dueDate = occurrenceDates[i]
-    
-    // Check if occurrence already exists
-    const existing = await prisma.choreOccurrence.findUnique({
-      where: {
-        recurringChoreId_dueDate: {
-          recurringChoreId,
-          dueDate,
-        },
-      },
-    })
-
-    if (!existing) {
-      // Calculate the correct assignee for this specific occurrence
-      const occurrenceRoundRobinIndex = initialRoundRobinIndex !== null ? initialRoundRobinIndex + i : null
-      const { assignedUserIds } = calculateAssignedUserIds(
-        assignmentMode,
-        fixedAssigneeIds,
-        roundRobinPoolIds,
-        occurrenceRoundRobinIndex
-      )
-
-      await prisma.choreOccurrence.create({
-        data: {
-          recurringChoreId,
-          dueDate,
-          status: 'PENDING',
-          assignedUserIds: JSON.stringify(assignedUserIds),
-          roundRobinIndex: occurrenceRoundRobinIndex,
-        },
-      })
-    }
-  }
-}
-
-/**
- * Calculate assigned user IDs based on assignment mode
- */
-function calculateAssignedUserIds(
-  assignmentMode: string,
-  fixedAssigneeIds: number[],
-  roundRobinPoolIds: number[],
-  roundRobinIndex: number | null
-): { assignedUserIds: number[]; roundRobinIndex: number | null } {
-  switch (assignmentMode) {
-    case 'FIXED':
-      return { assignedUserIds: fixedAssigneeIds, roundRobinIndex: null }
-    
-    case 'ROUND_ROBIN':
-      if (roundRobinPoolIds.length === 0) {
-        return { assignedUserIds: [], roundRobinIndex: null }
-      }
-      const rrIndex = roundRobinIndex ?? 0
-      const currentAssignee = roundRobinPoolIds[rrIndex % roundRobinPoolIds.length]
-      return { assignedUserIds: [currentAssignee], roundRobinIndex: rrIndex }
-    
-    case 'MIXED':
-      if (roundRobinPoolIds.length === 0) {
-        return { assignedUserIds: fixedAssigneeIds, roundRobinIndex: null }
-      }
-      const mixedRrIndex = roundRobinIndex ?? 0
-      const mixedCurrentAssignee = roundRobinPoolIds[mixedRrIndex % roundRobinPoolIds.length]
-      return {
-        assignedUserIds: [...fixedAssigneeIds, mixedCurrentAssignee],
-        roundRobinIndex: mixedRrIndex,
-      }
-    
-    default:
-      return { assignedUserIds: [], roundRobinIndex: null }
   }
 }
 
