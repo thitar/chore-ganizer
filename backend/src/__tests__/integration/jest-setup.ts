@@ -4,8 +4,6 @@
  * This file runs before each test file
  */
 
-import { logger } from '../../utils/logger.js'
-
 // Increase default timeout for integration tests
 jest.setTimeout(30000)
 
@@ -26,5 +24,5 @@ if (!process.env.DEBUG) {
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection', { promise, reason })
+  console.error('Unhandled Rejection', { promise, reason })
 })
