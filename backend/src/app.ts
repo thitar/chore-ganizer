@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit'
 import routes from './routes/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 import { csrfMiddleware, getCsrfToken } from './middleware/csrf.js'
+import { asyncHandler } from './utils/asyncHandler.js'
 import { requestLogger } from './middleware/requestLogger.js'
 import { metricsMiddleware } from './middleware/metricsMiddleware.js'
 import { shutdownMiddleware } from './middleware/shutdownMiddleware.js'
@@ -137,7 +138,7 @@ app.use(requestLogger)
 app.use(metricsMiddleware)
 
 // CSRF token endpoint - must be before routes
-app.get('/api/csrf-token', getCsrfToken)
+app.get('/api/csrf-token', asyncHandler(getCsrfToken))
 
 // API routes
 app.use('/api', routes)

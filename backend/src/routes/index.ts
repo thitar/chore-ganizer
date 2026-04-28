@@ -48,7 +48,7 @@ router.get('/health', asyncHandler(healthController.healthCheck))
  *       200:
  *         description: Server is alive
  */
-router.get('/health/live', healthController.livenessCheck)
+router.get('/health/live', asyncHandler(healthController.livenessCheck))
 
 /**
  * @swagger
@@ -78,7 +78,7 @@ router.get('/health/ready', asyncHandler(healthController.readinessCheck))
  *       200:
  *         description: Cache statistics
  */
-router.get('/health/cache', healthController.getCacheStatsHandler)
+router.get('/health/cache', asyncHandler(healthController.getCacheStatsHandler))
 
 /**
  * @swagger
@@ -91,7 +91,7 @@ router.get('/health/cache', healthController.getCacheStatsHandler)
  *       200:
  *         description: Security disclosure info
  */
-router.get('/.well-known/security.txt', healthController.getSecurityTxt)
+router.get('/.well-known/security.txt', asyncHandler(healthController.getSecurityTxt))
 
 /**
  * @swagger
