@@ -25,4 +25,5 @@ if (!process.env.DEBUG) {
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection', { promise, reason })
+  throw reason // Ensure tests fail
 })
