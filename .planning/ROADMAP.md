@@ -1,40 +1,23 @@
 # Roadmap
 
-## Active Milestone
+## Milestones
 
-### Phase 1: Remediate Codebase Concerns
+- ✅ **v2.1.10 Codebase Remediation** — Phase 1 (shipped 2026-04-28)
 
-**Goal:** Address all concerns raised in the codebase audit (CONCERNS.md) — covering security vulnerabilities, critical bugs, performance bottlenecks, test coverage gaps, and tech debt.
+## Phases
 
-**Depends on:** None
+<details>
+<summary>✅ v2.1.10 Codebase Remediation (Phase 1) — SHIPPED 2026-04-28</summary>
 
-**Plans:** 8 plans in 5 waves
-**Status:** Complete ✓
+- [x] Phase 1: Remediate Codebase Concerns (8/8 plans) — completed 2026-04-28
 
-**Plan list:**
-- [x] `01-01-PLAN.md` — Security hardening (session validation, error sanitization)
-- [x] `01-02-PLAN.md` — CSRF retry loop prevention (TDD)
-- [x] `01-03-PLAN.md` — Bug fixes (access denied toast, version sync)
-- [x] `01-04-PLAN.md` — Frontend error handling tests (TDD)
-- [x] `01-05-PLAN.md` — Overdue penalty edge case tests (TDD)
-- [x] `01-06-PLAN.md` — Performance improvements (batch inserts, console cleanup)
-- [x] `01-07-PLAN.md` — Controller refactoring (extract services)
-- [x] `01-08-PLAN.md` — Documentation & JSON storage evaluation
+</details>
 
-**Wave Structure:**
+## Progress
 
-| Wave | Plans | Dependencies | What it builds |
-|------|-------|--------------|----------------|
-| 1 | 01, 02, 03 | None | Security hardening + bug fixes |
-| 2 | 04, 05 | 01-02 (client.ts changes) | Test coverage expansion |
-| 3 | 06 | 01-04, 01-05 | Performance improvements |
-| 4 | 07 | 01-06 | Controller refactoring |
-| 5 | 08 | 01-06, 01-07 | Documentation & schema evaluation |
-
-**Cross-cutting constraints:**
-- All backend changes must pass `npm run build` and `npm run lint`
-- All frontend changes must pass `npm run build` and `npm run lint`
-- TDD plans (02, 04, 05) require RED→GREEN→REFACTOR commit sequence
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|---------------|--------|-----------|
+| 1. Remediate Codebase Concerns | v2.1.10 | 8/8 | Complete | 2026-04-28 |
 
 ---
 
