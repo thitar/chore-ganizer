@@ -4,7 +4,7 @@ import { useAuth, AuthProvider } from './hooks'
 import { ErrorBoundary, Loading } from './components/common'
 import OfflineIndicator from './components/common/OfflineIndicator'
 import { Navbar, Sidebar, Footer } from './components/layout'
-import { Toaster } from 'sonner'
+import { Toaster, toast } from 'sonner'
 
 // Lazy load pages for code splitting
 const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })))
@@ -31,11 +31,14 @@ const PageLoader = () => (
 // Protected route wrapper for parent-only pages
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isParent } = useAuth()
-  
+
   if (!isParent) {
+    toast.error('Access Denied', {
+      description: 'This page is for parents only.',
+    })
     return <Navigate to="/dashboard" replace />
   }
-  
+
   return <>{children}</>
 }
 
