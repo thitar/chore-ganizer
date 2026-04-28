@@ -52,11 +52,17 @@ export const validateNtfyServerUrl = (serverUrl: string): void => {
 
   // Block private IP ranges and localhost
   const hostname = url.hostname
+  const isPrivate172 = (h: string): boolean => {
+    const parts = h.split('.')
+    if (parts.length !== 4) return false
+    const second = parseInt(parts[1], 10)
+    return parts[0] === '172' && second >= 16 && second <= 31
+  }
   if (
     hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
     hostname.startsWith('10.') ||
-    hostname.startsWith('172.') ||
+    isPrivate172(hostname) ||
     hostname.startsWith('192.168.') ||
     hostname.startsWith('169.254.') ||
     hostname === '0.0.0.0' ||
