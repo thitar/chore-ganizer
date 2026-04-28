@@ -8,7 +8,8 @@
 
 **Depends on:** None
 
-**Plans:** 8 plans in 4 waves
+**Plans:** 8 plans in 5 waves
+**Status:** Complete ✓
 
 **Plan list:**
 - [x] `01-01-PLAN.md` — Security hardening (session validation, error sanitization)
@@ -27,7 +28,8 @@
 | 1 | 01, 02, 03 | None | Security hardening + bug fixes |
 | 2 | 04, 05 | 01-02 (client.ts changes) | Test coverage expansion |
 | 3 | 06 | 01-04, 01-05 | Performance improvements |
-| 4 | 07, 08 | 01-06 | Tech debt reduction + docs |
+| 4 | 07 | 01-06 | Controller refactoring |
+| 5 | 08 | 01-06, 01-07 | Documentation & schema evaluation |
 
 **Cross-cutting constraints:**
 - All backend changes must pass `npm run build` and `npm run lint`
