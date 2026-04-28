@@ -1,6 +1,25 @@
 import client from './client'
 import type { ChoreAssignment, CreateAssignmentData, UpdateAssignmentData, ApiResponse } from '../types'
 
+/**
+ * @file Assignments API
+ * @description Frontend API layer for chore assignments
+ *
+ * ## Naming Convention
+ *
+ * The frontend uses simplified parameter names internally, which map to backend API fields:
+ *
+ * | Frontend Param | Backend Param | Mapping Location |
+ * |----------------|---------------|------------------|
+ * | `userId`       | `assignedToId`| `getAll()` line 16 |
+ * | `fromDate`     | `dueDateFrom` | `getAll()` line 17 |
+ * | `toDate`       | `dueDateTo`   | `getAll()` line 18 |
+ *
+ * When adding new API functions that accept user or template identifiers,
+ * follow this pattern: map frontend params to backend params in the API layer.
+ * Never expose backend parameter names in components or hooks.
+ */
+
 export const assignmentsApi = {
   getAll: async (params?: {
     status?: string
@@ -13,8 +32,11 @@ export const assignmentsApi = {
     // Map userId to assignedToId for the backend API
     const apiParams: any = {}
     if (params?.status) apiParams.status = params.status
+    // Naming convention: frontend uses 'userId', backend expects 'assignedToId'
     if (params?.userId) apiParams.assignedToId = params.userId
+    // Naming convention: frontend uses 'fromDate', backend expects 'dueDateFrom'
     if (params?.fromDate) apiParams.dueDateFrom = params.fromDate
+    // Naming convention: frontend uses 'toDate', backend expects 'dueDateTo'
     if (params?.toDate) apiParams.dueDateTo = params.toDate
     
     const response = await client.get<{ assignments: ChoreAssignment[] }>('/chore-assignments', { params: apiParams })

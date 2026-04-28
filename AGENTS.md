@@ -195,6 +195,19 @@ npx playwright test -g "pattern"
 - **OverduePenalty** — Auto point deduction for overdue chores; uses `penaltyApplied` flag to prevent double-penalizing
 
 ### Non-Obvious Conventions
+
+#### Frontend-Backend Parameter Mapping
+
+Frontend uses simplified parameter names internally, mapped to backend API expectations in the `frontend/src/api/` layer:
+
+| Frontend | Backend | File |
+|----------|---------|------|
+| `userId` | `assignedToId` | `frontend/src/api/assignments.api.ts` |
+| `fromDate` | `dueDateFrom` | `frontend/src/api/assignments.api.ts` |
+| `toDate` | `dueDateTo` | `frontend/src/api/assignments.api.ts` |
+
+**Rule:** Mapping always happens in `frontend/src/api/` files, never in components or hooks.
+
 - **Frontend API parameter mapping**: frontend uses `userId`/`templateId` internally, but backend expects `assignedToId`/`choreTemplateId` — mapping happens in the `api/` layer
 - **Children accessing parent-only routes** are silently redirected to dashboard (no error page)
 - **401 responses** trigger auto-logout via a `auth:unauthorized` custom DOM event (see `client.ts`)
