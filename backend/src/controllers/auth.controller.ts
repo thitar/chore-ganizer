@@ -13,17 +13,20 @@ import { AUDIT_ACTIONS } from '../constants/audit-actions.js'
  * Register a new user
  */
 export const register = async (req: Request, res: Response) => {
-  const { email, password, name, role } = req.body
+  const { email, password, name } = req.body
 
   if (!email || !password || !name) {
     throw new AppError('Email, password, and name are required', 400, 'VALIDATION_ERROR')
   }
 
+  // Only allow CHILD registration via public endpoint
+  const effectiveRole = 'CHILD'
+
   const result = await authService.register({ 
     email, 
     password, 
     name, 
-    role: role || 'CHILD' 
+    role: effectiveRole 
   })
 
   // Set session
