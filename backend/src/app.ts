@@ -99,12 +99,8 @@ app.use(shutdownMiddleware)
 
 // Session configuration
 const sessionSecret = process.env.SESSION_SECRET
-const rawSessionMaxAge = Number(process.env.SESSION_MAX_AGE) || 604800000 // 7 days
-if (isNaN(rawSessionMaxAge) || rawSessionMaxAge <= 0) {
-  logger.error('Invalid SESSION_MAX_AGE value')
-  process.exit(1)
-}
-const sessionMaxAge = rawSessionMaxAge
+const raw = Number(process.env.SESSION_MAX_AGE)
+const sessionMaxAge = (!process.env.SESSION_MAX_AGE || isNaN(raw) || raw <= 0) ? 604800000 : raw
 
 const rawSameSite = process.env.SAMESITE_POLICY || 'strict'
 const validSameSite = ['strict', 'lax', 'none']
