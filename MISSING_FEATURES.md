@@ -17,7 +17,7 @@ There is no admin UI to view or manage API rate limit status. Currently, rate li
 - Rate limit hit counts or logs
 - Ability to adjust limits without code changes
 
-**Impact:** Low — rate limiting functions correctly but is opaque to operations.
+**Status:** ✅ IMPLEMENTED in v2.1.11 — Settings page + `/api/admin/rate-limits/status` endpoint
 
 **Suggested Approach (for future phase):**
 - Add admin-only endpoint: `GET /api/admin/rate-limits/status`
@@ -37,7 +37,7 @@ There is no admin UI to view or manage API rate limit status. Currently, rate li
 - **Month-end dates:** Monthly recurrence on the 31st when the next month has fewer days
 - **DST transitions:** Daylight Saving Time boundary shifts causing duplicate or skipped occurrences
 
-**Impact:** Medium — incorrect recurrence generation could cause missed or duplicate chore assignments during these edge cases.
+**Status:** ✅ IMPLEMENTED in v2.1.11 — recurrence.service.test.ts (405 lines, edge cases covered)
 
 **Note:** Plan `01-05` covers edge cases for `overdue-penalty.service.ts` (timezone boundaries, leap year February 29). The recurrence service requires separate test coverage.
 
