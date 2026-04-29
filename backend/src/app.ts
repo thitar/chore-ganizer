@@ -14,7 +14,7 @@ import { shutdownMiddleware } from './middleware/shutdownMiddleware.js'
 import { compressionMiddleware } from './middleware/compression.js'
 import { requestTimerMiddleware } from './middleware/requestTimer.js'
 import metricsRoutes from './routes/metrics.routes.js'
-import { FULL_VERSION } from './version.js'
+import { FULL_VERSION } from './version'
 import { logger } from './utils/logger.js'
 
 // Load environment variables
@@ -99,12 +99,8 @@ app.use(shutdownMiddleware)
 
 // Session configuration
 const sessionSecret = process.env.SESSION_SECRET
-const rawSessionMaxAge = Number(process.env.SESSION_MAX_AGE) || 604800000 // 7 days
-if (isNaN(rawSessionMaxAge) || rawSessionMaxAge <= 0) {
-  logger.error('Invalid SESSION_MAX_AGE value')
-  process.exit(1)
-}
-const sessionMaxAge = rawSessionMaxAge
+const raw = Number(process.env.SESSION_MAX_AGE)
+const sessionMaxAge = (!process.env.SESSION_MAX_AGE || isNaN(raw) || raw <= 0) ? 604800000 : raw
 
 const rawSameSite = process.env.SAMESITE_POLICY || 'strict'
 const validSameSite = ['strict', 'lax', 'none']

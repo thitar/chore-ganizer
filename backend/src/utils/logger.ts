@@ -1,6 +1,6 @@
 import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
-import { getVersion } from '../version.js';
+import { getVersion } from '../version';
 
 // Create format with correlation ID
 const correlationFormat = winston.format((info) => {

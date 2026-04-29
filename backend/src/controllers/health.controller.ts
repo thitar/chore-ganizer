@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { VERSION } from '../version.js'
+import { VERSION } from '../version'
 import prisma from '../config/database.js'
 import fs from 'fs'
 import path from 'path'

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { isIPv6 } from 'net'
 import { AppError } from '../middleware/errorHandler.js'
 import { logger } from '../utils/logger.js'
 
@@ -58,15 +59,26 @@ export const validateNtfyServerUrl = (serverUrl: string): void => {
     const second = parseInt(parts[1], 10)
     return parts[0] === '172' && second >= 16 && second <= 31
   }
-  if (
+
+  if (isIPv6(hostname)) {
+    const normalized = hostname.toLowerCase()
+    if (
+      hostname === '::' ||
+      hostname === '::1' ||
+      normalized.startsWith('fe80:') ||
+      normalized.startsWith('fc') ||
+      normalized.startsWith('fd')
+    ) {
+      throw new AppError('Invalid notification server URL: private/internal addresses are not allowed', 400, 'VALIDATION_ERROR')
+    }
+  } else if (
     hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
     hostname.startsWith('10.') ||
     isPrivate172(hostname) ||
     hostname.startsWith('192.168.') ||
     hostname.startsWith('169.254.') ||
-    hostname === '0.0.0.0' ||
-    hostname === '::1'
+    hostname === '0.0.0.0'
   ) {
     throw new AppError('Invalid notification server URL: private/internal addresses are not allowed', 400, 'VALIDATION_ERROR')
   }

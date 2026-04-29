@@ -1,5 +1,5 @@
 import type { Options } from 'swagger-jsdoc'
-import { VERSION } from './version.js'
+import { VERSION } from './version'
 
 const swaggerDefinition = {
   openapi: '3.0.3',
