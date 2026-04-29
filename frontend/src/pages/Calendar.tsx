@@ -68,8 +68,8 @@ export const Calendar: React.FC = () => {
     setIsSubmitting(true)
     try {
       const result = await createAssignment({
-        choreTemplateId: Number(newChoreTemplateId),
-        assignedToId: Number(newChoreUserId),
+        templateId: Number(newChoreTemplateId),
+        userId: Number(newChoreUserId),
         dueDate: selectedDate.toISOString(),
       })
       
@@ -133,7 +133,7 @@ export const Calendar: React.FC = () => {
 
   const canCompleteAssignment = (assignment: ChoreAssignment) => {
     if (isParent) return true
-    return assignment.assignedToId === user?.id
+    return assignment.userId === user?.id
   }
 
   const canCompleteOccurrence = (occurrence: ChoreOccurrence) => {

@@ -63,9 +63,9 @@ export const mockTemplate = (overrides?: Partial<ChoreTemplate>): ChoreTemplate 
 
 export const mockChoreAssignment = (overrides?: Partial<ChoreAssignment>): ChoreAssignment => ({
   id: 1,
-  choreTemplateId: 1,
+  templateId: 1,
   choreTemplate: mockTemplate(),
-  assignedToId: 2,
+  userId: 2,
   assignedTo: {
     id: 2,
     name: 'Child User',

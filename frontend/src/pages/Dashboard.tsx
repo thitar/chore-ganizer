@@ -37,7 +37,7 @@ export const Dashboard: React.FC = () => {
       // Filter to only show user's assignments in calendar
       const userDays: Record<number, ChoreAssignment[]> = {}
       for (const [day, dayAssignments] of Object.entries(calData.days)) {
-        const userAssignments = dayAssignments.filter(a => a.assignedToId === user.id)
+        const userAssignments = dayAssignments.filter(a => a.userId === user.id)
         if (userAssignments.length > 0) {
           userDays[Number(day)] = userAssignments
         }

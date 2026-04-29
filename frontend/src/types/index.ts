@@ -59,9 +59,9 @@ export interface ChoreTemplate {
 
 export interface ChoreAssignment {
   id: number
-  choreTemplateId: number
+  templateId: number
   choreTemplate: ChoreTemplate
-  assignedToId: number
+  userId: number
   assignedTo: {
     id: number
     name: string
@@ -81,7 +81,7 @@ export interface Chore {
   description: string | null
   points: number
   status: 'PENDING' | 'COMPLETED'
-  assignedToId: number
+  userId: number
   assignedTo: {
     id: number
     name: string
@@ -109,7 +109,7 @@ export interface CreateChoreData {
   title: string
   description?: string
   points: number
-  assignedToId: number
+  userId: number
   categoryId?: number
 }
 
@@ -117,7 +117,7 @@ export interface UpdateChoreData {
   title?: string
   description?: string
   points?: number
-  assignedToId?: number
+  userId?: number
   categoryId?: number
 }
 
@@ -154,13 +154,13 @@ export interface UpdateTemplateData {
 }
 
 export interface CreateAssignmentData {
-  choreTemplateId: number
-  assignedToId: number
+  templateId: number
+  userId: number
   dueDate: string
 }
 
 export interface UpdateAssignmentData {
-  assignedToId?: number
+  userId?: number
   dueDate?: string
   status?: 'PENDING' | 'COMPLETED'
 }

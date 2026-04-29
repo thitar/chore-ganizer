@@ -49,7 +49,7 @@ export const ChoreList: React.FC<ChoreListProps> = ({
   // Filter chores based on user role
   const filteredChores = chores.filter((chore) => {
     if (canEdit) return true // Parents can see all chores
-    return chore.assignedToId === currentUser?.id // Children only see their own chores
+    return chore.userId === currentUser?.id // Children only see their own chores
   })
 
   return (
@@ -62,7 +62,7 @@ export const ChoreList: React.FC<ChoreListProps> = ({
           onEdit={onEdit}
           onDelete={onDelete}
           canEdit={canEdit}
-          canComplete={canComplete && chore.assignedToId === currentUser?.id}
+          canComplete={canComplete && chore.userId === currentUser?.id}
         />
       ))}
     </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { choresApi } from '../api'
 import type { ChoreAssignment, CreateAssignmentData, UpdateAssignmentData } from '../types'
 
-export function useChores(filters?: { status?: string; assignedToId?: number }) {
+export function useChores(filters?: { status?: string; userId?: number }) {
   const [chores, setChores] = useState<ChoreAssignment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
