@@ -106,14 +106,14 @@ describe('Chore Assignments Service', () => {
       )
     })
 
-    it('should filter by assignedToId', async () => {
+    it('should filter by userId', async () => {
       ;(prisma.choreAssignment.findMany as jest.Mock).mockResolvedValue(mockAssignmentsWithDetails)
 
-      await assignmentsService.getAllAssignments({ assignedToId: 2 })
+      await assignmentsService.getAllAssignments({ userId: 2 })
 
       expect(prisma.choreAssignment.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { assignedToId: 2 },
+          where: { userId: 2 },
         })
       )
     })
@@ -222,8 +222,8 @@ describe('Chore Assignments Service', () => {
       ;(prisma.choreAssignment.create as jest.Mock).mockResolvedValue(mockCreatedAssignment)
 
       const data = {
-        choreTemplateId: 1,
-        assignedToId: 2,
+        templateId: 1,
+        userId: 2,
         dueDate: new Date(),
         notes: 'Test notes',
       }
@@ -234,8 +234,8 @@ describe('Chore Assignments Service', () => {
       expect(result.id).toBe(mockCreatedAssignment.id)
       expect(prisma.choreAssignment.create).toHaveBeenCalledWith({
         data: {
-          choreTemplateId: 1,
-          assignedToId: 2,
+          templateId: 1,
+          userId: 2,
           assignedById: 1,
           dueDate: data.dueDate,
           notes: 'Test notes',
@@ -252,8 +252,8 @@ describe('Chore Assignments Service', () => {
       ;(prisma.choreAssignment.create as jest.Mock).mockResolvedValue(mockCreatedAssignment)
 
       const data = {
-        choreTemplateId: 1,
-        assignedToId: 2,
+        templateId: 1,
+        userId: 2,
         dueDate: new Date(),
       }
 
@@ -302,13 +302,13 @@ describe('Chore Assignments Service', () => {
     it('should reassign to different user', async () => {
       ;(prisma.choreAssignment.update as jest.Mock).mockResolvedValue({
         ...mockUpdatedAssignment,
-        assignedToId: 3,
+        userId: 3,
         assignedTo: { id: 3, name: 'Another Child', color: '#FF0000' },
       })
 
-      const result = await assignmentsService.updateAssignment(1, { assignedToId: 3 })
+      const result = await assignmentsService.updateAssignment(1, { userId: 3 })
 
-      expect(result.assignedToId).toBe(3)
+      expect(result.userId).toBe(3)
     })
   })
 
@@ -316,7 +316,7 @@ describe('Chore Assignments Service', () => {
     const mockPendingAssignment = {
       ...mockAssignments.pending,
       choreTemplate: mockTemplates.dishes,
-      assignedToId: 2,
+      userId: 2,
     }
 
     it('should complete assignment and award full points', async () => {

@@ -187,8 +187,8 @@ async function main() {
 
   const assignment1 = await prisma.choreAssignment.create({
     data: {
-      choreTemplateId: template1.id,
-      assignedToId: alice.id,
+      templateId: template1.id,
+      userId: alice.id,
       assignedById: dad.id,
       dueDate: today,
     },
@@ -196,8 +196,8 @@ async function main() {
 
   const assignment2 = await prisma.choreAssignment.create({
     data: {
-      choreTemplateId: template2.id,
-      assignedToId: bob.id,
+      templateId: template2.id,
+      userId: bob.id,
       assignedById: dad.id,
       dueDate: today,
     },
@@ -205,8 +205,8 @@ async function main() {
 
   const assignment3 = await prisma.choreAssignment.create({
     data: {
-      choreTemplateId: template3.id,
-      assignedToId: alice.id,
+      templateId: template3.id,
+      userId: alice.id,
       assignedById: mom.id,
       dueDate: tomorrow,
     },
@@ -214,8 +214,8 @@ async function main() {
 
   const assignment4 = await prisma.choreAssignment.create({
     data: {
-      choreTemplateId: template4.id,
-      assignedToId: bob.id,
+      templateId: template4.id,
+      userId: bob.id,
       assignedById: mom.id,
       dueDate: tomorrow,
     },

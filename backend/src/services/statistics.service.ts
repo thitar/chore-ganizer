@@ -210,7 +210,7 @@ const getMemberStats = async (
   const statusCounts = await prisma.choreAssignment.groupBy({
     by: ['status'],
     where: {
-      assignedToId: userId,
+      userId: userId,
       createdAt: { gte: startDate, lte: endDate },
     },
     _count: true,
@@ -338,12 +338,12 @@ export const getChildStatistics = async (
 
   // Get child's chore stats
   const totalAssigned = await prisma.choreAssignment.count({
-    where: { assignedToId: childId, createdAt: { gte: startDate, lte: endDate } },
+    where: { userId: childId, createdAt: { gte: startDate, lte: endDate } },
   })
 
   const completed = await prisma.choreAssignment.count({
     where: {
-      assignedToId: childId,
+      userId: childId,
       status: 'COMPLETED',
       createdAt: { gte: startDate, lte: endDate },
     },

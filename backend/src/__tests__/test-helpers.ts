@@ -139,8 +139,8 @@ export const mockTemplates = {
 export const mockAssignments = {
   pending: {
     id: 1,
-    choreTemplateId: 1,
-    assignedToId: 2,
+    templateId: 1,
+    userId: 2,
     assignedById: 1,
     dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
     status: 'PENDING',
@@ -152,8 +152,8 @@ export const mockAssignments = {
   },
   completed: {
     id: 2,
-    choreTemplateId: 1,
-    assignedToId: 2,
+    templateId: 1,
+    userId: 2,
     assignedById: 1,
     dueDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
     status: 'COMPLETED',
@@ -165,8 +165,8 @@ export const mockAssignments = {
   },
   overdue: {
     id: 3,
-    choreTemplateId: 2,
-    assignedToId: 2,
+    templateId: 2,
+    userId: 2,
     assignedById: 1,
     dueDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
     status: 'PENDING',

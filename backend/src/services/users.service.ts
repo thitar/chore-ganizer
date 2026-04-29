@@ -138,7 +138,7 @@ export const getUserAssignments = async (
   status?: 'pending' | 'completed' | 'overdue' | 'all'
 ) => {
   const where: any = {
-    assignedToId: userId,
+    userId: userId,
   }
 
   if (status && status !== 'all') {
@@ -191,7 +191,7 @@ export const getUserAssignments = async (
 export const userHasActiveAssignments = async (userId: number): Promise<boolean> => {
   const count = await prisma.choreAssignment.count({
     where: {
-      assignedToId: userId,
+      userId: userId,
       status: 'PENDING',
     },
   })

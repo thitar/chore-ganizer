@@ -285,8 +285,8 @@ describe('Chore Templates API Integration Tests', () => {
       const prisma = getPrisma()
       await prisma.choreAssignment.create({
         data: {
-          choreTemplateId: testData.templates.mowing.id,
-          assignedToId: testData.users.child1.id,
+          templateId: testData.templates.mowing.id,
+          userId: testData.users.child1.id,
           assignedById: testData.users.parent.id,
           dueDate: new Date(Date.now() + 86400000),
           status: 'PENDING',
@@ -303,7 +303,7 @@ describe('Chore Templates API Integration Tests', () => {
       if (response.status === 200) {
         // Cascade delete - verify assignment is gone
         const assignments = await prisma.choreAssignment.findMany({
-          where: { choreTemplateId: testData.templates.mowing.id },
+          where: { templateId: testData.templates.mowing.id },
         })
         expect(assignments.length).toBe(0)
       } else {

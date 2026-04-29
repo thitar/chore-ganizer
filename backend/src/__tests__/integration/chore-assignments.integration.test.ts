@@ -34,8 +34,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const response = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
 
@@ -46,8 +46,8 @@ describe('Chore Assignments API Integration Tests', () => {
       // First create an assignment as parent
       await api.login(testData.users.parent)
       await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
 
@@ -64,8 +64,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.child1)
 
       const response = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child2.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child2.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
 
@@ -84,20 +84,20 @@ describe('Chore Assignments API Integration Tests', () => {
 
       // Create fresh assignments
       await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
       })
 
       await api.createAssignment({
-        choreTemplateId: testData.templates.cleaning.id,
-        assignedToId: testData.users.child2.id,
+        templateId: testData.templates.cleaning.id,
+        userId: testData.users.child2.id,
         dueDate: new Date(Date.now() + 172800000).toISOString(), // Day after tomorrow
       })
 
       await api.createAssignment({
-        choreTemplateId: testData.templates.mowing.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.mowing.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() - 86400000).toISOString(), // Yesterday (overdue)
       })
     })
@@ -125,11 +125,11 @@ describe('Chore Assignments API Integration Tests', () => {
     it('should filter by assigned user', async () => {
       await api.login(testData.users.parent)
 
-      const response = await api.getAssignments({ assignedToId: testData.users.child1.id })
+      const response = await api.getAssignments({ userId: testData.users.child1.id })
 
       expect(response.status).toBe(200)
-      response.body.data.assignments.forEach((assignment: { assignedToId: number }) => {
-        expect(assignment.assignedToId).toBe(testData.users.child1.id)
+      response.body.data.assignments.forEach((assignment: { userId: number }) => {
+        expect(assignment.userId).toBe(testData.users.child1.id)
       })
     })
 
@@ -177,8 +177,8 @@ describe('Chore Assignments API Integration Tests', () => {
 
       // Create an assignment
       const createResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
       const assignmentId = createResponse.body.data.assignment.id
@@ -202,8 +202,8 @@ describe('Chore Assignments API Integration Tests', () => {
 
       // Create assignment for child1
       const createResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
       const assignmentId = createResponse.body.data.assignment.id
@@ -223,15 +223,15 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const response = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
         notes: 'Please do this before dinner',
       })
 
       expect(response.status).toBe(201)
-      expect(response.body.data.assignment.choreTemplateId).toBe(testData.templates.dishes.id)
-      expect(response.body.data.assignment.assignedToId).toBe(testData.users.child1.id)
+      expect(response.body.data.assignment.templateId).toBe(testData.templates.dishes.id)
+      expect(response.body.data.assignment.userId).toBe(testData.users.child1.id)
       expect(response.body.data.assignment.status).toBe('PENDING')
       expect(response.body.data.assignment.notes).toBe('Please do this before dinner')
     })
@@ -240,8 +240,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const response = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: '',
       })
 
@@ -252,8 +252,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const response = await api.createAssignment({
-        choreTemplateId: 99999,
-        assignedToId: testData.users.child1.id,
+        templateId: 99999,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
 
@@ -264,8 +264,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const response = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: 99999,
+        templateId: testData.templates.dishes.id,
+        userId: 99999,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
 
@@ -276,8 +276,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const response = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
 
@@ -291,8 +291,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const createResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
       const assignmentId = createResponse.body.data.assignment.id
@@ -311,8 +311,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const createResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
       const assignmentId = createResponse.body.data.assignment.id
@@ -329,14 +329,14 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const createResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
       const assignmentId = createResponse.body.data.assignment.id
 
       const response = await api.updateAssignment(assignmentId, {
-        assignedToId: testData.users.child2.id,
+        userId: testData.users.child2.id,
       })
 
       expect(response.status).toBe(200)
@@ -347,8 +347,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const createResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
       const assignmentId = createResponse.body.data.assignment.id
@@ -369,8 +369,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const createResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
       const assignmentId = createResponse.body.data.assignment.id
@@ -387,8 +387,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const createResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
       const assignmentId = createResponse.body.data.assignment.id
@@ -406,8 +406,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const createResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
       const assignmentId = createResponse.body.data.assignment.id
@@ -426,8 +426,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const createResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
       const assignmentId = createResponse.body.data.assignment.id
@@ -444,8 +444,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const createResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
       const assignmentId = createResponse.body.data.assignment.id
@@ -462,8 +462,8 @@ describe('Chore Assignments API Integration Tests', () => {
       await api.login(testData.users.parent)
 
       const createResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
       const assignmentId = createResponse.body.data.assignment.id
@@ -490,16 +490,16 @@ describe('Chore Assignments API Integration Tests', () => {
       today.setHours(0, 0, 0, 0)
 
       await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: today.toISOString(),
       })
 
       const tomorrow = new Date(today)
       tomorrow.setDate(tomorrow.getDate() + 1)
       await api.createAssignment({
-        choreTemplateId: testData.templates.cleaning.id,
-        assignedToId: testData.users.child2.id,
+        templateId: testData.templates.cleaning.id,
+        userId: testData.users.child2.id,
         dueDate: tomorrow.toISOString(),
       })
     })

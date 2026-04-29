@@ -154,7 +154,7 @@ export const getOverdueChores = async (req: AuthenticatedRequest, res: Response)
       : {
           dueDate: { lt: now },
           status: 'PENDING',
-          assignedToId: user.id,
+          userId: user.id,
         }
     
     const overdueChores = await prisma.choreAssignment.findMany({
@@ -202,7 +202,7 @@ export const getPenaltyHistory = async (req: AuthenticatedRequest, res: Response
       : {
           penaltyApplied: true,
           penaltyPoints: { not: null },
-          assignedToId: user.id,
+          userId: user.id,
         }
     
     const penalties = await prisma.choreAssignment.findMany({

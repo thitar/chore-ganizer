@@ -121,7 +121,7 @@ describe('Users Service', () => {
       expect(result).toEqual(mockAssignmentsWithDetails)
       expect(prisma.choreAssignment.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { assignedToId: 2 },
+          where: { userId: 2 },
         })
       )
     })
@@ -135,7 +135,7 @@ describe('Users Service', () => {
       expect(prisma.choreAssignment.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
-            assignedToId: 2,
+            userId: 2,
             status: 'PENDING',
           },
         })
@@ -159,7 +159,7 @@ describe('Users Service', () => {
       expect(prisma.choreAssignment.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
-            assignedToId: 2,
+            userId: 2,
             status: 'COMPLETED',
           },
         })
@@ -174,7 +174,7 @@ describe('Users Service', () => {
       expect(prisma.choreAssignment.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
-            assignedToId: 2,
+            userId: 2,
             status: 'PENDING',
             dueDate: { lt: expect.any(Date) },
           },
@@ -190,7 +190,7 @@ describe('Users Service', () => {
       expect(result).toEqual(mockAssignmentsWithDetails)
       expect(prisma.choreAssignment.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { assignedToId: 2 },
+          where: { userId: 2 },
         })
       )
     })
@@ -407,7 +407,7 @@ describe('Users Service', () => {
       expect(result).toBe(true)
       expect(prisma.choreAssignment.count).toHaveBeenCalledWith({
         where: {
-          assignedToId: 2,
+          userId: 2,
           status: 'PENDING',
         },
       })
