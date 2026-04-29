@@ -6,6 +6,7 @@ import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import routes from './routes/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
+import { getGeneralLimiterConfig, incrementRequestCount } from './middleware/rateLimiter.js'
 import { csrfMiddleware, getCsrfToken } from './middleware/csrf.js'
 import { asyncHandler } from './utils/asyncHandler.js'
 import { requestLogger } from './middleware/requestLogger.js'
@@ -60,18 +61,26 @@ app.use(helmet({
 // Disabled in staging for local testing
 const noOpMiddleware: RequestHandler = (_req, _res, next) => next();
 
+const generalLimiterConfig = getGeneralLimiterConfig()
+
 const generalLimiter = process.env.DISABLE_RATE_LIMIT === 'true'
   ? noOpMiddleware
   : rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 300, // limit each IP to 300 requests per window
+      windowMs: generalLimiterConfig.windowMs,
+      max: generalLimiterConfig.max,
       message: {
         success: false,
         error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' }
       },
       standardHeaders: true,
       legacyHeaders: false,
-      // Use default keyGenerator to handle IPv4/IPv6 correctly
+      handler: (_req, res) => {
+        incrementRequestCount()
+        res.status(429).json({
+          success: false,
+          error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' }
+        })
+      },
     })
 
 // Apply general rate limiter to all API routes

@@ -12,6 +12,7 @@ import recurringChoresOccurrencesRoutes from './recurring-chores-occurrences.rou
 import pocketMoneyRoutes from './pocket-money.routes.js'
 import auditRoutes from './audit.routes.js'
 import statisticsRoutes from './statistics.routes.js'
+import adminRoutes from './admin.routes.js'
 import * as healthController from '../controllers/health.controller.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { VERSION, BUILD_DATE, FULL_VERSION } from '../version'
@@ -126,5 +127,6 @@ router.use('/recurring-chores', recurringChoresCrudRoutes)
 router.use('/pocket-money', pocketMoneyRoutes)
 router.use('/audit', auditRoutes)
 router.use('/statistics', statisticsRoutes)
+router.use('/admin', adminRoutes)
 
 export default router
