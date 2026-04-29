@@ -19,6 +19,7 @@ const RecurringChoresPage = lazy(() => import('./pages/RecurringChoresPage').the
 const PocketMoney = lazy(() => import('./pages/PocketMoney').then(m => ({ default: m.PocketMoney })))
 const StatisticsPage = lazy(() => import('./pages/StatisticsPage').then(m => ({ default: m.StatisticsPage })))
 const Notifications = lazy(() => import('./pages/Notifications').then(m => ({ default: m.Notifications })))
+const SettingsPage = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })))
 const NotFound = lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })))
 
 // Loading fallback for lazy-loaded components
@@ -126,6 +127,11 @@ function AppContent() {
                 } />
                 <Route path="/notifications" element={
                   <Suspense fallback={<PageLoader />}><Notifications /></Suspense>
+                } />
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>
+                  </ProtectedRoute>
                 } />
                 <Route path="*" element={
                   <Suspense fallback={<PageLoader />}><NotFound /></Suspense>
