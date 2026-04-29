@@ -90,7 +90,7 @@ export const createRecurringChore = async (req: Request, res: Response) => {
       categoryId: categoryId ?? null,
       createdById: req.user!.id,
       startDate: new Date(startDate),
-      recurrenceRule: JSON.stringify(recurrenceRule),
+      recurrenceRule,
       assignmentMode,
       isActive: true,
       fixedAssignees: {
@@ -202,7 +202,7 @@ export const updateRecurringChore = async (req: Request, res: Response) => {
   if (points !== undefined) updateData.points = points
   if (categoryId !== undefined) updateData.categoryId = categoryId
   if (startDate !== undefined) updateData.startDate = new Date(startDate)
-  if (recurrenceRule !== undefined) updateData.recurrenceRule = JSON.stringify(recurrenceRule)
+  if (recurrenceRule !== undefined) updateData.recurrenceRule = recurrenceRule
   if (assignmentMode !== undefined) updateData.assignmentMode = assignmentMode
   if (isActive !== undefined) updateData.isActive = isActive
 

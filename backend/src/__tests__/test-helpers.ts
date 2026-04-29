@@ -216,7 +216,7 @@ export const mockRecurringChores = {
     categoryId: 1,
     createdById: 1,
     startDate: new Date('2024-01-01'),
-    recurrenceRule: JSON.stringify({ frequency: 'DAILY', interval: 1 }),
+    recurrenceRule: { frequency: 'DAILY', interval: 1 },
     assignmentMode: 'FIXED',
     isActive: true,
     createdAt: new Date('2024-01-01'),
@@ -232,7 +232,7 @@ export const mockRecurringChores = {
     categoryId: 1,
     createdById: 1,
     startDate: new Date('2024-01-01'),
-    recurrenceRule: JSON.stringify({ frequency: 'WEEKLY', interval: 1, byDayOfWeek: [6] }), // Saturday
+    recurrenceRule: { frequency: 'WEEKLY', interval: 1, byDayOfWeek: [6] }, // Saturday
     assignmentMode: 'ROUND_ROBIN',
     isActive: true,
     createdAt: new Date('2024-01-01'),

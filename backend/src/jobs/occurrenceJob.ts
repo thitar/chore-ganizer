@@ -63,18 +63,7 @@ export const generateDailyOccurrences = async (targetDate: Date = new Date()): P
 
   for (const rc of recurringChores) {
     try {
-      // Parse the recurrence rule
-      let recurrenceRule: RecurrenceRule
-      try {
-        recurrenceRule = JSON.parse(rc.recurrenceRule)
-      } catch (parseError) {
-        logger.error('Failed to parse recurrence rule', { 
-          recurringChoreId: rc.id, 
-          recurrenceRule: rc.recurrenceRule 
-        })
-        errors.push({ recurringChoreId: rc.id, error: 'Invalid recurrence rule JSON' })
-        continue
-      }
+      const recurrenceRule = rc.recurrenceRule as unknown as RecurrenceRule
 
       // Validate the recurrence rule
       if (!RecurrenceService.isValidRule(recurrenceRule)) {

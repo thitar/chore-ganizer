@@ -1,18 +1,9 @@
-import { AppError } from '../../middleware/errorHandler.js'
-
 /**
  * Transform recurring chore data for API response
- * Parses recurrenceRule from JSON string and formats dates
+ * Formats dates and extracts nested relations
  */
 export function transformRecurringChore(dbRecord: any) {
-  let recurrenceRule = null
-  if (dbRecord.recurrenceRule) {
-    try {
-      recurrenceRule = JSON.parse(dbRecord.recurrenceRule)
-    } catch {
-      throw new AppError('Invalid recurrence rule data', 500, 'DATA_INTEGRITY_ERROR')
-    }
-  }
+  const recurrenceRule = dbRecord.recurrenceRule
 
   return {
     ...dbRecord,
