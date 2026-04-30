@@ -57,11 +57,17 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }))
 
+// Request counter - increments on every request for metrics
+const requestCounterMiddleware: RequestHandler = (req, res, next) => {
+  incrementRequestCount()
+  next()
+}
+
 // Rate limiting - General API limiter
 // Disabled in staging for local testing
 const noOpMiddleware: RequestHandler = (_req, _res, next) => next();
 
-const generalLimiterConfig = getGeneralLimiterConfig()
+const generalLimiterConfig = getGeneralLimiterConfig();
 
 const generalLimiter = process.env.DISABLE_RATE_LIMIT === 'true'
   ? noOpMiddleware
@@ -75,13 +81,17 @@ const generalLimiter = process.env.DISABLE_RATE_LIMIT === 'true'
       standardHeaders: true,
       legacyHeaders: false,
       handler: (_req, res) => {
-        incrementRequestCount()
         res.status(429).json({
           success: false,
           error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' }
         })
       },
     })
+      },
+    })
+
+// Apply request counter to all API routes (counts every request)
+app.use('/api', requestCounterMiddleware)
 
 // Apply general rate limiter to all API routes
 app.use('/api', generalLimiter)

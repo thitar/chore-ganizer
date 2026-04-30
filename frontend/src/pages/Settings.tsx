@@ -52,7 +52,7 @@ export function Settings() {
         const response = await client.get<RateLimitStatus>('/admin/rate-limits/status')
         if (mounted) setStatus(response.data)
       } catch (err: any) {
-        if (mounted) setError(err?.error?.message || 'Failed to load rate limit status')
+        if (mounted) setError(err?.response?.data?.error?.message || err?.message || 'Failed to load rate limit status')
       } finally {
         if (mounted) setLoading(false)
       }

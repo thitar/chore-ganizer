@@ -1,13 +1,58 @@
-import cron, { ScheduledTask } from 'node-cron'
+import { Prisma } from '@prisma/client'
+import { RecurrenceRule } from '../services/recurrence.service.js'
 import prisma from '../config/database.js'
-import { logger } from '../utils/logger.js'
-import { RecurrenceService, RecurrenceRule } from '../services/recurrence.service.js'
 
-// Run every day at midnight UTC
-const CRON_SCHEDULE = '0 0 * * *'
+// ... existing imports and code ...
 
-/**
- * Generate chore occurrences for a specific date based on active recurring chores.
+// Define custom type to correctly type the recurrenceRule after middleware transformation
+type RecurringChoreWithoutRule = Omit<Prisma.RecurringChoreGetPayload<{
+  include: {
+    fixedAssignees: {
+      include: {
+        user: true
+      }
+    }
+    roundRobinPool: {
+      include: {
+        user: true
+      }
+      orderBy: {
+        order: 'asc'
+      }
+    }
+  }
+}>, 'recurrenceRule'>
+
+type RecurringChoreWithParsedRule = RecurringChoreWithoutRule & {
+  recurrenceRule: RecurrenceRule
+}
+
+// ... existing code ...
+
+  // Get all active recurring chores
+  const recurringChores = await prisma.recurringChore.findMany({
+    where: {
+      isActive: true,
+      startDate: {
+        lte: tomorrow, // Only chores that have started
+      },
+    },
+    include: {
+      fixedAssignees: {
+        include: {
+          user: true,
+        },
+      },
+      roundRobinPool: {
+        include: {
+          user: true,
+        },
+        orderBy: {
+          order: 'asc',
+        },
+      },
+    },
+  }) as RecurringChoreWithParsedRule[]
  * 
  * This function:
  * 1. Fetches all active recurring chores
@@ -63,7 +108,7 @@ export const generateDailyOccurrences = async (targetDate: Date = new Date()): P
 
   for (const rc of recurringChores) {
     try {
-      const recurrenceRule = rc.recurrenceRule as unknown as RecurrenceRule
+      const recurrenceRule = rc.recurrenceRule
 
       // Validate the recurrence rule
       if (!RecurrenceService.isValidRule(recurrenceRule)) {
