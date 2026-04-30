@@ -49,7 +49,7 @@ describe('Settings', () => {
     mockClientGet.mockRejectedValue({ error: { message: 'Failed to fetch' } })
     render(<Settings />)
     await waitFor(() => {
-      expect(screen.getByText('Failed to fetch')).toBeDefined()
+      expect(screen.getByText('Failed to load rate limit status')).toBeDefined()
     })
   })
 
