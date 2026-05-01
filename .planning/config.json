@@ -1,12 +1,15 @@
 {
+  "mode": "yolo",
+  "granularity": "coarse",
+  "parallelization": true,
   "model_profile": "inherit",
   "commit_docs": true,
   "workflow": {
     "research": true,
     "plan_check": true,
     "verifier": true,
-    "auto_advance": false,
-    "nyquist_validation": true,
+    "auto_advance": true,
+    "nyquist_validation": false,
     "pattern_mapper": true,
     "ui_phase": true,
     "ui_safety_gate": true,
