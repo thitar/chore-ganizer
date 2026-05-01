@@ -7,13 +7,13 @@ vi.mock('../hooks', () => ({
 }))
 
 vi.mock('../api/client', () => ({
-  default: {
+  apiClient: {
     get: vi.fn(),
   },
 }))
 
 import { useAuth } from '../hooks'
-import client from '../api/client'
+import { apiClient as client } from '../api/client'
 import { Settings } from './Settings'
 
 const mockUseAuth = useAuth as Mock
