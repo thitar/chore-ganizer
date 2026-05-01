@@ -58,7 +58,7 @@ app.use(helmet({
 }))
 
 // Request counter - increments on every request for metrics
-const requestCounterMiddleware: RequestHandler = (req, res, next) => {
+const requestCounterMiddleware: RequestHandler = (_req, _res, next) => {
   incrementRequestCount()
   next()
 }
@@ -70,25 +70,23 @@ const noOpMiddleware: RequestHandler = (_req, _res, next) => next();
 const generalLimiterConfig = getGeneralLimiterConfig();
 
 const generalLimiter = process.env.DISABLE_RATE_LIMIT === 'true'
-  ? noOpMiddleware
-  : rateLimit({
-      windowMs: generalLimiterConfig.windowMs,
-      max: generalLimiterConfig.max,
-      message: {
-        success: false,
-        error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' }
-      },
-      standardHeaders: true,
-      legacyHeaders: false,
-      handler: (_req, res) => {
-        res.status(429).json({
-          success: false,
-          error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' }
+      ? noOpMiddleware
+      : rateLimit({
+          windowMs: generalLimiterConfig.windowMs,
+          max: generalLimiterConfig.max,
+          message: {
+            success: false,
+            error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' }
+          },
+          standardHeaders: true,
+          legacyHeaders: false,
+          handler: (_req, res) => {
+            res.status(429).json({
+              success: false,
+              error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' }
+            })
+          },
         })
-      },
-    })
-      },
-    })
 
 // Apply request counter to all API routes (counts every request)
 app.use('/api', requestCounterMiddleware)
