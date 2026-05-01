@@ -104,8 +104,8 @@ describe('ChoreForm', () => {
     
     await waitFor(() => {
       expect(mockOnSubmit).toHaveBeenCalledWith({
-        choreTemplateId: 1,
-        assignedToId: 2,
+        templateId: 1,
+        userId: 2,
         dueDate: '2024-12-31T00:00:00.000Z',
       })
     })
@@ -140,8 +140,8 @@ describe('ChoreForm', () => {
 
   it('populates form with assignment data when editing', () => {
     const assignment = mockChoreAssignment({
-      choreTemplateId: 2,
-      assignedToId: 2,
+      templateId: 2,
+      userId: 2,
       dueDate: '2024-12-31T00:00:00.000Z',
     })
     render(<ChoreForm {...defaultProps} assignment={assignment} />)

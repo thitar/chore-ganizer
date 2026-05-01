@@ -92,8 +92,8 @@ export const updateChoreTemplateSchema = z.object({
 // ============================================
 
 export const createChoreAssignmentSchema = z.object({
-  choreTemplateId: z.number().int('Template ID must be an integer').positive('Template ID must be positive'),
-  assignedToId: z.number().int('User ID must be an integer').positive('User ID must be positive'),
+  templateId: z.number().int('Template ID must be an integer').positive('Template ID must be positive'),
+  userId: z.number().int('User ID must be an integer').positive('User ID must be positive'),
   dueDate: z.string().datetime('Due date must be a valid ISO 8601 datetime').optional().nullable(),
   notes: z.string().max(500, 'Notes must be 500 characters or less').optional(),
 })

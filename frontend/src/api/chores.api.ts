@@ -18,7 +18,7 @@ export interface CompleteChoreResponse {
 // This API is kept for backward compatibility
 // All endpoints now use /api/chore-assignments
 export const choresApi = {
-  getAll: async (params?: { status?: string; assignedToId?: number }): Promise<ChoreAssignment[]> => {
+  getAll: async (params?: { status?: string; userId?: number }): Promise<ChoreAssignment[]> => {
     const response = await apiClient.get<{ assignments: ChoreAssignment[] }>('/chore-assignments', { params })
     return response.data?.assignments || []
   },

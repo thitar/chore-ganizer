@@ -112,8 +112,8 @@ describe('Overdue Penalty Service', () => {
       const mockOverdueChores = [
         {
           id: 1,
-          choreTemplateId: 1,
-          assignedToId: 2,
+          templateId: 1,
+          userId: 2,
           assignedById: 1,
           dueDate: new Date('2024-01-15T10:00:00Z'),
           status: 'PENDING',
@@ -149,8 +149,8 @@ describe('Overdue Penalty Service', () => {
       const mockOverdueChores = [
         {
           id: 1,
-          choreTemplateId: 1,
-          assignedToId: 2,
+          templateId: 1,
+          userId: 2,
           assignedById: 1,
           dueDate: new Date('2024-01-15T23:59:00Z'),
           status: 'PENDING',
@@ -206,8 +206,8 @@ describe('Overdue Penalty Service', () => {
       const mockLeapYearChores = [
         {
           id: 1,
-          choreTemplateId: 1,
-          assignedToId: 2,
+          templateId: 1,
+          userId: 2,
           assignedById: 1,
           dueDate: new Date('2024-02-29T23:00:00Z'),
           status: 'PENDING',
@@ -293,8 +293,8 @@ describe('Overdue Penalty Service', () => {
     it('should throw an error if penalty has already been applied (double-penalty guard)', async () => {
       const mockAssignment = {
         id: 1,
-        choreTemplateId: 1,
-        assignedToId: 2,
+        templateId: 1,
+        userId: 2,
         assignedById: 1,
         dueDate: new Date('2024-01-15T10:00:00Z'),
         status: 'PENDING',
@@ -317,8 +317,8 @@ describe('Overdue Penalty Service', () => {
     it('should use integer math for penalty calculation (no floating point)', async () => {
       const mockAssignment = {
         id: 1,
-        choreTemplateId: 1,
-        assignedToId: 2,
+        templateId: 1,
+        userId: 2,
         assignedById: 1,
         dueDate: new Date('2024-01-15T10:00:00Z'),
         status: 'PENDING',
@@ -362,8 +362,8 @@ describe('Overdue Penalty Service', () => {
     it('should calculate penalty correctly for whole number multipliers', async () => {
       const mockAssignment = {
         id: 1,
-        choreTemplateId: 1,
-        assignedToId: 2,
+        templateId: 1,
+        userId: 2,
         assignedById: 1,
         dueDate: new Date('2024-01-15T10:00:00Z'),
         status: 'PENDING',

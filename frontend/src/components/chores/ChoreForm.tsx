@@ -22,28 +22,28 @@ export const ChoreForm: React.FC<ChoreFormProps> = ({
   loading = false,
 }) => {
   const [templateId, setTemplateId] = useState<number | null>(null)
-  const [assignedToId, setAssignedToId] = useState<number | null>(null)
+  const [userId, setUserId] = useState<number | null>(null)
   const [dueDate, setDueDate] = useState('')
 
   useEffect(() => {
     if (assignment) {
-      setTemplateId(assignment.choreTemplateId)
-      setAssignedToId(assignment.assignedToId)
+      setTemplateId(assignment.templateId)
+      setUserId(assignment.userId)
       setDueDate(assignment.dueDate ? assignment.dueDate.split('T')[0] : '')
     } else {
       setTemplateId(null)
-      setAssignedToId(null)
+      setUserId(null)
       setDueDate('')
     }
   }, [assignment, isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!templateId || !assignedToId || !dueDate) return
+    if (!templateId || !userId || !dueDate) return
 
     const data: CreateAssignmentData | UpdateAssignmentData = {
-      choreTemplateId: templateId,
-      assignedToId,
+      templateId,
+      userId,
       dueDate: dueDate ? new Date(dueDate + 'T00:00:00.000Z').toISOString() : undefined,
     }
 
@@ -73,8 +73,8 @@ export const ChoreForm: React.FC<ChoreFormProps> = ({
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Assign To</label>
           <select
-            value={assignedToId || ''}
-            onChange={(e) => setAssignedToId(parseInt(e.target.value) || null)}
+            value={userId || ''}
+            onChange={(e) => setUserId(parseInt(e.target.value) || null)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           >

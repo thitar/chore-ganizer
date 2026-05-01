@@ -1,5 +1,46 @@
 import rateLimit from 'express-rate-limit'
 
+export function getGeneralLimiterConfig(): { windowMs: number; max: number } {
+  return {
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
+    max: parseInt(process.env.RATE_LIMIT_MAX || '300', 10),
+  }
+}
+
+export function getAuthLimiterConfig(): { windowMs: number; max: number } {
+  return {
+    windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || '900000', 10),
+    max: parseInt(process.env.AUTH_RATE_LIMIT_MAX || '100', 10),
+  }
+}
+
+interface RequestCounter {
+  count: number
+  windowStart: number
+}
+
+let requestCounter: RequestCounter = { count: 0, windowStart: Date.now() }
+
+export function incrementRequestCount(): void {
+  const now = Date.now()
+  const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10)
+  if (now - requestCounter.windowStart > windowMs) {
+    requestCounter = { count: 0, windowStart: now }
+  }
+  requestCounter.count++
+}
+
+export function resetRequestCount(): void {
+  requestCounter = { count: 0, windowStart: Date.now() }
+}
+
+export function getRequestCount(): { count: number; windowStart: string } {
+  return {
+    count: requestCounter.count,
+    windowStart: new Date(requestCounter.windowStart).toISOString(),
+  }
+}
+
 /**
  * Rate limiter for authentication endpoints
  * 
@@ -18,8 +59,8 @@ import rateLimit from 'express-rate-limit'
 export const authLimiter = process.env.NODE_ENV === 'test'
   ? (_req: unknown, _res: unknown, next: () => void) => next() // No-op in test
   : rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 100, // High limit - practically disabled for login, still protects registration
+      windowMs: getAuthLimiterConfig().windowMs,
+      max: getAuthLimiterConfig().max,
       skip: (req) => {
         // Skip rate limiting for login attempts - rely on per-user account lockout instead
         if (req.path === '/api/auth/login' || req.url === '/api/auth/login') {

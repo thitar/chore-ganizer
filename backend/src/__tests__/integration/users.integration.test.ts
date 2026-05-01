@@ -173,14 +173,14 @@ describe('Users API Integration Tests', () => {
       await prisma.choreAssignment.deleteMany()
 
       await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
 
       await api.createAssignment({
-        choreTemplateId: testData.templates.cleaning.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.cleaning.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 172800000).toISOString(),
       })
     })
@@ -190,7 +190,7 @@ describe('Users API Integration Tests', () => {
 
       // This endpoint might be under /users/:id/assignments or via query param
       // Adjust based on actual API structure
-      const response = await api.getAssignments({ assignedToId: testData.users.child1.id })
+      const response = await api.getAssignments({ userId: testData.users.child1.id })
 
       expect(response.status).toBe(200)
       expect(response.body.data.assignments.length).toBeGreaterThanOrEqual(2)
@@ -411,8 +411,8 @@ describe('Users API Integration Tests', () => {
 
       // Assign a chore to child1
       await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
 

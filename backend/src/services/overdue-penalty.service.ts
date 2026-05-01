@@ -94,7 +94,7 @@ export const applyOverduePenalty = async (
   
   // Update user's points
   await prisma.user.update({
-    where: { id: assignment.assignedToId },
+    where: { id: assignment.userId },
     data: {
       points: {
         increment: penaltyPoints,
@@ -113,7 +113,7 @@ export const applyOverduePenalty = async (
   
   return {
     penaltyPoints,
-    userId: assignment.assignedToId,
+    userId: assignment.userId,
     choreTitle: assignment.choreTemplate.title,
   }
 }
@@ -285,7 +285,7 @@ export const processOverdueChores = async (): Promise<{
       }
       
       // Notify child
-      await notifyChildOfPenalty(assignment.assignedToId, {
+      await notifyChildOfPenalty(assignment.userId, {
         choreTitle: assignment.choreTemplate.title,
         penaltyPoints: penalty.penaltyPoints,
       })

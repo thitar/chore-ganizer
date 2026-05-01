@@ -207,7 +207,7 @@ export class ApiClient {
 
   async getAssignments(filters?: {
     status?: string
-    assignedToId?: number
+    userId?: number
     dueDateFrom?: string
     dueDateTo?: string
   }) {
@@ -228,8 +228,8 @@ export class ApiClient {
   }
 
   async createAssignment(data: {
-    choreTemplateId: number
-    assignedToId: number
+    templateId: number
+    userId: number
     dueDate: string
     notes?: string
   }) {
@@ -239,7 +239,7 @@ export class ApiClient {
   async updateAssignment(id: number, data: {
     dueDate?: string
     notes?: string
-    assignedToId?: number
+    userId?: number
   }) {
     return this.agent.put(`/api/chore-assignments/${id}`).send(data)
   }

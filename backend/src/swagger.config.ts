@@ -211,7 +211,7 @@ const swaggerDefinition = {
           id: { type: 'string' },
           templateId: { type: 'string' },
           template: { $ref: '#/components/schemas/ChoreTemplate' },
-          assignedToId: { type: 'string' },
+          userId: { type: 'string' },
           assignedTo: { $ref: '#/components/schemas/User' },
           dueDate: { type: 'string', format: 'date-time' },
           status: { $ref: '#/components/schemas/ChoreStatus' },
@@ -220,17 +220,17 @@ const swaggerDefinition = {
       },
       CreateChoreAssignmentRequest: {
         type: 'object',
-        required: ['templateId', 'assignedToId', 'dueDate'],
+        required: ['templateId', 'userId', 'dueDate'],
         properties: {
           templateId: { type: 'string' },
-          assignedToId: { type: 'string' },
+          userId: { type: 'string' },
           dueDate: { type: 'string', format: 'date-time' },
         },
       },
       UpdateChoreAssignmentRequest: {
         type: 'object',
         properties: {
-          assignedToId: { type: 'string' },
+          userId: { type: 'string' },
           dueDate: { type: 'string', format: 'date-time' },
           status: { $ref: '#/components/schemas/ChoreStatus' },
         },

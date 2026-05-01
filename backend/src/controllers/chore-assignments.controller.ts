@@ -12,7 +12,7 @@ import { AUDIT_ACTIONS } from '../constants/audit-actions.js'
  * Get all chore assignments with optional filters
  */
 export const getAssignments = async (req: Request, res: Response) => {
-  const { status, assignedToId, dueDateFrom, dueDateTo } = req.query
+  const { status, userId, dueDateFrom, dueDateTo } = req.query
 
   const filters: assignmentsService.AssignmentFilters = {}
 
@@ -20,8 +20,8 @@ export const getAssignments = async (req: Request, res: Response) => {
     filters.status = status as assignmentsService.AssignmentFilters['status']
   }
 
-  if (assignedToId) {
-    filters.assignedToId = Number(assignedToId)
+  if (userId) {
+    filters.userId = Number(userId)
   }
 
   if (dueDateFrom) {
@@ -114,26 +114,26 @@ export const getAssignment = async (req: Request, res: Response) => {
  * Create a new chore assignment
  */
 export const createAssignment = async (req: Request, res: Response) => {
-  const { choreTemplateId, assignedToId, dueDate, notes } = req.body
+  const { templateId, userId, dueDate, notes } = req.body
 
-  if (!choreTemplateId || !assignedToId || !dueDate) {
-    throw new AppError('choreTemplateId, assignedToId, and dueDate are required', 400, 'VALIDATION_ERROR')
+  if (!templateId || !userId || !dueDate) {
+    throw new AppError('templateId, userId, and dueDate are required', 400, 'VALIDATION_ERROR')
   }
 
   // Verify template exists
-  const template = await templatesService.getTemplateById(choreTemplateId)
+  const template = await templatesService.getTemplateById(templateId)
   if (!template) {
     throw new AppError('Chore template not found', 404, 'NOT_FOUND')
   }
 
   const assignment = await assignmentsService.createAssignment(
-    { choreTemplateId, assignedToId, dueDate: new Date(dueDate), notes },
+    { templateId, userId, dueDate: new Date(dueDate), notes },
     req.user!.id
   )
 
   // Create notification for assigned user
   await notificationsService.createNotification({
-    userId: assignedToId,
+    userId: userId,
     type: 'CHORE_ASSIGNED',
     title: 'New Chore Assigned',
     message: `You have been assigned: ${template.title}`,
@@ -141,7 +141,7 @@ export const createAssignment = async (req: Request, res: Response) => {
 
   // Send push notification
   await notificationSettingsService.sendPushNotification(
-    assignedToId,
+    userId,
     'CHORE_ASSIGNED',
     {
       choreTitle: template.title,
@@ -156,7 +156,7 @@ export const createAssignment = async (req: Request, res: Response) => {
     action: AUDIT_ACTIONS.CHORE_ASSIGNED,
     entityType: 'ChoreAssignment',
     entityId: assignment.id,
-    newValue: { choreTemplateId, assignedToId, dueDate },
+    newValue: { templateId, userId, dueDate },
     ipAddress: context.ipAddress,
     userAgent: context.userAgent,
   })
@@ -178,7 +178,7 @@ export const updateAssignment = async (req: Request, res: Response) => {
     throw new AppError('Invalid assignment ID', 400, 'VALIDATION_ERROR')
   }
 
-  const { dueDate, notes, assignedToId } = req.body
+  const { dueDate, notes, userId } = req.body
 
   // Check assignment exists
   const existing = await assignmentsService.getAssignmentById(assignmentId)
@@ -189,7 +189,7 @@ export const updateAssignment = async (req: Request, res: Response) => {
   const updateData: assignmentsService.UpdateAssignmentData = {}
   if (dueDate) updateData.dueDate = new Date(dueDate)
   if (notes !== undefined) updateData.notes = notes
-  if (assignedToId) updateData.assignedToId = assignedToId
+  if (userId) updateData.userId = userId
 
   const assignment = await assignmentsService.updateAssignment(assignmentId, updateData)
 
@@ -200,8 +200,8 @@ export const updateAssignment = async (req: Request, res: Response) => {
     action: AUDIT_ACTIONS.CHORE_UPDATED,
     entityType: 'ChoreAssignment',
     entityId: assignmentId,
-    oldValue: { dueDate: existing.dueDate, notes: existing.notes, assignedToId: existing.assignedToId },
-    newValue: { dueDate, notes, assignedToId },
+    oldValue: { dueDate: existing.dueDate, notes: existing.notes, userId: existing.userId },
+    newValue: { dueDate, notes, userId },
     ipAddress: context.ipAddress,
     userAgent: context.userAgent,
   })
@@ -252,7 +252,7 @@ export const completeAssignment = async (req: Request, res: Response) => {
 
   // Create notification for points earned
   await notificationsService.createNotification({
-    userId: existing.assignedToId,
+    userId: existing.userId,
     type: 'POINTS_EARNED',
     title: status === 'PARTIALLY_COMPLETE' ? 'Partial Points Earned!' : 'Points Earned!',
     message: `You earned ${pointsAwarded} points for completing: ${existing.choreTemplate.title}`,
@@ -260,7 +260,7 @@ export const completeAssignment = async (req: Request, res: Response) => {
 
   // Send push notification for points earned
   await notificationSettingsService.sendPushNotification(
-    existing.assignedToId,
+    existing.userId,
     'POINTS_EARNED',
     {
       choreTitle: existing.choreTemplate.title,

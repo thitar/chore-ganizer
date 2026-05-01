@@ -3,8 +3,8 @@ import { AppError } from '../middleware/errorHandler.js'
 import { getFamilyPenaltySettings } from './overdue-penalty.service.js'
 
 export interface CreateAssignmentData {
-  choreTemplateId: number
-  assignedToId: number
+  templateId: number
+  userId: number
   dueDate: Date
   notes?: string
 }
@@ -12,12 +12,12 @@ export interface CreateAssignmentData {
 export interface UpdateAssignmentData {
   dueDate?: Date
   notes?: string
-  assignedToId?: number
+  userId?: number
 }
 
 export interface AssignmentWithDetails {
   id: number
-  choreTemplateId: number
+  templateId: number
   choreTemplate: {
     id: number
     title: string
@@ -26,7 +26,7 @@ export interface AssignmentWithDetails {
     icon: string | null
     color: string | null
   }
-  assignedToId: number
+  userId: number
   assignedTo: {
     id: number
     name: string
@@ -46,7 +46,7 @@ export interface AssignmentWithDetails {
 
 export interface AssignmentFilters {
   status?: 'PENDING' | 'COMPLETED' | 'PARTIALLY_COMPLETE' | 'OVERDUE' | 'ALL'
-  assignedToId?: number
+  userId?: number
   dueDateFrom?: Date
   dueDateTo?: Date
 }
@@ -69,8 +69,8 @@ export const getAllAssignments = async (
     }
   }
 
-  if (filters?.assignedToId) {
-    where.assignedToId = filters.assignedToId
+  if (filters?.userId) {
+    where.userId = filters.userId
   }
 
   if (filters?.dueDateFrom || filters?.dueDateTo) {
@@ -172,8 +172,8 @@ export const createAssignment = async (
 ): Promise<AssignmentWithDetails> => {
   const assignment = await prisma.choreAssignment.create({
     data: {
-      choreTemplateId: data.choreTemplateId,
-      assignedToId: data.assignedToId,
+      templateId: data.templateId,
+      userId: data.userId,
       assignedById,
       dueDate: data.dueDate,
       notes: data.notes,
@@ -287,7 +287,7 @@ export const completeAssignment = async (
   // Determine if user can complete this assignment
   // Parents can complete any assignment, children can only complete their own
   const isParent = options?.isParent || false
-  if (!isParent && assignment.assignedToId !== userId) {
+  if (!isParent && assignment.userId !== userId) {
     throw new AppError('You can only complete your own assignments', 403, 'FORBIDDEN')
   }
 
@@ -365,7 +365,7 @@ export const completeAssignment = async (
 
     // Award points to the user
     await tx.user.update({
-      where: { id: assignment.assignedToId },
+      where: { id: assignment.userId },
       data: {
         points: {
           increment: pointsToAward,
@@ -378,7 +378,7 @@ export const completeAssignment = async (
     const transactionType = (isOverdue && penaltySettings?.overduePenaltyEnabled && pointsToDeduct > 0) ? 'DEDUCTION' : 'EARNED'
     await tx.pointTransaction.create({
       data: {
-        userId: assignment.assignedToId,
+        userId: assignment.userId,
         type: transactionType,
         amount: pointsToAward,
         description: isOverdue && penaltySettings?.overduePenaltyEnabled && pointsToDeduct > 0
@@ -476,7 +476,7 @@ export const getUpcomingAssignments = async (
   }
 
   if (userId) {
-    where.assignedToId = userId
+    where.userId = userId
   }
 
   const assignments = await prisma.choreAssignment.findMany({
@@ -535,7 +535,7 @@ export const getAssignmentsByDate = async (
   }
 
   if (userId) {
-    where.assignedToId = userId
+    where.userId = userId
   }
 
   const assignments = await prisma.choreAssignment.findMany({
@@ -592,7 +592,7 @@ export const getAssignmentsForMonth = async (
   }
 
   if (userId) {
-    where.assignedToId = userId
+    where.userId = userId
   }
 
   const assignments = await prisma.choreAssignment.findMany({

@@ -51,8 +51,8 @@ describe('ChoreList', () => {
   it('filters chores for child user - shows only their chores', () => {
     const childUser = mockChild()
     const chores = [
-      mockChoreAssignment({ id: 1, assignedToId: childUser.id }),
-      mockChoreAssignment({ id: 2, assignedToId: 999, choreTemplate: { ...mockChoreAssignment().choreTemplate, id: 2, title: 'Other Chore' } }),
+      mockChoreAssignment({ id: 1, userId: childUser.id }),
+      mockChoreAssignment({ id: 2, userId: 999, choreTemplate: { ...mockChoreAssignment().choreTemplate, id: 2, title: 'Other Chore' } }),
     ]
     render(
       <ChoreList
@@ -72,7 +72,7 @@ describe('ChoreList', () => {
     const parentUser = mockUser({ role: 'PARENT' })
     const chores = [
       mockChoreAssignment({ id: 1 }),
-      mockChoreAssignment({ id: 2, assignedToId: 999, choreTemplate: { ...mockChoreAssignment().choreTemplate, id: 2, title: 'Other Chore' } }),
+      mockChoreAssignment({ id: 2, userId: 999, choreTemplate: { ...mockChoreAssignment().choreTemplate, id: 2, title: 'Other Chore' } }),
     ]
     render(
       <ChoreList

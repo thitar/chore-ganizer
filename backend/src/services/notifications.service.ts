@@ -149,7 +149,7 @@ export const createOverdueNotifications = async (): Promise<number> => {
     // Check if notification already exists for this assignment
     const existingNotification = await prisma.notification.findFirst({
       where: {
-        userId: assignment.assignedToId,
+        userId: assignment.userId,
         type: 'OVERDUE_CHORE',
         message: {
           contains: `chore #${assignment.id}`,
@@ -160,7 +160,7 @@ export const createOverdueNotifications = async (): Promise<number> => {
     if (!existingNotification) {
       await prisma.notification.create({
         data: {
-          userId: assignment.assignedToId,
+          userId: assignment.userId,
           type: 'OVERDUE_CHORE',
           title: 'Overdue Chore!',
           message: `Your chore "${assignment.choreTemplate.title}" (chore #${assignment.id}) is overdue! Due date was ${new Date(assignment.dueDate).toLocaleDateString()}`,

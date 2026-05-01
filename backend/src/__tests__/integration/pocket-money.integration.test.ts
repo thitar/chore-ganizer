@@ -295,8 +295,8 @@ describe('Pocket Money API Integration Tests', () => {
 
       // Create assignment
       const assignmentResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.dishes.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.dishes.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
 
@@ -322,8 +322,8 @@ describe('Pocket Money API Integration Tests', () => {
 
       // Create assignment
       const assignmentResponse = await api.createAssignment({
-        choreTemplateId: testData.templates.cleaning.id,
-        assignedToId: testData.users.child1.id,
+        templateId: testData.templates.cleaning.id,
+        userId: testData.users.child1.id,
         dueDate: new Date(Date.now() + 86400000).toISOString(),
       })
 

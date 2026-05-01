@@ -559,7 +559,7 @@
           "template": {
             "$ref": "#/components/schemas/ChoreTemplate"
           },
-          "assignedToId": {
+          "userId": {
             "type": "string"
           },
           "assignedTo": {
@@ -583,14 +583,14 @@
         "type": "object",
         "required": [
           "templateId",
-          "assignedToId",
+          "userId",
           "dueDate"
         ],
         "properties": {
           "templateId": {
             "type": "string"
           },
-          "assignedToId": {
+          "userId": {
             "type": "string"
           },
           "dueDate": {
@@ -602,7 +602,7 @@
       "UpdateChoreAssignmentRequest": {
         "type": "object",
         "properties": {
-          "assignedToId": {
+          "userId": {
             "type": "string"
           },
           "dueDate": {
