@@ -46,7 +46,14 @@ describe('Settings', () => {
   })
 
   it('shows error message on API failure', async () => {
-    mockClientGet.mockRejectedValue({ error: { message: 'Failed to fetch' } })
+    mockClientGet.mockRejectedValue({
+      response: {
+        data: {
+          success: false,
+          error: { message: 'Failed to fetch', code: 'INTERNAL_ERROR' }
+        }
+      }
+    })
     render(<Settings />)
     await waitFor(() => {
       expect(screen.getByText('Failed to load rate limit status')).toBeDefined()

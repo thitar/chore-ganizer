@@ -1,58 +1,13 @@
-import { Prisma } from '@prisma/client'
-import { RecurrenceRule } from '../services/recurrence.service.js'
+import cron, { ScheduledTask } from 'node-cron'
 import prisma from '../config/database.js'
+import { logger } from '../utils/logger.js'
+import { RecurrenceService, RecurrenceRule } from '../services/recurrence.service.js'
 
-// ... existing imports and code ...
+// Run every day at midnight UTC
+const CRON_SCHEDULE = '0 0 * * *'
 
-// Define custom type to correctly type the recurrenceRule after middleware transformation
-type RecurringChoreWithoutRule = Omit<Prisma.RecurringChoreGetPayload<{
-  include: {
-    fixedAssignees: {
-      include: {
-        user: true
-      }
-    }
-    roundRobinPool: {
-      include: {
-        user: true
-      }
-      orderBy: {
-        order: 'asc'
-      }
-    }
-  }
-}>, 'recurrenceRule'>
-
-type RecurringChoreWithParsedRule = RecurringChoreWithoutRule & {
-  recurrenceRule: RecurrenceRule
-}
-
-// ... existing code ...
-
-  // Get all active recurring chores
-  const recurringChores = await prisma.recurringChore.findMany({
-    where: {
-      isActive: true,
-      startDate: {
-        lte: tomorrow, // Only chores that have started
-      },
-    },
-    include: {
-      fixedAssignees: {
-        include: {
-          user: true,
-        },
-      },
-      roundRobinPool: {
-        include: {
-          user: true,
-        },
-        orderBy: {
-          order: 'asc',
-        },
-      },
-    },
-  }) as RecurringChoreWithParsedRule[]
+/**
+ * Generate chore occurrences for a specific date based on active recurring chores.
  * 
  * This function:
  * 1. Fetches all active recurring chores
@@ -108,7 +63,18 @@ export const generateDailyOccurrences = async (targetDate: Date = new Date()): P
 
   for (const rc of recurringChores) {
     try {
-      const recurrenceRule = rc.recurrenceRule
+      // Parse the recurrence rule
+      let recurrenceRule: RecurrenceRule
+      try {
+        recurrenceRule = JSON.parse(rc.recurrenceRule)
+      } catch (parseError) {
+        logger.error('Failed to parse recurrence rule', { 
+          recurringChoreId: rc.id, 
+          recurrenceRule: rc.recurrenceRule 
+        })
+        errors.push({ recurringChoreId: rc.id, error: 'Invalid recurrence rule JSON' })
+        continue
+      }
 
       // Validate the recurrence rule
       if (!RecurrenceService.isValidRule(recurrenceRule)) {

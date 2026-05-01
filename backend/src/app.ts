@@ -74,10 +74,6 @@ const generalLimiter = process.env.DISABLE_RATE_LIMIT === 'true'
       : rateLimit({
           windowMs: generalLimiterConfig.windowMs,
           max: generalLimiterConfig.max,
-          message: {
-            success: false,
-            error: { message: 'Too many requests, please try again later', code: 'RATE_LIMITED' }
-          },
           standardHeaders: true,
           legacyHeaders: false,
           handler: (_req, res) => {

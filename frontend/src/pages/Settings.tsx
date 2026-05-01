@@ -1,41 +1,30 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../hooks'
-import client from '../api/client'
+import { useAuth } from '../hooks/useAuth'
+import { client } from '../api/client'
+import { UsageBar } from '../components/layout/UsageBar'
 
 interface RateLimitStatus {
   general: {
     windowMs: number
     max: number
     currentCount: number
-    windowStart: string
     disabled: boolean
   }
   auth: {
     windowMs: number
     max: number
+    currentCount: number
+    disabled: boolean
   }
 }
 
-function formatWindow(ms: number): string {
-  const minutes = Math.round(ms / 60000)
-  return `${minutes} min`
-}
-
-function UsageBar({ current, max, label }: { current: number; max: number; label: string }) {
-  const pct = max > 0 ? Math.min((current / max) * 100, 100) : 0
-  const color = pct > 80 ? 'bg-red-500' : pct > 50 ? 'bg-yellow-500' : 'bg-green-500'
-
-  return (
-    <div className="mt-2">
-      <div className="flex justify-between text-sm text-gray-600 mb-1">
-        <span>{label}</span>
-        <span>{current} / {max}</span>
-      </div>
-      <div className="w-full bg-gray-200 rounded-full h-2.5">
-        <div className={`h-2.5 rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  )
+function formatWindow(windowMs: number): string {
+  const seconds = Math.floor(windowMs / 1000)
+  if (seconds < 60) return `${seconds} seconds`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes} minutes`
+  const hours = Math.floor(minutes / 60)
+  return `${hours} hours`
 }
 
 export function Settings() {
@@ -43,6 +32,8 @@ export function Settings() {
   const [status, setStatus] = useState<RateLimitStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+
+  if (!isParent) return null
 
   useEffect(() => {
     let mounted = true
@@ -61,8 +52,6 @@ export function Settings() {
     const interval = setInterval(fetchStatus, 30000)
     return () => { mounted = false; clearInterval(interval) }
   }, [])
-
-  if (!isParent) return null
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -84,9 +73,12 @@ export function Settings() {
               <UsageBar current={status.general.currentCount} max={status.general.max} label="Requests this window" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-700">Auth Route Limiter</h3>
+              <h3 className="font-medium text-gray-700">Auth API Limiter</h3>
               <p className="text-sm text-gray-500">Window: {formatWindow(status.auth.windowMs)}</p>
-              <p className="text-sm text-gray-500">Max: {status.auth.max} requests</p>
+              {status.auth.disabled && (
+                <p className="text-sm text-orange-600 font-medium">Rate limiting is disabled</p>
+              )}
+              <UsageBar current={status.auth.currentCount} max={status.auth.max} label="Requests this window" />
             </div>
           </div>
         )}
