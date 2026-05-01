@@ -56,7 +56,7 @@ describe('Settings', () => {
     })
     render(<Settings />)
     await waitFor(() => {
-      expect(screen.getByText('Failed to load rate limit status')).toBeDefined()
+      expect(screen.getByText('Failed to fetch')).toBeDefined()
     })
   })
 

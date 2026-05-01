@@ -4,6 +4,53 @@ import { getRequestCount, getGeneralLimiterConfig, getAuthLimiterConfig } from '
 
 const router = Router()
 
+/**
+ * @swagger
+ * /admin/rate-limits/status:
+ *   get:
+ *     summary: Get current rate limit configuration and usage stats
+ *     tags:
+ *       - Admin
+ *     security:
+ *       - CookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Rate limit status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     general:
+ *                       type: object
+ *                       properties:
+ *                         windowMs:
+ *                           type: integer
+ *                         max:
+ *                           type: integer
+ *                         currentCount:
+ *                           type: integer
+ *                         windowStart:
+ *                           type: string
+ *                         disabled:
+ *                           type: boolean
+ *                     auth:
+ *                       type: object
+ *                       properties:
+ *                         windowMs:
+ *                           type: integer
+ *                         max:
+ *                           type: integer
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
 router.get('/rate-limits/status',
   authenticate,
   authorize('PARENT'),

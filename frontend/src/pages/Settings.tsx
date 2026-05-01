@@ -44,9 +44,11 @@ export function Settings() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  if (!isParent) return null
-
   useEffect(() => {
+    if (!isParent) {
+      setLoading(false)
+      return
+    }
     let mounted = true
     async function fetchStatus() {
       try {
@@ -66,6 +68,8 @@ export function Settings() {
     const interval = setInterval(fetchStatus, 30000)
     return () => { mounted = false; clearInterval(interval) }
   }, [])
+
+  if (!isParent) return null
 
   return (
     <div className="max-w-2xl mx-auto">
