@@ -45,7 +45,7 @@ const router = Router();
  *             schema:
  *               $ref: #/components/schemas/ErrorResponse
  */
-router.get('/metrics', getMetrics);
+router.get('/', getMetrics);
 router.get('/health', getHealth);
 
 export default router;

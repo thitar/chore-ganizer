@@ -13,6 +13,7 @@ import pocketMoneyRoutes from './pocket-money.routes.js'
 import auditRoutes from './audit.routes.js'
 import statisticsRoutes from './statistics.routes.js'
 import adminRoutes from './admin.routes.js'
+import metricsRoutes from './metrics.routes.js'
 import * as healthController from '../controllers/health.controller.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { VERSION, BUILD_DATE, FULL_VERSION } from '../version'
@@ -128,5 +129,6 @@ router.use('/pocket-money', pocketMoneyRoutes)
 router.use('/audit', auditRoutes)
 router.use('/statistics', statisticsRoutes)
 router.use('/admin', adminRoutes)
+router.use('/metrics', metricsRoutes)
 
 export default router

@@ -14,7 +14,6 @@ import { metricsMiddleware } from './middleware/metricsMiddleware.js'
 import { shutdownMiddleware } from './middleware/shutdownMiddleware.js'
 import { compressionMiddleware } from './middleware/compression.js'
 import { requestTimerMiddleware } from './middleware/requestTimer.js'
-import metricsRoutes from './routes/metrics.routes.js'
 import { FULL_VERSION } from './version'
 import { logger } from './utils/logger.js'
 
@@ -151,9 +150,6 @@ app.get('/api/csrf-token', asyncHandler(getCsrfToken))
 
 // API routes
 app.use('/api', routes)
-
-// Metrics routes
-app.use('/api', metricsRoutes)
 
 // 404 handler
 app.use(notFoundHandler)
