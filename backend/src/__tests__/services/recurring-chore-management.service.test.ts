@@ -6,7 +6,6 @@
  */
 
 import * as rcService from '../../services/recurring-chores/recurring-chore-management.service'
-import { AppError } from '../../middleware/errorHandler'
 
 // Mock occurrence and assignment services
 jest.mock('../../services/recurring-chores/occurrence.service', () => ({
@@ -55,23 +54,6 @@ describe('Recurring Chore Management Service', () => {
   })
 
   describe('create', () => {
-    it('should create a recurring chore with FIXED assignment mode', async () => {
-      ;(prisma.recurringChore.create as jest.Mock).mockResolvedValue({
-        id: 1,
-        title: 'Feed Pet',
-        points: 5,
-        assignmentMode: 'FIXED',
-        recurrenceRule: { frequency: 'DAILY', interval: 1 },
-        isActive: true,
-      })
-
-      const result = await (rcService as any).updateRecurringChoreAssignments?.()
-
-      // The service uses direct exports, let's verify through a different approach.
-      // The recurring-chore-management service exports helper functions, not CRUD directly.
-      expect(prisma.recurringChore.create).not.toHaveBeenCalled()
-    })
-
     it('should handle assignment mode transitions via updateRecurringChoreAssignments', async () => {
       // Mock deleteMany for cleanup
       ;(prisma.recurringChoreFixedAssignee.deleteMany as jest.Mock).mockResolvedValue({ count: 2 })
@@ -230,7 +212,7 @@ describe('Recurring Chore Management Service', () => {
 
       await rcService.regenerateFutureOccurrences(
         1,
-        { frequency: 'WEEKLY', interval: 1, byDayOfWeek: [6] },
+        { frequency: 'WEEKLY', interval: 1, dayOfWeek: [6] },
         undefined,
         new Date('2024-01-01'),
         [2],

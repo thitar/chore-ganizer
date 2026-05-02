@@ -7,7 +7,6 @@
  */
 
 import * as payoutsService from '../../services/pocket-money/pocket-money-payouts.service'
-import { AppError } from '../../middleware/errorHandler'
 
 // Mock balance service
 jest.mock('../../services/pocket-money/pocket-money-balance.service', () => ({

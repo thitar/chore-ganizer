@@ -160,19 +160,20 @@ describe('Pocket Money Balance Service', () => {
     })
 
     it('should allow PARENT to access child balance', async () => {
-      ;(prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({
-        id: 1,
-        role: 'PARENT',
-      })
+      ;(prisma.user.findUnique as jest.Mock)
+        // verifyUserAccess: findUnique to check current user role
+        .mockResolvedValueOnce({ id: 1, role: 'PARENT' })
+        // getPointBalance: findUnique to check target user exists
+        .mockResolvedValueOnce({ id: 2, role: 'CHILD' })
+        // calculatePointBalance: findUnique for family config
+        .mockResolvedValueOnce({
+          id: 2, family: { pocketMoneyConfig: { currency: 'USD', pointValue: 10 } },
+        })
+        // getPointBalance: findUnique for currency display
+        .mockResolvedValueOnce({
+          id: 2, family: { pocketMoneyConfig: { currency: 'USD', pointValue: 10 } },
+        })
       ;(prisma.pointTransaction.findMany as jest.Mock).mockResolvedValue([])
-      ;(prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({
-        id: 2,
-        role: 'CHILD',
-      })
-      ;(prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({
-        id: 2,
-        family: { pocketMoneyConfig: { currency: 'USD', pointValue: 10 } },
-      })
 
       const result = await balanceService.getPointBalance(1, 2)
 
@@ -271,16 +272,16 @@ describe('Pocket Money Balance Service', () => {
       ;(prisma.pointTransaction.findMany as jest.Mock).mockReset()
       ;(prisma.pointTransaction.count as jest.Mock).mockResolvedValue(1)
       ;(prisma.pointTransaction.findMany as jest.Mock)
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce(mockTransactions)
-        .mockResolvedValueOnce(mockAllPriorTx)
+        .mockResolvedValueOnce([])       // 1st: page boundary
+        .mockResolvedValueOnce(mockTransactions)  // 2nd: main transactions (skip=0)
+        .mockResolvedValueOnce(mockAllPriorTx)    // 3rd: allPriorTx for running balance
 
       await balanceService.getTransactionHistory(1, 2, { type: 'EARNED' })
 
       // Should have passed type to where clause
+      // When skip=0: 1st=page boundary, 2nd=main transactions, 3rd=allPriorTx
       const findManyCalls = (prisma.pointTransaction.findMany as jest.Mock).mock.calls
-      const mainQueryCall = findManyCalls[2] // third call is actual transaction results
+      const mainQueryCall = findManyCalls[1] // second call is main transaction results
       expect(mainQueryCall[0].where.type).toBe('EARNED')
     })
 
@@ -292,10 +293,9 @@ describe('Pocket Money Balance Service', () => {
       ;(prisma.pointTransaction.findMany as jest.Mock).mockReset()
       ;(prisma.pointTransaction.count as jest.Mock).mockResolvedValue(1)
       ;(prisma.pointTransaction.findMany as jest.Mock)
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce(mockTransactions)
-        .mockResolvedValueOnce(mockAllPriorTx)
+        .mockResolvedValueOnce([])             // 1st: page boundary
+        .mockResolvedValueOnce(mockTransactions)    // 2nd: main transactions
+        .mockResolvedValueOnce(mockAllPriorTx)      // 3rd: allPriorTx
 
       await balanceService.getTransactionHistory(1, 2, {
         dateFrom: '2024-01-01',
@@ -303,7 +303,7 @@ describe('Pocket Money Balance Service', () => {
       })
 
       const findManyCalls = (prisma.pointTransaction.findMany as jest.Mock).mock.calls
-      const mainQueryCall = findManyCalls[2]
+      const mainQueryCall = findManyCalls[1] // second call is main transaction results
       expect(mainQueryCall[0].where.createdAt).toBeDefined()
       expect(mainQueryCall[0].where.createdAt.gte).toEqual(new Date('2024-01-01'))
       expect(mainQueryCall[0].where.createdAt.lte).toEqual(new Date('2024-01-31'))

@@ -69,7 +69,7 @@ describe('Chore Categories Service', () => {
     it('should return all categories with template counts', async () => {
       ;(prisma.choreCategory.findMany as jest.Mock).mockResolvedValue(mockCategories)
 
-      const result = await categoriesService.getAllCategories()
+      const result = await categoriesService.getAllCategories() as any[]
 
       expect(result).toHaveLength(2)
       expect(result[0].name).toBe('Household')

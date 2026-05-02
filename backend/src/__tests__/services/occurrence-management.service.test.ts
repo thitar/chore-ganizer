@@ -10,7 +10,6 @@
  */
 
 import * as omService from '../../services/recurring-chores/occurrence-management.service'
-import { AppError } from '../../middleware/errorHandler'
 
 // Mock Prisma with occurrence management models
 jest.mock('../../config/database', () => ({

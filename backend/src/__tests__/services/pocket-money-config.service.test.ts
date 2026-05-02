@@ -8,7 +8,6 @@
  */
 
 import * as configService from '../../services/pocket-money/pocket-money-config.service'
-import { AppError } from '../../middleware/errorHandler'
 
 // Mock Prisma
 jest.mock('../../config/database', () => ({

@@ -10,7 +10,7 @@ import { transformRecurringChore } from '../../services/recurring-chores/transfo
 
 describe('Transform Service', () => {
   describe('transformRecurringChore', () => {
-    it('should parse recurrenceRule from JSON string to object', () => {
+    it('should pass through recurrenceRule from Prisma (already parsed by Prisma)', () => {
       const dbRecord = {
         id: 1,
         title: 'Feed Pet',
@@ -21,7 +21,7 @@ describe('Transform Service', () => {
         categoryId: 1,
         createdById: 1,
         startDate: new Date('2024-01-01'),
-        recurrenceRule: JSON.stringify({ frequency: 'DAILY', interval: 1 }) as unknown,
+        recurrenceRule: { frequency: 'DAILY', interval: 1 } as unknown,
         assignmentMode: 'FIXED',
         isActive: true,
         createdAt: new Date('2024-01-01T12:00:00Z'),
