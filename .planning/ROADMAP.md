@@ -8,7 +8,7 @@ This remediation milestone systematically eliminates 22 known issues across depe
 
 - [ ] **Phase 1: Foundation & Cleanup** - Eliminate dead code, npm vulnerabilities, type safety violations, and known bugs
 - [ ] **Phase 2: Prisma Modernization** - Migrate Prisma middleware from deprecated `$use` to typed `$extends`, then upgrade to 6.x
-- [ ] **Phase 3: Architecture & Performance** - Extract fat controller, standardize services, version-control migrations, fix penalty race conditions
+- [x] **Phase 3: Architecture & Performance** - Extract fat controller, standardize services, version-control migrations, fix penalty race conditions
 - [ ] **Phase 4: Test Coverage & Gates** - Add comprehensive tests and CI coverage gates to prevent regression
 
 ## Phase Details
@@ -59,10 +59,10 @@ Plans:
 **Plans**: 4 plans in 1 wave
 
 Plans:
-- [ ] 03-01-PLAN.md — Service naming: rename emailService.ts → email.service.ts, delete dead notificationService.ts
-- [ ] 03-02-PLAN.md — PocketMoney extraction: extract 817-line controller into sub-services
-- [ ] 03-03-PLAN.md — Penalty performance: $transaction, Promise.allSettled, batch parent settings
-- [ ] 03-04-PLAN.md — Prisma migrations + seed password: baseline migration, migrate deploy, warning log
+- [x] 03-01-PLAN.md — Service naming: rename emailService.ts → email.service.ts, delete dead notificationService.ts
+- [x] 03-02-PLAN.md — PocketMoney extraction: extract 817-line controller into sub-services
+- [x] 03-03-PLAN.md — Penalty performance: $transaction, Promise.allSettled, batch parent settings
+- [x] 03-04-PLAN.md — Prisma migrations + seed password: baseline migration, migrate deploy, warning log
 
 ### Phase 4: Test Coverage & Gates
 **Goal**: Comprehensive test coverage across backend controllers, services, penalty edge cases, and frontend components — with CI coverage gates preventing future regression.
@@ -74,8 +74,12 @@ Plans:
   3. Overdue penalty `$transaction` atomicity and edge cases (timezone boundaries, integer rounding) are verified by dedicated tests
   4. Frontend test coverage reaches 50% (from 22%), with hooks and high-impact pages tested via Vitest + React Testing Library
   5. CI pipeline fails when any coverage threshold drops below configured levels in `jest.config.js` and `vitest.config.ts`
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans in 1 wave
+
+Plans:
+- [ ] 04-01-PLAN.md — Backend controller unit tests (15 controllers)
+- [ ] 04-02-PLAN.md — Backend service tests + overdue edge cases + CI coverage gates
+- [ ] 04-03-PLAN.md — Frontend tests (hooks + high-impact pages) + coverage gates
 
 ## Progress
 
@@ -83,5 +87,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Foundation & Cleanup | 4/4 | ✅ Complete | - |
 | 2. Prisma Modernization | 2/2 | ✅ Complete | - |
-| 3. Architecture & Performance | 0/4 | 📋 Planned | - |
-| 4. Test Coverage & Gates | 0/TBD | Not started | - |
+| 3. Architecture & Performance | 4/4 | ✅ Complete | 2026-05-02 |
+| 4. Test Coverage & Gates | 0/3 | Not started | - |
