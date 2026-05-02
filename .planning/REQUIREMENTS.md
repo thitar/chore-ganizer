@@ -29,9 +29,9 @@
 
 ### Bug Fixes & Code Quality (BUGS)
 
-- [ ] **BUGS-01**: Fix nested ternary in `recurring-chores-occurrences.controller.ts` line 52
-- [ ] **BUGS-02**: Type `transformRecurringChore` input as `Prisma.RecurringChoreGetPayload` instead of `any`
-- [ ] **BUGS-03**: Log original data in `safeParseAssignedUserIds` error path for debugging data corruption
+- [x] **BUGS-01**: Fix nested ternary in `recurring-chores-occurrences.controller.ts` line 52
+- [x] **BUGS-02**: Type `transformRecurringChore` input as `Prisma.RecurringChoreGetPayload` instead of `any`
+- [x] **BUGS-03**: Log original data in `safeParseAssignedUserIds` error path for debugging data corruption
 - [ ] **BUGS-04**: Gate all 45 unconditional console statements in frontend behind a shared `debug.ts` utility
 
 ### Test Coverage (TEST)
@@ -82,9 +82,9 @@
 | PERF-01 | Phase 3 - Architecture & Performance | Pending |
 | PERF-02 | Phase 3 - Architecture & Performance | Pending |
 | PERF-03 | Phase 3 - Architecture & Performance | Pending |
-| BUGS-01 | Phase 1 - Foundation & Cleanup | Pending |
-| BUGS-02 | Phase 1 - Foundation & Cleanup | Pending |
-| BUGS-03 | Phase 1 - Foundation & Cleanup | Pending |
+| BUGS-01 | Phase 1 - Foundation & Cleanup | Complete |
+| BUGS-02 | Phase 1 - Foundation & Cleanup | Complete |
+| BUGS-03 | Phase 1 - Foundation & Cleanup | Complete |
 | BUGS-04 | Phase 1 - Foundation & Cleanup | Pending |
 | TEST-01 | Phase 4 - Test Coverage & Gates | Pending |
 | TEST-02 | Phase 4 - Test Coverage & Gates | Pending |

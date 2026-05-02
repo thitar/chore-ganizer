@@ -1,119 +1,132 @@
 ---
 phase: 01-remediate-codebase-concerns
 plan: 03
-subsystem: ui
+subsystem: backend
+tags: [typescript, prisma, winston, logging, readability, type-safety, code-quality]
 
-tags: [sonner, toast, react-router, github-actions, ci-cd, docker-compose, version-sync]
-
+# Dependency graph
 requires:
-  - phase: 01-remediate-codebase-concerns
-    provides: "Frontend auth hooks (useAuth) and routing infrastructure"
-
+  - phase: 01-01
+    provides: "resolve .js extension imports in backend"
 provides:
-  - "Access denied toast notification for child users navigating to parent-only routes"
-  - "CI gate that blocks builds when backend/frontend package.json versions mismatch"
-  - "Auto-sync of .env APP_VERSION from backend/package.json in docker-compose.sh"
-
+  - "Readable filterUserId if/else replacing nested ternary in occurrences controller"
+  - "Typed transformRecurringChore with RecurringChoreDbRecord interface, zero any casts"
+  - "Winston structured logging of corrupt assignedUserIds before AppError throw"
 affects:
-  - "01-04-PLAN.md"
-  - "01-05-PLAN.md"
-  - "Any future frontend route changes involving ProtectedRoute"
-  - "Release workflow and version bumping procedures"
+  - "recurring chores CRUD"
+  - "occurrence management"
+  - "data integrity debugging"
 
+# Tech tracking
 tech-stack:
   added: []
   patterns:
-    - "Toast feedback on auth-gated navigation (UX pattern)"
-    - "Version validation as a CI dependency gate"
-    - "Shell-level .env auto-sync to prevent configuration drift"
+    - "Local interface matching Prisma include shape for typed transform functions"
+    - "Structured error logging (type + message + rawValue) before throwing AppError"
+    - "Explicit if/else over nested ternary for multi-condition assignments"
 
 key-files:
   created: []
   modified:
-    - "frontend/src/App.tsx - Added toast.error in ProtectedRoute before redirect"
-    - ".github/workflows/ci-cd.yml - Added validate-versions job and needs dependency"
-    - "docker-compose.sh - Added .env APP_VERSION sync logic"
+    - backend/src/controllers/recurring-chores-occurrences.controller.ts
+    - backend/src/services/recurring-chores/transform.service.ts
+    - backend/src/services/recurring-chores/occurrence-management.service.ts
 
 key-decisions:
-  - "Used toast.error (not toast.warning) for access denied to clearly signal a blocking restriction"
-  - "Placed validate-versions as a separate job (not a step inside backend/frontend) to run in parallel with nothing and fail fast"
-  - "Used sed -i for .env mutation in docker-compose.sh for in-place update without file recreation"
+  - "Used RecurringChoreDbRecord as a local interface (not shared) since transform.service.ts is the only consumer of this shape"
+  - "Made user property optional on fixedAssignees and roundRobinPool to support toggle endpoint's different include shape"
+  - "Used unknown for recurrenceRule field since it may be deserialized by Prisma middleware at runtime"
 
 patterns-established:
-  - "Auth-gated navigation should provide user feedback before silent redirects"
-  - "Monorepo version numbers must be validated in CI before any build/test jobs run"
-  - "Deployment scripts should proactively sync runtime config files with source-of-truth values"
+  - "Typed transform functions: define a local DbRecord interface matching RECURRING_CHORE_INCLUDE to eliminate any parameters"
+  - "Data integrity logging: log raw corrupt values before throwing AppError in parse helpers"
 
-requirements-completed: []
+requirements-completed: [BUGS-01, BUGS-02, BUGS-03]
 
-duration: 5min
-completed: 2026-04-28
+# Metrics
+duration: 10min
+completed: 2026-05-02
 ---
 
-# Phase 1 Plan 3: Bug Fixes Summary
+# Phase 01 Plan 03: Backend Bug Fixes Summary
 
-**Access denied toast for child users, CI version sync gate, and .env APP_VERSION auto-sync in docker-compose.sh**
+**Three backend code-quality fixes: readable if/else replaces nested ternary in filterUserId, fully-typed transformRecurringChore with local RecurringChoreDbRecord interface, and Winston structured logging for corrupt assignedUserIds parse failures**
 
 ## Performance
 
-- **Duration:** 5 min
-- **Started:** 2026-04-28T17:05:43Z
-- **Completed:** 2026-04-28T17:10:00Z
+- **Duration:** ~10 min
+- **Started:** 2026-05-02T01:24:00Z
+- **Completed:** 2026-05-02T01:34:00Z
 - **Tasks:** 3
 - **Files modified:** 3
 
 ## Accomplishments
 
-- Child users now see a clear "Access Denied" toast before being redirected from parent-only routes
-- CI pipeline fails fast with a descriptive error if backend and frontend package.json versions diverge
-- docker-compose.sh automatically updates `.env` APP_VERSION when it differs from `backend/package.json`
+- Replaced nested ternary `(userId ? Number(userId) : (assignedToMe === 'true' ? req.user!.id : null))` with explicit if/else block — same logic, readable code
+- Typed the `transformRecurringChore` function parameter with a local `RecurringChoreDbRecord` interface, eliminating all `any` casts from the function body
+- Added Winston `logger.error()` call in `safeParseAssignedUserIds` catch block, logging the raw corrupt `assignedUserIds` value before throwing — enables data corruption forensics
 
 ## Task Commits
 
 Each task was committed atomically:
 
-1. **Task 1: Add access denied toast for child users** — `dd96de5` (fix)
-2. **Task 2: Add version sync validation to CI** — `50d2eb6` (feat)
-3. **Task 3: Update docker-compose.sh to sync .env APP_VERSION** — `671a972` (feat)
+1. **Task 1: Replace nested ternary with explicit if/else** - `fddc967` (fix)
+2. **Task 2: Type transformRecurringChore parameter** - `001d470` (refactor)
+3. **Task 3: Log corrupt assignedUserIds before throwing** - `b8e4e76` (fix)
 
 ## Files Created/Modified
 
-- `frontend/src/App.tsx` — Added `toast.error('Access Denied', ...)` inside `ProtectedRoute` before `<Navigate to="/dashboard" />`
-- `.github/workflows/ci-cd.yml` — Added `validate-versions` job; added `needs: validate-versions` to `backend` and `frontend` jobs
-- `docker-compose.sh` — Added `.env` APP_VERSION comparison and auto-update via `sed -i`
+- `backend/src/controllers/recurring-chores-occurrences.controller.ts` - Replaced nested ternary (line 52) with explicit if/else for filterUserId
+- `backend/src/services/recurring-chores/transform.service.ts` - Added RecurringChoreDbRecord interface, typed dbRecord parameter, removed `: any` casts
+- `backend/src/services/recurring-chores/occurrence-management.service.ts` - Added Winston logger import, log rawValue in safeParseAssignedUserIds catch block
 
 ## Decisions Made
 
-- **toast.error vs toast.warning:** Used `toast.error` for stronger visual signal that access is blocked, matching the severity of the restriction.
-- **Separate CI job vs embedded step:** Chose a standalone `validate-versions` job so it can fail the workflow before any `npm ci` or build steps start, minimizing CI minutes wasted on mismatched versions.
-- **sed -i in shell script:** Chose in-place sed edit to preserve all other `.env` values and comments while updating only `APP_VERSION`.
+- Used `RecurringChoreDbRecord` as a local interface in `transform.service.ts` rather than a shared type — the shape is only used by this one function and mirrors `RECURRING_CHORE_INCLUDE`
+- Made `user` property optional on `fixedAssignees` and `roundRobinPool` elements to support the `toggleRecurringChoreActive` endpoint's different Prisma include shape (no nested `user` on `fixedAssignees`)
+- Used `unknown` for `recurrenceRule` field — matches the reality that Prisma may or may not deserialize this JSON string at runtime
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+### Auto-fixed Issues
 
-## Issues Encountered
+**1. [Rule 1 - Bug] Interface didn't match actual Prisma return types**
 
-- `npm run lint` in frontend failed because `eslint` binary was not available in this execution environment (no `node_modules` installed). The `npm run build` step succeeded, confirming TypeScript compilation and syntax validity.
-
-## Known Stubs
-
-None - all changes are fully wired and functional.
-
-## Threat Flags
-
-No new threat surface introduced beyond what is documented in the plan's threat model.
-
-## User Setup Required
-
-None - no external service configuration required.
-
-## Next Phase Readiness
-
-- Bug fixes complete; ready for test coverage expansion in Plan 04 and Plan 05
-- CI version gate is active and will catch future version drift automatically
+- **Found during:** Task 2 (Typed transformRecurringChore parameter)
+- **Issue:** The plan's `RecurringChoreDbRecord` interface specified `string` for `user.color`, but the Prisma User model has `color: String?` (nullable), so the actual return type is `string | null`. Additionally, the `toggleRecurringChoreActive` endpoint uses `include: { fixedAssignees: true }` (no nested `user`), so `fixedAssignees` elements lack the `user` property — TypeScript rejected the interface.
+- **Fix:** Changed `color: string` → `color: string | null` on both `fixedAssignees` and `roundRobinPool` user sub-objects. Added `id?: number` and `userId?: number` to `fixedAssignees` element type (junction table fields for type compatibility). Made `user` optional on both element types. Added `recurringChoreId?: number` to `roundRobinPool`.
+- **Files modified:** `backend/src/services/recurring-chores/transform.service.ts`
+- **Verification:** `tsc` build passes, all 241 tests pass, no `: any` remain in file
+- **Committed in:** `001d470` (Task 2 commit)
 
 ---
 
+**Total deviations:** 1 auto-fixed (Rule 1, type mismatch)
+**Impact on plan:** Interface adjusted to match real Prisma types. Zero behavior change — all adjustments were structural for TypeScript compatibility.
+
+## Issues Encountered
+
+- TypeScript build failed after initial interface definition due to `user.color` being `string | null` and the toggle endpoint's different include shape — resolved by adjusting interface to match actual Prisma types (see deviations)
+
+## User Setup Required
+
+None — no external service configuration required.
+
+## Next Phase Readiness
+
+- All three code-quality fixes are complete, build and tests green (241 passed, 1 skipped)
+- Ready for remaining phase 01 plans (01-04 and beyond)
+- No blockers or concerns
+
+## Threat Flags
+
+None — no new security surface introduced. The logger.error call logs raw JSON values (T-03-01, accepted risk — Winston logs are internal-only).
+
+---
+## Self-Check: PASSED
+
+All 3 source files exist and are modified. All 3 commit hashes (fddc967, 001d470, b8e4e76) confirmed in git log. Build passes, 241 tests pass, lint clean.
+
+---
 *Phase: 01-remediate-codebase-concerns*
-*Completed: 2026-04-28*
+*Completed: 2026-05-02*
