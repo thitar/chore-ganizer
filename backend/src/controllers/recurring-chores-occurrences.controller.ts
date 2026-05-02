@@ -49,7 +49,12 @@ export const listOccurrences = async (req: Request, res: Response) => {
     where.status = status as 'PENDING' | 'COMPLETED' | 'SKIPPED'
   }
 
-  const filterUserId = userId ? Number(userId) : (assignedToMe === 'true' ? req.user!.id : null)
+  let filterUserId: number | null = null
+  if (userId) {
+    filterUserId = Number(userId)
+  } else if (assignedToMe === 'true') {
+    filterUserId = req.user!.id
+  }
 
   if (filterUserId !== null) {
     const allOccurrences = await prisma.choreOccurrence.findMany({
