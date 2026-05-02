@@ -39,8 +39,8 @@
 - [ ] **TEST-01**: Add unit tests for all 15 controllers (mock services, never Prisma)
 - [ ] **TEST-02**: Add unit tests for 8 untested services (recurring-chores subsystem priority)
 - [ ] **TEST-03**: Test overdue penalty edge cases (double-penalty via `$transaction`, timezone, integer rounding)
-- [ ] **TEST-04**: Increase frontend test coverage from 22% to at least 50% (hooks, pages, error handling)
-- [ ] **TEST-05**: Add `coverageThreshold` to Jest and Vitest configs to prevent regression
+- [x] **TEST-04**: Increase frontend test coverage from 22% to at least 50% (hooks, pages, error handling)
+- [x] **TEST-05**: Add `coverageThreshold` to Jest and Vitest configs to prevent regression
 
 ## v2 Requirements
 
@@ -89,8 +89,8 @@
 | TEST-01 | Phase 4 - Test Coverage & Gates | Pending |
 | TEST-02 | Phase 4 - Test Coverage & Gates | Pending |
 | TEST-03 | Phase 4 - Test Coverage & Gates | Pending |
-| TEST-04 | Phase 4 - Test Coverage & Gates | Pending |
-| TEST-05 | Phase 4 - Test Coverage & Gates | Pending |
+| TEST-04 | Phase 4 - Test Coverage & Gates | Complete |
+| TEST-05 | Phase 4 - Test Coverage & Gates | Complete |
 
 **Coverage:**
 - v1 requirements: 22 total

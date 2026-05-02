@@ -77,9 +77,9 @@ Plans:
 **Plans**: 3 plans in 1 wave
 
 Plans:
-- [ ] 04-01-PLAN.md — Backend controller unit tests (15 controllers)
-- [ ] 04-02-PLAN.md — Backend service tests + overdue edge cases + CI coverage gates
-- [ ] 04-03-PLAN.md — Frontend tests (hooks + high-impact pages) + coverage gates
+- [x] 04-01-PLAN.md — Backend controller unit tests (15 controllers)
+- [x] 04-02-PLAN.md — Backend service tests + overdue edge cases + CI coverage gates
+- [x] 04-03-PLAN.md — Frontend tests (hooks + high-impact pages) + coverage gates
 
 ## Progress
 
