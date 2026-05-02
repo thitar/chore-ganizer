@@ -13,6 +13,7 @@ import { useAuth } from '../hooks'
 import { statisticsApi } from '../api'
 import type { FamilyStatistics } from '../api/statistics.api'
 import { Loading, ErrorDisplay } from '../components/common'
+import { debugError, debugWarn } from '../utils/debug'
 
 export const StatisticsPage: React.FC = () => {
   const { user, isParent } = useAuth()
@@ -43,10 +44,10 @@ export const StatisticsPage: React.FC = () => {
       )
       setStats(data)
     } catch (err: any) {
-      console.error('Failed to load statistics:', err)
+      debugError('Failed to load statistics:', err)
       const errorMsg = err?.error?.message || 'Failed to load statistics'
       const errorCode = err?.error?.code
-      console.warn('[StatisticsPage] Error loading stats - code:', errorCode, 'message:', errorMsg)
+      debugWarn('[StatisticsPage] Error loading stats - code:', errorCode, 'message:', errorMsg)
       setError(errorMsg)
     } finally {
       setIsLoading(false)

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth, useUsers, useCategories, useTemplates } from '../hooks'
 import { recurringChoresApi } from '../api/recurring-chores.api'
+import { debugError } from '../utils/debug'
 import type {
   RecurringChore,
   ChoreOccurrence,
@@ -72,7 +73,7 @@ export function RecurringChoresPage() {
       const data = await recurringChoresApi.listOccurrences(params)
       setOccurrences(data)
     } catch (error) {
-      console.error('Failed to fetch occurrences:', error)
+      debugError('Failed to fetch occurrences:', error)
     } finally {
       setIsLoadingOccurrences(false)
     }
@@ -87,7 +88,7 @@ export function RecurringChoresPage() {
       const data = await recurringChoresApi.list()
       setRecurringChores(data)
     } catch (error) {
-      console.error('Failed to fetch recurring chores:', error)
+      debugError('Failed to fetch recurring chores:', error)
     } finally {
       setIsLoadingChores(false)
     }
@@ -116,7 +117,7 @@ export function RecurringChoresPage() {
       })
       await fetchOccurrences()
     } catch (error) {
-      console.error('Failed to complete occurrence:', error)
+      debugError('Failed to complete occurrence:', error)
     } finally {
       setProcessingId(null)
     }
@@ -142,7 +143,7 @@ export function RecurringChoresPage() {
       setSkipReason('')
       await fetchOccurrences()
     } catch (error) {
-      console.error('Failed to skip occurrence:', error)
+      debugError('Failed to skip occurrence:', error)
     } finally {
       setProcessingId(null)
     }
@@ -155,7 +156,7 @@ export function RecurringChoresPage() {
       await recurringChoresApi.unskipOccurrence(occurrence.id)
       await fetchOccurrences()
     } catch (error) {
-      console.error('Failed to unskip occurrence:', error)
+      debugError('Failed to unskip occurrence:', error)
     } finally {
       setProcessingId(null)
     }
@@ -189,7 +190,7 @@ export function RecurringChoresPage() {
         await fetchOccurrences()
       }
     } catch (error: any) {
-      console.error('Failed to toggle active status:', error)
+      debugError('Failed to toggle active status:', error)
       alert(error?.error?.message || 'Failed to toggle active status. Please try again.')
     } finally {
       setProcessingId(null)
@@ -208,7 +209,7 @@ export function RecurringChoresPage() {
       // Also refresh occurrences since deleting may affect them
       await fetchOccurrences()
     } catch (error: any) {
-      console.error('Failed to delete recurring chore:', error)
+      debugError('Failed to delete recurring chore:', error)
       alert(error?.error?.message || 'Failed to delete recurring chore. Please try again.')
     } finally {
       setIsDeleting(false)
@@ -236,7 +237,7 @@ export function RecurringChoresPage() {
       // Refresh occurrences to show any new ones
       await fetchOccurrences()
     } catch (error) {
-      console.error('Failed to save recurring chore:', error)
+      debugError('Failed to save recurring chore:', error)
       throw error
     } finally {
       setIsSubmitting(false)

@@ -2,10 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { authApi } from '../api'
 import type { User, LoginCredentials } from '../types'
 import type { RegisterCredentials } from '../api/auth.api'
-
-// Enable debug logging in development OR when debug is enabled in config
-const isDev = import.meta.env.DEV
-const debugEnabled = isDev || window.APP_CONFIG?.debug === true || import.meta.env.VITE_DEBUG === 'true'
+import { debugLog, debugError } from '../utils/debug'
 
 interface AuthContextType {
   user: User | null
@@ -36,18 +33,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && !user) {
         // Only re-check if not currently authenticated
-        if (debugEnabled) {
-          console.log('[AuthProvider] Visibility changed to visible, re-checking auth...')
-        }
+        debugLog('[AuthProvider] Visibility changed to visible, re-checking auth...')
         checkAuth()
       }
     }
 
     const handleFocus = () => {
       // Re-check auth when window gains focus
-      if (debugEnabled) {
-        console.log('[AuthProvider] Window gained focus, re-checking auth...')
-      }
+      debugLog('[AuthProvider] Window gained focus, re-checking auth...')
       if (!user) {
         checkAuth()
       }
@@ -55,9 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for unauthorized events from API client
     const handleUnauthorized = () => {
-      if (debugEnabled) {
-        console.log('[AuthProvider] Received unauthorized event, logging out...')
-      }
+      debugLog('[AuthProvider] Received unauthorized event, logging out...')
       setUser(null)
     }
 
@@ -74,18 +65,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      if (debugEnabled) {
-        console.log('[AuthProvider] checkAuth called')
-      }
+      debugLog('[AuthProvider] checkAuth called')
       const response = await authApi.getCurrentUser()
-      if (debugEnabled) {
-        console.log('[AuthProvider] checkAuth response:', response)
-      }
+      debugLog('[AuthProvider] checkAuth response:', response)
       setUser(response.data.user)
     } catch (err) {
-      if (debugEnabled) {
-        console.log('[AuthProvider] checkAuth error:', err)
-      }
+      debugLog('[AuthProvider] checkAuth error:', err)
       setUser(null)
     } finally {
       setLoading(false)
@@ -94,20 +79,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (credentials: LoginCredentials) => {
     try {
-      if (debugEnabled) {
-        console.log('[AuthProvider] login called with:', credentials)
-      }
+      debugLog('[AuthProvider] login called with:', credentials)
       setError(null)
       const response = await authApi.login(credentials)
-      if (debugEnabled) {
-        console.log('[AuthProvider] login response:', response)
-      }
+      debugLog('[AuthProvider] login response:', response)
       setUser(response.data.user)
       return { success: true }
     } catch (err: any) {
-      if (debugEnabled) {
-        console.error('[AuthProvider] login error:', err)
-      }
+      debugError('[AuthProvider] login error:', err)
       const errorMessage = err.error?.message || 'Login failed'
       setError(errorMessage)
       return { success: false, error: errorMessage }
@@ -116,20 +95,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (credentials: RegisterCredentials) => {
     try {
-      if (debugEnabled) {
-        console.log('[AuthProvider] register called with:', credentials)
-      }
+      debugLog('[AuthProvider] register called with:', credentials)
       setError(null)
       const response = await authApi.register(credentials)
-      if (debugEnabled) {
-        console.log('[AuthProvider] register response:', response)
-      }
+      debugLog('[AuthProvider] register response:', response)
       setUser(response.data.user)
       return { success: true }
     } catch (err: any) {
-      if (debugEnabled) {
-        console.error('[AuthProvider] register error:', err)
-      }
+      debugError('[AuthProvider] register error:', err)
       const errorMessage = err.error?.message || err.message || 'Registration failed'
       setError(errorMessage)
       return { success: false, error: errorMessage }
@@ -140,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authApi.logout()
     } catch (err) {
-      console.error('Logout error:', err)
+      debugError('Logout error:', err)
     } finally {
       setUser(null)
     }
@@ -148,15 +121,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      if (debugEnabled) {
-        console.log('[AuthProvider] refreshUser called')
-      }
+      debugLog('[AuthProvider] refreshUser called')
       const response = await authApi.getCurrentUser()
       setUser(response.data.user)
     } catch (err) {
-      if (debugEnabled) {
-        console.error('[AuthProvider] refreshUser error:', err)
-      }
+      debugError('[AuthProvider] refreshUser error:', err)
     }
   }
 

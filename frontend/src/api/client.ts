@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios'
 import type { ApiResponse, ApiError } from '../types'
+import { debugLog, debugError, debugWarn } from '../utils/debug'
 
 // Local shadow type for CSRF retry counter on request config
 interface CsrfRetryConfig extends InternalAxiosRequestConfig {
@@ -22,15 +23,9 @@ declare global {
 // This allows configuration changes without rebuilding the container
 const API_URL = window.APP_CONFIG?.apiUrl ?? import.meta.env.VITE_API_URL ?? ''
 
-// Enable debug logging in development OR when debug is enabled in config
-const isDev = import.meta.env.DEV
-const debugEnabled = isDev || window.APP_CONFIG?.debug === true || import.meta.env.VITE_DEBUG === 'true'
-
-if (debugEnabled) {
-  console.log('[ApiClient] Initializing with API_URL:', API_URL || '(empty - using relative URLs)')
-  console.log('[ApiClient] Debug mode enabled')
-  console.log('[ApiClient] Config source:', window.APP_CONFIG ? 'runtime' : 'build-time')
-}
+debugLog('[ApiClient] Initializing with API_URL:', API_URL || '(empty - using relative URLs)')
+debugLog('[ApiClient] Debug mode enabled')
+debugLog('[ApiClient] Config source:', window.APP_CONFIG ? 'runtime' : 'build-time')
 
 interface CsrfTokenResponse {
   csrfToken: string
@@ -45,9 +40,7 @@ export class ApiClient {
   constructor() {
     const baseURL = API_URL ? `${API_URL}/api` : '/api'
     
-    if (debugEnabled) {
-      console.log('[ApiClient] baseURL:', baseURL)
-    }
+    debugLog('[ApiClient] baseURL:', baseURL)
     
     this.client = axios.create({
       baseURL,
@@ -63,25 +56,19 @@ export class ApiClient {
     // Request interceptor for logging and CSRF token
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        if (debugEnabled) {
-          console.log('[ApiClient] Request:', config.method?.toUpperCase(), config.url, config.data)
-        }
+        debugLog('[ApiClient] Request:', config.method?.toUpperCase(), config.url, config.data)
         
         // Add CSRF token to state-changing requests
         const method = config.method?.toUpperCase()
         if (this.csrfToken && method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
           config.headers['X-CSRF-Token'] = this.csrfToken
-          if (debugEnabled) {
-            console.log('[ApiClient] Added CSRF token to request')
-          }
+          debugLog('[ApiClient] Added CSRF token to request')
         }
         
         return config
       },
       (error) => {
-        if (debugEnabled) {
-          console.error('[ApiClient] Request error:', error)
-        }
+        debugError('[ApiClient] Request error:', error)
         return Promise.reject(error)
       }
     )
@@ -89,9 +76,7 @@ export class ApiClient {
     // Response interceptor
     this.client.interceptors.response.use(
       (response) => {
-        if (debugEnabled) {
-          console.log('[ApiClient] Response:', response.status, response.data)
-        }
+        debugLog('[ApiClient] Response:', response.status, response.data)
         return response
       },
       async (error: AxiosError<ApiError>) => {
@@ -99,13 +84,11 @@ export class ApiClient {
         const errorCode = error.response?.data?.error?.code
         const errorMessage = error.response?.data?.error?.message
         
-        if (debugEnabled) {
-          console.error('[ApiClient] Response error:', error.message, status, errorCode, errorMessage)
-        }
+        debugError('[ApiClient] Response error:', error.message, status, errorCode, errorMessage)
         
         // Log 401 UNAUTHORIZED errors for debugging session issues
         if (status === 401) {
-          console.warn('[ApiClient] 🚨 401 UNAUTHORIZED - Session may be invalid:', errorCode, errorMessage)
+          debugWarn('[ApiClient] 🚨 401 UNAUTHORIZED - Session may be invalid:', errorCode, errorMessage)
           // Dispatch custom event so AuthContext can handle logout
           window.dispatchEvent(new CustomEvent('auth:unauthorized', {
             detail: { code: errorCode, message: errorMessage }
@@ -122,16 +105,12 @@ export class ApiClient {
               // Check if we've already retried this request
               const retryCount = originalRequest._csrfRetryCount || 0
               if (retryCount >= 1) {
-                if (debugEnabled) {
-                  console.log('[ApiClient] CSRF retry limit reached, propagating error')
-                }
+                debugLog('[ApiClient] CSRF retry limit reached, propagating error')
                 throw error.response.data
               }
               originalRequest._csrfRetryCount = retryCount + 1
 
-              if (debugEnabled) {
-                console.log('[ApiClient] CSRF token error, refreshing token...')
-              }
+              debugLog('[ApiClient] CSRF token error, refreshing token...')
               // Reset and re-fetch CSRF token
               this.csrfToken = null
               this.csrfInitialized = false
@@ -186,17 +165,13 @@ export class ApiClient {
 
     this.csrfPromise = (async () => {
       try {
-        if (debugEnabled) {
-          console.log('[ApiClient] Fetching CSRF token...')
-        }
+        debugLog('[ApiClient] Fetching CSRF token...')
         const response = await this.client.get<ApiResponse<CsrfTokenResponse>>('/csrf-token')
         this.csrfToken = response.data.data.csrfToken
         this.csrfInitialized = true
-        if (debugEnabled) {
-          console.log('[ApiClient] CSRF token initialized')
-        }
+        debugLog('[ApiClient] CSRF token initialized')
       } catch (error) {
-        console.error('[ApiClient] Failed to fetch CSRF token:', error)
+        debugError('[ApiClient] Failed to fetch CSRF token:', error)
         // Don't throw - allow the app to continue, requests will fail with CSRF error
       } finally {
         this.csrfPromise = null

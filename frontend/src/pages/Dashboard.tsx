@@ -3,6 +3,7 @@ import { useAuth, useAssignments } from '../hooks'
 import { Loading, ErrorDisplay } from '../components/common'
 import { assignmentsApi } from '../api'
 import { showSuccess } from '../utils/toast'
+import { debugError, debugWarn } from '../utils/debug'
 import type { ChoreAssignment } from '../types'
 
 export const Dashboard: React.FC = () => {
@@ -48,9 +49,9 @@ export const Dashboard: React.FC = () => {
         days: userDays
       })
     } catch (err: any) {
-      console.error('Failed to load assignments:', err)
+      debugError('Failed to load assignments:', err)
       const errorMessage = err?.error?.message || err?.message || 'Failed to load assignments'
-      console.warn('[Dashboard] Error loading assignments - could be auth issue:', errorMessage)
+      debugWarn('[Dashboard] Error loading assignments - could be auth issue:', errorMessage)
       setError(errorMessage)
     } finally {
       setLoading(false)

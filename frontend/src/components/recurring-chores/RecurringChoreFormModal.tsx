@@ -9,6 +9,7 @@ import type { User, ChoreCategory, ChoreTemplate } from '../../types'
 import { RecurrenceRuleEditor } from './RecurrenceRuleEditor'
 import { AssignmentModeSelector } from './AssignmentModeSelector'
 import { Button, Input } from '../common'
+import { debugError } from '../../utils/debug'
 
 interface RecurringChoreFormModalProps {
   isOpen: boolean
@@ -160,7 +161,7 @@ export function RecurringChoreFormModal({
     try {
       await onSubmit(data)
     } catch (error) {
-      console.error('Form submission error:', error)
+      debugError('Form submission error:', error)
     }
   }
 

@@ -4,6 +4,7 @@ import { Button } from '../components/common'
 import { ChoreList, ChoreForm, ChoreFilters } from '../components/chores'
 import { assignmentsApi } from '../api'
 import { showSuccess } from '../utils/toast'
+import { debugError } from '../utils/debug'
 import type { ChoreAssignment, CreateAssignmentData, UpdateAssignmentData } from '../types'
 
 export const Chores: React.FC = () => {
@@ -34,7 +35,7 @@ export const Chores: React.FC = () => {
         setMyAssignments(data)
       }
     } catch (err) {
-      console.error('Failed to load assignments:', err)
+      debugError('Failed to load assignments:', err)
     } finally {
       setMyLoading(false)
     }

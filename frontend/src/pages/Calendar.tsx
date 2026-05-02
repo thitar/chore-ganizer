@@ -4,6 +4,7 @@ import CalendarView, { CalendarEvent } from '../components/chores/CalendarView'
 import { Modal, Button } from '../components/common'
 import { useAuth, useAssignments, useTemplates, useUsers } from '../hooks'
 import { recurringChoresApi } from '../api/recurring-chores.api'
+import { debugError } from '../utils/debug'
 import type { ChoreAssignment } from '../types'
 import type { ChoreOccurrence } from '../types/recurring-chores'
 
@@ -112,7 +113,7 @@ export const Calendar: React.FC = () => {
         setTimeout(() => setSuccessMessage(null), 3000)
       }
     } catch (error) {
-      console.error('Failed to complete occurrence:', error)
+      debugError('Failed to complete occurrence:', error)
     }
   }
 
@@ -127,7 +128,7 @@ export const Calendar: React.FC = () => {
       setRefreshTrigger(prev => prev + 1)
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (error) {
-      console.error('Failed to skip occurrence:', error)
+      debugError('Failed to skip occurrence:', error)
     }
   }
 

@@ -7,6 +7,7 @@ import { PointHistoryList } from './PointHistoryList'
 import { BonusDeductionModal } from './BonusDeductionModal'
 import { PayoutModal } from './PayoutModal'
 import { ConfigurationForm } from './ConfigurationForm'
+import { debugError } from '../../utils/debug'
 
 interface ChildBalance {
   user: User
@@ -47,7 +48,7 @@ export const PocketMoneyDashboard: React.FC<PocketMoneyDashboardProps> = ({ chil
             const balance = await pocketMoneyApi.getBalance(child.id)
             return { user: child, balance: balance || { points: 0, monetaryValue: 0, currency: 'EUR' } }
           } catch (error) {
-            console.error(`Failed to load balance for user ${child.id}:`, error)
+            debugError(`Failed to load balance for user ${child.id}:`, error)
             return { user: child, balance: { points: 0, monetaryValue: 0, currency: 'EUR' } }
           }
         })
@@ -63,7 +64,7 @@ export const PocketMoneyDashboard: React.FC<PocketMoneyDashboardProps> = ({ chil
         setPayouts(pymnts)
       }
     } catch (error) {
-      console.error('Failed to load pocket money data:', error)
+      debugError('Failed to load pocket money data:', error)
     } finally {
       setIsLoading(false)
     }
@@ -85,7 +86,7 @@ export const PocketMoneyDashboard: React.FC<PocketMoneyDashboardProps> = ({ chil
       setTransactions(txns)
       setPayouts(pymnts)
     } catch (error) {
-      console.error('Failed to load child data:', error)
+      debugError('Failed to load child data:', error)
     }
   }
 

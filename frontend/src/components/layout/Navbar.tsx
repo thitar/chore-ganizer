@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks'
 import { Button } from '../common'
 import { notificationsApi } from '../../api'
 import { NOTIFICATION_POLL_INTERVAL_MS } from '../../constants'
+import { debugError } from '../../utils/debug'
 
 interface NavbarProps {
   onMenuOpen?: () => void
@@ -19,7 +20,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuOpen }) => {
       const response = await notificationsApi.getAll({ unreadOnly: true })
       setUnreadCount(response.data.notifications.length)
     } catch (err) {
-      console.error('Failed to load notification count:', err)
+      debugError('Failed to load notification count:', err)
     }
   }, [])
 

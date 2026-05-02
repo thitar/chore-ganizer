@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useAuth } from '../hooks'
 import { Input, Button, Loading, PasswordStrengthIndicator } from '../components/common'
 import { showError, showSuccess } from '../utils/toast'
+import { debugError } from '../utils/debug'
 
 type AuthMode = 'login' | 'register'
 
@@ -90,7 +91,7 @@ export const Login: React.FC = () => {
         }
       }
     } catch (err) {
-      console.error('[Login] error:', err)
+      debugError('[Login] error:', err)
       setErrors({ general: 'An unexpected error occurred' })
     }
   }

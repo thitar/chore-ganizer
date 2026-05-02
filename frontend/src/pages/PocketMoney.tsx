@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth, useUsers } from '../hooks'
 import { pocketMoneyApi } from '../api'
 import { showError } from '../utils/toast'
+import { debugError } from '../utils/debug'
 import type { PointBalance, ProjectedEarnings, PointTransaction, TransactionType } from '../types/pocket-money'
 import { PocketMoneyCard, PointHistoryList, PocketMoneyDashboard } from '../components/pocket-money'
 
@@ -39,7 +40,7 @@ export const PocketMoney: React.FC = () => {
       setProjected(projectedData)
       setTransactions(transactionsData)
     } catch (err: any) {
-      console.error('Failed to load pocket money data:', err)
+      debugError('Failed to load pocket money data:', err)
       showError(err?.error?.message || 'Failed to load pocket money data')
     } finally {
       setIsLoading(false)
