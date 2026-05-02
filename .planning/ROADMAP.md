@@ -23,7 +23,13 @@ This remediation milestone systematically eliminates 22 known issues across depe
   3. TypeScript compilation passes with zero `as any` casts in production source (validated via `@typescript-eslint/no-explicit-any: "error"`)
   4. All route file mounts follow the same pattern through `routes/index.ts` — no direct `app.use()` calls in `app.ts`
   5. Frontend browser console shows no unconditional output — all 45 console statements gated behind shared `debug.ts` utility
-**Plans**: TBD
+**Plans**: 4 plans in 3 waves
+
+Plans:
+- [ ] 01-01-PLAN.md — DEPS-01: npm audit fix (both packages) + TECH-01: delete dead route file + TECH-06: move metricsRoutes to routes/index.ts
+- [ ] 01-02-PLAN.md — TECH-04: eliminate `as any` casts (client.ts D-01 local shadow types + errorHandler.ts D-02 instanceof guard)
+- [ ] 01-03-PLAN.md — BUGS-01: nested ternary → if/else + BUGS-02: typed transformRecurringChore + BUGS-03: log corrupt data in safeParseAssignedUserIds
+- [ ] 01-04-PLAN.md — BUGS-04: create debug.ts utility + replace all 57 console statements across 14 files
 **UI hint**: yes
 
 ### Phase 2: Prisma Modernization
@@ -65,7 +71,7 @@ This remediation milestone systematically eliminates 22 known issues across depe
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Cleanup | 0/TBD | Not started | - |
+| 1. Foundation & Cleanup | 0/4 | Not started | - |
 | 2. Prisma Modernization | 0/TBD | Not started | - |
 | 3. Architecture & Performance | 0/TBD | Not started | - |
 | 4. Test Coverage & Gates | 0/TBD | Not started | - |
