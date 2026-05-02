@@ -1,10 +1,16 @@
 import prisma from '../../config/database.js'
 import { AppError } from '../../middleware/errorHandler.js'
+import { logger } from '../../utils/logger.js'
 
 function safeParseAssignedUserIds(assignedUserIds: string): number[] {
   try {
     return JSON.parse(assignedUserIds) as number[]
   } catch {
+    logger.error({
+      type: 'DATA_INTEGRITY_ERROR',
+      message: 'Failed to parse assignedUserIds JSON in safeParseAssignedUserIds',
+      rawValue: assignedUserIds,
+    })
     throw new AppError('Invalid occurrence data', 500, 'DATA_INTEGRITY_ERROR')
   }
 }
