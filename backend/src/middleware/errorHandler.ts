@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { logger } from '../utils/logger.js'
 import { notifyServerError } from '../utils/error-webhook.js'
 
@@ -51,9 +52,8 @@ export const errorHandler = (
   }
 
   // Handle Prisma errors
-  if (err.name === 'PrismaClientKnownRequestError') {
-    const prismaError = err as any
-    if (prismaError.code === 'P2002') {
+  if (err instanceof PrismaClientKnownRequestError) {
+    if (err.code === 'P2002') {
       res.status(409).json({
         success: false,
         error: {
@@ -63,7 +63,7 @@ export const errorHandler = (
       })
       return
     }
-    if (prismaError.code === 'P2025') {
+    if (err.code === 'P2025') {
       res.status(404).json({
         success: false,
         error: {
