@@ -40,7 +40,11 @@ Plans:
   1. All Prisma read/write operations use typed `$extends` query extension with proper JSON serialization — zero `$use` calls remain in `database.ts`
   2. Prisma and `@prisma/client` upgraded to 6.x, client regenerated, and all existing unit and integration tests pass
   3. Existing recurring chore data with JSON `recurrenceRule` fields survives the middleware migration intact (verified via integration test)
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
+
+Plans:
+- [ ] 02-01-PLAN.md — $extends middleware migration + dual client fix + CRUD integration tests
+- [ ] 02-02-PLAN.md — Prisma 6.x upgrade + full test suite verification
 
 ### Phase 3: Architecture & Performance
 **Goal**: Business logic is properly separated from HTTP concerns, services follow consistent naming, database schema migrations are version-controlled, and penalty processing is race-condition-free with optimal performance.
@@ -72,6 +76,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Cleanup | 3/4 | In progress | - |
-| 2. Prisma Modernization | 0/TBD | Not started | - |
+| 2. Prisma Modernization | 0/2 | In progress | - |
 | 3. Architecture & Performance | 0/TBD | Not started | - |
 | 4. Test Coverage & Gates | 0/TBD | Not started | - |
