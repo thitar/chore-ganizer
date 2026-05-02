@@ -1,132 +1,126 @@
 ---
 phase: 01-remediate-codebase-concerns
 plan: 01
-subsystem: security
-tags: [express, session, error-handling, production-hardening]
+subsystem: infra
+tags: [npm, security, express, cleanup, dead-code, route-mounting]
 
-requires:
-  - phase: N/A
-    provides: Base Express app with session middleware and global error handler
-
+# Dependency graph
+requires: []
 provides:
-  - Fatal startup validation ensuring SESSION_SECRET is always present
-  - Environment-aware error response sanitization to prevent information leakage
-  - DRY getSafeErrorMessage helper for consistent production error handling
+  - Zero HIGH/CRITICAL npm vulnerabilities in both backend and frontend packages
+  - Dead route file (recurring-chores.routes.ts, 394 lines) deleted with zero side effects
+  - metricsRoutes consolidated into routes/index.ts — single app.use('/api', routes) pattern in app.ts
+affects: [01-02, 01-03, 01-04]
 
-affects:
-  - 01-02-PLAN.md (CSRF retry loop prevention — relies on same middleware stack)
-  - 01-03-PLAN.md (bug fixes — may reference error response shapes)
-
+# Tech tracking
 tech-stack:
   added: []
   patterns:
-    - "Fatal startup guards for required environment variables"
-    - "Environment-conditional error sanitization (NODE_ENV === 'production')"
-    - "Status-code-aware message filtering (5xx sanitized, 4xx preserved)"
+    - "npm audit fix without --force for safe dependency upgrades"
+    - "npm overrides for forced transitive dependency versions (lodash >=4.17.21)"
+    - "Single central route mount: app.use('/api', routes) in app.ts"
 
 key-files:
   created: []
   modified:
-    - backend/src/app.ts
-    - backend/src/middleware/errorHandler.ts
+    - backend/package.json (npm devDep 11.12.1 -> 11.13.0)
+    - backend/package-lock.json (npm audit fix updates)
+    - frontend/package.json (lodash override added)
+    - frontend/package-lock.json (npm audit fix updates)
+    - backend/src/routes/index.ts (metricsRoutes import + mount added)
+    - backend/src/routes/metrics.routes.ts (route path /metrics -> /)
+    - backend/src/app.ts (metricsRoutes import + mount removed)
+  deleted:
+    - backend/src/routes/recurring-chores.routes.ts (394-line dead file, zero imports)
 
 key-decisions:
-  - "Removed development fallback for SESSION_SECRET to enforce uniform security posture across all environments"
-  - "Preserved full error details in server-side logs while sanitizing only HTTP responses"
-  - "Allowed 4xx error messages in production since they are user-facing and safe"
+  - "Fixed metrics.routes.ts route path from /metrics to / — the prefix is now handled by the mount point in routes/index.ts, preventing double /metrics/metrics path"
+  - "Upgraded npm devDep to 11.13.0 to resolve bundled picomatch HIGH vulnerability"
 
-requirements-completed: []
+patterns-established:
+  - "All route files now mounted exclusively through routes/index.ts with consistent router.use('/prefix', routeModule) pattern"
 
-duration: 7min
-completed: 2026-04-28
+requirements-completed:
+  - DEPS-01
+  - TECH-01
+  - TECH-06
+
+# Metrics
+duration: 9min
+completed: 2026-05-02
 ---
 
-# Phase 1 Plan 01: Security Hardening Summary
+# Phase 01 Plan 01: npm audit fix, dead code deletion, route mounting consolidation
 
-**Fatal startup validation for SESSION_SECRET and production-safe error responses without stack trace leakage**
+**Zero HIGH vulns across both packages via selective audit fix + overrides; dead 394-line route file deleted; metricsRoutes consolidated into central router for consistent Express route mounting pattern.**
 
 ## Performance
 
-- **Duration:** 7 min
-- **Started:** 2026-04-28T16:28:54Z
-- **Completed:** 2026-04-28T16:35:12Z
-- **Tasks:** 2
-- **Files modified:** 2
+- **Duration:** 9min
+- **Started:** 2026-05-02T01:10:28Z
+- **Completed:** 2026-05-02T01:19:35Z
+- **Tasks:** 3
+- **Files modified:** 8
 
 ## Accomplishments
-- Added explicit fatal startup check for SESSION_SECRET with actionable instructions
-- Simplified session secret retrieval by removing now-dead fallback code
-- Added `getSafeErrorMessage` helper for DRY, environment-aware error sanitization
-- Ensured production 5xx responses return only "Internal server error" without leaking internals
-- Preserved full error messages in development for debugging
-- Allowed 4xx messages in production since they are user-facing
+- Backend: 6 vulns → 1 moderate (uuid), zero HIGH/CRITICAL — fixed axios, brace-expansion, follow-redirects, nodemailer, and bundled picomatch via npm upgrade
+- Frontend: 6 vulns → 0 vulns — fixed axios, brace-expansion, follow-redirects, lodash, postcss, vite via `npm audit fix`, plus lodash override for future protection
+- Deleted `recurring-chores.routes.ts` (394 lines), verified zero imports and clean build
+- Moved metricsRoutes from direct mount in app.ts to routes/index.ts, joining all other route files in the central router
+- All test suites pass: backend (241 tests, 17 suites), frontend (195 tests, 18 files)
 
 ## Task Commits
 
 Each task was committed atomically:
 
-1. **Task 1: Add startup SESSION_SECRET validation** — `76ade96` (feat)
-   - Fix commit for unused import removal — `e28b263` (fix)
-2. **Task 2: Sanitize error responses in production** — `27a7bac` (feat)
-
-**Plan metadata:** `TBD` (docs: complete plan)
+1. **Task 1: Fix npm vulnerabilities in both packages** - `3f82a9f` (fix)
+2. **Task 2: Delete dead file recurring-chores.routes.ts** - `db42696` (fix)
+3. **Task 3: Move metricsRoutes mount from app.ts to routes/index.ts** - `bd8d44e` (refactor)
 
 ## Files Created/Modified
-- `backend/src/app.ts` — Added fatal SESSION_SECRET validation after `dotenv.config()`; simplified session secret assignment
-- `backend/src/middleware/errorHandler.ts` — Added `getSafeErrorMessage` helper; refactored AppError, Prisma, and unknown error handlers to use it
+- `backend/package.json` - npm devDependency upgraded 11.12.1 → 11.13.0 (fixes bundled picomatch HIGH)
+- `backend/package-lock.json` - Audit fix: axios, brace-expansion, follow-redirects, nodemailer updated
+- `frontend/package.json` - Added `"lodash": ">=4.17.21"` to overrides block
+- `frontend/package-lock.json` - Audit fix: all 6 vulnerabilities resolved
+- `backend/src/routes/index.ts` - Added `import metricsRoutes` and `router.use('/metrics', metricsRoutes)`
+- `backend/src/routes/metrics.routes.ts` - Changed `router.get('/metrics')` → `router.get('/')` (prefix now handled by mount)
+- `backend/src/app.ts` - Removed metricsRoutes import and `app.use('/api', metricsRoutes)` mount
+- `backend/src/routes/recurring-chores.routes.ts` - **DELETED** (394-line dead file, zero imports)
 
 ## Decisions Made
-- Removed development fallback for SESSION_SECRET because the plan explicitly required the app to refuse to start without it; keeping the fallback would be misleading and contradictory
-- Preserved full error details in server-side logs (including stack traces) while sanitizing only the HTTP response body, ensuring debuggability is not compromised
+- Metrics route path changed from `/metrics` to `/` in the route file because the `/metrics` prefix is now provided by `router.use('/metrics', metricsRoutes)` in routes/index.ts. Without this fix, the Prometheus endpoint would have resolved to `/api/metrics/metrics` instead of `/api/metrics`.
+- The metrics health endpoint moved from `/api/health` to `/api/metrics/health` — no code in the codebase references the old path, so this is a safe consolidation.
+- Upgraded npm devDependency to 11.13.0 (from 11.12.1) to resolve the bundled picomatch HIGH vulnerability that `npm audit fix` couldn't reach.
 
 ## Deviations from Plan
 
 ### Auto-fixed Issues
 
-**1. [Rule 3 - Blocking] Removed unused `crypto` import after session secret refactor**
-- **Found during:** Task 1 (Add startup SESSION_SECRET validation)
-- **Issue:** After removing the `getSessionSecret()` fallback that used `crypto.randomBytes`, the `import crypto from 'crypto'` became unused, causing `tsc` to fail with TS6133
-- **Fix:** Removed the unused `crypto` import from `backend/src/app.ts`
-- **Files modified:** `backend/src/app.ts`
-- **Verification:** `npm run build` passes without errors
-- **Committed in:** `e28b263`
+**1. [Rule 1 - Bug] Fixed metrics route path to prevent double /metrics prefix**
+- **Found during:** Task 3 (Move metricsRoutes mount)
+- **Issue:** The plan assumed `router.get('/')` in metrics.routes.ts but the actual code had `router.get('/metrics')`. Mounting at `router.use('/metrics', metricsRoutes)` would have created the wrong path: `/api/metrics/metrics`.
+- **Fix:** Changed `router.get('/metrics')` to `router.get('/')` in metrics.routes.ts since the `/metrics` prefix is now provided by the mount point.
+- **Files modified:** backend/src/routes/metrics.routes.ts
+- **Verification:** Build passes, all 241 tests pass, resulting paths verified: `GET /api/metrics` (Prometheus) and `GET /api/metrics/health` (metrics health)
+- **Committed in:** bd8d44e (Task 3 commit)
 
 ---
 
-**Total deviations:** 1 auto-fixed (1 blocking)
-**Impact on plan:** Necessary for build correctness. No scope creep.
+**Total deviations:** 1 auto-fixed (Rule 1 - Bug)
+**Impact on plan:** Essential path fix for correctness. No scope creep.
 
 ## Issues Encountered
-- None — plan executed smoothly after the auto-fixed import issue
-
-## Threat Flags
-
-No new threat surface introduced. Changes harden existing trust boundaries without adding new attack vectors.
-
-## Known Stubs
-
-None — all implementations are complete and functional.
+- The npm bundled dependencies (brace-expansion@5.0.4, picomatch@4.0.3) within npm@11.12.1 could not be fixed by `npm audit fix` or overrides — resolved by upgrading npm devDependency to 11.13.0.
 
 ## User Setup Required
 
-None — no external service configuration required.
+None — no external service configuration required. Dependency updates are applied automatically via `npm install`.
 
 ## Next Phase Readiness
-- Security hardening foundation complete
-- Ready for 01-02 (CSRF retry loop prevention) which operates within the same middleware stack
-- Error handler sanitization is backward-compatible and will not affect existing test assertions that check 4xx messages
-
-## Self-Check: PASSED
-
-- [x] `backend/src/app.ts` exists and contains SESSION_SECRET validation
-- [x] `backend/src/middleware/errorHandler.ts` exists and contains `getSafeErrorMessage`
-- [x] Commit `76ade96` exists (Task 1)
-- [x] Commit `e28b263` exists (import fix)
-- [x] Commit `27a7bac` exists (Task 2)
-- [x] Commit `a0bdfa7` exists (plan metadata)
-
-**Verification:** All files present, all commits found in git history, TypeScript build passes.
+- Clean baseline established: zero HIGH vulns, zero dead code, consistent route mounting
+- Ready for 01-02 (type safety fixes — TECH-04, BUGS-01/02/03)
+- No blockers
 
 ---
 *Phase: 01-remediate-codebase-concerns*
-*Completed: 2026-04-28*
+*Completed: 2026-05-02*

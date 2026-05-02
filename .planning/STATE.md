@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1 context gathered
-last_updated: "2026-05-02T01:07:06.048Z"
-last_activity: 2026-05-02 -- Phase 01 planning complete
+stopped_at: Plan 01-01 complete
+last_updated: "2026-05-02T01:19:35Z"
+last_activity: 2026-05-02 -- Plan 01-01 executed (npm audit fix, dead code deletion, route consolidation)
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 0
   total_plans: 4
-  completed_plans: 4
-  percent: 100
+  completed_plans: 1
+  percent: 25
 ---
 
 # Project State
@@ -26,32 +26,32 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 ## Current Position
 
 Phase: 1 of 4 (Foundation & Cleanup)
-Plan: 0 of TBD in current phase
-Status: Ready to execute
-Last activity: 2026-05-02 -- Phase 01 planning complete
+Plan: 1 of 4 in current phase
+Status: Executing (Plan 01-01 complete)
+Last activity: 2026-05-02 -- Plan 01-01 executed (npm audit fix, dead code deletion, route consolidation)
 
-Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
+Progress: [█████░░░░░░░░░░░░░░░░░] 25% (1/4 plans in phase)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
-- Average duration: N/A
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 9min
+- Total execution time: 0.15 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Foundation & Cleanup | 0/TBD | - | - |
+| 1. Foundation & Cleanup | 1/4 | 9min | 9min |
 | 2. Prisma Modernization | 0/TBD | - | - |
 | 3. Architecture & Performance | 0/TBD | - | - |
 | 4. Test Coverage & Gates | 0/TBD | - | - |
 
 **Recent Trend:**
 
-- No plans executed yet.
+- 01-01: 9min — npm audit fix, dead code deletion, route consolidation
 
 *Updated after each plan completion*
 
@@ -61,6 +61,10 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
+
+- **Metrics route path fix**: Changed `router.get('/metrics')` to `router.get('/')` in metrics.routes.ts — prefix now handled by mount point in routes/index.ts, preventing double `/metrics/metrics` path
+- **npm bundled vuln fix**: Upgraded npm devDep 11.12.1 → 11.13.0 to resolve bundled picomatch HIGH vulnerability unreachable by `npm audit fix`
+- **Lodash override**: Added `"lodash": ">=4.17.21"` to frontend overrides to prevent transitive HIGH vuln reintroduction
 
 - **Milestone scope**: Address all CONCERNS.md items in a single remediation milestone (holistic approach)
 - **Prisma migration**: `$use` → `$extends` must complete before upgrading to Prisma 6.x (`$use` removed in v6)
@@ -86,6 +90,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-02T00:31:28.996Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-remediate-codebase-concerns/01-CONTEXT.md
+Last session: 2026-05-02T01:19:35Z
+Stopped at: Plan 01-01 complete
+Resume file: .planning/phases/01-remediate-codebase-concerns/01-01-SUMMARY.md

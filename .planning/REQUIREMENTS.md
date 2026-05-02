@@ -7,17 +7,17 @@
 
 ### Tech Debt (TECH)
 
-- [ ] **TECH-01**: Delete dead `recurring-chores.routes.ts` (394 lines, zero imports)
+- [x] **TECH-01**: Delete dead `recurring-chores.routes.ts` (394 lines, zero imports)
 - [ ] **TECH-02**: Migrate Prisma `$use` middleware to `$extends` query extension for `recurrenceRule` JSON serialization
 - [ ] **TECH-03**: Extract `PocketMoneyService` from fat `pocket-money.controller.ts` (817 lines, 27 prisma calls → thin HTTP layer)
 - [ ] **TECH-04**: Eliminate `as any` casts in production code (client.ts CSRF retry, errorHandler.ts Prisma error, database.ts middleware)
 - [ ] **TECH-05**: Standardize service file naming to `dot.case.ts` (rename `emailService.ts` and delete `notificationService.ts` — dead code)
-- [ ] **TECH-06**: Mount `metricsRoutes` via `routes/index.ts` for route mounting consistency
+- [x] **TECH-06**: Mount `metricsRoutes` via `routes/index.ts` for route mounting consistency
 - [ ] **TECH-07**: Migrate from `prisma db push` to versioned `prisma migrate deploy` in Docker entrypoint
 
 ### Dependency Security (DEPS)
 
-- [ ] **DEPS-01**: Fix npm vulnerabilities (axios, follow-redirects, nodemailer, lodash, vite) via `npm audit fix` in both packages
+- [x] **DEPS-01**: Fix npm vulnerabilities (axios, follow-redirects, nodemailer, lodash, vite) via `npm audit fix` in both packages
 - [ ] **DEPS-02**: Replace hardcoded seed password with stronger default or force-change-on-first-login flow, syncing both seed.ts and docker-entrypoint.sh
 - [ ] **DEPS-03**: Upgrade Prisma from 5.22.0 to 6.x (gated on TECH-02 completion)
 
@@ -69,14 +69,14 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TECH-01 | Phase 1 - Foundation & Cleanup | Pending |
+| TECH-01 | Phase 1 - Foundation & Cleanup | Completed (01-01) |
 | TECH-02 | Phase 2 - Prisma Modernization | Pending |
 | TECH-03 | Phase 3 - Architecture & Performance | Pending |
 | TECH-04 | Phase 1 - Foundation & Cleanup | Pending |
 | TECH-05 | Phase 3 - Architecture & Performance | Pending |
-| TECH-06 | Phase 1 - Foundation & Cleanup | Pending |
+| TECH-06 | Phase 1 - Foundation & Cleanup | Completed (01-01) |
 | TECH-07 | Phase 3 - Architecture & Performance | Pending |
-| DEPS-01 | Phase 1 - Foundation & Cleanup | Pending |
+| DEPS-01 | Phase 1 - Foundation & Cleanup | Completed (01-01) |
 | DEPS-02 | Phase 3 - Architecture & Performance | Pending |
 | DEPS-03 | Phase 2 - Prisma Modernization | Pending |
 | PERF-01 | Phase 3 - Architecture & Performance | Pending |
