@@ -69,34 +69,34 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TECH-01 | — | Pending |
-| TECH-02 | — | Pending |
-| TECH-03 | — | Pending |
-| TECH-04 | — | Pending |
-| TECH-05 | — | Pending |
-| TECH-06 | — | Pending |
-| TECH-07 | — | Pending |
-| DEPS-01 | — | Pending |
-| DEPS-02 | — | Pending |
-| DEPS-03 | — | Pending |
-| PERF-01 | — | Pending |
-| PERF-02 | — | Pending |
-| PERF-03 | — | Pending |
-| BUGS-01 | — | Pending |
-| BUGS-02 | — | Pending |
-| BUGS-03 | — | Pending |
-| BUGS-04 | — | Pending |
-| TEST-01 | — | Pending |
-| TEST-02 | — | Pending |
-| TEST-03 | — | Pending |
-| TEST-04 | — | Pending |
-| TEST-05 | — | Pending |
+| TECH-01 | Phase 1 - Foundation & Cleanup | Pending |
+| TECH-02 | Phase 2 - Prisma Modernization | Pending |
+| TECH-03 | Phase 3 - Architecture & Performance | Pending |
+| TECH-04 | Phase 1 - Foundation & Cleanup | Pending |
+| TECH-05 | Phase 3 - Architecture & Performance | Pending |
+| TECH-06 | Phase 1 - Foundation & Cleanup | Pending |
+| TECH-07 | Phase 3 - Architecture & Performance | Pending |
+| DEPS-01 | Phase 1 - Foundation & Cleanup | Pending |
+| DEPS-02 | Phase 3 - Architecture & Performance | Pending |
+| DEPS-03 | Phase 2 - Prisma Modernization | Pending |
+| PERF-01 | Phase 3 - Architecture & Performance | Pending |
+| PERF-02 | Phase 3 - Architecture & Performance | Pending |
+| PERF-03 | Phase 3 - Architecture & Performance | Pending |
+| BUGS-01 | Phase 1 - Foundation & Cleanup | Pending |
+| BUGS-02 | Phase 1 - Foundation & Cleanup | Pending |
+| BUGS-03 | Phase 1 - Foundation & Cleanup | Pending |
+| BUGS-04 | Phase 1 - Foundation & Cleanup | Pending |
+| TEST-01 | Phase 4 - Test Coverage & Gates | Pending |
+| TEST-02 | Phase 4 - Test Coverage & Gates | Pending |
+| TEST-03 | Phase 4 - Test Coverage & Gates | Pending |
+| TEST-04 | Phase 4 - Test Coverage & Gates | Pending |
+| TEST-05 | Phase 4 - Test Coverage & Gates | Pending |
 
 **Coverage:**
 - v1 requirements: 22 total
-- Mapped to phases: 0 (pending roadmap creation)
-- Unmapped: 22
+- Mapped to phases: 22
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-01*
-*Last updated: 2026-05-01 after initial definition*
+*Last updated: 2026-05-02 — traceability populated by roadmap creation*

@@ -1,49 +1,73 @@
----
-gsd_state_version: 1.0
-milestone: v2.1.10
-milestone_name: Codebase Remediation
-status: complete
-stopped_at: Completed milestone v2.1.10 archive
-last_updated: "2026-04-28T22:00:00.000Z"
-last_activity: 2026-04-28
-progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
----
-
 # Project State
 
-## Milestone: v2.1.10 — Codebase Remediation
+## Project Reference
 
-**Status:** ✅ Complete
+See: .planning/PROJECT.md (updated 2026-05-01)
 
-**Phases:**
-- Phase 1: Remediate Codebase Concerns — Complete (8/8 plans)
+**Core value:** A robust, secure, maintainable, and well-tested codebase that eliminates known risks and sets up the project for future feature development without accumulating more tech debt.
+**Current focus:** Phase 1 - Foundation & Cleanup
+
+## Current Position
+
+Phase: 1 of 4 (Foundation & Cleanup)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-05-02 — ROADMAP.md created with 4 phases, 22 requirements mapped
+
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 0
+- Average duration: N/A
+- Total execution time: 0 hours
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 1. Foundation & Cleanup | 0/TBD | - | - |
+| 2. Prisma Modernization | 0/TBD | - | - |
+| 3. Architecture & Performance | 0/TBD | - | - |
+| 4. Test Coverage & Gates | 0/TBD | - | - |
+
+**Recent Trend:**
+- No plans executed yet.
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
 ### Decisions
 
-- TDD mode enabled for Plans 02, 04, 05
-- Batch inserts for occurrence generation
-- Controller refactoring into dedicated services
-- Kept swagger JSDoc in route files to stay under 300-line controller limit
-- Mounted occurrences router before CRUD router to prevent route shadowing
-- Barrel re-exports preserve backward compatibility during controller splits
-- Fatal startup guards for security-critical env vars
-- ESLint v10 with flat config format
-- Winston structured logging with (message, metadata) signature
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
 
-### Deferred Items
+- **Milestone scope**: Address all CONCERNS.md items in a single remediation milestone (holistic approach)
+- **Prisma migration**: `$use` → `$extends` must complete before upgrading to Prisma 6.x (`$use` removed in v6)
+- **Service naming**: All service files standardized to `dot.case.ts` (13 of 17 already follow this convention)
+- **Test sequencing**: Controller tests written AFTER PocketMoneyService extraction — testing before extraction guarantees breakage (PITFALLS #1)
+- **Penalty vs Prisma separation**: Penalty fixes (PERF-01/02/03) assigned to Phase 3, separate from Prisma modernization (Phase 2) due to different risk profiles
 
-| Category | Item | Status |
-|----------|------|--------|
-| feature | API Rate Limiting Visibility — admin UI | MISSING_FEATURES.md |
-| test | recurrence.service.ts edge case tests | MISSING_FEATURES.md |
+### Pending Todos
 
----
+None yet.
 
-*State updated: 2026-04-28*
+### Blockers/Concerns
+
+None — all phases have clear execution paths with HIGH-confidence research backing.
+
+## Deferred Items
+
+Items acknowledged and carried forward from previous milestone close:
+
+| Category | Item | Status | Deferred At |
+|----------|------|--------|-------------|
+| *(none)* | | | |
+
+## Session Continuity
+
+Last session: 2026-05-02
+Stopped at: Roadmap creation complete — 4 phases defined, 22/22 requirements mapped
+Resume file: None
