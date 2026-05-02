@@ -1,87 +1,127 @@
 # Technology Stack
 
-**Analysis Date:** 2026-04-28
+**Analysis Date:** 2026-05-01
 
 ## Languages
 
 **Primary:**
-- TypeScript 5.3.3 - Backend (`backend/`) and Frontend (`frontend/`) codebases
+- TypeScript 5.3+ - Used across both backend and frontend
+- JavaScript (ES2022) - Build output for Node.js runtime
 
 **Secondary:**
-- SQL (SQLite) - Database schema definitions in `backend/prisma/schema.prisma`
+- HTML/CSS - Frontend markup via React JSX and Tailwind CSS
+- SQL (SQLite dialect) - Database queries via Prisma ORM
+- Shell (Bash) - Docker entrypoint scripts and backup automation
 
 ## Runtime
 
 **Environment:**
-- Node.js 18+ (required for local development, per AGENTS.md Quick Start)
+- Node.js 18+ (CI uses Node.js 20)
+- Docker production image: `node:25-slim` (backend), `nginx:alpine` (frontend)
+- Docker build image: `node:25-slim` (backend), `node:25-alpine` (frontend)
 
 **Package Manager:**
-- npm (used for all dependency management and scripts)
-- Lockfile: `backend/package-lock.json`, `frontend/package-lock.json` (present)
+- npm (with `package-lock.json`)
+- Lockfile: present for all three packages (root, backend, frontend)
 
 ## Frameworks
 
-**Core:**
-- Express.js 4.18.x - Backend web framework (`backend/package.json`)
-- React 18.2.x - Frontend UI library (`frontend/package.json`)
+**Core Backend:**
+- Express.js 4.18 - Web framework and REST API server
+- Prisma 5.22 (ORM) + `@prisma/client` 5.22 - Database ORM for SQLite
+- node-cron 4.2 - Cron job scheduling for recurring chore occurrences
+
+**Core Frontend:**
+- React 18.2 - UI framework
+- React Router DOM 6.22 - Client-side routing with lazy loading
+- @tanstack/react-query 5.95 - Server state management and API data caching
+- Zustand 5.0 - Client-side state management (used sparingly; auth is via React Context)
+- Tailwind CSS 3.4 - Utility-first CSS framework
+- Recharts 3.7 - Charting library for statistics
+- Vite 6.2 - Build tool and dev server
 
 **Testing:**
-- Jest 30.0.x - Backend unit and integration tests (`backend/package.json`)
-- Vitest 4.1.x - Frontend unit tests (`frontend/package.json`)
-- Playwright - End-to-end tests (e2e/ directory, per AGENTS.md)
+- Backend: Jest 30 (with ts-jest 29 for TypeScript)
+- Frontend: Vitest 4.1 (with @testing-library/react 16)
+- E2E: Playwright 1.50 (in root `package.json`)
 
 **Build/Dev:**
-- Vite 6.2.x - Frontend build tool and dev server (`frontend/package.json`)
-- TypeScript 5.3.x - Type checking and compilation for both backend and frontend
-- ts-node/nodemon - Backend dev server execution (used by `npm run dev` in backend)
+- TypeScript compiler (`tsc`) - Backend build output
+- Vite (via `vite build`) - Frontend build output
+- Nodemon 3.0 - Backend dev server with auto-reload
+- ESLint 10 (backend + frontend)
+- Prettier (via `npm run format` scripts)
+- Docker Compose - Container orchestration
 
 ## Key Dependencies
 
-**Critical:**
-- Prisma 5.22.x (runtime: @prisma/client ^5.22.0, CLI: prisma ^5.7.1 dev) - ORM for SQLite database
-- Express.js 4.18.x - Backend web framework
-- React 18.2.x - Frontend UI library
-- Axios 1.13.x (frontend), 1.14.x (backend) - HTTP client for API requests
-- express-session 1.17.x - Session management for authentication (`backend/package.json`)
-- bcrypt 6.0.x - Password hashing for user authentication (`backend/package.json`)
-- Tailwind CSS 3.4.x - Frontend utility-first styling (`frontend/package.json`)
-- Zod 4.3.x - Request/response validation (shared between backend and frontend)
+**Critical Backend:**
+- `bcrypt` 6.0 - Password hashing for authentication
+- `express-session` 1.17 - Server-side session management (SQLite store via Prisma)
+- `helmet` 8.1 - Security headers (CSP, XSS, HSTS, etc.)
+- `cors` 2.8 - Cross-Origin Resource Sharing
+- `express-rate-limit` 8.2 - API rate limiting
+- `zod` 4.3 - Request validation schemas
+- `winston` 3.11 - Structured JSON logging with correlation IDs
+- `prom-client` 15.1 - Prometheus metrics (histograms, counters, gauges)
+- `compression` 1.8 - Gzip/brotli response compression
+- `dotenv` 17.3 - Environment variable loading
+- `nodemailer` 8.0 - SMTP email notifications
+- `axios` 1.14 - HTTP client for ntfy notifications
+- `node-cache` 5.1 - In-memory caching (10-min TTL)
+- `uuid` 13.0 - UUID generation for correlation IDs and family IDs
+- `tar` 7.5 - Backup/restore archive creation
+
+**Critical Frontend:**
+- `axios` 1.13 - HTTP client with CSRF token injection
+- `lucide-react` 0.577 - Icon library
+- `sonner` 1.3 - Toast notification system
+- `zod` 4.3 - Form validation schemas
+- `workbox-window` 7.4 - PWA service worker
+- `vite-plugin-pwa` 1.2 - PWA support (offline, install prompts)
 
 **Infrastructure:**
-- SQLite 3 - Embedded relational database (no separate server required)
-- Docker 24.x+ - Containerization for development and production
-- nginx - Static file serving and reverse proxy for frontend container
-- node-cache 5.1.x - In-memory caching for backend (`backend/package.json`)
-- prom-client 15.1.x - Prometheus metrics collection (`backend/package.json`)
-- winston 3.11.x - Structured logging for backend (`backend/package.json`)
+- `supercronic` 0.2.29 - Cron daemon for backup scheduling in production Docker
 
 ## Configuration
 
 **Environment:**
-- Configured via `.env` file in project root (copy from `.env.example`)
-- Critical required variables: `SESSION_SECRET`, `APP_VERSION`
-- Full list of variables documented in AGENTS.md and INTEGRATIONS.md
+- `.env` file at project root (never committed)
+- `SESSION_SECRET` required (no default) - generated via `openssl rand -base64 32`
+- `APP_VERSION` required - must match `backend/package.json` version
+- `DATA_DIR` - Host path for persistent SQLite database (default: `/opt/app-data/chore-ganizer`)
+- `DATABASE_URL` - SQLite file path (default: `file:${DATA_DIR}/chore-ganizer.db`)
+- `PUID`/`PGID` - Host user/group IDs for bind mount file ownership (default: `1001`)
+- `CORS_ORIGIN` - Allowed frontend origin (default: `http://localhost:3002`)
+- `VITE_API_URL` - Frontend API base URL (empty = relative URLs via nginx proxy)
+- `VITE_DEBUG` - Enable frontend debug logging
+- `VITE_APP_VERSION` - Frontend version display
+- `BACKEND_PORT` - Backend port for nginx API proxy (default: `3010`)
 
 **Build:**
-- `backend/tsconfig.json` - TypeScript configuration for backend
-- `frontend/tsconfig.json` - TypeScript configuration for frontend
-- `frontend/vite.config.ts` - Vite build and dev server configuration
-- `docker-compose.yml` - Docker Compose orchestration for backend and frontend containers
-- `frontend/postcss.config.js` - PostCSS configuration for Tailwind CSS
+- `backend/tsconfig.json` - Target ES2022, CommonJS modules, strict mode
+- `frontend/tsconfig.json` - Target ES2020, ESNext modules, React JSX, strict mode
+- `frontend/vite.config.ts` - Vite build config with manual chunk splitting, PWA plugin
+- `frontend/vitest.config.ts` - Vitest with jsdom environment
+- `backend/jest.config.js` - Jest unit test config, ts-jest preset
+- `backend/jest.integration.config.js` - Jest integration test config with global setup/teardown
+- `frontend/postcss.config.js` - PostCSS with Tailwind
+- `frontend/tailwind.config.js` - Custom theme colors (sidebar, primary, surface, border)
 
 ## Platform Requirements
 
 **Development:**
-- Node.js 18+
-- Docker and Docker Compose (for containerized run)
-- SQLite (embedded, no separate installation required)
-- Git
+- Node.js 18+ (20+ recommended)
+- npm
+- SQLite (bundled via Prisma, no external install needed)
+- Docker + Docker Compose (for containerized builds)
 
 **Production:**
-- Docker-compatible hosting platform
-- Persistent volume for data (configured via `DATA_DIR` env var)
-- Network access for container ports (frontend: 3002, backend: 3010 by default)
+- Docker Compose with pre-built images from `ghcr.io/thitar/chore-ganizer/`
+- SQLite (embedded, no separate DB server)
+- Reverse proxy in front of nginx (Caddy/Traefik) for TLS termination
+- Persistence via host bind mount for SQLite database and backups
 
 ---
 
-*Stack analysis: 2026-04-28*
+*Stack analysis: 2026-05-01*

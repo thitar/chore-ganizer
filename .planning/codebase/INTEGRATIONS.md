@@ -1,134 +1,131 @@
 # External Integrations
 
-**Analysis Date:** 2026-04-28
+**Analysis Date:** 2026-05-01
 
 ## APIs & External Services
 
-**Notification Services:**
-- ntfy.sh - Push notification delivery for user alerts and error alerts
-  - SDK/Client: HTTP API (no official SDK, uses axios/fetch)
-  - Auth: `NTFY_TOKEN` env var (optional, for access-controlled topics)
-  - Config: `NTFY_DEFAULT_SERVER_URL` (default: https://ntfy.sh), `NTFY_DEFAULT_TOPIC`
-  - Triggers: Chore assigned/due/completed/overdue, points earned, 500 errors
-- SMTP (Email) - Email notification delivery for user alerts
-  - SDK/Client: nodemailer 8.0.x (`backend/package.json`)
-  - Auth: `SMTP_USER`, `SMTP_PASS` env vars
-  - Config: `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`
+**Push Notifications (ntfy.sh):**
+- ntfy.sh / self-hosted ntfy - Push notification delivery
+  - SDK/Client: Custom implementation in `backend/src/services/ntfy.service.ts` using `axios`
+  - Auth: Optional Basic Auth (`ntfyUsername`/`ntfyPassword` per user in `UserNotificationSettings`)
+  - SSRF protection: URL validation rejects private/internal IPs (`backend/src/services/ntfy.service.ts` lines 41-85)
+  - Default server: `https://ntfy.sh`
 
-**None:** No third-party business logic APIs (e.g., Stripe, AWS) are integrated.
+**Email Notifications:**
+- SMTP (any provider: Gmail, SendGrid, custom) - Email notifications for chore assignments, completions, points
+  - SDK/Client: `nodemailer` in `backend/src/services/emailService.ts`
+  - Auth: `SMTP_USER`, `SMTP_PASS` via environment variables
+  - Templates: Pre-built HTML templates for chore assigned, chore completed, points earned
+
+**Error Webhook Alerts:**
+- ntfy.sh webhook - Server error notifications (500 errors, DB errors, backup failures, health check failures)
+  - Implementation: `backend/src/utils/error-webhook.ts`
+  - Config: `ERROR_WEBHOOK_ENABLED`, `ERROR_WEBHOOK_URL`, `ERROR_WEBHOOK_USERNAME`, `ERROR_WEBHOOK_PASSWORD`
 
 ## Data Storage
 
 **Databases:**
-- SQLite 3 (via Prisma ORM 5.22.x)
-  - Connection: `DATABASE_URL` env var (dev: `file:./dev.db`, production: `file:${DATA_DIR}/chore-ganizer.db`)
-  - Client: @prisma/client 5.22.x (Prisma's generated client)
-  - Schema: `backend/prisma/schema.prisma`
-  - Migrations: Automatically applied via `prisma db push` on container start
+- SQLite (embedded)
+  - Connection: `DATABASE_URL=file:${DATA_DIR}/chore-ganizer.db`
+  - Client: Prisma ORM (`@prisma/client` 5.22)
+  - Schema: `backend/prisma/schema.prisma` (375 lines, 16 models)
+  - Session store: Express sessions stored via Prisma (no separate session DB)
 
 **File Storage:**
-- Local filesystem only (persistent data stored in `DATA_DIR` on host, mapped to `/app/data` in backend container)
-- Backups stored in `./backups` host directory (mapped to `/backups` in backend container)
+- Local filesystem only (no cloud storage)
+- Persistent via Docker bind mount: `${DATA_DIR}:/opt/app-data/chore-ganizer`
+- Backups stored at `./backups:/backups` within the container
 
 **Caching:**
-- node-cache 5.1.x - In-memory caching for backend (`backend/package.json`)
-  - Used for: Caching frequently accessed data like user sessions, chore templates
+- In-memory: `node-cache` in `backend/src/utils/cache.ts`
+  - TTL: 10 minutes default, with SHORT (5m), MEDIUM (10m), LONG (1h) presets
+  - Cache keys: chore templates, categories, notification settings, user preferences
 
 ## Authentication & Identity
 
 **Auth Provider:**
-- Custom implementation using:
-  - `express-session` 1.17.x with SQLite session store (sessions persisted in database)
-  - `bcrypt` 6.0.x for password hashing
-  - CSRF tokens (implemented via custom middleware or deprecated `csurf` replacement)
-- Implementation files:
-  - `backend/src/middleware/auth.ts` - Session validation and role authorization
-  - `backend/src/middleware/csrf.ts` - CSRF token generation and validation
-  - `backend/src/services/auth.service.ts` - Authentication business logic
+- Custom (email + password)
+  - Implementation: `backend/src/services/auth.service.ts`
+  - Password hashing: `bcrypt` 6.0
+  - Session management: `express-session` with rolling sessions
+  - Session config: maxAge (7 days default), httpOnly, secure (configurable), sameSite (configurable)
+  - CSRF protection: Custom token-based via `backend/src/middleware/csrf.ts`
+  - Lockout: Per-user account lockout after 5 failed attempts, 15-min lockout in `backend/src/utils/lockout.ts`
 
-**Roles:**
-- `PARENT` and `CHILD` - Enforced via `authorize(...roles)` middleware in `backend/src/middleware/auth.ts`
+**Role-Based Access Control:**
+- `PARENT` role: Full access to all features including user management, chore template creation, settings
+- `CHILD` role: Limited to viewing/completing chores, checking pocket money, profile
+- Implemented via `authenticate` and `authorize(...roles)` middleware in `backend/src/middleware/auth.ts`
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- ntfy.sh webhook for 500-error alerts (configured via `ERROR_WEBHOOK_URL` env var, uses ntfy.sh integration)
+- ntfy.sh error webhook (self-hosted or ntfy.sh) - 500 errors, DB errors, backup failures, health check failures
+- Winston JSON logging with correlation IDs (`backend/src/utils/logger.ts`)
 
 **Logs:**
-- Backend: Winston 3.11.x structured logs to stdout (captured by Docker logs)
-- Frontend: Browser console logs (APP_VERSION logged on startup)
-- Metrics: Prometheus metrics via prom-client 15.1.x, available at `/api/metrics` endpoint (`backend/src/routes/metrics.ts`)
+- Winston structured JSON logger with correlation IDs (UUID)
+- Console transport with colorized output for readability
+- Debug mode: `LOG_LEVEL=debug` enables verbose session/auth debugging
+- Request logging: `backend/src/middleware/requestLogger.ts`
+- Request timing: `backend/src/middleware/requestTimer.ts` (logs slow requests >1s by default)
+
+**Metrics:**
+- Prometheus metrics via `prom-client` in `backend/src/utils/metrics.ts`
+- Endpoints: `/api/metrics` (Prometheus scrape target)
+- Custom metrics: HTTP request duration histogram, HTTP request counter, active connections gauge, DB query duration histogram, pocket money payouts counter, point transactions counter
+- Default metrics: CPU, memory, event loop
+
+**Health Checks:**
+- `/api/health` - Full health (DB, memory, disk) (`backend/src/controllers/health.controller.ts`)
+- `/api/health/live` - Liveness probe
+- `/api/health/ready` - Readiness probe (DB connectivity)
+- `/api/health/cache` - Cache statistics
+- `/api/version` - API version info
 
 ## CI/CD & Deployment
 
 **Hosting:**
-- Docker images hosted on GitHub Container Registry (ghcr.io/thitar/chore-ganizer/chore-ganizer-backend, ghcr.io/thitar/chore-ganizer/chore-ganizer-frontend)
-- Deployable to any Docker-compatible platform
+- Docker images published to GitHub Container Registry: `ghcr.io/thitar/chore-ganizer/`
+- Backend image: `chore-ganizer-backend:{version}` (node:25-slim)
+- Frontend image: `chore-ganizer-frontend:{version}` (nginx:alpine)
+- Docker Compose with bridge network for container orchestration
 
 **CI Pipeline:**
-- GitHub Actions (`.github/workflows/ci-cd.yml`)
-- Steps: Lint, test, Swagger doc validation, Docker image build, push to ghcr.io
+- GitHub Actions CI/CD: `.github/workflows/ci-cd.yml`
+  - Validate version sync (backend/frontend package.json must match)
+  - Backend: Prisma generate → Swagger validation → unit tests + coverage → integration tests → TypeScript build
+  - Frontend: Install → Vitest tests → Vite build
+  - CD (main branch only): Download builds → Docker Buildx → Push to GHCR
+
+**Security Scanning:**
+- GitHub Actions: `.github/workflows/security.yml`
+  - CodeQL static analysis (JavaScript/TypeScript)
+  - npm audit for backend and frontend (moderate+ for dev, high+ for production)
+  - Gitleaks secret scanning
+  - Semgrep SAST (security-audit, secrets, owasp-top-ten, typescript, javascript)
+  - Trivy container vulnerability scanning (CRITICAL+HIGH severity)
 
 ## Environment Configuration
 
 **Required env vars:**
-- `SESSION_SECRET` - Random string for session encryption (no default)
-- `APP_VERSION` - Must match version in `backend/package.json` (2.1.10) and `frontend/package.json` (2.1.10) (no default)
-
-**Optional env vars:**
-- `DATA_DIR` - Host path for persistent data (default: `/opt/app-data/chore-ganizer`)
-- `PUID`/`PGID` - Host UID/GID for bind mount ownership (default: `1001`)
-- `OVERDUE_PENALTY_*` - Auto point deduction configuration for overdue chores
-- `SLOW_REQUEST_THRESHOLD_MS` - Log slow requests (default: not set)
-- `COMPRESSION_ENABLED` - Toggle gzip/brotli compression (default: enabled via `compression` package)
-- `ERROR_WEBHOOK_*` - ntfy.sh webhook for 500 errors
-- `SMTP_*` - Email notification configuration
-- `NTFY_*` - Push notification configuration
-- `BACKEND_PORT` - Backend container port (default: `3010`)
-- `VITE_API_URL` - Frontend API URL (default: empty, uses relative URLs)
-- `CORS_ORIGIN` - Allowed CORS origins (default: `http://localhost:3002`)
-- `SECURE_COOKIES` - Enable secure cookies (default: `false`)
-- `SESSION_MAX_AGE` - Session max age in ms (default: `604800000` = 7 days)
-- `LOG_LEVEL` - Backend log level (default: `info`)
+- `SESSION_SECRET` - Session encryption key (no default)
+- `APP_VERSION` - Must match backend/package.json version
 
 **Secrets location:**
-- `.env` file in project root (excluded from git via `.gitignore`)
-- Docker containers inherit env vars from `.env` or system environment
+- `.env` file at project root (gitignored, never committed)
+- CI secrets: `GITHUB_TOKEN` (auto-provided), `SESSION_SECRET` set in GitHub Actions
 
 ## Webhooks & Callbacks
 
 **Incoming:**
-- None (no incoming webhook endpoints documented)
+- None
 
 **Outgoing:**
-- ntfy.sh push notifications (user alerts, error alerts)
-- SMTP email notifications (user alerts)
-- `ERROR_WEBHOOK_URL` - ntfy.sh webhook for unhandled 500 errors
-
-## Documentation Integrations
-
-**OpenAPI/Swagger:**
-- `docs/swagger.json` - Auto-generated OpenAPI 3.0 spec from JSDoc comments in `backend/src/routes/*.ts`
-- Generator: `backend/scripts/generate-swagger.ts` (uses `swagger-jsdoc` 6.2.x)
-- Config: `backend/src/swagger.config.ts` (base OpenAPI definition)
-- CI Gate: `npm run docs:validate` fails build if `swagger.json` is stale
-
-## Frontend Integrations
-
-**PWA Support:**
-- `vite-plugin-pwa` 1.2.x - PWA manifest and service worker generation
-- `workbox-window` 7.4.x - Workbox integration for offline support
-- `frontend/public/manifest.json` - PWA manifest configuration
-
-**State Management:**
-- `@tanstack/react-query` 5.95.x - Server state management for API data fetching
-- `zustand` 5.0.x - Client state management (supplemental to React context)
-
-**UI Components:**
-- `lucide-react` 0.577.x - Icon library
-- `recharts` 3.7.x - Charting library for analytics
-- `sonner` 1.3.x - Toast notification system
+- ntfy.sh webhook for server errors (`backend/src/utils/error-webhook.ts`)
+- ntfy.sh push notifications per user (`backend/src/services/ntfy.service.ts`)
+- SMTP email notifications (`backend/src/services/emailService.ts`)
 
 ---
 
-*Integration audit: 2026-04-28*
+*Integration audit: 2026-05-01*
