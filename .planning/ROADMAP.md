@@ -56,7 +56,13 @@ Plans:
   3. `prisma migrate deploy` runs successfully in Docker entrypoint on both fresh and existing databases without data loss
   4. Overdue penalty processing uses atomic `$transaction` — concurrent `applyOverduePenalty` calls cannot produce double-penalties
   5. Penalty notification flow completes faster than before (N+1 queries eliminated via batch parent lookups, parallel processing via `Promise.allSettled`)
-**Plans**: TBD
+**Plans**: 4 plans in 1 wave
+
+Plans:
+- [ ] 03-01-PLAN.md — Service naming: rename emailService.ts → email.service.ts, delete dead notificationService.ts
+- [ ] 03-02-PLAN.md — PocketMoney extraction: extract 817-line controller into sub-services
+- [ ] 03-03-PLAN.md — Penalty performance: $transaction, Promise.allSettled, batch parent settings
+- [ ] 03-04-PLAN.md — Prisma migrations + seed password: baseline migration, migrate deploy, warning log
 
 ### Phase 4: Test Coverage & Gates
 **Goal**: Comprehensive test coverage across backend controllers, services, penalty edge cases, and frontend components — with CI coverage gates preventing future regression.
@@ -75,7 +81,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Cleanup | 3/4 | In progress | - |
-| 2. Prisma Modernization | 0/2 | In progress | - |
-| 3. Architecture & Performance | 0/TBD | Not started | - |
+| 1. Foundation & Cleanup | 4/4 | ✅ Complete | - |
+| 2. Prisma Modernization | 2/2 | ✅ Complete | - |
+| 3. Architecture & Performance | 0/4 | 📋 Planned | - |
 | 4. Test Coverage & Gates | 0/TBD | Not started | - |
