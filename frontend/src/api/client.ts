@@ -1,6 +1,11 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios'
 import type { ApiResponse, ApiError } from '../types'
 
+// Local shadow type for CSRF retry counter on request config
+interface CsrfRetryConfig extends InternalAxiosRequestConfig {
+  _csrfRetryCount?: number
+}
+
 // Declare window.APP_CONFIG type for runtime configuration
 declare global {
   interface Window {
@@ -91,8 +96,8 @@ export class ApiClient {
       },
       async (error: AxiosError<ApiError>) => {
         const status = error.response?.status
-        const errorCode = (error.response?.data as any)?.error?.code
-        const errorMessage = (error.response?.data as any)?.error?.message
+        const errorCode = error.response?.data?.error?.code
+        const errorMessage = error.response?.data?.error?.message
         
         if (debugEnabled) {
           console.error('[ApiClient] Response error:', error.message, status, errorCode, errorMessage)
@@ -109,20 +114,20 @@ export class ApiClient {
         
         // Handle CSRF token errors - try to refresh token and retry
         if (status === 403 && error.response) {
-          const errorData = error.response.data as any
+          const errorData = error.response.data
           if (errorData?.error?.code === 'CSRF_TOKEN_INVALID' || errorData?.error?.code === 'CSRF_TOKEN_MISSING') {
             // Retry the original request once
-            const originalRequest = error.config
+            const originalRequest = error.config as CsrfRetryConfig | undefined
             if (originalRequest) {
               // Check if we've already retried this request
-              const retryCount = (originalRequest as any)._csrfRetryCount || 0
+              const retryCount = originalRequest._csrfRetryCount || 0
               if (retryCount >= 1) {
                 if (debugEnabled) {
                   console.log('[ApiClient] CSRF retry limit reached, propagating error')
                 }
                 throw error.response.data
               }
-              (originalRequest as any)._csrfRetryCount = retryCount + 1
+              originalRequest._csrfRetryCount = retryCount + 1
 
               if (debugEnabled) {
                 console.log('[ApiClient] CSRF token error, refreshing token...')
