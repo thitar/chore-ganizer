@@ -7,25 +7,28 @@
 import * as notificationsService from '../../services/notifications.service'
 import prisma from '../../config/database'
 
-// Mock Prisma - use jest.fn() for proper mocking
-jest.mock('../../config/database', () => {
-  const mockFn = jest.fn()
-  return {
-    __esModule: true,
-    default: {
-      notification: {
-        create: mockFn,
-        findMany: mockFn,
-        findUnique: mockFn,
-        update: mockFn,
-      },
+// Mock Prisma - each method gets its own jest.fn() to avoid cross-method interference
+jest.mock('../../config/database', () => ({
+  __esModule: true,
+  default: {
+    notification: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+      findFirst: jest.fn(),
+      delete: jest.fn(),
     },
-  }
-})
+    choreAssignment: {
+      findMany: jest.fn(),
+    },
+  },
+}))
 
 describe('Notifications Service', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    jest.resetAllMocks()
   })
 
   describe('createNotification', () => {
@@ -185,6 +188,122 @@ describe('Notifications Service', () => {
       await expect(
         notificationsService.markNotificationAsRead(1, 1)
       ).rejects.toThrow('Notification does not belong to user')
+    })
+  })
+
+  describe('markAllAsRead', () => {
+    it('should mark all user notifications as read', async () => {
+      ;(prisma.notification.updateMany as jest.Mock).mockResolvedValue({ count: 3 })
+
+      const result = await notificationsService.markAllAsRead(1)
+
+      expect(result).toBe(3)
+      expect(prisma.notification.updateMany).toHaveBeenCalledWith({
+        where: { userId: 1, read: false },
+        data: { read: true },
+      })
+    })
+
+    it('should return 0 when no unread notifications exist', async () => {
+      ;(prisma.notification.updateMany as jest.Mock).mockResolvedValue({ count: 0 })
+
+      const result = await notificationsService.markAllAsRead(1)
+
+      expect(result).toBe(0)
+    })
+  })
+
+  describe('deleteNotification', () => {
+    it('should delete notification successfully', async () => {
+      ;(prisma.notification.findUnique as jest.Mock).mockResolvedValue({
+        id: 1,
+        userId: 1,
+      })
+      ;(prisma.notification.delete as jest.Mock).mockResolvedValue({ id: 1 })
+
+      await notificationsService.deleteNotification(1, 1)
+
+      expect(prisma.notification.delete).toHaveBeenCalledWith({
+        where: { id: 1 },
+      })
+    })
+
+    it('should throw error if notification not found', async () => {
+      ;(prisma.notification.findUnique as jest.Mock).mockResolvedValue(null)
+
+      await expect(
+        notificationsService.deleteNotification(999, 1)
+      ).rejects.toThrow('Notification not found')
+    })
+
+    it('should throw error if notification does not belong to user', async () => {
+      ;(prisma.notification.findUnique as jest.Mock).mockResolvedValue({
+        id: 1,
+        userId: 2,
+      })
+
+      await expect(
+        notificationsService.deleteNotification(1, 1)
+      ).rejects.toThrow('Notification does not belong to user')
+    })
+  })
+
+  describe('createOverdueNotifications', () => {
+    it('should create notifications for overdue assignments', async () => {
+      const mockOverdueAssignments = [
+        {
+          id: 1,
+          userId: 2,
+          dueDate: new Date('2024-01-15T10:00:00Z'),
+          status: 'PENDING',
+          choreTemplate: { id: 1, title: 'Wash Dishes' },
+          assignedTo: { id: 2, name: 'Test Child' },
+        },
+      ]
+
+      ;(prisma.choreAssignment.findMany as jest.Mock).mockResolvedValue(mockOverdueAssignments)
+      ;(prisma.notification.findFirst as jest.Mock).mockResolvedValue(null)
+      ;(prisma.notification.create as jest.Mock).mockResolvedValue({ id: 1 })
+
+      const result = await notificationsService.createOverdueNotifications()
+
+      expect(result).toBe(1)
+      expect(prisma.notification.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: 2,
+          type: 'OVERDUE_CHORE',
+        }),
+      })
+    })
+
+    it('should not create duplicate notifications', async () => {
+      const mockOverdueAssignments = [
+        {
+          id: 1,
+          userId: 2,
+          dueDate: new Date('2024-01-15T10:00:00Z'),
+          status: 'PENDING',
+          choreTemplate: { id: 1, title: 'Wash Dishes' },
+          assignedTo: { id: 2, name: 'Test Child' },
+        },
+      ]
+
+      ;(prisma.choreAssignment.findMany as jest.Mock).mockResolvedValue(mockOverdueAssignments)
+      // Notification already exists
+      ;(prisma.notification.findFirst as jest.Mock).mockResolvedValue({ id: 1 })
+
+      const result = await notificationsService.createOverdueNotifications()
+
+      expect(result).toBe(0)
+      expect(prisma.notification.create).not.toHaveBeenCalled()
+    })
+
+    it('should return 0 when no overdue assignments exist', async () => {
+      ;(prisma.choreAssignment.findMany as jest.Mock).mockResolvedValue([])
+
+      const result = await notificationsService.createOverdueNotifications()
+
+      expect(result).toBe(0)
     })
   })
 })

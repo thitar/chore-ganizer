@@ -18,9 +18,19 @@ jest.mock('../../services/notification-settings.service', () => ({
 }))
 
 // Mock Prisma
+const mockTx = {
+  user: {
+    update: jest.fn(),
+  },
+  choreAssignment: {
+    update: jest.fn(),
+  },
+}
+
 jest.mock('../../config/database', () => ({
   __esModule: true,
   default: {
+    $transaction: jest.fn((cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx)),
     user: {
       findMany: jest.fn(),
       update: jest.fn(),
@@ -42,6 +52,8 @@ import { getOrCreateSettings } from '../../services/notification-settings.servic
 describe('Overdue Penalty Service', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    // Restore $transaction to execute callback (tests that override this must isolate)
+    ;(prisma.$transaction as jest.Mock).mockImplementation((cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx))
     ;(getOrCreateSettings as jest.Mock).mockResolvedValue({
       ...mockNotificationSettings.default,
       ntfyTopic: 'test-topic',
@@ -343,14 +355,14 @@ describe('Overdue Penalty Service', () => {
 
       expect(Number.isInteger(result.penaltyPoints)).toBe(true)
       expect(result.penaltyPoints).toBe(-5)
-      expect(prisma.user.update).toHaveBeenCalledWith(
+      expect(mockTx.user.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             points: { increment: -5 },
           }),
         })
       )
-      expect(prisma.choreAssignment.update).toHaveBeenCalledWith(
+      expect(mockTx.choreAssignment.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             penaltyPoints: -5,
@@ -497,6 +509,441 @@ describe('Overdue Penalty Service', () => {
       const result = await overdueService.getAssignmentPenaltyStatus(999)
 
       expect(result).toBeNull()
+    })
+  })
+
+  describe('$transaction atomicity', () => {
+    beforeEach(() => {
+      jest.useFakeTimers()
+      jest.setSystemTime(new Date('2024-01-16T12:00:00Z'))
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    it('should call both user.update and choreAssignment.update inside $transaction', async () => {
+      ;(prisma.choreAssignment.findUnique as jest.Mock).mockResolvedValue({
+        id: 1,
+        templateId: 1,
+        userId: 2,
+        dueDate: new Date('2024-01-15T10:00:00Z'),
+        status: 'PENDING',
+        penaltyApplied: false,
+        penaltyPoints: null,
+        createdAt: new Date('2024-01-14T10:00:00Z'),
+        completedAt: null,
+        notes: null,
+        choreTemplate: { id: 1, title: 'Wash Dishes', points: 10 },
+        assignedTo: { id: 2, name: 'Test Child' },
+        assignedBy: { id: 1, name: 'Test Parent' },
+      })
+
+      mockTx.user.update.mockResolvedValue({ id: 2, points: -20 })
+      mockTx.choreAssignment.update.mockResolvedValue({
+        id: 1,
+        penaltyApplied: true,
+        penaltyPoints: -20,
+      })
+
+      await overdueService.applyOverduePenalty(1, 2)
+
+      // $transaction should have been called (verified by mockTx operations being used)
+      expect(mockTx.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 2 },
+          data: { points: { increment: -20 } },
+        })
+      )
+      expect(mockTx.choreAssignment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1 },
+          data: { penaltyApplied: true, penaltyPoints: -20 },
+        })
+      )
+    })
+
+    it('should throw and rollback if transaction callback fails', async () => {
+      ;(prisma.choreAssignment.findUnique as jest.Mock).mockResolvedValue({
+        id: 1,
+        templateId: 1,
+        userId: 2,
+        dueDate: new Date('2024-01-15T10:00:00Z'),
+        status: 'PENDING',
+        penaltyApplied: false,
+        penaltyPoints: null,
+        createdAt: new Date('2024-01-14T10:00:00Z'),
+        completedAt: null,
+        notes: null,
+        choreTemplate: { id: 1, title: 'Wash Dishes', points: 10 },
+        assignedTo: { id: 2, name: 'Test Child' },
+      })
+
+      // Make the transaction throw — mockTx.user.update will reject
+      mockTx.user.update.mockRejectedValue(new Error('Transaction failed'))
+
+      await expect(
+        overdueService.applyOverduePenalty(1, 2)
+      ).rejects.toThrow()
+
+      // Verify no partial updates completed (choreAssignment.update was not called because user.update failed)
+      expect(mockTx.choreAssignment.update).not.toHaveBeenCalled()
+    })
+
+    it('should use the tx client for all prisma operations inside the callback', async () => {
+      ;(prisma.choreAssignment.findUnique as jest.Mock).mockResolvedValue({
+        id: 1,
+        templateId: 1,
+        userId: 2,
+        dueDate: new Date('2024-01-15T10:00:00Z'),
+        status: 'PENDING',
+        penaltyApplied: false,
+        penaltyPoints: null,
+        createdAt: new Date('2024-01-14T10:00:00Z'),
+        completedAt: null,
+        notes: null,
+        choreTemplate: { id: 1, title: 'Wash Dishes', points: 10 },
+        assignedTo: { id: 2, name: 'Test Child' },
+      })
+
+      mockTx.user.update.mockResolvedValue({ id: 2, points: -20 })
+      mockTx.choreAssignment.update.mockResolvedValue({
+        id: 1,
+        penaltyApplied: true,
+        penaltyPoints: -20,
+      })
+
+      await overdueService.applyOverduePenalty(1, 2)
+
+      // prisma.user.update (the non-tx one) should NOT be called — only tx.user.update
+      // The direct prisma mock is still jest.fn() and should not be invoked
+      expect(prisma.user.update).not.toHaveBeenCalled()
+      expect(prisma.choreAssignment.update).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('integer rounding in penalty calculation', () => {
+    it('should use Math.round for non-integer penalty results', async () => {
+      jest.useFakeTimers()
+      jest.setSystemTime(new Date('2024-01-16T12:00:00Z'))
+
+      ;(prisma.choreAssignment.findUnique as jest.Mock).mockResolvedValue({
+        id: 1,
+        templateId: 1,
+        userId: 2,
+        dueDate: new Date('2024-01-15T10:00:00Z'),
+        status: 'PENDING',
+        penaltyApplied: false,
+        penaltyPoints: null,
+        createdAt: new Date('2024-01-14T10:00:00Z'),
+        completedAt: null,
+        notes: null,
+        choreTemplate: { id: 1, title: 'Wash Dishes', points: 3 },
+        assignedTo: { id: 2, name: 'Test Child' },
+      })
+
+      mockTx.user.update.mockResolvedValue({ id: 2, points: -5 })
+      mockTx.choreAssignment.update.mockResolvedValue({
+        id: 1,
+        penaltyApplied: true,
+        penaltyPoints: -5,
+      })
+
+      const result = await overdueService.applyOverduePenalty(1, 1.5)
+
+      // 3 * 1.5 = 4.5, Math.round(4.5) = 5, negated = -5
+      // The current implementation uses Math.round
+      expect(result.penaltyPoints).toBe(-5)
+      expect(Number.isInteger(result.penaltyPoints)).toBe(true)
+    })
+
+    it('should handle odd point values with integer multiplier', async () => {
+      jest.useFakeTimers()
+      jest.setSystemTime(new Date('2024-01-16T12:00:00Z'))
+
+      ;(prisma.choreAssignment.findUnique as jest.Mock).mockResolvedValue({
+        id: 1,
+        templateId: 1,
+        userId: 2,
+        dueDate: new Date('2024-01-15T10:00:00Z'),
+        status: 'PENDING',
+        penaltyApplied: false,
+        penaltyPoints: null,
+        createdAt: new Date('2024-01-14T10:00:00Z'),
+        completedAt: null,
+        notes: null,
+        choreTemplate: { id: 1, title: 'Wash Dishes', points: 7 },
+        assignedTo: { id: 2, name: 'Test Child' },
+      })
+
+      mockTx.user.update.mockResolvedValue({ id: 2, points: -7 })
+      mockTx.choreAssignment.update.mockResolvedValue({
+        id: 1,
+        penaltyApplied: true,
+        penaltyPoints: -7,
+      })
+
+      const result = await overdueService.applyOverduePenalty(1, 1)
+
+      expect(result.penaltyPoints).toBe(-7)
+    })
+
+    it('should produce consistent results for the same inputs', async () => {
+      jest.useFakeTimers()
+      jest.setSystemTime(new Date('2024-01-16T12:00:00Z'))
+
+      ;(prisma.choreAssignment.findUnique as jest.Mock).mockResolvedValue({
+        id: 1,
+        templateId: 1,
+        userId: 2,
+        dueDate: new Date('2024-01-15T10:00:00Z'),
+        status: 'PENDING',
+        penaltyApplied: false,
+        penaltyPoints: null,
+        createdAt: new Date('2024-01-14T10:00:00Z'),
+        completedAt: null,
+        notes: null,
+        choreTemplate: { id: 1, title: 'Wash Dishes', points: 5 },
+        assignedTo: { id: 2, name: 'Test Child' },
+      })
+
+      mockTx.user.update.mockResolvedValue({ id: 2, points: -10 })
+      mockTx.choreAssignment.update.mockResolvedValue({
+        id: 1,
+        penaltyApplied: true,
+        penaltyPoints: -10,
+      })
+
+      const result1 = await overdueService.applyOverduePenalty(1, 2)
+      // Reset mock assignment for a second call with a different assignment
+      ;(prisma.choreAssignment.findUnique as jest.Mock).mockResolvedValue({
+        id: 2,
+        templateId: 1,
+        userId: 2,
+        dueDate: new Date('2024-01-15T10:00:00Z'),
+        status: 'PENDING',
+        penaltyApplied: false,
+        penaltyPoints: null,
+        createdAt: new Date('2024-01-14T10:00:00Z'),
+        completedAt: null,
+        notes: null,
+        choreTemplate: { id: 1, title: 'Wash Dishes', points: 5 },
+        assignedTo: { id: 2, name: 'Test Child' },
+      })
+
+      const result2 = await overdueService.applyOverduePenalty(2, 2)
+
+      expect(result1.penaltyPoints).toBe(-10)
+      expect(result2.penaltyPoints).toBe(-10)
+    })
+  })
+
+  describe('timezone boundary in overdue detection', () => {
+    it('should treat UTC midnight as the cutoff, independent of user timezone', async () => {
+      jest.useFakeTimers()
+      // Chore due at 2024-01-16T01:00:00Z (Jan 16 1am UTC)
+      // Now set to 2024-01-16T00:30:00Z (Jan 16 12:30am UTC)
+      jest.setSystemTime(new Date('2024-01-16T00:30:00Z'))
+
+      ;(prisma.choreAssignment.findMany as jest.Mock).mockResolvedValue([])
+
+      const result = await overdueService.findOverdueChoresWithoutPenalty()
+
+      // Due date (01:00) is AFTER start of today (00:00), so NOT overdue
+      // findMany should query dueDate < 2024-01-16T00:00:00Z
+      expect(prisma.choreAssignment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            dueDate: { lt: new Date('2024-01-16T00:00:00Z') },
+          }),
+        })
+      )
+      expect(result).toEqual([])
+    })
+
+    it('should detect overdue correctly for chore due at 23:59 UTC on previous day', async () => {
+      jest.useFakeTimers()
+      // Chore due at 2024-01-15T23:59:00Z
+      // Now set to 2024-01-16T00:01:00Z
+      jest.setSystemTime(new Date('2024-01-16T00:01:00Z'))
+
+      const mockOverdue = [{
+        id: 1,
+        templateId: 1,
+        userId: 2,
+        assignedById: 1,
+        dueDate: new Date('2024-01-15T23:59:00Z'),
+        status: 'PENDING',
+        penaltyApplied: false,
+        penaltyPoints: null,
+        createdAt: new Date('2024-01-14T10:00:00Z'),
+        completedAt: null,
+        notes: null,
+        choreTemplate: { id: 1, title: 'Wash Dishes', points: 10 },
+        assignedTo: { id: 2, name: 'Test Child' },
+        assignedBy: { id: 1, name: 'Test Parent' },
+      }]
+
+      ;(prisma.choreAssignment.findMany as jest.Mock).mockResolvedValue(mockOverdue)
+
+      const result = await overdueService.findOverdueChoresWithoutPenalty()
+
+      expect(result).toHaveLength(1)
+      expect(prisma.choreAssignment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            dueDate: { lt: new Date('2024-01-16T00:00:00Z') },
+          }),
+        })
+      )
+    })
+  })
+
+  describe('processOverdueChores', () => {
+    beforeEach(() => {
+      jest.useFakeTimers()
+      jest.setSystemTime(new Date('2024-01-16T12:00:00Z'))
+
+      // Mock getFamilyPenaltySettings chain:
+      // getFamilyPenaltySettings -> getAllParents -> prisma.user.findMany -> getOrCreateSettings
+      ;(prisma.user.findMany as jest.Mock).mockResolvedValue([
+        { id: 1, role: 'PARENT', email: 'parent@test.com', name: 'Test Parent', points: 100 },
+      ])
+      ;(getOrCreateSettings as jest.Mock).mockResolvedValue({
+        ...mockNotificationSettings.default,
+        overduePenaltyEnabled: true,
+        overduePenaltyMultiplier: 2,
+        ntfyTopic: 'test-topic',
+      })
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    it('should process multiple overdue chores in parallel', async () => {
+      // Mock overdue chores
+      const mockChores = [
+        {
+          id: 1, templateId: 1, userId: 2, assignedById: 1,
+          dueDate: new Date('2024-01-15T10:00:00Z'),
+          status: 'PENDING', penaltyApplied: false, penaltyPoints: null,
+          createdAt: new Date('2024-01-14T10:00:00Z'),
+          completedAt: null, notes: null,
+          choreTemplate: { id: 1, title: 'Wash Dishes', points: 10 },
+          assignedTo: { id: 2, name: 'Test Child' },
+          assignedBy: { id: 1, name: 'Test Parent' },
+        },
+        {
+          id: 2, templateId: 2, userId: 2, assignedById: 1,
+          dueDate: new Date('2024-01-15T10:00:00Z'),
+          status: 'PENDING', penaltyApplied: false, penaltyPoints: null,
+          createdAt: new Date('2024-01-14T10:00:00Z'),
+          completedAt: null, notes: null,
+          choreTemplate: { id: 2, title: 'Clean Room', points: 15 },
+          assignedTo: { id: 2, name: 'Test Child' },
+          assignedBy: { id: 1, name: 'Test Parent' },
+        },
+      ]
+
+      // Mock the findOverdueChoresWithoutPenalty call (via choreAssignment.findMany)
+      ;(prisma.choreAssignment.findMany as jest.Mock).mockResolvedValue(mockChores)
+
+      // Mock the individual applyOverduePenalty calls
+      // assignment.findUnique is called for each
+      ;(prisma.choreAssignment.findUnique as jest.Mock)
+        .mockResolvedValueOnce({
+          id: 1, templateId: 1, userId: 2,
+          dueDate: new Date('2024-01-15T10:00:00Z'),
+          status: 'PENDING', penaltyApplied: false, penaltyPoints: null,
+          choreTemplate: { id: 1, title: 'Wash Dishes', points: 10 },
+        })
+        .mockResolvedValueOnce({
+          id: 2, templateId: 2, userId: 2,
+          dueDate: new Date('2024-01-15T10:00:00Z'),
+          status: 'PENDING', penaltyApplied: false, penaltyPoints: null,
+          choreTemplate: { id: 2, title: 'Clean Room', points: 15 },
+        })
+
+      // Mock for notifications
+      mockTx.user.update.mockResolvedValue({})
+      mockTx.choreAssignment.update.mockResolvedValue({})
+
+      const result = await overdueService.processOverdueChores()
+
+      expect(result.processed).toBe(2)
+      expect(result.errors).toHaveLength(0)
+      expect(result.penalties).toHaveLength(2)
+    })
+
+    it('should isolate per-chore errors and continue processing others', async () => {
+      // Mock only one chore
+      const mockChores = [
+        {
+          id: 1, templateId: 1, userId: 2, assignedById: 1,
+          dueDate: new Date('2024-01-15T10:00:00Z'),
+          status: 'PENDING', penaltyApplied: false, penaltyPoints: null,
+          createdAt: new Date('2024-01-14T10:00:00Z'),
+          completedAt: null, notes: null,
+          choreTemplate: { id: 1, title: 'Wash Dishes', points: 10 },
+          assignedTo: { id: 2, name: 'Test Child' },
+          assignedBy: { id: 1, name: 'Test Parent' },
+        },
+        {
+          id: 2, templateId: 2, userId: 2, assignedById: 1,
+          dueDate: new Date('2024-01-15T10:00:00Z'),
+          status: 'PENDING', penaltyApplied: false, penaltyPoints: null,
+          createdAt: new Date('2024-01-14T10:00:00Z'),
+          completedAt: null, notes: null,
+          choreTemplate: { id: 2, title: 'Clean Room', points: 15 },
+          assignedTo: { id: 2, name: 'Test Child' },
+          assignedBy: { id: 1, name: 'Test Parent' },
+        },
+      ]
+
+      ;(prisma.choreAssignment.findMany as jest.Mock).mockResolvedValue(mockChores)
+
+      // First chore succeeds
+      ;(prisma.choreAssignment.findUnique as jest.Mock)
+        .mockResolvedValueOnce({
+          id: 1, templateId: 1, userId: 2,
+          dueDate: new Date('2024-01-15T10:00:00Z'),
+          status: 'PENDING', penaltyApplied: false, penaltyPoints: null,
+          choreTemplate: { id: 1, title: 'Wash Dishes', points: 10 },
+        })
+        // Second chore throws - simulate by making findUnique reject
+        .mockRejectedValueOnce(new Error('Simulated failure'))
+
+      mockTx.user.update.mockResolvedValue({})
+      mockTx.choreAssignment.update.mockResolvedValue({})
+
+      const result = await overdueService.processOverdueChores()
+
+      expect(result.processed).toBe(1)
+      expect(result.errors).toHaveLength(1)
+      expect(result.errors[0].error).toBe('Simulated failure')
+    })
+
+    it('should return empty results when no overdue chores exist', async () => {
+      ;(prisma.choreAssignment.findMany as jest.Mock).mockResolvedValue([])
+
+      const result = await overdueService.processOverdueChores()
+
+      expect(result.processed).toBe(0)
+      expect(result.errors).toHaveLength(0)
+      expect(result.penalties).toHaveLength(0)
+    })
+
+    it('should return early when penalty system is disabled', async () => {
+      ;(getOrCreateSettings as jest.Mock).mockResolvedValue({
+        ...mockNotificationSettings.default,
+        overduePenaltyEnabled: false,
+      })
+
+      const result = await overdueService.processOverdueChores()
+
+      expect(result.processed).toBe(0)
+      expect(result.errors).toHaveLength(0)
     })
   })
 })

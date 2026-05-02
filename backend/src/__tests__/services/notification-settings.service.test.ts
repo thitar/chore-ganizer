@@ -20,12 +20,20 @@ jest.mock('../../services/ntfy.service.js', () => ({
     LOW: 'low',
     CHORE_OVERDUE: 5,
     POINTS_EARNED: 3,
+    CHORE_ASSIGNED: 3,
+    CHORE_DUE_SOON: 4,
+    CHORE_COMPLETED: 3,
+    PENALTY: 5,
   },
   NotificationTags: {
     WARNING: 'warning',
     INFO: 'info',
     CHORE_OVERDUE: ['x', 'warning'],
     POINTS_EARNED: ['white_check_mark'],
+    CHORE_ASSIGNED: ['white_check_mark'],
+    CHORE_DUE_SOON: ['alarm_clock'],
+    CHORE_COMPLETED: ['white_check_mark'],
+    PENALTY: ['warning', 'x'],
   },
 }))
 
@@ -208,6 +216,124 @@ describe('Notification Settings Service', () => {
           message: '"Wash Dishes" is 3 day(s) overdue',
         })
       )
+    })
+
+    it('should return false when user has no ntfyTopic configured', async () => {
+      ;(prisma.userNotificationSettings.findUnique as jest.Mock).mockResolvedValue({
+        ...mockNotificationSettings.default,
+        ntfyTopic: null,
+        notifyChoreOverdue: true,
+      })
+
+      const result = await notificationSettingsService.sendPushNotification(1, 'CHORE_OVERDUE', {
+        choreTitle: 'Wash Dishes',
+      })
+
+      expect(result).toBe(false)
+    })
+
+    it('should return false when notification type is not enabled', async () => {
+      ;(prisma.userNotificationSettings.findUnique as jest.Mock).mockResolvedValue({
+        ...settingsWithNtfy,
+        notifyChoreOverdue: false,
+      })
+
+      const result = await notificationSettingsService.sendPushNotification(1, 'CHORE_OVERDUE', {
+        choreTitle: 'Wash Dishes',
+      })
+
+      expect(result).toBe(false)
+    })
+
+    it('should return false during quiet hours', async () => {
+      // Set system time to be within quiet hours
+      jest.useFakeTimers()
+      const quietHour = 22 // 10 PM
+      const now = new Date()
+      now.setHours(quietHour, 0, 0, 0)
+      jest.setSystemTime(now)
+
+      ;(prisma.userNotificationSettings.findUnique as jest.Mock).mockResolvedValue({
+        ...settingsWithNtfy,
+        quietHoursStart: 22,
+        quietHoursEnd: 7,
+      })
+
+      const result = await notificationSettingsService.sendPushNotification(1, 'CHORE_OVERDUE', {
+        choreTitle: 'Wash Dishes',
+      })
+
+      expect(result).toBe(false)
+      jest.useRealTimers()
+    })
+
+    it('should handle CHORE_ASSIGNED type correctly', async () => {
+      const { sendNtfyNotification } = require('../../services/ntfy.service')
+
+      ;(prisma.userNotificationSettings.findUnique as jest.Mock).mockResolvedValue({
+        ...settingsWithNtfy,
+        notifyChoreAssigned: true,
+      })
+
+      await notificationSettingsService.sendPushNotification(1, 'CHORE_ASSIGNED', {
+        choreTitle: 'Wash Dishes',
+        dueDate: '2024-01-20',
+      })
+
+      expect(sendNtfyNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'New Chore Assigned: Wash Dishes',
+        })
+      )
+    })
+
+    it('should handle POINTS_EARNED type correctly', async () => {
+      const { sendNtfyNotification } = require('../../services/ntfy.service')
+
+      ;(prisma.userNotificationSettings.findUnique as jest.Mock).mockResolvedValue({
+        ...settingsWithNtfy,
+        notifyPointsEarned: true,
+      })
+
+      await notificationSettingsService.sendPushNotification(1, 'POINTS_EARNED', {
+        choreTitle: 'Wash Dishes',
+        points: 10,
+        totalPoints: 50,
+      })
+
+      expect(sendNtfyNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'You earned 10 points!',
+        })
+      )
+    })
+  })
+
+  describe('updateSettings additional validation', () => {
+    it('should throw error for invalid ntfyServerUrl (SSRF prevention)', async () => {
+      ;(prisma.userNotificationSettings.findUnique as jest.Mock).mockResolvedValue(mockNotificationSettings.default)
+
+      await expect(
+        notificationSettingsService.updateSettings(1, {
+          ntfyServerUrl: 'http://internal.server/admin',
+        })
+      ).rejects.toThrow()
+    })
+
+    it('should create settings with defaults when none exist during update', async () => {
+      ;(prisma.userNotificationSettings.findUnique as jest.Mock)
+        .mockResolvedValueOnce(null) // no existing
+      ;(prisma.userNotificationSettings.create as jest.Mock).mockResolvedValue({
+        ...mockNotificationSettings.default,
+        ntfyTopic: 'my-topic',
+      })
+
+      const result = await notificationSettingsService.updateSettings(1, {
+        ntfyTopic: 'my-topic',
+      })
+
+      expect(result.ntfyTopic).toBe('my-topic')
+      expect(prisma.userNotificationSettings.create).toHaveBeenCalled()
     })
   })
 })
