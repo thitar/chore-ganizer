@@ -10,7 +10,7 @@
 - [x] **TECH-01**: Delete dead `recurring-chores.routes.ts` (394 lines, zero imports)
 - [ ] **TECH-02**: Migrate Prisma `$use` middleware to `$extends` query extension for `recurrenceRule` JSON serialization
 - [ ] **TECH-03**: Extract `PocketMoneyService` from fat `pocket-money.controller.ts` (817 lines, 27 prisma calls → thin HTTP layer)
-- [ ] **TECH-04**: Eliminate `as any` casts in production code (client.ts CSRF retry, errorHandler.ts Prisma error, database.ts middleware)
+- [x] **TECH-04**: Eliminate `as any` casts in production code (client.ts CSRF retry, errorHandler.ts Prisma error, database.ts middleware)
 - [ ] **TECH-05**: Standardize service file naming to `dot.case.ts` (rename `emailService.ts` and delete `notificationService.ts` — dead code)
 - [x] **TECH-06**: Mount `metricsRoutes` via `routes/index.ts` for route mounting consistency
 - [ ] **TECH-07**: Migrate from `prisma db push` to versioned `prisma migrate deploy` in Docker entrypoint
@@ -72,7 +72,7 @@
 | TECH-01 | Phase 1 - Foundation & Cleanup | Completed (01-01) |
 | TECH-02 | Phase 2 - Prisma Modernization | Pending |
 | TECH-03 | Phase 3 - Architecture & Performance | Pending |
-| TECH-04 | Phase 1 - Foundation & Cleanup | Pending |
+| TECH-04 | Phase 1 - Foundation & Cleanup | Complete |
 | TECH-05 | Phase 3 - Architecture & Performance | Pending |
 | TECH-06 | Phase 1 - Foundation & Cleanup | Completed (01-01) |
 | TECH-07 | Phase 3 - Architecture & Performance | Pending |

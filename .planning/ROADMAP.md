@@ -27,7 +27,7 @@ This remediation milestone systematically eliminates 22 known issues across depe
 
 Plans:
 - [x] 01-01-PLAN.md — DEPS-01: npm audit fix (both packages) + TECH-01: delete dead route file + TECH-06: move metricsRoutes to routes/index.ts
-- [ ] 01-02-PLAN.md — TECH-04: eliminate `as any` casts (client.ts D-01 local shadow types + errorHandler.ts D-02 instanceof guard)
+- [x] 01-02-PLAN.md — TECH-04: eliminate `as any` casts (client.ts D-01 local shadow types + errorHandler.ts D-02 instanceof guard)
 - [ ] 01-03-PLAN.md — BUGS-01: nested ternary → if/else + BUGS-02: typed transformRecurringChore + BUGS-03: log corrupt data in safeParseAssignedUserIds
 - [ ] 01-04-PLAN.md — BUGS-04: create debug.ts utility + replace all 57 console statements across 14 files
 **UI hint**: yes
