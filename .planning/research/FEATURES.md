@@ -1,452 +1,437 @@
-# Correct Behavior Specifications — Bugfix Milestone (v2.3.0)
+# Feature Landscape — ntfy.sh Push Notifications (v3.1)
 
-**Domain:** Family Chore Management (Express/Prisma/React)
-**Researched:** 2026-05-03
-**Confidence:** HIGH (all findings verified against source code and schema)
-
-## Overview
-
-This document defines the **correct expected user-facing behavior** for each of the 7 bugs targeted in milestone v2.3.0. These specs serve as the acceptance criteria for fixes, test cases, and validation.
+**Domain:** Family chore management (Express/Prisma/React/SQLite homelab)
+**Researched:** 2026-06-29
+**Confidence:** HIGH (all findings verified against official ntfy.sh docs and existing v1-archive reference implementation)
+**Downstream consumer:** Phase planning for v3.1 — feeds SUMMARY.md, ARCHITECTURE.md, PITFALLS.md
 
 ---
 
-## Bug 1: Double Penalty (PEN-02 — 🔴 REAL PROBLEM)
+## Executive Summary
 
-### What the user sees today (broken)
-A child has a chore worth 10 points, due yesterday, with penalty multiplier of 2:
+ntfy.sh is a simple HTTP-based pub/sub notification service. A client POSTs to `<server>/<topic>` with optional headers (`Title`, `Priority`, `Tags`, `Click`, `X-Sequence-ID`); subscribed devices receive a push. Self-hosting is a single `binwiederhier/ntfy` container. For a 4-user family chore app, the ntfy surface area is small — **4 table-stakes features, 0 essential differentiators, 5 anti-features for the homelab scope**.
 
-1. **Midnight:** Cron applies penalty. `user.points` drops by -20. Child sees balance drop but no transaction explaining it (bug #3 compounds).
-2. **Next morning:** Child completes the chore. `user.points` changes by `+10 - 20 = -10`. Net change: was -20, then another -10 → total -30.
-3. **Net result on `user.points`:** `templatePoints - 2×penalty` = `10 - 40 = -30`
-4. **What should happen:** `templatePoints - penalty` = `10 - 20 = -10`
+The v1-archive codebase (pre-rewrite) shipped a complete notification system with per-user settings, email, quiet hours, and 6 event types. v3.1 is intentionally narrower: **3 events, per-user topic only, no preferences, no email, no in-app, self-hosted only, lazy "due soon" trigger**. This research treats those constraints as load-bearing.
 
-### Correct behavior (after fix)
-
-| Event | `user.points` change | Transaction created | `penaltyApplied` |
-|-------|---------------------|-------------------|-----------------|
-| Midnight cron | -20 (penalty) | Yes (PENALTY, -20) | true |
-| Child completes next day | +10 (earned, no penalty) | Yes (EARNED, +10, or PENALTY depending on fix #5) | already true — skipped |
-
-**Net effect to child's points:** `-20 (cron) + 10 (completion) = -10`
-
-### User-visible acceptance criteria
-- **Child's point balance:** Drops by exactly `penalty` points total after both events, not `2×penalty`.
-- **Transaction history shows:**
-  - A PENALTY entry for the cron application (-20 points)
-  - An EARNED entry for the completion (+10 points)
-- **The `completeAssignment` handler checks `penaltyApplied` before applying in-line penalty.** If the cron already set it, the completion awards full template points minus any previously-applied penalty (i.e., no second deduction).
-- **The `completeAssignment` transaction does NOT set `penaltyApplied` or `penaltyPoints` a second time** — only the cron should mark these, and the completion should respect the existing flag.
-
-### Test scenario
-```
-Setup: 10-pt chore due yesterday, penalty multiplier = 2
-Cron runs:
-  - user.points: 100 → 80
-  - PointTransaction: PENALTY, -20
-  - penaltyApplied: false → true
-
-Child completes chore:
-  - completeAssignment fetches penaltyApplied = true
-  - skips: pointsToAward = 10 - 20  (does NOT run)
-  - uses: pointsToAward = 10
-  - user.points: 80 → 90
-  - PointTransaction: EARNED, +10
-
-Result: user.points went 100 → 90 (net -10 = templatePoints - penalty)
-NOT: 100 → 70 (which would be templatePoints - 2×penalty)
-```
-
-### Related bugs
-- **Bug #3 (missing penalty transaction):** Required prerequisite — cron must create `PointTransaction` for the penalty, otherwise the cron penalty is invisible.
-- **Bug #5 (wrong penalty type):** The completion's penalty transaction type should be `'PENALTY'` for consistency.
+The core technical decision is **where to store the topic** (on `User` table vs separate `UserNotificationSettings` table). The v3.1 spec explicitly chooses the former — keep it simple, fewer migrations, fewer tables.
 
 ---
 
-## Bug 2: ADJUSTMENT Inconsistency (BAL-01 — 🔴 REAL PROBLEM)
+## Domain Context
 
-### What the user sees today (broken)
-Parent gives a manual +50 point adjustment to Alice (balance was 100):
-
-- **Balance endpoint** (`GET /api/pocket-money/balance/:id`): Shows **50** — WRONG.
-  - Reason: `calculatePointBalance()` treats ALL `ADJUSTMENT` as negative: `totalPoints -= Math.abs(tx.amount)`.
-- **Transaction history** (running balance): Shows **150** — CORRECT.
-  - Reason: Running balance code follows `tx.amount` sign for `ADJUSTMENT`.
-- **Parent sees DIFFERENT numbers** on different screens. Confusing and erodes trust.
-
-### Correct behavior (after fix)
-Both endpoints must agree. When a parent adjusts +50:
-
-| Endpoint | Balance | Running balance | Match? |
-|----------|---------|-----------------|--------|
-| `/api/pocket-money/balance/:id` | 150 | — | ✅ |
-| Transaction history last row | — | 150 | ✅ |
-
-### User-visible acceptance criteria
-- **`calculatePointBalance()` removes `ADJUSTMENT` from the "always subtract" group** — let it follow the sign of `tx.amount` like `EARNED` and `BONUS`.
-- **Balance endpoint and transaction history show the same value** for any set of transactions including ADJUSTMENTs.
-- **Negative ADJUSTMENTs still work correctly:** an ADJUSTMENT of -30 reduces balance by 30.
-- **`projectedEarnings` (which also uses `calculatePointBalance`) is fixed as a side effect.**
-
-### Affected code paths
-| Path | Line | Current behavior | Fixed behavior |
-|------|------|-----------------|----------------|
-| `calculatePointBalance()` switch | 111 | `ADJUSTMENT` → subtract always | Follow `amount` sign |
-| Transaction running balance (page boundary) | 397 | Already correct (`ADJUSTMENT` → follow sign) | No change |
-| Transaction running balance (page) | 436 | Already correct | No change |
-| Transaction running balance (map) | 444 | Already correct | No change |
-| `calculateProjectedEarnings` period calc | 790 | Same bug as `calculatePointBalance` | Fixed via shared code |
+- **App:** Chore-ganizer v3.0.0 rewrite, single-family homelab, 4-6 users
+- **Existing validated features** (do not re-research): auth, chore templates/assignments, recurring chores, points, calendar, profile self-service (password + color), Docker compose
+- **Stack:** Express + Prisma + SQLite backend, React + Vite + Tailwind frontend
+- **Existing chore lifecycle hooks** (where notifications will fire):
+  - `assignment.service.ts:create` — chore assigned (line 5)
+  - `assignment.service.ts:complete` — chore completed (line 125, inside `$transaction`)
+  - `assignment.service.ts:getAll` — fetches upcoming chores, **natural place for lazy "due soon" trigger** (line 42 calls `generateOccurrences`)
+- **Schema:** `User` table has `id, email, name, password, role, color, createdAt, updatedAt` — no ntfy columns yet
+- **v1-archive reference:** `backend-v1-archive/src/services/ntfy.service.ts` (205 lines) and `notification-settings.service.ts` (314 lines) — full prior art, including the `validateNtfyServerUrl` SSRF guard, `NotificationPriorities` map, and `NotificationTags` map. **Reuse the priorities/tags/SSRF guard verbatim**; drop the per-event settings model.
 
 ---
 
-## Bug 3: Missing Penalty Transaction (PEN-01 — 🔴 REAL PROBLEM)
+## Table Stakes
 
-### What the user sees today (broken)
-Child has chore due yesterday, penalty multiplier = 2:
+Features that users expect from a chore app with push notifications. Missing = product feels incomplete. **All 4 are in-scope for v3.1.**
 
-1. Midnight cron applies penalty.
-2. **Child wakes up:** balance dropped from 100 to 80.
-3. **Child checks "View All Transactions":** Empty — no explanation for the -20.
-4. **If the child has a notification**, they get an in-app alert saying "Penalty Applied" — but there's no permanent record of it.
+### TS-1: Per-user ntfy topic stored on `User` table
 
-### Correct behavior (after fix)
-- **`applyOverduePenalty()` creates a `PointTransaction` record** with:
-  - `type`: `'PENALTY'`
-  - `amount`: `penaltyPoints` (negative, e.g., -20)
-  - `description`: `"Penalty for: {choreTitle}"` (or similar meaningful text)
-  - `userId`: the child's ID
-  - `choreAssignmentId`: the overdue assignment's ID
-- **Transaction history shows the penalty entry** alongside other transactions, in chronological order.
-- **The penalty entry carries through to balance calculations** in both `calculatePointBalance()` and running balance.
+**Why expected:** The v3.1 spec mandates this. Each user gets their own topic so they subscribe on their own device(s). Topics are passwords — per-user isolation prevents one family member's topic from leaking notifications to another.
 
-### User-visible acceptance criteria
-- **Transaction history includes a penalty entry** with type "Penalty" and the correct negative amount.
-- **Penalty is applied atomically within the same database transaction** as the `user.points` decrement and the `penaltyApplied` flag update.
-- **Balance endpoint reflects the penalty** (it already would since it sums all transactions — but now there's a transaction to sum).
+**Complexity:** Low. Two new columns on `User`:
+- `ntfyTopic` (String, nullable, unique) — e.g., `"alice-chores-7f3a"`
+- `ntfyBaseUrl` (String, nullable) — optional per-user override; typically inherited from `NTFY_BASE_URL` env
 
-### Test scenario
+**Schema migration impact:** Add 2 columns + a unique index on `ntfyTopic`. Existing users get NULL → no notifications until they configure it.
+
+**Source:** PROJECT.md v3.1 spec; v1-archive `UserNotificationSettings.ntfyTopic`.
+
+---
+
+### TS-2: HTTP publish to ntfy server with Title / Priority / Tags / Click headers
+
+**Why expected:** Without these, the push is just `"<message text>"` on a generic title. Title and tags are what make the notification glanceable on a phone. Priority controls vibration/sound. Click opens the right page.
+
+**Recommended headers (per event):**
+
+| Event | Title | Body | Priority | Tags | Click |
+|-------|-------|------|----------|------|-------|
+| Chore assigned | `"New chore: {title}"` | `"{title} — due {dueDate}"` | `3` (default) | `clipboard,bell` | `<app-url>/chores/{id}` |
+| Chore due soon (same day) | `"Due today: {title}"` | `"{title} — {points} pts, due {dueDate}"` | `4` (high) | `warning,alarm_clock` | `<app-url>/chores/{id}` |
+| Chore completed | `"{userName} completed: {title}"` | `"+{points} points earned"` | `2` (low) | `white_check_mark,star` | `<app-url>/chores/{id}` |
+
+**Priority rationale:**
+- Assigned = default (`3`) — informational, normal sound
+- Due soon = high (`4`) — important, longer vibration, deserves attention today
+- Completed = low (`2`) — confirmation only, no sound/vibration; parents get many of these
+
+**Tags rationale (from ntfy emoji short codes):**
+- `clipboard` → 📋
+- `bell` → 🔔
+- `warning` → ⚠️
+- `alarm_clock` → ⏰
+- `white_check_mark` → ✔️
+- `star` → ⭐
+- For Android: emoji tags prepend to the title; for iOS: appear in subtitle.
+
+**Source:** ntfy.sh publish docs (https://docs.ntfy.sh/publish/#message-title, /#message-priority, /#tags-emojis); v1-archive `NotificationPriorities` + `NotificationTags` constants.
+
+---
+
+### TS-3: Graceful degradation when ntfy not configured
+
+**Why expected:** The v3.1 spec mandates this. A family member who hasn't set up ntfy yet should NOT cause errors when the backend tries to fire a notification. Nor should the app crash if `NTFY_BASE_URL` is unset.
+
+**Behavior:**
+- If `user.ntfyTopic` is NULL → **skip the notification silently** (no log error, no API failure)
+- If `NTFY_BASE_URL` env is unset → **skip ALL notifications silently** (no global crash)
+- If ntfy server is unreachable (timeout, 5xx) → **log warning, return success** to the caller (notification is best-effort, never blocks chore business logic)
+
+**Implementation note:** The notification fire must happen **after** the database commit, not inside the `$transaction`. If ntfy is down, the chore should still be saved. A try/catch around the axios call with a `logger.warn` is the standard pattern. v1-archive `sendNtfyNotification` already does this (returns `false` on error, never throws).
+
+**Complexity:** Low. ~5 lines of guard logic in the publish function.
+
+**Source:** PROJECT.md v3.1 spec ("missing config gracefully degrades"); v1-archive `ntfy.service.ts:143-151`.
+
+---
+
+### TS-4: SSRF guard on user-supplied ntfy server URL
+
+**Why expected:** The v1-archive already has this. If `ntfyBaseUrl` is per-user-configurable (even if most users use the env default), a malicious user could enter `http://169.254.169.254/...` (AWS metadata) or `http://localhost:6379/...` (Redis) and have the backend POST sensitive data there.
+
+**Implementation:** Reuse the `validateNtfyServerUrl` function from `backend-v1-archive/src/services/ntfy.service.ts:41-85` verbatim. Rejects:
+- Non-HTTP(S) protocols (`file:`, `gopher:`, etc.)
+- Loopback (`localhost`, `127.0.0.1`, `::1`)
+- Private RFC1918 ranges (`10/8`, `172.16/12`, `192.168/16`)
+- Link-local (`169.254/16`)
+- IPv6 ULA (`fc00::/7`, `fd00::/8`)
+
+**Why this is table stakes for the homelab:** Even though "developer is the user," the `ntfyBaseUrl` field on `User` is part of the API surface. The v1-archive shipped it, the security test in v1-archive covers it, removing it for v3.1 would be a regression.
+
+**Complexity:** Low (copy 45 lines of code, no new logic).
+
+**Source:** v1-archive `ntfy.service.ts:41-85`; the v3.0.0 rewrite explicitly preserved this concern (it appears in the v1-archive retained as reference).
+
+---
+
+## Differentiators
+
+Features that set the app apart. Not expected by users, but valued. **All explicitly out-of-scope for v3.1 per spec; documented here so future milestones know what was considered.**
+
+| Feature | Value | Why Deferred for v3.1 |
+|---------|-------|----------------------|
+| Per-event toggle (`notifyChoreAssigned` etc.) | Lets kids mute chore-assigned but keep due-soon | Spec says "no per-user preferences" — uniform behavior is the design intent |
+| Quiet hours (don't notify 9pm-7am) | Avoids waking kids at night | Spec excludes it; 4-user family can self-moderate; "due soon" fires during waking hours anyway |
+| Custom per-user `ntfyBaseUrl` (vs env default) | Family member uses a different ntfy instance | Overkill for homelab; env var covers the common case |
+| Email fallback (SMTP) | Reliability if ntfy is down | Spec excludes email entirely |
+| In-app notification bell (notification center) | See missed notifications in the app | Spec excludes in-app entirely; ntfy *is* the notification UI |
+| Phone-call escalation for overdue chores | Wake-the-parent safety net | Out of scope; v1-archive had it but no one used it |
+| Scheduled delivery (`X-Delay` header) | "Notify at 7am" instead of "now" | Out of scope; "due soon" is the substitute |
+| Attach chore photo to completion notification | Visual confirmation | Out of scope; increases payload size, rarely useful |
+| Notification grouping (per-chore, collapse) | Phone groups 3 chores into one notification | ntfy doesn't support per-publisher grouping; client-side dedup via `X-Sequence-ID` is the workaround (see Anti-Features) |
+| Web push (browser tab notification) without ntfy | No ntfy install required | ntfy web app IS this (https://ntfy.sh/<topic>); user can subscribe in browser |
+
+**Recommendation:** **Build 0 of these for v3.1.** The spec is intentionally narrow. Adding per-user preferences or quiet hours would require a `UserNotificationSettings` table (rejected by spec), a settings UI (more frontend work), and testing for every preference combination (exponential). Defer all of these to a future "notification preferences" milestone if the family asks.
+
+---
+
+## Anti-Features
+
+Features to **explicitly NOT build** in v3.1. Each one would either (a) be wasted effort for 4 users, (b) conflict with the spec's "no preferences" rule, or (c) reintroduce complexity the v3.0.0 rewrite removed.
+
+### AF-1: Separate `UserNotificationSettings` table
+
+**Why avoid:** v1-archive had this (a 27-column model: ntfyTopic, ntfyServerUrl, ntfyUsername, ntfyPassword, emailNotifications, notificationEmail, 5 per-event booleans, reminderHoursBefore, quietHoursStart, quietHoursEnd, overduePenaltyEnabled, etc.). Most of those columns were never used. v3.1 spec puts the topic directly on `User` (2 columns) and intentionally drops the rest.
+
+**What to do instead:** Two new columns on `User`: `ntfyTopic` (String?, unique) and `ntfyBaseUrl` (String?, nullable override). Read `NTFY_BASE_URL` env as default. No join, no separate fetch, no migration of the legacy table.
+
+**Effort saved:** ~250 lines (entire `notification-settings.service.ts` and `notification-settings.controller.ts` from v1-archive).
+
+---
+
+### AF-2: Per-event enable/disable toggles
+
+**Why avoid:** Spec says "All events fire when applicable — no per-user preferences." A child can't disable chore-assigned notifications. A parent can't disable chore-completed. This is intentional: a 4-user family doesn't need 4×3=12 preference switches.
+
+**What to do instead:** Uniform behavior. If the user has a topic set, they get all 3 event types. If they want to mute, they unsubscribe from the topic in their ntfy app.
+
+**Effort saved:** 5 boolean columns + a settings UI tab + tests for every combination.
+
+---
+
+### AF-3: Quiet hours
+
+**Why avoid:** Spec excludes it. Adds `quietHoursStart` / `quietHoursEnd` columns, a clock comparison in the publisher, and a "did this notification get suppressed?" log to debug. The homelab "due soon" window is already during waking hours (a chore due "today" fires when the user opens the app, which is when they're awake).
+
+**What to do instead:** None needed. If a family member wants quiet hours, they configure them in the ntfy Android app's per-topic settings — that app already has native support for this. Don't reinvent.
+
+**Effort saved:** 2 columns + per-message clock check + settings UI.
+
+---
+
+### AF-4: Email fallback / SMTP
+
+**Why avoid:** Spec says "No email." The v1-archive had nodemailer integration; v3.0.0 removed it. Re-adding it would mean a separate `emailService.ts`, SMTP env vars, app-password docs, and testing for spam folders.
+
+**What to do instead:** ntfy supports email forwarding (`X-Email: phil@example.com` header) IF a family member really wants it. They can configure it on the ntfy server side. The chore-ganizer backend doesn't need to know.
+
+**Effort saved:** ~150 lines of SMTP integration + a 2nd transport layer.
+
+---
+
+### AF-5: Test-from-settings button (and "Test notification" endpoint)
+
+**Why expected?** A reasonable user might want to verify their topic works. But: **the ntfy mobile app already has this**. Subscribing to a topic, sending a test from the ntfy app or `curl`, and confirming the push lands on the phone is faster and more reliable than building a "Send Test" button inside chore-ganizer. The `notify-tester` skill in `.claude/skills/notify-tester/SKILL.md` already documents the curl pattern for the developer.
+
+**Why avoid (for v3.1):** Adds a settings page section, a `POST /api/users/:id/test-ntfy` endpoint, error UI ("ntfy returned 401 — check your topic name"), and async feedback. For 4 users who set up once, the cost > benefit.
+
+**What to do instead:** The ntfy app's "Send test message" button (built into every ntfy client). Or `curl -d "test" $NTFY_BASE_URL/$user_topic` from the server.
+
+**Effort saved:** Settings UI section + endpoint + error states.
+
+**Reconsider for:** A "Family Setup Guide" README page that says "to test, open ntfy app → Subscribe to `<topic>` → Send a test."
+
+---
+
+## Event Specifications
+
+Concrete wire format for each of the 3 events. Use these as the implementation contract.
+
+### Event 1: Chore Assigned
+
+**Trigger:** `POST /api/assignments` succeeds (after DB commit)
+**Audience:** The assigned user (the child, typically)
+**Lookup:** `prisma.user.findUnique({ where: { id: assignment.assignedToId }, select: { ntfyTopic: true } })`
+**Skip if:** `user.ntfyTopic` is null
+
+**HTTP request:**
 ```
-Before: user.points = 100, chore due yesterday, 10 pts, multiplier = 2
+POST {NTFY_BASE_URL}/{user.ntfyTopic} HTTP/1.1
+Title: New chore: {template.title}
+Priority: 3
+Tags: clipboard,bell
+Click: {APP_URL}/chores/{assignment.id}
+X-Sequence-ID: chore-{assignment.id}-assigned
 
-Cron runs applyOverduePenalty():
-  - user.points: 100 → 80  (-20)
-  - choreAssignment.penaltyApplied: false → true
-  - choreAssignment.penaltyPoints: null → -20
-  - PointTransaction: CREATED
-      type: "PENALTY"
-      amount: -20
-      userId: child.id
-      choreAssignmentId: assignment.id
-
-Child views transactions:
-  - Sees: "PENALTY: -20" with description "Penalty for: Clean Bedroom"
-  - Running balance reflects the -20
-
-Balance endpoint:
-  - calculatePointBalance() includes the -20 PENALTY
-  - Result: 80 (matches user.points)
+{title} — due {dueDate}
 ```
 
-### Important detail
-The `applyOverduePenalty()` function already has a **guard** against double-penalty at line 87:
+**Example:**
+```
+POST https://ntfy.home.local/alice-chores-7f3a HTTP/1.1
+Title: New chore: Take out trash
+Priority: 3
+Tags: clipboard,bell
+Click: http://localhost:3002/chores/42
+X-Sequence-ID: chore-42-assigned
+
+Take out trash — due 2026-06-30
+```
+
+**Rationale:**
+- `X-Sequence-ID: chore-{id}-assigned` means if the chore gets reassigned, a new sequence ID is used (so the new push is a new notification, not an update of the old one)
+- Priority 3 (default) — normal sound, not alarming
+- Tags `clipboard` (📋) + `bell` (🔔) — glanceable on lock screen
+
+---
+
+### Event 2: Chore Due Soon (same day)
+
+**Trigger:** Lazy — fires when `GET /api/assignments` returns an assignment whose `dueDate` is today and notification hasn't been sent yet for this assignment
+**Audience:** The assigned user
+**Lookup:** Same as Event 1
+**Skip if:** `user.ntfyTopic` is null OR the notification was already sent (dedup below)
+
+**Dedup mechanism:** Store a `dueNotifiedAt` timestamp column on `ChoreAssignment` (nullable). On trigger, check if `dueNotifiedAt` is null. If null, send and set it. This is a one-line schema change and avoids the cron pattern.
+
+**Alternative dedup:** Use ntfy's `X-Sequence-ID: chore-{id}-due` — if the same sequence ID is sent twice, ntfy treats it as an update and the client doesn't re-notify. But this only works if the ntfy server is reachable AND if the previous send was successful. A `dueNotifiedAt` column is more reliable.
+
+**HTTP request:**
+```
+POST {NTFY_BASE_URL}/{user.ntfyTopic} HTTP/1.1
+Title: Due today: {template.title}
+Priority: 4
+Tags: warning,alarm_clock
+Click: {APP_URL}/chores/{assignment.id}
+X-Sequence-ID: chore-{assignment.id}-due
+
+{title} — {points} pts, due today
+```
+
+**Example:**
+```
+POST https://ntfy.home.local/alice-chores-7f3a HTTP/1.1
+Title: Due today: Take out trash
+Priority: 4
+Tags: warning,alarm_clock
+Click: http://localhost:3002/chores/42
+X-Sequence-ID: chore-42-due
+
+Take out trash — 10 pts, due today
+```
+
+**Rationale:**
+- Priority 4 (high) — deserves attention; same-day deadline
+- Tags `warning` (⚠️) + `alarm_clock` (⏰) — visual urgency
+- Body includes points — "earn 10 pts" is a positive nudge
+
+**Where it fires in the code:** At the top of `assignment.service.ts:getAll` (line 42) — same place that calls `generateOccurrences`. Pseudocode:
 ```typescript
-if (assignment.penaltyApplied) {
-  throw new AppError('Penalty has already been applied to this assignment', 409, 'ALREADY_PENALIZED')
-}
-```
-This guard means the `PointTransaction` creation will also only fire once per assignment — correct behavior.
-
----
-
-## Bug 4: Missing familyId (USR-01 — 🟡 WOULD NOTICE)
-
-### What the user sees today (broken)
-Parent creates a new child account "Charlie" via the admin panel:
-
-1. **Parent immediately looks at admin dashboard:** Charlie is NOT listed in the chore stats or point summary members.
-2. **Root cause:** The new user's `familyId` is `null`, but `getChoreStats()` queries `where: { familyId }` and `getPointSummary()` also filters by `familyId`.
-3. **Parent has to restart the app** (or wait for seed re-run) for Charlie to be linked to the family.
-4. **Charlie also gets default pocket money config** instead of family's config (e.g., defaults to `MONTHLY` payout on day 1 instead of actual family settings like day 15).
-
-### Correct behavior (after fix)
-- **New users created by parents inherit the parent's `familyId`.**
-- **The user immediately appears** in admin dashboard queries that scope by `familyId`.
-- **The user gets the family pocket money config** automatically via the `familyId` relation.
-
-### Three things to fix
-
-| Fix Location | What to Change | Why |
-|-------------|----------------|-----|
-| `auth.ts` middleware | Add `familyId` to the `select` in `authenticate()` | So `req.user.familyId` is available |
-| `users.controller.ts` `createUser` | Pass `req.user.familyId` to the service | So the service knows what family to assign |
-| `users.service.ts` `createUser` | Accept and set `familyId` in the create data | So it's stored in the DB |
-
-### User-visible acceptance criteria
-- **Create Charlie as child:** Dashboard shows Charlie in member lists immediately.
-- **Pocket money config for Charlie:** Inherits family settings (same as other kids).
-- **Audit log shows Charlie's user creation** with correct admin attribution (already works, doesn't depend on `familyId`).
-
-### Test scenario
-```
-Seed: Default family "The Family" with id "default-family"
-Log in as Dad (parent, familyId: "default-family", id: 1)
-
-POST /api/users { name: "Charlie", email: "charlie@home.local", role: "CHILD" }
-  → createUser req.body, passes familyId: "default-family" from req.user.familyId
-  → Charlie.familyId = "default-family"  (was null before)
-
-GET /api/admin/dashboard
-  → getChoreStats("default-family") finds Charlie in prisma.user.findMany({where:{familyId}})
-  → getPointSummary("default-family") finds Charlie in prisma.user.findMany({where:{familyId}})
-  → Charlie appears in both memberBreakdown and memberBalances
-```
-
----
-
-## Bug 5: Wrong Penalty Type (PEN-03 — 🟡 WOULD NOTICE)
-
-### What the user sees today (broken)
-Child completes an overdue chore that incurs a penalty:
-
-- **Transaction history shows:** "Deduction: -20" (type `'DEDUCTION'`)
-- **What child expects:** "Penalty: -20" (type `'PENALTY'`)
-- **Confusing:** Child doesn't know if this was a parent-applied deduction or an automatic penalty.
-
-### Correct behavior (after fix)
-- **`completeAssignment()` creates transaction with type `'PENALTY'` instead of `'DEDUCTION'`** when the deduction is due to late completion.
-- **Transaction history shows "Penalty"** — consistent with cron-applied penalties (bug #3).
-- **The `DEDUCTION` type is reserved** for parent-initiated manual deductions via the pocket money management UI.
-
-### What changes
-
-**File:** `backend/src/services/chore-assignments.service.ts` **Line 378:**
-
-```typescript
-// BEFORE (broken):
-const transactionType = (isOverdue && penaltySettings?.overduePenaltyEnabled && pointsToDeduct > 0)
-    ? 'DEDUCTION' : 'EARNED'
-
-// AFTER (fixed):
-const transactionType = (isOverdue && penaltySettings?.overduePenaltyEnabled && pointsToDeduct > 0)
-    ? 'PENALTY' : 'EARNED'
-```
-
-### User-visible acceptance criteria
-- **Late completion penalty shows as "Penalty"** in transaction history, not "Deduction".
-- **Parent-initiated deduction** (via pocket money management) still shows as "Deduction" — unchanged.
-- **Running balance calculations are unaffected** — both `DEDUCTION` and `PENALTY` are in the same "subtract" group in balance calculations.
-
-### Transaction type semantics (after fix)
-
-| Type | Source | Description |
-|------|--------|-------------|
-| `EARNED` | Chore completion (on time or partial) | Points earned normally |
-| `PENALTY` | **Cron: overdue chore** or **Late completion** (was `DEDUCTION`) | Automatic deduction for lateness |
-| `DEDUCTION` | Parent manual deduction | Parent chose to deduct points |
-| `BONUS` | Parent manual bonus | Parent chose to award extra points |
-| `PAYOUT` | Payout executed | Points converted to money |
-| `ADVANCE` | Advance payment | Negative balance allowed |
-| `ADJUSTMENT` | Manual balance adjustment | Can be positive or negative |
-
----
-
-## Bug 6: NotifConfigCard Empty (UI-01 — 🟡 WOULD NOTICE)
-
-### What the user sees today (broken)
-Admin dashboard shows **6 cards**. The **NotifConfigCard** always says _"No notification config"_ — even when the admin user has notification settings configured:
-
-```tsx
-// AdminPage.tsx line 16 — hardcoded null
-<NotifConfigCard data={null} loading={loading} error={error} />
-```
-
-### Correct behavior (after fix)
-The admin dashboard should display the **admin user's own notification settings** in the NotifConfigCard.
-
-**Backend endpoint already exists:** `GET /api/admin/users/:userId/notification-settings` (see `admin.controller.ts` lines 43–56).
-
-This endpoint:
-1. Fetches `UserNotificationSettings` for the given user (creating defaults if none exist)
-2. Strips credential fields (`ntfyPassword`, `ntfyUsername`, `emailNotifications`, `notificationEmail`)
-3. Returns the safe settings object
-
-### What needs to change
-
-**Frontend:**
-- `AdminPage.tsx`: Remove `data={null}`, fetch settings for the current admin user
-- Add a hook or inline fetch to call `GET /api/admin/users/:userId/notification-settings` with the current user's ID
-
-**No backend changes needed** — the endpoint already works correctly.
-
-### User-visible acceptance criteria
-- **Admin dashboard NotifConfigCard shows:**
-  - ntfy channel topic (if configured)
-  - ntfy server URL (if not default)
-  - Notification preference toggles (Chore Assigned, Due Soon, Completed, Overdue, Points Earned) — shown as green/gray badges
-  - Reminder hours before due date
-- **If admin has no notification settings:** Shows defaults (all toggles on, default values) — the `getOrCreateSettings()` in the backend auto-creates defaults.
-- **Card works as part of the auto-refresh cycle** (30-second interval from `useAdminDashboard`).
-
-### Response shape (already exists)
-```
-GET /api/admin/users/:userId/notification-settings
-{
-  "success": true,
-  "data": {
-    "settings": {
-      "ntfyTopic": "mychores" | null,
-      "ntfyServerUrl": "https://ntfy.sh",
-      "notifyChoreAssigned": true | false,
-      "notifyChoreDueSoon": true | false,
-      "notifyChoreCompleted": true | false,
-      "notifyChoreOverdue": true | false,
-      "notifyPointsEarned": true | false,
-      "reminderHoursBefore": 2
-    }
-  }
+// After generateOccurrences
+const dueToday = await prisma.choreAssignment.findMany({
+  where: {
+    dueDate: { gte: startOfToday, lte: endOfToday },
+    status: 'PENDING',
+    dueNotifiedAt: null,
+    assignedTo: { ntfyTopic: { not: null } },
+  },
+  include: { template: true, assignedTo: true },
+})
+for (const a of dueToday) {
+  await sendNtfy(a.assignedTo, { ... })
+  await prisma.choreAssignment.update({
+    where: { id: a.id },
+    data: { dueNotifiedAt: new Date() },
+  })
 }
 ```
 
-### Related
-- Frontend `NotifConfigCard.tsx` component — already handles all states (loading, error, empty data, data with settings) correctly. Only the `data` prop was hardcoded to `null`.
+**Source:** v3.1 spec "Lazy 'due soon' trigger (no cron)".
 
 ---
 
-## Bug 7: Dual Bookkeeping (INT-01 — ⚪ THEORETICAL)
+### Event 3: Chore Completed
 
-### The core question
-**Is `user.points` the canonical balance, or is `SUM(PointTransaction)`?**
+**Trigger:** `POST /api/assignments/:id/complete` succeeds (after DB commit)
+**Audience:** The parent(s) — all users with `role: 'PARENT'`
+**Lookup:** `prisma.user.findMany({ where: { role: 'PARENT', ntfyTopic: { not: null } } })`
+**Skip if:** No parents have ntfy configured
 
-### Answer
-**`SUM(PointTransaction)` IS the canonical balance.** The `user.points` field on the `User` model is a **denormalized cache** — it exists for fast reads (avoid summing all transactions every time a user views their balance).
-
-### What the evidence shows
-
-| Evidence | `user.points` | `SUM(PointTransaction)` |
-|----------|--------------|------------------------|
-| Admin dashboard `getPointSummary()` | Uses `m.points` (fast) | ❌ Not used |
-| Balance endpoint `getPointBalance()` | ❌ Not used | Uses `calculatePointBalance()` which sums transactions |
-| Running balance in transaction history | ❌ Not used | Sums transactions page-by-page |
-| Completion handler `completeAssignment()` | Updates both atomically | Creates PointTransaction |
-| Cron penalty `applyOverduePenalty()` (current bug) | Updates | ❌ Does NOT create transaction (bug #3) |
-| Bonus/Deduction `addBonus()` / `addDeduction()` | ❌ Does NOT update `user.points` | Creates PointTransaction |
-
-### Current state of divergence risk
-
-| Risk | Current Status | After Bug Fixes |
-|------|---------------|-----------------|
-| Bug #3: Cron penalty skips transaction | `user.points` has penalty, no transaction record | `user.points` and transaction in sync |
-| Completion handler: updates `user.points` + creates transaction | Atomic in Prisma transaction — in sync | Unchanged — still atomic |
-| Bonus/Deduction: creates transaction but no `user.points` update | `user.points` may LAG behind canonical balance | ⚠️ **Still broken** — needs fixing |
-| Balance endpoint uses canonical (transactions) | Correct by definition | Correct |
-| Admin dashboard uses `user.points` | May differ from balance endpoint | Needs reconciliation |
-
-### What correct behavior looks like (strategic)
-
-**Option A: Make `user.points` a computed/dropped field (recommended for safety)**
-- Remove `user.points` from the User model
-- All reads compute from `SUM(PointTransaction)`
-- Simplifies the data model, eliminates divergence entirely
-- Performance impact: SQLite on homelab hardware, 4-6 users, <10K transactions/year — negligible
-- **Risk:** Changes the schema; affects every query that reads `user.points`
-
-**Option B: Every code path updates both atomically (simplest fix)**
-- Fix `addBonus`, `addDeduction`, `addAdvance`, `createPayout` to also update `user.points`
-- Add a `reconcilePoints` function that syncs `user.points` from transactions
-- Run reconciliation in a cron job or periodically
-- **Risk:** Continues to rely on manual discipline for updates
-
-**Option C: Change admin dashboard to use canonical balance**
-- `getPointSummary()` computes balance from transactions instead of reading `user.points`
-- Reconcile `user.points` as a one-time data migration
-- **Risk:** Dashboard becomes slightly slower
-
-### User-visible acceptance criteria (minimum for this milestone)
-
-1. **After all bug fixes, every code path that affects points creates BOTH a `user.points` update AND a `PointTransaction` record.** The two representations stay in sync.
-
-2. **Admin dashboard `getPointSummary()` should NOT use `user.points`** — it should compute from `PointTransaction` or a reconciliation function should ensure `user.points` is always correct.
-
-3. **If Option A or C is chosen:** A user viewing their balance on the admin dashboard and their balance via the pocket money screen sees the **same number**.
-
-### Remaining gaps (not fixed by this milestone's other 6 bugs)
-
-| Operation | Updates `user.points`? | Creates PointTransaction? | After all 7 fixes |
-|-----------|----------------------|-------------------------|-------------------|
-| Chore completion | ✅ Yes (line 367) | ✅ Yes (line 379) | ✅ Fixed |
-| Cron penalty (bug #3) | ✅ Yes (line 96) | ✅ Yes (fix #3) | ✅ Fixed |
-| Bonus | ❌ No | ✅ Yes | ❌ **Still gap** |
-| Deduction | ❌ No | ✅ Yes | ❌ **Still gap** |
-| Advance | ❌ No | ✅ Yes | ❌ **Still gap** |
-| Payout | ❌ No | ✅ Yes | ❌ **Still gap** |
-| Adjustment | ❌ No | ❌ No¹ | ❌ **Still gap** |
-
-¹ `ADJUSTMENT` is not implemented as a frontend action in the current codebase; it's a transaction type constant defined in `pocket-money.controller.ts` (line 56) but there's no API handler that creates ADJUSTMENT transactions.
-
-**For this milestone:** The minimum fix is to ensure the admin dashboard (`getPointSummary`) reads from the canonical source (transactions), OR to add user.points updates to the bonus/deduction/advance/payout handlers. The CONCERNS.md rates this as LOW priority — it's noted for awareness but fixing all 6 other bugs brings the system to ~90% consistency.
-
----
-
-## Feature Dependency Map
-
+**HTTP request (sent to EACH parent's topic):**
 ```
-Bug #3 (Missing penalty transaction)
-    └──prerequisite──> Bug #1 (Double penalty)
-                        └──both modify──> completeAssignment's penalty logic
+POST {NTFY_BASE_URL}/{parent.ntfyTopic} HTTP/1.1
+Title: {userName} completed: {template.title}
+Priority: 2
+Tags: white_check_mark,star
+Click: {APP_URL}/chores/{assignment.id}
+X-Sequence-ID: chore-{assignment.id}-completed
 
-Bug #5 (Wrong penalty type)
-    └──related──> Bug #3 (both affect PENALTY transaction creation paths)
-
-Bug #3 (Missing penalty transaction)
-    └──prerequisite──> Bug #7 (Dual bookkeeping — one divergence source is fixed)
-
-Bug #4 (Missing familyId)
-    └──independent──> Bug #6 (NotifConfigCard) — different stack layer
-
-Bug #2 (ADJUSTMENT inconsistency)
-    └──independent──> Bug #1, #3, #5 (different code path)
-
-Bug #6 (NotifConfigCard empty)
-    └──independent──> All others (pure frontend bug)
++{points} points earned
 ```
 
-### Implementation ordering rationale
-1. **Bug #3 first** (foundation — cron needs to log its work before we can prevent double-penalty correctly)
-2. **Bug #5 second** (trivial one-line fix, aligns penalty type semantics)
-3. **Bug #1 third** (depends on #3 — double-penalty check is meaningless without transaction logging for the cron penalty)
-4. **Bug #2 fourth** (adds correctness to ADJUSTMENT type; independent but small)
-5. **Bug #4 fifth** (small change across 3 files; independent)
-6. **Bug #6 sixth** (frontend-only, independent)
-7. **Bug #7 last** (strategic decision, may be deferred; depends on #3 being fixed for one of the divergence sources)
+**Example:**
+```
+POST https://ntfy.home.local/dad-chores-a9c1 HTTP/1.1
+Title: Alice completed: Take out trash
+Priority: 2
+Tags: white_check_mark,star
+Click: http://localhost:3002/chores/42
+X-Sequence-ID: chore-42-completed
+
++10 points earned
+```
+
+**Rationale:**
+- Priority 2 (low) — confirmation only, no sound/vibration; parents get many of these
+- Tags `white_check_mark` (✔️) + `star` (⭐) — positive visual
+- Body is terse — "see the app" for details
+- The chore completer does NOT get notified about their own completion (no need)
 
 ---
 
-## Detailed Acceptance Criteria by Bug
+## Feature Dependencies
 
-| Bug | User Story | Acceptance | Verification |
-|-----|-----------|------------|-------------|
-| 1 | As a child, I shouldn't lose double points for one overdue chore | Points change = template - single penalty | `calculateAndAssert(user.points)` |
-| 2 | As a parent, I want balance and transaction history to show the same number | Both endpoints agree after an ADJUSTMENT | Compare `/balance` and `/transactions` running total |
-| 3 | As a child, I want to see why my balance dropped overnight | Transaction history includes PENALTY entry | Query `PointTransaction` for the assignment |
-| 4 | As a parent, new children appear in the admin dashboard immediately | Dashboard shows new user in member lists | E2E: create user → check dashboard |
-| 5 | As a child, late penalties should say "Penalty" not "Deduction" | Transaction type = `'PENALTY'` | Inspect transaction type in DB |
-| 6 | As a parent, I want to see my notification settings in the dashboard | Card shows actual settings, not "No config" | Visual inspection |
-| 7 | As a user, my balance should be consistent everywhere | `user.points` ≈ `SUM(PointTransaction)` | Reconciliation query |
+```
+TS-1 (per-user topic on User table)
+   └── enables──> TS-2 (publish with headers)
+   └── enables──> TS-3 (graceful degradation)
+   └── enables──> TS-4 (SSRF guard — applies to user-supplied baseUrl override)
+
+Event 1 (chore assigned)
+   └── requires──> TS-1 (recipient must have ntfyTopic)
+   └── requires──> TS-2
+   └── requires──> TS-3
+   └── requires──> TS-4 (when user.ntfyBaseUrl is set)
+
+Event 2 (chore due soon)
+   └── requires──> Event 1 dependencies
+   └── requires──> dueNotifiedAt column for dedup
+   └── requires──> lazy trigger point in getAll()
+
+Event 3 (chore completed)
+   └── requires──> Event 1 dependencies
+   └── requires──> parent role lookup
+```
+
+---
+
+## MVP Recommendation
+
+**Build these 4 features for v3.1. Skip everything else.**
+
+1. **Schema migration** — add `User.ntfyTopic` (String?, unique), `User.ntfyBaseUrl` (String?, nullable), `ChoreAssignment.dueNotifiedAt` (DateTime?, nullable)
+2. **Profile page UI** — add a "Notifications" section to the existing profile page: input for topic (auto-generate suggestion like `chore-{username}-{6chars}`), input for baseUrl override, "Save" button
+3. **Backend publish function** — `services/ntfy.service.ts` with: `validateNtfyServerUrl` (from v1-archive), `sendNtfyNotification` (axios POST, returns boolean, never throws), priority/tag maps as constants
+4. **Wire up 3 triggers** — call the publish function at the right points in `assignment.service.ts:create`, `:complete`, and `:getAll` (the lazy due-soon trigger)
+
+**Plus config:**
+- `NTFY_BASE_URL` env var, **no default** (missing = no notifications, no error) — spec mandate
+- One-line setup: parents set this once in `.env`; kids just enter their topic in the app
+
+**Defer to future milestones** (not in v3.1):
+- Per-event toggles
+- Quiet hours
+- Email fallback
+- "Test notification" button
+- Per-user `ntfyBaseUrl` (use env default for v3.1)
+- Notification history (in-app)
+
+---
+
+## Confidence Assessment
+
+| Area | Confidence | Notes |
+|------|------------|-------|
+| ntfy.sh API surface (headers, priority, tags, click) | HIGH | Verified against official docs at docs.ntfy.sh/publish/ |
+| Priority + tag recommendations | HIGH | Adapted from v1-archive's shipped `NotificationPriorities` and `NotificationTags` constants, which were user-tested in production |
+| SSRF guard requirements | HIGH | v1-archive's `validateNtfyServerUrl` was security-reviewed and shipped |
+| Lazy "due soon" trigger location | MEDIUM | Recommendation to fire in `getAll()` is opinionated; alternative is a per-user endpoint. The `getAll` location piggybacks on existing read traffic (no cron, no new endpoint) |
+| Dedup with `dueNotifiedAt` column vs `X-Sequence-ID` | MEDIUM | Both work; the column is more explicit and queryable. Trade-off is +1 column vs +0 columns. The column is recommended for explicitness |
+| Audience for "chore completed" = all parents | MEDIUM | Spec is silent; "all parents" is the simplest interpretation. Alternative: only the original creator. For homelab, "all parents" is fine (typically 2 parents) |
+| Event 2 trigger timing (when does `getAll` fire?) | MEDIUM | The spec says "lazy" but doesn't specify what counts as a "view." Recommendation: any GET on `/api/assignments` by the assigned user counts. So the kid's own app-open triggers their reminder. Parents viewing the family calendar also re-evaluate, but parents don't get the "due today" notification (they're not the assignedTo) |
+
+---
+
+## Gaps to Address
+
+- **No official "ntfy node SDK for TypeScript"** — axios to a URL is the standard. No new dependency needed (axios is already a transitive dep via existing services).
+- **No testing for ntfy side-effects in unit tests** — the publish function will be mocked. Integration tests need a running ntfy server (or the v1-archive test fixture pattern of mocking at the axios boundary).
+- **iOS subscription UX** — ntfy iOS app is newer; the tag rendering and click handling may differ. Worth a 5-minute manual test on iOS before declaring done.
+- **`NTFY_BASE_URL` must NOT default to `https://ntfy.sh`** — spec says self-hosted only, no public fallback. If the env is unset, `sendNtfyNotification` returns false silently. Document this in `.env.example`.
 
 ---
 
 ## Sources
 
-- **Source code analyzed:**
-  - `backend/src/services/chore-assignments.service.ts` (lines 262–406) — completion handler
-  - `backend/src/services/overdue-penalty.service.ts` (lines 73–119) — penalty application
-  - `backend/src/controllers/pocket-money.controller.ts` (lines 95–127, 396–448) — balance calculation and running balance
-  - `backend/src/services/users.service.ts` (lines 100–130) — user creation
-  - `backend/src/controllers/users.controller.ts` (lines 41–78) — controller for user creation
-  - `backend/src/middleware/auth.ts` (lines 33–43) — authenticate middleware select
-  - `frontend/src/pages/AdminPage.tsx` (line 16) — hardcoded null
-  - `frontend/src/components/admin/NotifConfigCard.tsx` — card component
-  - `backend/src/controllers/admin.controller.ts` — notification settings endpoint
-  - `backend/src/services/admin.service.ts` — dashboard data assembly
-  - `backend/prisma/schema.prisma` — data model
-- **CONCERNS.md** — bug descriptions and fix approaches (verified against source code)
-- **PROJECT.md** — milestone scope definitions
+- **ntfy.sh publish API:** https://docs.ntfy.sh/publish/ (verified 2026-06-29)
+  - Title, priority, tags, click, actions, attachments, X-Sequence-ID, message caching, authentication
+- **ntfy.sh message priority reference:** https://docs.ntfy.sh/publish/#message-priority
+  - 1=min, 2=low, 3=default, 4=high, 5=max/urgent
+- **ntfy.sh emoji short codes:** https://docs.ntfy.sh/emojis/
+  - `clipboard` 📋, `bell` 🔔, `warning` ⚠️, `alarm_clock` ⏰, `white_check_mark` ✔️, `star` ⭐
+- **ntfy.sh limitations:** https://docs.ntfy.sh/publish/#limitations
+  - 4,096 byte message max; 60 concurrent requests/visitor; 250 daily messages on ntfy.sh (self-hosted: configurable)
+- **PROJECT.md v3.1 spec:** per-user topic on User table, 3 events, self-hosted only, lazy due-soon
+- **backend-v1-archive/src/services/ntfy.service.ts** (205 lines): reference implementation
+  - `validateNtfyServerUrl` (SSRF guard)
+  - `sendNtfyNotification` (axios POST, graceful error handling)
+  - `NotificationPriorities` map: ASSIGNED=3, DUE_SOON=4, COMPLETED=2, OVERDUE=5, POINTS_EARNED=2, PENALTY=4
+  - `NotificationTags` map: ASSIGNED=[clipboard,new], DUE_SOON=[warning,clock], COMPLETED=[white_check_mark,star]
+- **backend-v1-archive/src/services/notification-settings.service.ts:240-272** (75 lines): title/body templates per event type — pattern to follow, simplified for v3.1
+- **backend-v1-archive/prisma/schema.prisma** (UserNotificationSettings model): data model that v3.1 explicitly rejects in favor of 2 columns on User
+- **.claude/skills/notify-tester/SKILL.md** (176 lines): existing test/curl patterns for ntfy
+- **Existing chore lifecycle hooks** (where notifications fire):
+  - `backend/src/services/assignment.service.ts:5` (`create` — assigned)
+  - `backend/src/services/assignment.service.ts:125` (`complete` — completed)
+  - `backend/src/services/assignment.service.ts:42` (`getAll` — calls `generateOccurrences`; natural place for lazy due-soon trigger)
