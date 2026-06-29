@@ -1,7 +1,7 @@
 # Multi-stage build for frontend-v2 (React + Vite + nginx)
 
 # ---- Stage 1: build ----
-FROM node:20-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 
 # Install deps
