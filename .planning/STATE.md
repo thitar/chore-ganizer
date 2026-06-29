@@ -1,12 +1,16 @@
 ---
 gsd_state_version: 1.0
 milestone: v3.1
-milestone_name: Notifications (ntfy.sh)
+milestone_name: Notifications
+current_phase: 9
+current_phase_name: Foundation
 status: planning
-last_updated: "2026-06-29T16:20:00.000Z"
+stopped_at: Phase 9 context gathered
+last_updated: "2026-06-29T16:51:06.125Z"
 last_activity: 2026-06-29
+last_activity_desc: v3.1 roadmap created (5 phases, 8/8 requirements mapped)
 progress:
-  total_phases: 5
+  total_phases: 13
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -127,3 +131,9 @@ None — v3.0.0 (rewrite) switchover complete (commit 38feb91), legacy archived 
 ## Operator Next Steps
 
 - Run `/gsd-discuss-phase 9` then `/gsd-plan-phase 9` to plan the Foundation phase (notification.service + config + schema migration)
+
+## Session
+
+**Last session:** 2026-06-29T16:51:06.110Z
+**Stopped at:** Phase 9 context gathered
+**Resume file:** .planning/phases/09-foundation/09-CONTEXT.md
