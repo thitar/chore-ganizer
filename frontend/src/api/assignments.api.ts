@@ -1,111 +1,71 @@
-import client from './client'
-import type { ChoreAssignment, CreateAssignmentData, UpdateAssignmentData, ApiResponse } from '../types'
+import axios from 'axios'
 
-/**
- * @file Assignments API
- * @description Frontend API layer for chore assignments
- *
- * Parameter naming is consistent between frontend and backend.
- * Frontend uses `userId` and `templateId` — matching the backend API.
- */
+const api = axios.create({ baseURL: '/api/assignments', withCredentials: true })
 
-export const assignmentsApi = {
-  getAll: async (params?: {
-    status?: string
-    userId?: number
-    fromDate?: string
-    toDate?: string
-  }): Promise<ChoreAssignment[]> => {
-    const apiParams: any = {}
-    if (params?.status) apiParams.status = params.status
-    if (params?.userId) apiParams.userId = params.userId
-    if (params?.fromDate) apiParams.dueDateFrom = params.fromDate
-    if (params?.toDate) apiParams.dueDateTo = params.toDate
-    
-    const response = await client.get<{ assignments: ChoreAssignment[] }>('/chore-assignments', { params: apiParams })
-    const assignments = response.data?.assignments || []
-    return assignments
-  },
+export interface Assignment {
+  id: number
+  type?: 'REGULAR' | 'RECURRING'
+  choreTemplateId: number
+  assignedToId: number
+  dueDate: string
+  status: 'PENDING' | 'COMPLETED'
+  completedAt: string | null
+  pointsAwarded: number | null
+  notes: string | null
+  createdAt: string
+  template: {
+    id: number
+    title: string
+    points: number
+    category: string | null
+  }
+  assignedTo: {
+    id: number
+    name: string
+    color: string
+  }
+}
 
-  getById: async (id: number): Promise<ChoreAssignment> => {
-    const response = await client.get<{ assignment: ChoreAssignment }>(`/chore-assignments/${id}`)
-    return response.data?.assignment
-  },
+export async function getAll(): Promise<Assignment[]> {
+  const response = await api.get('/')
+  return response.data.data
+}
 
-  getUpcoming: async (days: number = 7): Promise<ChoreAssignment[]> => {
-    const response = await client.get<{ assignments: ChoreAssignment[] }>('/chore-assignments/upcoming', {
-      params: { days },
-    })
-    return response.data?.assignments || []
-  },
+export async function create(data: {
+  templateId: number
+  userId: number
+  dueDate: string
+}): Promise<Assignment> {
+  const response = await api.post('/', {
+    choreTemplateId: data.templateId,
+    assignedToId: data.userId,
+    dueDate: data.dueDate,
+  })
+  return response.data.data
+}
 
-  getOverdue: async (): Promise<ChoreAssignment[]> => {
-    const response = await client.get<{ assignments: ChoreAssignment[] }>('/chore-assignments/overdue')
-    return response.data?.assignments || []
-  },
+export async function update(
+  id: number,
+  data: { userId?: number; dueDate?: string }
+): Promise<Assignment> {
+  const body: Record<string, unknown> = {}
+  if (data.userId !== undefined) body.assignedToId = data.userId
+  if (data.dueDate !== undefined) body.dueDate = data.dueDate
+  const response = await api.put(`/${id}`, body)
+  return response.data.data
+}
 
-  getCalendar: async (year?: number, month?: number, userId?: number): Promise<{
-    year: number
-    month: number
-    assignments: ChoreAssignment[]
-    days: Record<number, ChoreAssignment[]>
-  }> => {
-    const params: any = { year, month }
-    if (userId) params.userId = userId
-    const response = await client.get<{
-      year: number
-      month: number
-      assignments: ChoreAssignment[]
-    }>('/chore-assignments/calendar', { params })
-    const result = response.data || { assignments: [], year: year || new Date().getFullYear(), month: month || new Date().getMonth() + 1 }
-    
-    // Group assignments by day
-    const days: Record<number, ChoreAssignment[]> = {}
-    for (const assignment of result.assignments) {
-      const dueDate = new Date(assignment.dueDate)
-      const day = dueDate.getDate()
-      if (!days[day]) {
-        days[day] = []
-      }
-      days[day].push(assignment)
-    }
-    
-    return {
-      year: result.year,
-      month: result.month,
-      assignments: result.assignments,
-      days,
-    }
-  },
+export async function complete(id: number): Promise<Assignment> {
+  const response = await api.post(`/${id}/complete`)
+  return response.data.data
+}
 
-  create: async (data: CreateAssignmentData): Promise<ChoreAssignment> => {
-    const response = await client.post<{ assignment: ChoreAssignment }>('/chore-assignments', data)
-    return response.data?.assignment
-  },
+export async function uncomplete(id: number): Promise<Assignment> {
+  const response = await api.post(`/${id}/uncomplete`)
+  return response.data.data
+}
 
-  update: async (id: number, data: UpdateAssignmentData): Promise<ChoreAssignment> => {
-    const response = await client.put<{ assignment: ChoreAssignment }>(`/chore-assignments/${id}`, data)
-    return response.data?.assignment
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await client.delete(`/chore-assignments/${id}`)
-  },
-
-  complete: async (id: number, options?: { status?: 'COMPLETED' | 'PARTIALLY_COMPLETE'; customPoints?: number }): Promise<{ assignment: ChoreAssignment; pointsAwarded: number }> => {
-    const response = await client.post<{ success: boolean; data: { assignment: ChoreAssignment; pointsAwarded: number } }>(
-      `/chore-assignments/${id}/complete`,
-      options
-    )
-    // Handle possible response structures - check both nested and flat formats
-    const responseData = response?.data
-    const data = responseData?.data ?? responseData
-    if (!data?.assignment) {
-      throw new Error('Invalid response: missing assignment data')
-    }
-    return {
-      assignment: data.assignment,
-      pointsAwarded: data.pointsAwarded ?? 0,
-    }
-  },
+export async function delete_(id: number): Promise<{ deleted: true }> {
+  const response = await api.delete(`/${id}`)
+  return response.data.data
 }

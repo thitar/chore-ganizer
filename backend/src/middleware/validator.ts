@@ -1,37 +1,25 @@
 import { Request, Response, NextFunction } from 'express'
-import { ZodError, ZodSchema, ZodIssue } from 'zod'
+import { ZodSchema, ZodError } from 'zod'
 
-/**
- * Validation middleware using Zod schemas
- * @param schema - Zod schema to validate against
- * @param property - Request property to validate (body, query, params)
- */
-export const validate = (schema: ZodSchema, property: 'body' | 'query' | 'params' = 'body') => {
+export function validate(schema: ZodSchema) {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
-      const result = schema.parse(req[property])
-      // Replace the property with the parsed result (includes transformations)
-      req[property] = result
+      req.body = schema.parse(req.body)
       next()
-    } catch (error) {
-      if (error instanceof ZodError) {
+    } catch (err) {
+      if (err instanceof ZodError) {
         res.status(400).json({
           success: false,
           error: {
             message: 'Validation failed',
             code: 'VALIDATION_ERROR',
-            details: error.issues.map((err: ZodIssue) => ({
-              field: err.path.join('.'),
-              message: err.message,
-            })),
+            details: err.issues.map(e => ({ path: e.path.join('.'), message: e.message })),
           },
+          data: null,
         })
         return
       }
-      next(error)
+      next(err)
     }
   }
 }
-
-// Re-export schemas for convenience
-export * from '../schemas/validation.schemas.js'

@@ -1,66 +1,48 @@
-import apiClient from './client'
-import type { User, CreateUserData, UpdateUserData, UserWithStats } from '../types'
+import axios from 'axios'
 
-export interface UsersResponse {
-  users: User[]
+const api = axios.create({ baseURL: '/api/users', withCredentials: true })
+
+export interface UserSummary {
+  id: number
+  name: string
+  role: string
+  color: string
 }
 
-export interface UserResponse {
-  user: User
+export interface UserWithEmail extends UserSummary {
+  email: string
 }
 
-export interface UserAssignmentsResponse {
-  assignments: any[]
+export async function getAll(): Promise<UserSummary[]> {
+  const response = await api.get('/')
+  return response.data.data
 }
 
-export const usersApi = {
-  getAll: async (): Promise<User[]> => {
-    const response = await apiClient.get<{ users: User[] }>('/users')
-    return response.data?.users || []
-  },
+export async function createUser(data: {
+  name: string
+  email: string
+  password: string
+  role: 'PARENT' | 'CHILD'
+  color: string
+}): Promise<UserWithEmail> {
+  const response = await api.post('/', data)
+  return response.data.data
+}
 
-  getById: async (id: number): Promise<User> => {
-    const response = await apiClient.get<{ user: User }>(`/users/${id}`)
-    return response.data?.user
-  },
+export async function deleteUser(id: number): Promise<{ deleted: true }> {
+  const response = await api.delete(`/${id}`)
+  return response.data.data
+}
 
-  getWithStats: async (id: number): Promise<UserWithStats> => {
-    const response = await apiClient.get<{ user: UserWithStats }>(`/users/${id}`)
-    return response.data?.user
-  },
+export async function updatePassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<{ updated: true }> {
+  const response = await api.put('/me/password', { currentPassword, newPassword })
+  return response.data.data
+}
 
-  getAssignments: async (id: number, status?: string) => {
-    const params = status ? `?status=${status}` : ''
-    const response = await apiClient.get<{ assignments: any[] }>(`/users/${id}/assignments${params}`)
-    return response.data?.assignments || []
-  },
-
-  create: async (data: CreateUserData): Promise<User> => {
-    const response = await apiClient.post<{ user: User }>('/users', data)
-    return response.data?.user
-  },
-
-  update: async (id: number, data: UpdateUserData): Promise<User> => {
-    const response = await apiClient.put<{ user: User }>(`/users/${id}`, data)
-    return response.data?.user
-  },
-
-  updateMe: async (data: Partial<UpdateUserData>): Promise<User> => {
-    const response = await apiClient.patch<{ user: User }>('/users/me', data)
-    return response.data?.user
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await apiClient.delete(`/users/${id}`)
-  },
-
-  lock: async (id: number): Promise<User> => {
-    const response = await apiClient.post<{ user: User }>(`/users/${id}/lock`, {})
-    return response.data?.user
-  },
-
-  unlock: async (id: number): Promise<User> => {
-    const response = await apiClient.post<{ user: User }>(`/users/${id}/unlock`, {})
-    return response.data?.user
-  },
+export async function updateColor(color: string): Promise<UserWithEmail> {
+  const response = await api.put('/me/color', { color })
+  return response.data.data
 }

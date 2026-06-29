@@ -1,319 +1,119 @@
-import prisma from '../config/database.js'
-import { AppError } from '../middleware/errorHandler.js'
+import { prisma } from '../config/prisma'
+import { AppError } from '../middleware/errorHandler'
+import bcrypt from 'bcrypt'
 
-export interface User {
-  id: number
-  email: string
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const HEX_REGEX = /^#[0-9A-Fa-f]{6}$/
+
+export async function getAll() {
+  return prisma.user.findMany({
+    select: { id: true, name: true, role: true, color: true },
+    orderBy: { name: 'asc' },
+  })
+}
+
+export async function createUser(data: {
   name: string
-  role: string
-  points: number
-  basePocketMoney: number
-  color: string | null
-  familyId: string | null
-  createdAt: Date
-  failedLoginAttempts?: number
-  lockoutUntil?: Date | null
-  lockedAt?: Date | null
-}
-
-/**
- * Get all users
- */
-export const getAllUsers = async (): Promise<User[]> => {
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      points: true,
-      basePocketMoney: true,
-      color: true,
-      familyId: true,
-      createdAt: true,
-      failedLoginAttempts: true,
-      lockoutUntil: true,
-      lockedAt: true,
-    },
-    orderBy: {
-      name: 'asc',
-    },
-  })
-
-  return users
-}
-
-/**
- * Get user by email
- */
-export const getUserByEmail = async (email: string): Promise<User | null> => {
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      points: true,
-      basePocketMoney: true,
-      color: true,
-      familyId: true,
-      createdAt: true,
-    },
-  })
-
-  return user
-}
-
-/**
- * Get user by ID
- */
-export const getUserById = async (userId: number): Promise<User> => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      points: true,
-      basePocketMoney: true,
-      color: true,
-      familyId: true,
-      createdAt: true,
-      failedLoginAttempts: true,
-      lockoutUntil: true,
-      lockedAt: true,
-    },
-  })
-
-  if (!user) {
-    throw new AppError('User not found', 404, 'NOT_FOUND')
-  }
-
-  return user
-}
-
-/**
- * Create a new user
- */
-export const createUser = async (data: {
   email: string
   password: string
-  name: string
   role: string
   color: string
-  basePocketMoney: number
-}): Promise<User> => {
-  const user = await prisma.user.create({
+}) {
+  if (!data.name || data.name.length === 0 || data.name.length > 50) {
+    throw new AppError('Name must be 1-50 characters', 400)
+  }
+  if (!EMAIL_REGEX.test(data.email)) {
+    throw new AppError('Invalid email format', 400)
+  }
+  if (data.password.length < 6) {
+    throw new AppError('Password must be at least 6 characters', 400)
+  }
+  if (data.role !== 'PARENT' && data.role !== 'CHILD') {
+    throw new AppError('Role must be PARENT or CHILD', 400)
+  }
+  if (!HEX_REGEX.test(data.color)) {
+    throw new AppError('Color must be a valid hex code (#RRGGBB)', 400)
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email: data.email } })
+  if (existing) {
+    throw new AppError('Email already in use', 409)
+  }
+
+  const hashed = await bcrypt.hash(data.password, 10)
+  return prisma.user.create({
     data: {
-      email: data.email,
-      password: data.password,
       name: data.name,
+      email: data.email,
+      password: hashed,
       role: data.role,
       color: data.color,
-      basePocketMoney: data.basePocketMoney,
     },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      points: true,
-      basePocketMoney: true,
-      color: true,
-      familyId: true,
-      createdAt: true,
-    },
+    select: { id: true, name: true, email: true, role: true, color: true },
   })
-
-  return user
 }
 
-/**
- * Get assignments assigned to a user
- */
-export const getUserAssignments = async (
-  userId: number,
-  status?: 'pending' | 'completed' | 'overdue' | 'all'
-) => {
-  const where: any = {
-    userId: userId,
+export async function deleteUser(id: number, requestingUserId: number) {
+  if (id === requestingUserId) {
+    throw new AppError('Cannot delete yourself', 400)
+  }
+  const user = await prisma.user.findUnique({ where: { id } })
+  if (!user) throw new AppError('User not found', 404)
+
+  const [assignmentCount, pointLogCount, recurringChoreCount, createdRecurringCount] = await Promise.all([
+    prisma.choreAssignment.count({ where: { assignedToId: id } }),
+    prisma.pointLog.count({ where: { userId: id } }),
+    prisma.recurringChore.count({ where: { assignedToId: id } }),
+    prisma.recurringChore.count({ where: { createdById: id } }),
+  ])
+
+  const total =
+    assignmentCount + pointLogCount + recurringChoreCount + createdRecurringCount
+  if (total > 0) {
+    const parts: string[] = []
+    if (assignmentCount > 0) parts.push(`${assignmentCount} assignment${assignmentCount === 1 ? '' : 's'}`)
+    if (pointLogCount > 0) parts.push(`${pointLogCount} point log${pointLogCount === 1 ? '' : 's'}`)
+    if (recurringChoreCount > 0) parts.push(`${recurringChoreCount} recurring chore${recurringChoreCount === 1 ? '' : 's'}`)
+    if (createdRecurringCount > 0) parts.push(`${createdRecurringCount} created recurring chore${createdRecurringCount === 1 ? '' : 's'}`)
+    throw new AppError(
+      `Cannot delete user with existing data (${parts.join(', ')}). Reassign or uncomplete them first.`,
+      409
+    )
   }
 
-  if (status && status !== 'all') {
-    if (status === 'overdue') {
-      where.status = 'PENDING'
-      where.dueDate = { lt: new Date() }
-    } else {
-      where.status = status.toUpperCase()
-    }
+  await prisma.user.delete({ where: { id } })
+  return { deleted: true }
+}
+
+export async function updatePassword(userId: number, currentPassword: string, newPassword: string) {
+  if (!currentPassword) {
+    throw new AppError('Current password is required', 400)
+  }
+  if (!newPassword || newPassword.length < 6) {
+    throw new AppError('New password must be at least 6 characters', 400)
   }
 
-  const assignments = await prisma.choreAssignment.findMany({
-    where,
-    include: {
-      choreTemplate: {
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          points: true,
-          icon: true,
-          color: true,
-        },
-      },
-      assignedTo: {
-        select: {
-          id: true,
-          name: true,
-          color: true,
-        },
-      },
-      assignedBy: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-    orderBy: {
-      dueDate: 'asc',
-    },
-  })
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) throw new AppError('User not found', 404)
 
-  return assignments
+  const valid = await bcrypt.compare(currentPassword, user.password)
+  if (!valid) throw new AppError('Current password is incorrect', 401)
+
+  const hashed = await bcrypt.hash(newPassword, 10)
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashed },
+  })
+  return { updated: true }
 }
 
-/**
- * Check if user has active assignments
- */
-export const userHasActiveAssignments = async (userId: number): Promise<boolean> => {
-  const count = await prisma.choreAssignment.count({
-    where: {
-      userId: userId,
-      status: 'PENDING',
-    },
-  })
-
-  return count > 0
-}
-
-/**
- * Get count of parent users
- */
-export const getParentCount = async (): Promise<number> => {
-  const count = await prisma.user.count({
-    where: { role: 'PARENT' },
-  })
-
-  return count
-}
-
-/**
- * Update user
- */
-export const updateUser = async (userId: number, data: { name?: string; role?: string; color?: string; email?: string; basePocketMoney?: number }) => {
-  // If email is being updated, check if it's already taken
-  if (data.email) {
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        email: data.email,
-        NOT: { id: userId }
-      }
-    })
-    if (existingUser) {
-      throw new AppError('Email is already taken', 409, 'CONFLICT')
-    }
+export async function updateColor(userId: number, color: string) {
+  if (!HEX_REGEX.test(color)) {
+    throw new AppError('Color must be a valid hex code (#RRGGBB)', 400)
   }
-
-  const user = await prisma.user.update({
+  return prisma.user.update({
     where: { id: userId },
-    data,
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      points: true,
-      basePocketMoney: true,
-      color: true,
-      familyId: true,
-      createdAt: true,
-      failedLoginAttempts: true,
-      lockoutUntil: true,
-      lockedAt: true,
-    },
+    data: { color },
+    select: { id: true, name: true, email: true, role: true, color: true },
   })
-
-  return user
-}
-
-/**
- * Delete user
- */
-export const deleteUser = async (userId: number): Promise<void> => {
-  await prisma.user.delete({
-    where: { id: userId },
-  })
-}
-
-/**
- * Lock user account
- */
-export const lockUser = async (userId: number): Promise<User> => {
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      lockedAt: new Date(),
-      failedLoginAttempts: 10,
-      lockoutUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      points: true,
-      basePocketMoney: true,
-      color: true,
-      familyId: true,
-      createdAt: true,
-      failedLoginAttempts: true,
-      lockoutUntil: true,
-      lockedAt: true,
-    },
-  })
-
-  return user
-}
-
-/**
- * Unlock user account
- */
-export const unlockUser = async (userId: number): Promise<User> => {
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      lockedAt: null,
-      failedLoginAttempts: 0,
-      lockoutUntil: null,
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      points: true,
-      basePocketMoney: true,
-      color: true,
-      familyId: true,
-      createdAt: true,
-      failedLoginAttempts: true,
-      lockoutUntil: true,
-      lockedAt: true,
-    },
-  })
-
-  return user
 }

@@ -1,49 +1,103 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.1.10
-milestone_name: Codebase Remediation
-status: complete
-stopped_at: Completed milestone v2.1.10 archive
-last_updated: "2026-04-28T22:00:00.000Z"
-last_activity: 2026-04-28
+milestone: v1-rewrite
+milestone_name: Simplified Rebuild
+status: Awaiting next milestone
+last_updated: "2026-06-29T15:36:21.255Z"
+last_activity: 2026-06-29
+last_activity_desc: Milestone v1-rewrite completed and archived
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  total_phases: 8
+  completed_phases: 3
+  total_plans: 27
+  completed_plans: 16
+  percent: 38
 ---
 
 # Project State
 
-## Milestone: v2.1.10 — Codebase Remediation
+## Project Reference
 
-**Status:** ✅ Complete
+See: .planning/PROJECT.md (updated 2026-05-22)
 
-**Phases:**
-- Phase 1: Remediate Codebase Concerns — Complete (8/8 plans)
+**Core value:** Any family member can open the app, see their chores for today, and complete them — without the app requiring a devops engineer to maintain.
+**Current focus:** Phase 04 — recurring-chores (COMPLETE)
+
+## Current Position
+
+Phase: Milestone v1-rewrite complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-29 — Milestone v1-rewrite completed and archived
+
+## Performance Metrics
+
+**Velocity:**
+
+- Total plans completed (all milestones): 28
+- Average duration: — (not tracked per-plan)
+- Total execution time: — (not tracked)
+
+**By Phase:**
+
+| Phase          | Plans | Total | Avg/Plan |
+| -------------- | ----- | ----- | -------- |
+| rewrite-1      | 2     | —     | —        |
+| rewrite-2      | 4     | —     | —        |
+| rewrite-3      | 7     | —     | —        |
+| rewrite-4      | 5     | —     | —        |
+
+**Recent Trend:** Phase 4 delivered all 5 plans in a single session — 143 tests, 5 plans, 10 STRIDE threats closed.
 
 ## Accumulated Context
 
 ### Decisions
 
-- TDD mode enabled for Plans 02, 04, 05
-- Batch inserts for occurrence generation
-- Controller refactoring into dedicated services
-- Kept swagger JSDoc in route files to stay under 300-line controller limit
-- Mounted occurrences router before CRUD router to prevent route shadowing
-- Barrel re-exports preserve backward compatibility during controller splits
-- Fatal startup guards for security-critical env vars
-- ESLint v10 with flat config format
-- Winston structured logging with (message, metadata) signature
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
 
-### Deferred Items
+- [v1-rewrite]: Rewrite not refactor — 200+ files with cascading imports; rewrite is faster
+- [v1-rewrite]: Build alongside existing app in backend-v2/ + frontend-v2/; switch docker-compose.yml at Phase 8
+- [v1-rewrite]: Lazy occurrence generation — no cron, generate on demand when viewing upcoming period
+- [v1-rewrite]: SameSite cookies, no CSRF — private network eliminates the actual threat
+- [v1-rewrite]: Points as integer + simple log — drop PointTransaction banking, lightweight PointLog only
+- [v1-rewrite]: v2.3.0 Production Readiness superseded — rewrite replaces further work on old codebase
+- [v1-rewrite/phase-04]: SetNull preserves completed occurrences when parent RecurringChore is deleted (history-preserving)
+- [v1-rewrite/phase-04]: Type discriminator (REGULAR | RECURRING) routes frontend completion to correct API endpoint
 
-| Category | Item | Status |
-|----------|------|--------|
-| feature | API Rate Limiting Visibility — admin UI | MISSING_FEATURES.md |
-| test | recurrence.service.ts edge case tests | MISSING_FEATURES.md |
+### Pending Todos
 
----
+None yet.
 
-*State updated: 2026-04-28*
+### Blockers/Concerns
+
+- Data migration strategy (Phase 8): choose Option A (re-seed) or Option B (migration script) before switchover
+
+## Deferred Items
+
+| Category  | Item                                        | Status                | Deferred At |
+| --------- | ------------------------------------------- | --------------------- | ----------- |
+| feature   | API Rate Limiting Visibility (admin UI)     | MISSING_FEATURES.md   | v2.1.10     |
+| test      | recurrence.service.ts edge case tests       | MISSING_FEATURES.md   | v2.1.10     |
+| milestone | v2.3.0 Production Readiness (phases 11-14) | Superseded by rewrite | v2.3.0      |
+| feature   | Recurring chore edit (currently create+delete only) | Future polish phase | v1-rewrite  |
+| feature   | Round-robin / mixed assignment modes        | Future (RECUR-05 fixed only) | v1-rewrite  |
+| feature   | Recurring chore uncomplete                  | Future (not in RECUR scope) | v1-rewrite  |
+| feature   | Bulk create recurring chores                | Future (out of RECUR scope) | v1-rewrite  |
+| feature   | Custom recurrence rules (RRULE)             | Future (out of RECUR scope) | v1-rewrite  |
+
+## Phase 4 Artifacts
+
+- `04-CONTEXT.md` — Phase context and decisions
+- `04-UI-SPEC.md` — UI design contract
+- `04-01-PLAN.md` ... `04-05-PLAN.md` — Implementation plans
+- `04-01-SUMMARY.md` ... `04-05-SUMMARY.md` — Implementation summaries
+- `04-RESEARCH.md` — Research notes
+- `04-SECURITY.md` — STRIDE threat verification (10/10 closed)
+- `04-VALIDATION.md` — Nyquist validation (5/5 RECUR covered, 0 gaps)
+- `04-UAT.md` — User acceptance testing
+- `04-VERIFICATION.md` — Goal-backward verification (PASS)
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

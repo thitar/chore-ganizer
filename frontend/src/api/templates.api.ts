@@ -1,28 +1,42 @@
-import client from './client'
-import type { ChoreTemplate, CreateTemplateData, UpdateTemplateData, ApiResponse } from '../types'
+import axios from 'axios'
 
-export const templatesApi = {
-  getAll: async (): Promise<ChoreTemplate[]> => {
-    const response = await client.get<{ templates: ChoreTemplate[] }>('/chore-templates')
-    return response.data?.templates || []
-  },
+const api = axios.create({ baseURL: '/api/templates', withCredentials: true })
 
-  getById: async (id: number): Promise<ChoreTemplate> => {
-    const response = await client.get<{ template: ChoreTemplate }>(`/chore-templates/${id}`)
-    return response.data?.template
-  },
+export interface Template {
+  id: number
+  title: string
+  description: string | null
+  points: number
+  category: string | null
+  createdById: number
+  createdAt: string
+  updatedAt: string
+}
 
-  create: async (data: CreateTemplateData): Promise<ChoreTemplate> => {
-    const response = await client.post<{ template: ChoreTemplate }>('/chore-templates', data)
-    return response.data?.template
-  },
+export async function getAll(): Promise<Template[]> {
+  const response = await api.get('/')
+  return response.data.data
+}
 
-  update: async (id: number, data: UpdateTemplateData): Promise<ChoreTemplate> => {
-    const response = await client.put<{ template: ChoreTemplate }>(`/chore-templates/${id}`, data)
-    return response.data?.template
-  },
+export async function create(data: {
+  title: string
+  points: number
+  category?: string | null
+  description?: string | null
+}): Promise<Template> {
+  const response = await api.post('/', data)
+  return response.data.data
+}
 
-  delete: async (id: number): Promise<void> => {
-    await client.delete(`/chore-templates/${id}`)
-  },
+export async function update(
+  id: number,
+  data: { title?: string; points?: number; category?: string | null; description?: string | null }
+): Promise<Template> {
+  const response = await api.put(`/${id}`, data)
+  return response.data.data
+}
+
+export async function delete_(id: number): Promise<{ deleted: true }> {
+  const response = await api.delete(`/${id}`)
+  return response.data.data
 }

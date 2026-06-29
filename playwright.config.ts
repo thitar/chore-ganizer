@@ -29,7 +29,7 @@ export default defineConfig({
   // Global test settings
   use: {
     // Base URL for tests
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:5173',
 
     // Collect trace on retry
     trace: 'on-first-retry',
@@ -60,13 +60,19 @@ export default defineConfig({
     },
   ],
 
-  // Configure web server for testing
-  webServer: {
-    command: 'cd backend && npm run build && node dist/server.js',
-    url: 'http://localhost:3000/api/health',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  },
+  // Start servers automatically
+  webServer: [
+    {
+      command: 'cd backend && npm run dev',
+      url: 'http://localhost:3010/api/health',
+      reuseExistingServer: true,
+      timeout: 30000,
+    },
+    {
+      command: 'cd frontend && npm run dev',
+      url: 'http://localhost:5173',
+      reuseExistingServer: true,
+      timeout: 30000,
+    },
+  ],
 });

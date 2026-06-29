@@ -1,183 +1,69 @@
-import { lazy, Suspense, useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth, AuthProvider } from './hooks'
-import { ErrorBoundary, Loading } from './components/common'
-import OfflineIndicator from './components/common/OfflineIndicator'
-import { Navbar, Sidebar, Footer } from './components/layout'
-import { Toaster, toast } from 'sonner'
-
-// Lazy load pages for code splitting
-const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })))
-const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })))
-const Chores = lazy(() => import('./pages/Chores').then(m => ({ default: m.Chores })))
-const Templates = lazy(() => import('./pages/Templates').then(m => ({ default: m.Templates })))
-const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })))
-const Users = lazy(() => import('./pages/Users').then(m => ({ default: m.Users })))
-const UserDetail = lazy(() => import('./pages/UserDetail').then(m => ({ default: m.UserDetail })))
-const Calendar = lazy(() => import('./pages/Calendar').then(m => ({ default: m.Calendar })))
-const RecurringChoresPage = lazy(() => import('./pages/RecurringChoresPage').then(m => ({ default: m.RecurringChoresPage })))
-const PocketMoney = lazy(() => import('./pages/PocketMoney').then(m => ({ default: m.PocketMoney })))
-const StatisticsPage = lazy(() => import('./pages/StatisticsPage').then(m => ({ default: m.StatisticsPage })))
-const Notifications = lazy(() => import('./pages/Notifications').then(m => ({ default: m.Notifications })))
-const SettingsPage = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })))
-const NotFound = lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })))
-
-// Loading fallback for lazy-loaded components
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <Loading size="lg" text="Loading page..." />
-  </div>
-)
-
-// Protected route wrapper for parent-only pages
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isParent } = useAuth()
-
-  if (!isParent) {
-    toast.error('Access Denied', {
-      description: 'This page is for parents only.',
-    })
-    return <Navigate to="/dashboard" replace />
-  }
-
-  return <>{children}</>
-}
-
-function AppContent() {
-  const { isAuthenticated, loading } = useAuth()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <Login />
-      </Suspense>
-    )
-  }
-
-  return (
-    <ErrorBoundary>
-      <div className="min-h-screen flex flex-col bg-gray-100">
-        <OfflineIndicator />
-        <Navbar onMenuOpen={() => setSidebarOpen(true)} />
-        <div className="flex flex-1">
-          <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-          <main className="flex-1 p-6 overflow-y-auto">
-            <div className="max-w-7xl mx-auto">
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={
-                  <Suspense fallback={<PageLoader />}><Dashboard /></Suspense>
-                } />
-                <Route path="/chores" element={
-                  <Suspense fallback={<PageLoader />}><Chores /></Suspense>
-                } />
-                <Route path="/profile" element={
-                  <Suspense fallback={<PageLoader />}><Profile /></Suspense>
-                } />
-                <Route path="/users" element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}><Users /></Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/users/:id" element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}><UserDetail /></Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route 
-                  path="/templates" 
-                  element={
-                    <ProtectedRoute>
-                      <Suspense fallback={<PageLoader />}><Templates /></Suspense>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/calendar" 
-                  element={
-                    <ProtectedRoute>
-                      <Suspense fallback={<PageLoader />}><Calendar /></Suspense>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route path="/recurring-chores" element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}><RecurringChoresPage /></Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/pocket-money" element={
-                  <Suspense fallback={<PageLoader />}><PocketMoney /></Suspense>
-                } />
-                <Route path="/statistics" element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}><StatisticsPage /></Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="/notifications" element={
-                  <Suspense fallback={<PageLoader />}><Notifications /></Suspense>
-                } />
-                <Route path="/settings" element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>
-                  </ProtectedRoute>
-                } />
-                <Route path="*" element={
-                  <Suspense fallback={<PageLoader />}><NotFound /></Suspense>
-                } />
-              </Routes>
-            </div>
-          </main>
-        </div>
-        <Footer />
-      </div>
-    </ErrorBoundary>
-  )
-}
-
-// Wrapper component that uses key to force remount on auth state change
-// This prevents React DOM reconciliation issues during login/logout transitions
-// caused by React StrictMode's double-rendering in development
-function AppContentWithKey() {
-  const { isAuthenticated, loading } = useAuth()
-  
-  // Use a key based on auth state to force React to create a new component tree
-  // when authentication state changes, preventing insertBefore errors
-  const authKey = loading ? 'loading' : (isAuthenticated ? 'authenticated' : 'unauthenticated')
-  
-  return <AppContent key={authKey} />
-}
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { LoginPage } from './pages/LoginPage'
+import { DashboardPage } from './pages/DashboardPage'
+import { TemplatesPage } from './pages/TemplatesPage'
+import { AssignmentsPage } from './pages/AssignmentsPage'
+import { MyChoresPage } from './pages/MyChoresPage'
+import { RecurringChoresPage } from './pages/RecurringChoresPage'
+import { PointsPage } from './pages/PointsPage'
+import { CalendarPage } from './pages/CalendarPage'
+import { UsersPage } from './pages/UsersPage'
+import { ProfilePage } from './pages/ProfilePage'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
   return (
-    <>
-      <Toaster
-        position="top-right"
-        closeButton
-        toastOptions={{
-          classNames: {
-            success: 'bg-green-50 border border-green-200 text-green-800',
-            error: 'bg-red-50 border border-red-200 text-red-800',
-            warning: 'bg-yellow-50 border border-yellow-200 text-yellow-800',
-            info: 'bg-blue-50 border border-blue-200 text-blue-800',
-          },
-        }}
-      />
-      <AuthProvider>
-        <AppContentWithKey />
-      </AuthProvider>
-    </>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/templates" element={
+          <ProtectedRoute requiredRole="PARENT">
+            <TemplatesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/recurring-chores" element={
+          <ProtectedRoute requiredRole="PARENT">
+            <RecurringChoresPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/assignments" element={
+          <ProtectedRoute requiredRole="PARENT">
+            <AssignmentsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/users" element={
+          <ProtectedRoute requiredRole="PARENT">
+            <UsersPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/my-chores" element={
+          <ProtectedRoute>
+            <MyChoresPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/points" element={
+          <ProtectedRoute>
+            <PointsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/calendar" element={
+          <ProtectedRoute>
+            <CalendarPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 

@@ -81,3 +81,18 @@ uploads/*
 playwright-report/
 .worktrees/
 .superpowers/
+
+# CommanCode
+.commandcode/
+
+# Graphify
+graphify-out/
+.planning/graphs/
+
+# Opencode
+.opencode/
+
+# E2E test artifacts
+e2e/screenshots/
+test-results/
+playwright-report/

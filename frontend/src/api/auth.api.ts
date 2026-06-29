@@ -1,31 +1,43 @@
-import apiClient from './client'
-import type { User, LoginCredentials, ApiResponse } from '../types'
+import axios from 'axios'
 
-export interface LoginResponse {
-  user: User
+const api = axios.create({ baseURL: '/api/auth', withCredentials: true })
+
+export class AuthError extends Error {
+  statusCode: number
+  constructor(message: string, statusCode: number) {
+    super(message)
+    this.name = 'AuthError'
+    this.statusCode = statusCode
+  }
 }
 
-export interface MeResponse {
-  user: User
-}
-
-export interface RegisterCredentials {
+export interface User {
+  id: number
   email: string
-  password: string
   name: string
-  role?: 'PARENT' | 'CHILD'
+  role: string
+  color: string
+  createdAt: string
+  updatedAt: string
 }
 
-export const authApi = {
-  login: (credentials: LoginCredentials) =>
-    apiClient.post<LoginResponse>('/auth/login', credentials),
+export async function login(email: string, password: string): Promise<User> {
+  const response = await api.post('/login', { email, password })
+  return response.data.data
+}
 
-  register: (credentials: RegisterCredentials) =>
-    apiClient.post<LoginResponse>('/auth/register', credentials),
+export async function logout(): Promise<void> {
+  await api.post('/logout')
+}
 
-  logout: () =>
-    apiClient.post<{ message: string }>('/auth/logout'),
-
-  getCurrentUser: () =>
-    apiClient.get<MeResponse>('/auth/me'),
+export async function getCurrentUser(): Promise<User> {
+  try {
+    const response = await api.get('/me')
+    return response.data.data
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 401) {
+      throw new AuthError('Not authenticated', 401)
+    }
+    throw err
+  }
 }

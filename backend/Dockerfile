@@ -1,99 +1,59 @@
-# Backend Dockerfile for Chore-Ganizer
-# Multi-stage build for optimized production image
+# Multi-stage build for backend-v2 (Node.js + Prisma + Express)
 
-# Stage 1: Build
-FROM node:25-slim AS builder
-
+# ---- Stage 1: dependencies ----
+FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Install OpenSSL for Prisma
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+# Install build deps
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev
 
-# Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
+# ---- Stage 2: build ----
+FROM node:20-alpine AS build
+WORKDIR /app
 
-# Install dependencies
+# Install all deps (including dev) for TypeScript build
+COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Copy source code
-COPY . .
-
-# Generate Prisma client
+# Copy source and build
+COPY tsconfig.json ./
+COPY prisma ./prisma
+COPY src ./src
 RUN npx prisma generate
-
-# Build TypeScript
 RUN npm run build
 
-# Stage 2: Production
-FROM node:25-slim AS production
-
+# ---- Stage 3: runtime ----
+FROM node:20-alpine AS runtime
 WORKDIR /app
 
-# Install OpenSSL for Prisma, sqlite3 for backup/restore, supercronic for cron jobs, and gosu for user switching
-RUN apt-get update && apt-get install -y openssl sqlite3 curl gosu && rm -rf /var/lib/apt/lists/*
+# Install runtime deps only
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev && npm cache clean --force
 
-# Install supercronic
-# https://github.com/aptible/supercronic
-ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.29/supercronic-linux-amd64 \
-    SUPERCRONIC_SHA1SUM=cd48d45c4b10f3f0bfdd3a57d054cd05ac96812b \
-    SUPERCRONIC_PLATFORM=supercronic-linux-amd64 \
-    SUPERCRONIC=supercronic
+# Copy built artifacts
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build /app/prisma ./prisma
 
-RUN curl -fsSLO "$SUPERCRONIC_URL" \
-    && echo "$SUPERCRONIC_SHA1SUM  $SUPERCRONIC_PLATFORM" | sha1sum -c - \
-    && chmod +x "$SUPERCRONIC_PLATFORM" \
-    && mv "$SUPERCRONIC_PLATFORM" /usr/local/bin/supercronic
+# Install runtime tools
+RUN apk add --no-cache su-exec tini curl
 
-# Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
+# Create non-root user
+RUN addgroup -g 1001 -S appuser && \
+    adduser -u 1001 -S -G appuser appuser && \
+    mkdir -p /opt/app-data/chore-ganizer && \
+    chown -R appuser:appuser /app /opt/app-data/chore-ganizer
 
-# Install only production dependencies
-RUN npm ci --only=production
+# Copy entrypoint
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Generate Prisma client for production
-RUN npx prisma generate
-
-# Copy built files from builder
-COPY --from=builder /app/dist ./dist
-
-# Bake version from package.json into the image
-RUN echo "APP_VERSION=$(node -p "require('./package.json').version")" > /app/.image-version
-
-# Copy entrypoint scripts and config
-COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-COPY cron-entrypoint.sh /app/cron-entrypoint.sh
-COPY supercronic.conf /app/supercronic.conf
-COPY crontab /crontab
-RUN chmod +x /app/docker-entrypoint.sh
-
-# Create directory for backup scripts (will be populated at runtime)
-RUN mkdir -p /backup-scripts
-
-# Create directory for SQLite database
-RUN mkdir -p /opt/app-data/chore-ganizer
-
-# Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3010
-
-# Expose port
+ENV DATA_DIR=/opt/app-data/chore-ganizer
 EXPOSE 3010
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3010/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
-
-# Create non-root user and set permissions
-RUN groupadd -r appuser && useradd -r -g appuser -u 1001 appuser \
-    && chown -R appuser:appuser /app \
-    && chown -R appuser:appuser /backup-scripts \
-    && chown -R appuser:appuser /opt/app-data/chore-ganizer
-
-# Switch to non-root user (must be after CMD for security)
-# Note: USER appuser removed - entrypoint runs as root first to run migrations,
-# then uses gosu to switch to appuser
-
-# Start the application
-CMD ["/app/docker-entrypoint.sh"]
+# Use tini for proper signal handling
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
+CMD ["node", "dist/server.js"]

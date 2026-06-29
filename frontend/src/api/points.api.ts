@@ -1,0 +1,48 @@
+import axios from 'axios'
+
+const api = axios.create({ baseURL: '/api/points', withCredentials: true })
+
+export type PointLogType =
+  | 'EARNED'
+  | 'BONUS'
+  | 'DEDUCTION'
+  | 'PENALTY'
+  | 'REVERSED'
+  | 'ADJUSTMENT'
+  | 'PAYOUT'
+  | 'ADVANCE'
+
+export interface PointLog {
+  id: number
+  userId: number
+  amount: number
+  reason: string
+  type: PointLogType
+  createdAt: string
+  user?: { id: number; name: string; color: string }
+}
+
+export interface PointsSummary {
+  user: { id: number; name: string; color: string; role: string }
+  balance: number
+  logs: PointLog[]
+}
+
+export async function getMyPoints(): Promise<PointsSummary> {
+  const response = await api.get('/me')
+  return response.data.data
+}
+
+export async function getUserPoints(userId: number): Promise<PointsSummary> {
+  const response = await api.get(`/users/${userId}`)
+  return response.data.data
+}
+
+export async function adjustPoints(
+  userId: number,
+  amount: number,
+  reason: string
+): Promise<PointLog> {
+  const response = await api.post('/adjust', { userId, amount, reason })
+  return response.data.data
+}

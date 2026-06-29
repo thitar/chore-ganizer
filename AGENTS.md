@@ -240,13 +240,18 @@ Both must have identical version numbers in their `package.json` files. Docker C
 - `/api/health/ready` — Readiness probe (DB connectivity)
 - `/api/metrics` — Prometheus metrics endpoint
 
-### API Documentation (auto-generated)
+### API Documentation (none — by design)
 
-The OpenAPI spec at `docs/swagger.json` is **generated** from `@swagger` JSDoc blocks co-located with each route in `backend/src/routes/*.ts`. Do not hand-edit `swagger.json` — changes will be overwritten.
+The v1-rewrite intentionally does **not** generate OpenAPI / Swagger docs. Per the v1-rewrite scope (`REQUIREMENTS.md` line 89), a solo developer who wrote the API doesn't need docs to remember it. The `backend/src/routes/*.ts` files have TypeScript types via Zod schemas and Express types; that's the authoritative contract.
 
-- **Base definition** (info, servers, tags, all schemas): `backend/src/swagger.config.ts`
-- **Generator script**: `backend/scripts/generate-swagger.ts` (uses `swagger-jsdoc`)
-- **Regenerate**: `cd backend && npm run docs:generate` — commit the updated `docs/swagger.json` alongside the route changes
-- **CI gate**: the `Validate Swagger documentation` step in `.github/workflows/ci-cd.yml` runs `npm run docs:validate` and fails the build if `swagger.json` is stale
+If a future contributor wants API docs:
+- The Zod schemas in `backend/src/schemas/*.ts` are the single source of truth for request bodies
+- The TypeScript return types in service methods document the response shapes
+- Run the dev server and curl endpoints; the Express middleware returns JSON `{success, data, error}` envelopes with descriptive error messages
 
-When adding a route or changing its request/response shape, add or update the `@swagger` block above the `router.*()` call (use OpenAPI `{id}` paths, not Express `:id`), regenerate, and commit. See `SWAGGER_JSDOC_GUIDE.md` for the JSDoc template and available `$ref` schema names.
+Legacy references that were removed in Phase 8:
+- `docs/swagger.json` (stale v2.1.10 spec, deleted)
+- `backend/src/swagger.config.ts` (not present in v1-rewrite)
+- `backend/scripts/generate-swagger.ts` (not present in v1-rewrite)
+- `SWAGGER_JSDOC_GUIDE.md` (not present in v1-rewrite)
+- The "Validate Swagger documentation" CI step (no longer applicable)

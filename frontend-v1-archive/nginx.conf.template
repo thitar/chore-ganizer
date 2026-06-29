@@ -1,0 +1,77 @@
+# Nginx configuration for Chore-Ganizer frontend
+# Handles SPA routing and API proxy
+# NOTE: $BACKEND_PORT is substituted at container startup via envsubst
+
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_proxied expired no-cache no-store private auth;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml application/javascript;
+    gzip_disable "MSIE [1-6]";
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    # Proxy API requests to backend
+    location /api {
+        # Use variable + resolver so DNS lookup happens at request time, not startup.
+        # This prevents "host not found in upstream 'backend'" when backend starts slower than frontend.
+        resolver 127.0.0.11 valid=10s ipv6=off;
+        set $upstream_backend http://backend:$BACKEND_PORT;
+        proxy_pass $upstream_backend;
+        
+        proxy_http_version 1.1;
+        
+        # Pass original Host header to preserve origin information
+        proxy_set_header Host $host;
+        
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # CRITICAL: Preserve X-Forwarded-Proto from upstream proxy (Caddy/Traefik).
+        # Do NOT change to $scheme - this breaks TLS detection behind reverse proxies.
+        # The upstream proxy (e.g., Caddy) sets X-Forwarded-Proto to https when handling TLS.
+        # We must preserve this value so the backend knows the original request protocol.
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+        
+        # Important for session cookies
+        proxy_pass_header Set-Cookie;
+        proxy_cookie_path / /;
+    }
+
+    # Health check endpoint
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+
+    # SPA fallback - serve index.html for all routes
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Error pages
+    error_page 404 /index.html;
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}

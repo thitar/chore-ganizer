@@ -1,49 +1,12 @@
-/**
- * Jest Configuration for Unit Tests
- * 
- * This configuration is for unit tests only. Integration tests use a separate
- * configuration (jest.integration.config.js) to avoid conflicts with database
- * setup and to allow parallel execution of unit tests.
- * 
- * For integration tests, use: npm run test:integration
- */
-
+/** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
-  testMatch: ['**/__tests__/**/*.test.ts', '**/?(*.)+(spec|test).ts'],
-  // Exclude integration tests from unit test runs
-  testPathIgnorePatterns: ['/integration/'],
-  collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.test.ts',
-    '!src/**/*.spec.ts',
-    '!src/types/**',
-    '!src/__tests__/test-helpers.ts',
-    '!src/__tests__/integration/**',
-    '!src/__tests__/utils/**',
-  ],
-  coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^(\\.{1,2}/.*)\\.js$': '$1',
-    // Map uuid to a CommonJS mock for tests (uuid@13.x is ESM-only)
-    '^uuid$': '<rootDir>/src/__tests__/__mocks__/uuid.ts',
-  },
-  moduleFileExtensions: ['ts', 'js', 'json'],
-  // Transform ESM modules from node_modules (needed for uuid 13.x and other ESM packages)
+  testMatch: ['**/__tests__/**/*.test.ts'],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
-      useESM: false,
-    }],
-    '^.+\\.js$': 'babel-jest',
+    '^.+\\.ts$': ['ts-jest', { isolatedModules: true }],
   },
-  transformIgnorePatterns: [
-    // Match ESM packages that need transformation
-    'node_modules/(?!(uuid)/)',
-  ],
-  // Standard timeout for unit tests
-  testTimeout: 10000,
+  clearMocks: true,
+  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts'],
 };

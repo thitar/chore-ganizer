@@ -1,104 +1,37 @@
-import { Request, Response, NextFunction } from 'express'
-import { logger } from '../utils/logger.js'
-import { notifyServerError } from '../utils/error-webhook.js'
-
-const getSafeErrorMessage = (err: Error | AppError, statusCode: number): string => {
-  if (process.env.NODE_ENV !== 'production') return err.message
-  return statusCode >= 500 ? 'Internal server error' : err.message
-}
-
 export class AppError extends Error {
   statusCode: number
-  code: string
+  code?: string
 
-  constructor(message: string, statusCode: number = 500, code: string = 'INTERNAL_ERROR') {
+  constructor(message: string, statusCode: number = 500, code?: string) {
     super(message)
     this.statusCode = statusCode
     this.code = code
-    this.name = 'AppError'
-    Error.captureStackTrace(this, this.constructor)
+    Object.setPrototypeOf(this, AppError.prototype)
   }
 }
 
-/**
- * Global error handler middleware
- */
-export const errorHandler = (
-  err: Error | AppError,
-  req: Request,
-  res: Response,
-  _next: NextFunction
-): void => {
-  // Log error for debugging
-  logger.error({
-    type: 'ERROR',
-    message: err.message,
-    stack: err.stack,
-    path: req.path,
-    method: req.method
-  });
+export function notFoundHandler(_req: any, res: any) {
+  res.status(404).json({
+    success: false,
+    data: null,
+    error: { message: 'Not found' },
+  })
+}
 
-  // Handle known AppError
+export function errorHandler(err: Error, _req: any, res: any, _next: any) {
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
       success: false,
-      error: {
-        message: getSafeErrorMessage(err, err.statusCode),
-        code: err.code,
-      },
+      data: null,
+      error: { message: err.message, code: err.code },
     })
     return
   }
 
-  // Handle Prisma errors
-  if (err.name === 'PrismaClientKnownRequestError') {
-    const prismaError = err as any
-    if (prismaError.code === 'P2002') {
-      res.status(409).json({
-        success: false,
-        error: {
-          message: getSafeErrorMessage(err, 409),
-          code: 'CONFLICT',
-        },
-      })
-      return
-    }
-    if (prismaError.code === 'P2025') {
-      res.status(404).json({
-        success: false,
-        error: {
-          message: getSafeErrorMessage(err, 404),
-          code: 'NOT_FOUND',
-        },
-      })
-      return
-    }
-  }
-
-  // Handle unknown errors (500)
-  // Send error notification to webhook for server errors
-  notifyServerError(err, { path: req.path, method: req.method }).catch(webhookErr => {
-    logger.error('[ErrorHandler] Failed to send error webhook:', webhookErr)
-  })
-
+  console.error('Unhandled error:', err)
   res.status(500).json({
     success: false,
-    error: {
-      message: getSafeErrorMessage(err, 500),
-      code: 'INTERNAL_ERROR',
-    },
-  })
-}
-
-/**
- * 404 Not Found handler
- */
-export const notFoundHandler = (req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    error: {
-      message: `Route ${req.method} ${req.path} not found`,
-      code: 'NOT_FOUND',
-    },
+    data: null,
+    error: { message: 'Internal server error' },
   })
 }
