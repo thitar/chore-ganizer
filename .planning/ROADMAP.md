@@ -247,7 +247,10 @@ Plans:
   3. `sendNtfy()` catches all errors internally — no unhandled promise rejection can escape the module, even if the ntfy server is unreachable
   4. The Prisma schema has `User.ntfyTopic String? @unique`, `ChoreAssignment.dueNotifiedAt DateTime?`, and `RecurringOccurrence.dueNotifiedAt DateTime?` — all applied via `prisma db push`
   5. Notification bodies contain the chore summary but never the user's name; the `Click` header is set to a relative path `/chores/{id}` (not an absolute URL)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 09-01-PLAN.md — Prisma schema migration, config module, formatters + tests
+- [ ] 09-02-PLAN.md — Notification transport service + domain wrappers + tests
 
 ### Phase 10: Profile UI + User topic route
 
@@ -327,7 +330,7 @@ Note: Phase 6 (User Management) depends on Phase 2 (Auth), not Phase 5. It can b
 | rewrite-6. User Mgmt + Profile       | v1-rewrite | 3/3            | ✅ Complete | 2026-06-29 |
 | rewrite-7. Frontend Polish + Docker  | v1-rewrite | 2/2            | ✅ Complete | 2026-06-29 |
 | rewrite-8. Switchover                | v1-rewrite | 1/1            | ✅ Complete | 2026-06-29 |
-| 9. Foundation (Notifications)        | v3.1       | 0/TBD          | Not started | -          |
+| 9. Foundation (Notifications)        | v3.1       | 0/2            | Planning    | -          |
 | 10. Profile UI + ntfy topic route    | v3.1       | 0/TBD          | Not started | -          |
 | 11. chore-assigned trigger           | v3.1       | 0/TBD          | Not started | -          |
 | 12. chore-due-soon lazy trigger      | v3.1       | 0/TBD          | Not started | -          |
