@@ -1,8 +1,19 @@
 # Chore-Ganizer (Rewrite)
 
+## Current Milestone: v3.1 Notifications (ntfy.sh)
+
+**Goal:** Add ntfy.sh push notifications so family members get a push when chores are assigned, due soon, or completed — using a self-hosted ntfy server and per-user topics.
+
+**Target features:**
+- Each user configures their own ntfy topic in their profile (parent sets it for kids, kids set their own)
+- Chore assigned → push to recipient's topic
+- Chore due soon (same day) → push to recipient's topic
+- Chore completed → push to parent's topic(s)
+- `NTFY_BASE_URL` env var (no default — must be set in `.env`); missing config gracefully degrades (no notifications, no errors)
+
 ## What This Is
 
-A right-sized family chore management app where parents assign chores with points, kids complete them to earn points, and parents can track the family's progress. Built as a homelab-first, single-family app with no public exposure — prioritizing simplicity over enterprise features. The v1-rewrite replaced an over-engineered version that had accumulated SaaS-grade infrastructure for a 4-person family; the rewrite is now the production codebase at `backend/` and `frontend/`, with the legacy code preserved in `backend-v1-archive/` and `frontend-v1-archive/`.
+A right-sized family chore management app where parents assign chores with points, kids complete them to earn points, and parents can track the family's progress. Built as a homelab-first, single-family app with no public exposure — prioritizing simplicity over enterprise features. The v3.0.0 rewrite replaced an over-engineered version that had accumulated SaaS-grade infrastructure for a 4-person family; the rewrite is now the production codebase at `backend/` and `frontend/`, with the legacy code preserved in `backend-v1-archive/` and `frontend-v1-archive/`.
 
 ## Core Value
 
@@ -10,7 +21,7 @@ Any family member can open the app, see their chores for today, and complete the
 
 ## Requirements
 
-### Validated (v1-rewrite — shipped 2026-06-29)
+### Validated (v3.0.0 — shipped 2026-06-29)
 
 #### Auth & Users
 
@@ -57,9 +68,20 @@ Any family member can open the app, see their chores for today, and complete the
 - ✓ **DEPLOY-01**: `docker compose up` starts the full app from a clean clone — v1-rewrite
 - ✓ **DEPLOY-02**: Data persists across container restarts via volume mount — v1-rewrite
 
-### V2 (Next — After Rewrite Stabilizes)
+### Active (v3.1 — Notifications)
 
-- [ ] **NOTIFY-01**: ntfy.sh push notifications — chore assigned, due soon, completed (no email, no in-app)
+#### Notifications (ntfy.sh)
+
+- [ ] **NOTIFY-01**: Per-user ntfy topic stored on User profile; settable in Profile page
+- [ ] **NOTIFY-02**: Backend fires `chore-assigned` notification to recipient's ntfy topic on assignment create
+- [ ] **NOTIFY-03**: Backend fires `chore-due-soon` notification to recipient's ntfy topic when an assignment is due today
+- [ ] **NOTIFY-04**: Backend fires `chore-completed` notification to assigned-to user's parent(s) topic when an assignment is completed
+- [ ] **NOTIFY-05**: `NTFY_BASE_URL` env var configures the ntfy server; missing/empty config disables notifications gracefully (no errors, log a warning once at startup)
+- [ ] **NOTIFY-06**: Notification delivery failures are logged but never block the API response
+- [ ] **NOTIFY-07**: "Due soon" trigger runs on app load + on demand when viewing calendar/chore list (lazy, no cron)
+
+### V2 (Deferred)
+
 - [ ] **MONEY-01**: Parent can set a global point conversion rate (e.g. 1 pt = €0.50); points page shows equivalent value
 - [ ] **MONEY-02**: Parent can configure a per-child conversion rate override if needed
 
@@ -149,4 +171,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-Last updated: 2026-06-29 after v1-rewrite milestone (Simplified Rebuild) — all 27 V1 requirements shipped
+Last updated: 2026-06-29 after v3.1 milestone (Notifications) initialization

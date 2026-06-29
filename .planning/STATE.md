@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1-rewrite
-milestone_name: Simplified Rebuild
-status: Shipped — awaiting next milestone
-last_updated: "2026-06-29T15:48:34.000Z"
+milestone: v3.1
+milestone_name: Notifications (ntfy.sh)
+status: planning
+last_updated: "2026-06-29T16:04:49.732Z"
 last_activity: 2026-06-29
-last_activity_desc: Milestone v1-rewrite merged to main and tagged
 progress:
-  total_phases: 8
-  completed_phases: 8
-  total_plans: 27
-  completed_plans: 27
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-06-29 after v1-rewrite ship)
 
 ## Current Position
 
-Phase: Milestone v1-rewrite SHIPPED 2026-06-29
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-29 — v1-rewrite merged to main (b01a314) and tagged v1-rewrite
+Status: Defining requirements
+Last activity: 2026-06-29 — Milestone v3.1 started
 
 ## Performance Metrics
 
