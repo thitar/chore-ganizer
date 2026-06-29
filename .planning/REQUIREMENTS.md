@@ -60,21 +60,22 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| NOTIFY-01 | Phase 1 — Foundation | Pending |
-| NOTIFY-05 | Phase 1 — Foundation | Pending |
-| NOTIFY-06 | Phase 1 — Foundation | Pending |
-| NOTIFY-02 | Phase 2 — Assignment triggers | Pending |
-| NOTIFY-03 | Phase 3 — Due-soon lazy trigger | Pending |
-| NOTIFY-04 | Phase 4 — Completion trigger | Pending |
-| NOTIFY-07 | Phase 3 — Due-soon lazy trigger | Pending |
-| NOTIFY-08 | Phase 1 — Foundation | Pending |
+| NOTIFY-01 | Phase 10 — Profile UI + User topic route | Pending |
+| NOTIFY-02 | Phase 11 — chore-assigned trigger | Pending |
+| NOTIFY-03 | Phase 12 — chore-due-soon lazy trigger | Pending |
+| NOTIFY-04 | Phase 13 — chore-completed trigger | Pending |
+| NOTIFY-05 | Phase 9 — Foundation | Pending |
+| NOTIFY-06 | Phase 9 — Foundation | Pending |
+| NOTIFY-07 | Phase 12 — chore-due-soon lazy trigger | Pending |
+| NOTIFY-08 | Phase 9 — Foundation | Pending |
 
 **Coverage:**
 - v1 requirements: 8 total
 - Mapped to phases: 8
 - Unmapped: 0 ✓
 
----
+> **Note on NOTIFY-01:** The schema (`User.ntfyTopic` column + Zod validation) lands in Phase 9 — Foundation, but the user-observable "User can set their own ntfy topic in the Profile page" only becomes TRUE at the end of Phase 10. NOTIFY-01 is mapped to Phase 10 because that's where the success criterion is satisfied.
 
+---
 *Requirements defined: 2026-06-29*
-*Last updated: 2026-06-29 after v3.1 milestone initialization*
+*Last updated: 2026-06-29 after v3.1 roadmap created*

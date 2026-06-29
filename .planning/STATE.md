@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Notifications (ntfy.sh)
 status: planning
-last_updated: "2026-06-29T16:04:49.732Z"
+last_updated: "2026-06-29T16:20:00.000Z"
 last_activity: 2026-06-29
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,17 +17,19 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-29 after v1-rewrite ship)
+See: .planning/PROJECT.md (updated 2026-06-29 after v3.1 milestone init)
 
 **Core value:** Any family member can open the app, see their chores for today, and complete them — without the app requiring a devops engineer to maintain.
-**Current focus:** Planning next milestone (V2 notifications + pocket money)
+**Current focus:** v3.1 Notifications (ntfy.sh) — roadmap created, 5 phases (9–13), ready to plan Phase 9 (Foundation)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 9 of 13 in v3.1 (Foundation)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-29 — Milestone v3.1 started
+Status: Ready to plan
+Last activity: 2026-06-29 — v3.1 roadmap created (5 phases, 8/8 requirements mapped)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -50,9 +52,11 @@ Last activity: 2026-06-29 — Milestone v3.1 started
 | rewrite-7 Polish+Docker | 2/2 | ✅ Complete |
 | rewrite-8 Switchover | 1/1 | ✅ Complete |
 
-**Test totals:** 162 backend + 81 frontend + 51 E2E = 294 passing.
+**By Phase (v3.1):** 0/5 — see ROADMAP.md
 
-**Recent Trend:** Milestone shipped on schedule. Three cross-phase regression tests added in Path A caught the 2 functional blockers (CAL-01/03 query params, AUTH-04 FK error) and 1 warning (AUTH-06 query invalidation) that escaped per-phase tests.
+**Test totals:** 162 backend + 81 frontend + 51 E2E = 294 passing (pre-v3.1 baseline).
+
+**Recent Trend:** v3.0.0 (rewrite) shipped on schedule. v3.1 research complete with HIGH confidence — zero new npm deps, fire-and-forget pattern, lazy due-soon sweep.
 
 ## Accumulated Context
 
@@ -69,6 +73,13 @@ Recent decisions affecting current work:
 - [v1-rewrite]: v2.3.0 Production Readiness superseded — rewrite replaces further work on old codebase
 - [v1-rewrite/phase-04]: SetNull preserves completed occurrences when parent RecurringChore is deleted (history-preserving)
 - [v1-rewrite/phase-04]: Type discriminator (REGULAR | RECURRING) routes frontend completion to correct API endpoint
+- [v3.1]: Native `fetch` + `AbortSignal.timeout(3000)` for ntfy HTTP — zero new npm deps; rejected `ntfy` npm pkg (GPL-3.0, ESM-only, node>=21)
+- [v3.1]: Fire-and-forget `void sendNtfy(...)` pattern — never `await` in a route, all errors caught inside the service
+- [v3.1]: Lazy "due-soon" sweep piggybacks on `assignment.service.getAll` after `generateOccurrences` — mirrors the existing lazy-generation precedent, no cron
+- [v3.1]: Single `User.ntfyTopic` column, nullable + `@unique` — per-user topic isolation is the multi-tenant boundary; `null` = silent no-op
+- [v3.1]: `dueNotifiedAt DateTime?` on `ChoreAssignment` + `RecurringOccurrence` — preferred over boolean for automatic day-rollover; concurrent-dedup via conditional `prisma.$transaction`
+- [v3.1]: Ntfy topic Zod-validated as `^[-_A-Za-z0-9]{12,64}$` — 12-char minimum because topic is an access token
+- [v3.1]: Click header is relative path `/chores/{id}` (not absolute URL) — avoids leaking internal hostname to lock screen
 
 ### Pending Todos
 
@@ -76,7 +87,7 @@ None yet.
 
 ### Blockers/Concerns
 
-None — switchover complete (commit 38feb91), legacy archived in `backend-v1-archive/` + `frontend-v1-archive/`.
+None — v3.0.0 (rewrite) switchover complete (commit 38feb91), legacy archived in `backend-v1-archive/` + `frontend-v1-archive/`. v3.1 self-hosting of ntfy server is out of code scope (developer ops task, not in ROADMAP).
 
 ## Deferred Items
 
@@ -90,8 +101,12 @@ None — switchover complete (commit 38feb91), legacy archived in `backend-v1-ar
 | feature   | Recurring chore uncomplete                  | Future (not in RECUR scope) | v1-rewrite  |
 | feature   | Bulk create recurring chores                | Future (out of RECUR scope) | v1-rewrite  |
 | feature   | Custom recurrence rules (RRULE)             | Future (out of RECUR scope) | v1-rewrite  |
+| feature   | Per-user ntfyBaseUrl override               | Out of scope (env var is enough) | v3.1       |
+| feature   | Per-event notification toggles              | Out of scope (not in NOTIFY-01..08) | v3.1       |
+| feature   | In-app notification center                  | Out of scope (ntfy push only) | v3.1       |
+| feature   | Email / Slack / Discord fallback channels   | Out of scope (ntfy is the only channel) | v3.1       |
 
-## Phase 4 Artifacts
+## Phase 4 Artifacts (v1-rewrite reference)
 
 - `04-CONTEXT.md` — Phase context and decisions
 - `04-UI-SPEC.md` — UI design contract
@@ -107,8 +122,8 @@ None — switchover complete (commit 38feb91), legacy archived in `backend-v1-ar
 
 - `v2.1.10` (Codebase Remediation) — `.planning/milestones/v2.1.10-ROADMAP.md`
 - `v2.2.0` (Admin Dashboard) — see MILESTONES.md
-- `v1-rewrite` (Simplified Rebuild) — `.planning/milestones/v1-rewrite-ROADMAP.md`
+- `v1-rewrite` / v3.0.0 (Simplified Rebuild) — `.planning/milestones/v1-rewrite-ROADMAP.md`
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone (V2 candidates: ntfy.sh notifications, pocket money conversion rate)
+- Run `/gsd-discuss-phase 9` then `/gsd-plan-phase 9` to plan the Foundation phase (notification.service + config + schema migration)
