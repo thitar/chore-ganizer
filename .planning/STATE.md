@@ -2,52 +2,58 @@
 gsd_state_version: 1.0
 milestone: v1-rewrite
 milestone_name: Simplified Rebuild
-status: Awaiting next milestone
-last_updated: "2026-06-29T15:36:21.255Z"
+status: Shipped — awaiting next milestone
+last_updated: "2026-06-29T15:48:34.000Z"
 last_activity: 2026-06-29
-last_activity_desc: Milestone v1-rewrite completed and archived
+last_activity_desc: Milestone v1-rewrite merged to main and tagged
 progress:
   total_phases: 8
-  completed_phases: 3
+  completed_phases: 8
   total_plans: 27
-  completed_plans: 16
-  percent: 38
+  completed_plans: 27
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-22)
+See: .planning/PROJECT.md (updated 2026-06-29 after v1-rewrite ship)
 
 **Core value:** Any family member can open the app, see their chores for today, and complete them — without the app requiring a devops engineer to maintain.
-**Current focus:** Phase 04 — recurring-chores (COMPLETE)
+**Current focus:** Planning next milestone (V2 notifications + pocket money)
 
 ## Current Position
 
-Phase: Milestone v1-rewrite complete
+Phase: Milestone v1-rewrite SHIPPED 2026-06-29
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-06-29 — Milestone v1-rewrite completed and archived
+Last activity: 2026-06-29 — v1-rewrite merged to main (b01a314) and tagged v1-rewrite
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed (all milestones): 28
+- Total plans completed (all milestones): 41 (v2.1.10: 13, v2.2.0: 11, v1-rewrite: 27 across 8 phases; v2.3.0 superseded)
 - Average duration: — (not tracked per-plan)
-- Total execution time: — (not tracked)
+- Total execution time: v1-rewrite ~38 days (2026-05-22 → 2026-06-29)
 
-**By Phase:**
+**By Phase (v1-rewrite):**
 
-| Phase          | Plans | Total | Avg/Plan |
-| -------------- | ----- | ----- | -------- |
-| rewrite-1      | 2     | —     | —        |
-| rewrite-2      | 4     | —     | —        |
-| rewrite-3      | 7     | —     | —        |
-| rewrite-4      | 5     | —     | —        |
+| Phase          | Plans | Status     |
+| -------------- | ----- | ---------- |
+| rewrite-1 Scaffold | 2/2 | ✅ Complete |
+| rewrite-2 Auth | 4/4 | ✅ Complete |
+| rewrite-3 CRUD | 7/7 | ✅ Complete |
+| rewrite-4 Recurring | 5/5 | ✅ Complete |
+| rewrite-5 Points+Cal | 4/4 | ✅ Complete |
+| rewrite-6 User Mgmt | 3/3 | ✅ Complete |
+| rewrite-7 Polish+Docker | 2/2 | ✅ Complete |
+| rewrite-8 Switchover | 1/1 | ✅ Complete |
 
-**Recent Trend:** Phase 4 delivered all 5 plans in a single session — 143 tests, 5 plans, 10 STRIDE threats closed.
+**Test totals:** 162 backend + 81 frontend + 51 E2E = 294 passing.
+
+**Recent Trend:** Milestone shipped on schedule. Three cross-phase regression tests added in Path A caught the 2 functional blockers (CAL-01/03 query params, AUTH-04 FK error) and 1 warning (AUTH-06 query invalidation) that escaped per-phase tests.
 
 ## Accumulated Context
 
@@ -71,7 +77,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- Data migration strategy (Phase 8): choose Option A (re-seed) or Option B (migration script) before switchover
+None — switchover complete (commit 38feb91), legacy archived in `backend-v1-archive/` + `frontend-v1-archive/`.
 
 ## Deferred Items
 
@@ -98,6 +104,12 @@ None yet.
 - `04-UAT.md` — User acceptance testing
 - `04-VERIFICATION.md` — Goal-backward verification (PASS)
 
+## Archived Milestones
+
+- `v2.1.10` (Codebase Remediation) — `.planning/milestones/v2.1.10-ROADMAP.md`
+- `v2.2.0` (Admin Dashboard) — see MILESTONES.md
+- `v1-rewrite` (Simplified Rebuild) — `.planning/milestones/v1-rewrite-ROADMAP.md`
+
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Start the next milestone with /gsd-new-milestone (V2 candidates: ntfy.sh notifications, pocket money conversion rate)
