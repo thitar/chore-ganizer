@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const HEX_REGEX = /^#[0-9A-Fa-f]{6}$/
+const NTFY_TOPIC_REGEX = /^[-_A-Za-z0-9]{12,64}$/
 
 export async function getAll() {
   return prisma.user.findMany({
@@ -115,5 +116,38 @@ export async function updateColor(userId: number, color: string) {
     where: { id: userId },
     data: { color },
     select: { id: true, name: true, email: true, role: true, color: true },
+  })
+}
+
+export async function updateNtfyTopic(userId: number, ntfyTopic: string | null) {
+  // Normalize empty string to null (clear topic)
+  if (ntfyTopic === null || ntfyTopic === '') {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { ntfyTopic: null },
+      select: { id: true, name: true, email: true, role: true, color: true, ntfyTopic: true },
+    })
+  }
+
+  // Validate format: 12-64 chars, alphanumeric + hyphens + underscores
+  if (!NTFY_TOPIC_REGEX.test(ntfyTopic)) {
+    throw new AppError(
+      'Topic must be 12-64 characters, containing only letters, numbers, hyphens, and underscores',
+      400
+    )
+  }
+
+  // Check uniqueness (exclude current user)
+  const existing = await prisma.user.findFirst({
+    where: { ntfyTopic, id: { not: userId } },
+  })
+  if (existing) {
+    throw new AppError('This topic is already in use. Please choose another.', 409)
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: { ntfyTopic },
+    select: { id: true, name: true, email: true, role: true, color: true, ntfyTopic: true },
   })
 }

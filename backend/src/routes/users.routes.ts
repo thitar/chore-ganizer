@@ -54,4 +54,14 @@ router.put('/me/color', authenticate, async (req, res, next) => {
   }
 })
 
+router.put('/me/ntfy-topic', authenticate, async (req, res, next) => {
+  try {
+    const { ntfyTopic } = req.body
+    const user = await usersService.updateNtfyTopic(req.session.userId!, ntfyTopic)
+    res.json({ success: true, data: user, error: null })
+  } catch (err) {
+    next(err)
+  }
+})
+
 export default router
