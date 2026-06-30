@@ -58,7 +58,7 @@
 **Phase Numbering (v3.1):** Continues from v3.0.0 (which ended at Phase 8 of the rewrite). v3.1 phases are numbered 9–13.
 
 - [x] **Phase 9: Foundation** — `notification.service.ts` + `config/notifications.ts` + `.env.example` + Prisma migration (`User.ntfyTopic`, `ChoreAssignment.dueNotifiedAt`, `RecurringOccurrence.dueNotifiedAt`) + body/Click format helpers (completed 2026-06-29)
-- [ ] **Phase 10: Profile UI + User topic route** — `PUT /api/users/me/ntfy-topic` + `users.service.updateNtfyTopic` (Zod-validated) + Profile page "Notifications" section with "Generate random topic" helper
+- [x] **Phase 10: Profile UI + User topic route** — `PUT /api/users/me/ntfy-topic` + `users.service.updateNtfyTopic` (Zod-validated) + Profile page "Notifications" section with "Generate random topic" helper (completed 2026-06-30)
 - [ ] **Phase 11: chore-assigned trigger** — Wire `assignment.service.create` to fire `sendNtfy` for the recipient (priority 3, 📋🔔)
 - [ ] **Phase 12: chore-due-soon lazy trigger** — Piggyback on `assignment.service.getAll` after `generateOccurrences`; conditional `prisma.$transaction` update for concurrent-dedup
 - [ ] **Phase 13: chore-completed trigger** — Wire `assignment.service.complete` + `recurring.service.completeOccurrence` to fan out to all parents' topics (priority 2, ✔️⭐)
@@ -278,11 +278,11 @@ Plans:
   4. Attempting to save a topic that another user already has configured returns 409 Conflict with a friendly "topic in use" message
   5. User saves an empty value — their ntfy topic is cleared (set to `null`) and future notifications silently no-op for them
 
-**Plans**: 2 plans
+**Plans**: 2/2 plans complete
 Plans:
 
-- [ ] 10-01-PLAN.md — Backend updateNtfyTopic service + PUT /me/ntfy-topic route (TDD)
-- [ ] 10-02-PLAN.md — Frontend Push Notifications section + Family Topics cards on Profile page
+- [x] 10-01-PLAN.md — Backend updateNtfyTopic service + PUT /me/ntfy-topic route (TDD)
+- [x] 10-02-PLAN.md — Frontend Push Notifications section + Family Topics cards on Profile page
 
 **UI hint**: yes
 
@@ -347,7 +347,7 @@ Note: Phase 6 (User Management) depends on Phase 2 (Auth), not Phase 5. It can b
 | 7. Routes, Controllers & Auth        | v2.2.0     | 1/1            | Complete    | 2026-05-03 |
 | 8. Backend Tests                     | v2.2.0     | 2/2            | Complete    | 2026-05-03 |
 | 9. Frontend Components               | v2.2.0     | 2/2 | Complete    | 2026-05-03 |
-| 10. Frontend Page & Integration      | v2.2.0     | 2/2            | Complete    | 2026-05-03 |
+| 10. Frontend Page & Integration      | v2.2.0     | 2/2 | Complete   | 2026-05-03 |
 | rewrite-1. Scaffold                  | v1-rewrite | 2/2            | ✅ Complete | 2026-05-22 |
 | rewrite-2. Authentication            | v1-rewrite | 4/4            | ✅ Complete | 2026-05-23 |
 | rewrite-3. Core Chore CRUD           | v1-rewrite | 7/7            | ✅ Complete | 2026-06-28 |
