@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Notifications
 current_phase: 10
-current_phase_name: Profile UI + User topic route
+current_phase_name: profile-ui-user-topic-route
 status: executing
-stopped_at: Phase 10 context gathered
-last_updated: "2026-06-29T20:30:43.008Z"
-last_activity: 2026-06-29
-last_activity_desc: Phase 09 complete, transitioned to Phase 10
+stopped_at: Phase 10 UI-SPEC approved
+last_updated: "2026-06-30T19:30:07.433Z"
+last_activity: 2026-06-30
+last_activity_desc: Phase 10 execution started
 progress:
   total_phases: 13
   completed_phases: 0
-  total_plans: 3
+  total_plans: 5
   completed_plans: 2
   percent: 0
 ---
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v3.1 milestone init)
 
 **Core value:** Any family member can open the app, see their chores for today, and complete them — without the app requiring a devops engineer to maintain.
-**Current focus:** Phase 09 — foundation
+**Current focus:** Phase 10 — profile-ui-user-topic-route
 
 ## Current Position
 
-Phase: 10 — Profile UI + User topic route
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-06-29 — Phase 09 complete, transitioned to Phase 10
+Phase: 10 (profile-ui-user-topic-route) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 10
+Last activity: 2026-06-30 — Phase 10 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -134,6 +134,6 @@ None — v3.0.0 (rewrite) switchover complete (commit 38feb91), legacy archived 
 
 ## Session
 
-**Last session:** 2026-06-29T20:30:42.943Z
-**Stopped at:** Phase 10 context gathered
-**Resume file:** .planning/phases/10-profile-ui-user-topic-route/10-CONTEXT.md
+**Last session:** 2026-06-29T21:11:01.089Z
+**Stopped at:** Phase 10 UI-SPEC approved
+**Resume file:** .planning/phases/10-profile-ui-user-topic-route/10-UI-SPEC.md
