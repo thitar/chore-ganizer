@@ -8,7 +8,7 @@ const NTFY_TOPIC_REGEX = /^[-_A-Za-z0-9]{12,64}$/
 
 export async function getAll() {
   return prisma.user.findMany({
-    select: { id: true, name: true, role: true, color: true },
+    select: { id: true, name: true, role: true, color: true, ntfyTopic: true },
     orderBy: { name: 'asc' },
   })
 }
