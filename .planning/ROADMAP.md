@@ -278,7 +278,12 @@ Plans:
   4. Attempting to save a topic that another user already has configured returns 409 Conflict with a friendly "topic in use" message
   5. User saves an empty value — their ntfy topic is cleared (set to `null`) and future notifications silently no-op for them
 
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+
+- [ ] 10-01-PLAN.md — Backend updateNtfyTopic service + PUT /me/ntfy-topic route (TDD)
+- [ ] 10-02-PLAN.md — Frontend Push Notifications section + Family Topics cards on Profile page
+
 **UI hint**: yes
 
 ### Phase 11: chore-assigned trigger
@@ -341,7 +346,7 @@ Note: Phase 6 (User Management) depends on Phase 2 (Auth), not Phase 5. It can b
 | 6. Admin Backend Service             | v2.2.0     | 1/1            | Complete    | 2026-05-03 |
 | 7. Routes, Controllers & Auth        | v2.2.0     | 1/1            | Complete    | 2026-05-03 |
 | 8. Backend Tests                     | v2.2.0     | 2/2            | Complete    | 2026-05-03 |
-| 9. Frontend Components               | v2.2.0     | 2/2 | Complete   | 2026-05-03 |
+| 9. Frontend Components               | v2.2.0     | 2/2 | Complete    | 2026-05-03 |
 | 10. Frontend Page & Integration      | v2.2.0     | 2/2            | Complete    | 2026-05-03 |
 | rewrite-1. Scaffold                  | v1-rewrite | 2/2            | ✅ Complete | 2026-05-22 |
 | rewrite-2. Authentication            | v1-rewrite | 4/4            | ✅ Complete | 2026-05-23 |
@@ -352,7 +357,7 @@ Note: Phase 6 (User Management) depends on Phase 2 (Auth), not Phase 5. It can b
 | rewrite-7. Frontend Polish + Docker  | v1-rewrite | 2/2            | ✅ Complete | 2026-06-29 |
 | rewrite-8. Switchover                | v1-rewrite | 1/1            | ✅ Complete | 2026-06-29 |
 | 9. Foundation (Notifications)        | v3.1       | 0/2            | Planning    | -          |
-| 10. Profile UI + ntfy topic route    | v3.1       | 0/TBD          | Not started | -          |
+| 10. Profile UI + ntfy topic route    | v3.1       | 0/2            | Planning    | -          |
 | 11. chore-assigned trigger           | v3.1       | 0/TBD          | Not started | -          |
 | 12. chore-due-soon lazy trigger      | v3.1       | 0/TBD          | Not started | -          |
 | 13. chore-completed trigger          | v3.1       | 0/TBD          | Not started | -          |
