@@ -53,3 +53,9 @@ export async function updateNtfyTopic(ntfyTopic: string | null): Promise<UserWit
   const response = await api.put('/me/ntfy-topic', { ntfyTopic: payload })
   return response.data.data
 }
+
+export async function updateUserNtfyTopic(userId: number, ntfyTopic: string | null): Promise<UserWithEmail> {
+  const payload = ntfyTopic === '' ? null : ntfyTopic
+  const response = await api.put(`/${userId}/ntfy-topic`, { ntfyTopic: payload })
+  return response.data.data
+}

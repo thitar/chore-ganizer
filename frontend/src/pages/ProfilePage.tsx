@@ -145,7 +145,7 @@ export function ProfilePage() {
     setFamilyUpdatingMap((prev) => ({ ...prev, [userId]: true }))
     try {
       const value = familyValueMap[userId] || null
-      await usersApi.updateNtfyTopic(value)
+      await usersApi.updateUserNtfyTopic(userId, value)
       queryClient.invalidateQueries({ queryKey: ['users'] })
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
       setFamilyEditMap((prev) => ({ ...prev, [userId]: false }))
@@ -251,28 +251,40 @@ export function ProfilePage() {
                 </button>
               </div>
             ) : (
-              /* Empty state */
-              <div>
-                <p className="text-sm text-gray-500 mb-3">Topic required for notifications</p>
+              /* Empty state - show input directly */
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="topic-input" className="block text-sm font-normal text-gray-700 mb-1">Topic</label>
+                  <input
+                    id="topic-input"
+                    type="text"
+                    value={topicValue}
+                    onChange={(e) => setTopicValue(e.target.value)}
+                    placeholder="Enter your topic or generate one below"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring font-mono"
+                  />
+                </div>
                 <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => { setTopicValue(''); setTopicEdit(true); setTopicError(null); }}
-                    className="bg-indigo-600 text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-indigo-700"
-                  >
-                    Set up notifications
-                  </button>
                   <button
                     type="button"
                     onClick={() => {
                       const topic = generateRandomTopic(user?.name ?? 'user')
                       setTopicValue(topic)
-                      setTopicEdit(true)
-                      setTopicError(null)
                     }}
                     className="bg-white border border-gray-300 text-gray-700 px-3 py-2 min-h-[44px] rounded-lg text-sm hover:bg-gray-50"
                   >
                     Generate random topic
+                  </button>
+                </div>
+                {topicError && <div className="bg-red-50 text-red-600 p-3 rounded text-sm">{topicError}</div>}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleTopicSave}
+                    disabled={isUpdatingTopic || !topicValue.trim()}
+                    className="bg-indigo-600 text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {isUpdatingTopic ? 'Saving...' : 'Save'}
                   </button>
                 </div>
               </div>
