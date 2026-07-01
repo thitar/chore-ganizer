@@ -254,18 +254,27 @@ export function ProfilePage() {
               /* Empty state */
               <div>
                 <p className="text-sm text-gray-500 mb-3">Topic required for notifications</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const topic = generateRandomTopic(user?.name ?? 'user')
-                    setTopicValue(topic)
-                    setTopicEdit(true)
-                    setTopicError(null)
-                  }}
-                  className="bg-white border border-gray-300 text-gray-700 px-3 py-2 min-h-[44px] rounded-lg text-sm hover:bg-gray-50"
-                >
-                  Generate random topic
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setTopicValue(''); setTopicEdit(true); setTopicError(null); }}
+                    className="bg-indigo-600 text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-indigo-700"
+                  >
+                    Set up notifications
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const topic = generateRandomTopic(user?.name ?? 'user')
+                      setTopicValue(topic)
+                      setTopicEdit(true)
+                      setTopicError(null)
+                    }}
+                    className="bg-white border border-gray-300 text-gray-700 px-3 py-2 min-h-[44px] rounded-lg text-sm hover:bg-gray-50"
+                  >
+                    Generate random topic
+                  </button>
+                </div>
               </div>
             )
           ) : (

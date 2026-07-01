@@ -22,7 +22,6 @@ export function NavBar() {
     { to: '/', label: 'Dashboard', parent: false },
     { to: '/my-chores', label: 'My Chores', parent: false },
     { to: '/points', label: 'Points', parent: false },
-    { to: '/profile', label: 'Profile', parent: false },
     { to: '/calendar', label: 'Calendar', parent: false },
     { to: '/templates', label: 'Templates', parent: true },
     { to: '/recurring-chores', label: 'Recurring', parent: true },
@@ -50,7 +49,7 @@ export function NavBar() {
 
         {/* Desktop user section */}
         <div className="hidden md:flex items-center gap-3">
-          <span className="text-gray-600">{user?.name}</span>
+          <Link to="/profile" className="text-gray-600 hover:text-gray-900 min-h-[44px] inline-flex items-center">{user?.name}</Link>
           <button
             onClick={() => logout()}
             className="flex items-center gap-1 text-gray-600 hover:text-red-600 min-h-[44px] px-3"
@@ -86,7 +85,7 @@ export function NavBar() {
               </Link>
             ))}
             <div className="flex items-center justify-between py-3 border-t border-gray-200 mt-2">
-              <span className="text-gray-600">{user?.name}</span>
+              <Link to="/profile" onClick={() => setMenuOpen(false)} className="text-gray-600 hover:text-gray-900">{user?.name}</Link>
               <button
                 onClick={() => { setMenuOpen(false); logout() }}
                 className="flex items-center gap-1 text-gray-600 hover:text-red-600 min-h-[44px] px-3"

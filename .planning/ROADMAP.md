@@ -58,7 +58,7 @@
 **Phase Numbering (v3.1):** Continues from v3.0.0 (which ended at Phase 8 of the rewrite). v3.1 phases are numbered 9–13.
 
 - [x] **Phase 9: Foundation** — `notification.service.ts` + `config/notifications.ts` + `.env.example` + Prisma migration (`User.ntfyTopic`, `ChoreAssignment.dueNotifiedAt`, `RecurringOccurrence.dueNotifiedAt`) + body/Click format helpers (completed 2026-06-29)
-- [x] **Phase 10: Profile UI + User topic route** — `PUT /api/users/me/ntfy-topic` + `users.service.updateNtfyTopic` (Zod-validated) + Profile page "Notifications" section with "Generate random topic" helper (completed 2026-06-30)
+- [x] **Phase 10: Profile UI + User topic route** — `PUT /api/users/me/ntfy-topic` + `users.service.updateNtfyTopic` (Zod-validated) + Profile page "Notifications" section with "Generate random topic" helper + gap closure for navbar link and empty state UX (completed 2026-07-01)
 - [ ] **Phase 11: chore-assigned trigger** — Wire `assignment.service.create` to fire `sendNtfy` for the recipient (priority 3, 📋🔔)
 - [ ] **Phase 12: chore-due-soon lazy trigger** — Piggyback on `assignment.service.getAll` after `generateOccurrences`; conditional `prisma.$transaction` update for concurrent-dedup
 - [ ] **Phase 13: chore-completed trigger** — Wire `assignment.service.complete` + `recurring.service.completeOccurrence` to fan out to all parents' topics (priority 2, ✔️⭐)
