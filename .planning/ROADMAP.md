@@ -283,7 +283,7 @@ Plans:
 
 - [x] 10-01-PLAN.md — Backend updateNtfyTopic service + PUT /me/ntfy-topic route (TDD)
 - [x] 10-02-PLAN.md — Frontend Push Notifications section + Family Topics cards on Profile page
-- [ ] 10-03-PLAN.md — Gap closure: navbar username links to Profile, empty state allows custom topic input
+- [x] 10-03-PLAN.md — Gap closure: navbar username links to Profile, empty state allows custom topic input
 
 **UI hint**: yes
 
@@ -348,7 +348,7 @@ Note: Phase 6 (User Management) depends on Phase 2 (Auth), not Phase 5. It can b
 | 7. Routes, Controllers & Auth        | v2.2.0     | 1/1            | Complete    | 2026-05-03 |
 | 8. Backend Tests                     | v2.2.0     | 2/2            | Complete    | 2026-05-03 |
 | 9. Frontend Components               | v2.2.0     | 2/2 | Complete    | 2026-05-03 |
-| 10. Frontend Page & Integration      | v2.2.0     | 2/2 | Complete   | 2026-05-03 |
+| 10. Frontend Page & Integration      | v2.2.0     | 3/3 | Complete    | 2026-05-03 |
 | rewrite-1. Scaffold                  | v1-rewrite | 2/2            | ✅ Complete | 2026-05-22 |
 | rewrite-2. Authentication            | v1-rewrite | 4/4            | ✅ Complete | 2026-05-23 |
 | rewrite-3. Core Chore CRUD           | v1-rewrite | 7/7            | ✅ Complete | 2026-06-28 |
