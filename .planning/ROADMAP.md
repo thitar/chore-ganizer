@@ -278,11 +278,12 @@ Plans:
   4. Attempting to save a topic that another user already has configured returns 409 Conflict with a friendly "topic in use" message
   5. User saves an empty value — their ntfy topic is cleared (set to `null`) and future notifications silently no-op for them
 
-**Plans**: 2/2 plans complete
+**Plans**: 3 plans
 Plans:
 
 - [x] 10-01-PLAN.md — Backend updateNtfyTopic service + PUT /me/ntfy-topic route (TDD)
 - [x] 10-02-PLAN.md — Frontend Push Notifications section + Family Topics cards on Profile page
+- [ ] 10-03-PLAN.md — Gap closure: navbar username links to Profile, empty state allows custom topic input
 
 **UI hint**: yes
 
@@ -357,7 +358,7 @@ Note: Phase 6 (User Management) depends on Phase 2 (Auth), not Phase 5. It can b
 | rewrite-7. Frontend Polish + Docker  | v1-rewrite | 2/2            | ✅ Complete | 2026-06-29 |
 | rewrite-8. Switchover                | v1-rewrite | 1/1            | ✅ Complete | 2026-06-29 |
 | 9. Foundation (Notifications)        | v3.1       | 0/2            | Planning    | -          |
-| 10. Profile UI + ntfy topic route    | v3.1       | 0/2            | Planning    | -          |
+| 10. Profile UI + ntfy topic route    | v3.1       | 2/3            | Executing   | -          |
 | 11. chore-assigned trigger           | v3.1       | 0/TBD          | Not started | -          |
 | 12. chore-due-soon lazy trigger      | v3.1       | 0/TBD          | Not started | -          |
 | 13. chore-completed trigger          | v3.1       | 0/TBD          | Not started | -          |
