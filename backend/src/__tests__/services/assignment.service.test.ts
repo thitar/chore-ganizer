@@ -39,19 +39,33 @@ beforeEach(() => {
 })
 
 describe('assignmentService.create', () => {
-  it('creates assignment with status PENDING and returns with includes', async () => {
+  it('creates assignment with status PENDING and returns enriched result', async () => {
     prisma.choreTemplate.findUnique.mockResolvedValue({ id: 1 })
     const created = {
       id: 1, choreTemplateId: 1, assignedToId: 2, dueDate: new Date('2026-06-01'),
       status: 'PENDING', pointsAwarded: null, notes: null,
     }
     prisma.choreAssignment.create.mockResolvedValue(created)
+    const enriched = {
+      id: 1, choreTemplateId: 1, assignedToId: 2, dueDate: new Date('2026-06-01'),
+      status: 'PENDING', pointsAwarded: null, notes: null,
+      template: { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen' },
+      assignedTo: { id: 2, name: 'Alice', color: '#10B981', ntfyTopic: 'alice-topic' },
+    }
+    prisma.choreAssignment.findUnique.mockResolvedValue(enriched)
 
     const result = await assignmentService.create({ choreTemplateId: 1, assignedToId: 2, dueDate: '2026-06-01' })
 
     expect(prisma.choreTemplate.findUnique).toHaveBeenCalledWith({ where: { id: 1 } })
     expect(prisma.choreAssignment.create).toHaveBeenCalled()
-    expect(result).toBe(created)
+    expect(prisma.choreAssignment.findUnique).toHaveBeenCalledWith({
+      where: { id: 1 },
+      include: {
+        template: { select: { id: true, title: true, points: true, category: true } },
+        assignedTo: { select: { id: true, name: true, color: true, ntfyTopic: true } },
+      },
+    })
+    expect(result).toBe(enriched)
   })
 
   it('throws AppError 404 when template does not exist', async () => {
@@ -59,6 +73,143 @@ describe('assignmentService.create', () => {
 
     await expect(assignmentService.create({ choreTemplateId: 999, assignedToId: 2, dueDate: '2026-06-01' }))
       .rejects.toMatchObject({ statusCode: 404, message: 'Template not found' })
+  })
+
+  it('fires ntfy fetch with correct payload when child has topic', async () => {
+    prisma.choreTemplate.findUnique.mockResolvedValue({ id: 1 })
+    const created = {
+      id: 1, choreTemplateId: 1, assignedToId: 2, dueDate: new Date('2026-07-15'),
+      status: 'PENDING', pointsAwarded: null, notes: null,
+    }
+    prisma.choreAssignment.create.mockResolvedValue(created)
+    const enriched = {
+      id: 1, choreTemplateId: 1, assignedToId: 2, dueDate: new Date('2026-07-15'),
+      status: 'PENDING', pointsAwarded: null, notes: null,
+      template: { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen' },
+      assignedTo: { id: 2, name: 'Alice', color: '#10B981', ntfyTopic: 'alice-topic' },
+    }
+    prisma.choreAssignment.findUnique.mockResolvedValue(enriched)
+
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(new Response())
+
+    await assignmentService.create({ choreTemplateId: 1, assignedToId: 2, dueDate: '2026-07-15' })
+    await new Promise(process.nextTick)
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://ntfy.example.com/alice-topic',
+      expect.objectContaining({
+        method: 'POST',
+        body: 'Wash Dishes — due 2026-07-15',
+        headers: expect.objectContaining({
+          Title: 'Chore-Ganizer',
+          Priority: '3',
+          Tags: 'clipboard,bell',
+          Click: '/chores/1',
+        }),
+      })
+    )
+    fetchSpy.mockRestore()
+  })
+
+  it('does not fire ntfy fetch when assignedTo.ntfyTopic is null', async () => {
+    prisma.choreTemplate.findUnique.mockResolvedValue({ id: 1 })
+    const created = {
+      id: 1, choreTemplateId: 1, assignedToId: 2, dueDate: new Date('2026-07-15'),
+      status: 'PENDING', pointsAwarded: null, notes: null,
+    }
+    prisma.choreAssignment.create.mockResolvedValue(created)
+    const enriched = {
+      id: 1, choreTemplateId: 1, assignedToId: 2, dueDate: new Date('2026-07-15'),
+      status: 'PENDING', pointsAwarded: null, notes: null,
+      template: { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen' },
+      assignedTo: { id: 2, name: 'Alice', color: '#10B981', ntfyTopic: null },
+    }
+    prisma.choreAssignment.findUnique.mockResolvedValue(enriched)
+
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(new Response())
+
+    await assignmentService.create({ choreTemplateId: 1, assignedToId: 2, dueDate: '2026-07-15' })
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+    fetchSpy.mockRestore()
+  })
+
+  it('does not fire ntfy fetch when NTFY_BASE_URL is unset', async () => {
+    jest.resetModules()
+    jest.mock('../../config/notifications', () => ({
+      isNtfyConfigured: false,
+      getNtfyConfig: jest.fn(() => ({ enabled: false, baseUrl: '' })),
+    }))
+    jest.mock('../../config/prisma', () => ({
+      prisma: {
+        choreTemplate: {
+          findUnique: jest.fn(),
+          findMany: jest.fn(),
+        },
+        choreAssignment: {
+          create: jest.fn(),
+          findMany: jest.fn(),
+          findUnique: jest.fn(),
+          update: jest.fn(),
+          delete: jest.fn(),
+        },
+        pointLog: { create: jest.fn() },
+        recurringChore: { findMany: jest.fn() },
+        recurringOccurrence: { findMany: jest.fn(), createMany: jest.fn() },
+        $transaction: jest.fn(),
+      },
+    }))
+
+    const freshPrisma = require('../../config/prisma').prisma
+    freshPrisma.recurringChore.findMany.mockResolvedValue([])
+    freshPrisma.recurringOccurrence.findMany.mockResolvedValue([])
+    const freshService = require('../../services/assignment.service')
+
+    freshPrisma.choreTemplate.findUnique.mockResolvedValue({ id: 1 })
+    const created = {
+      id: 1, choreTemplateId: 1, assignedToId: 2, dueDate: new Date('2026-07-15'),
+      status: 'PENDING', pointsAwarded: null, notes: null,
+    }
+    freshPrisma.choreAssignment.create.mockResolvedValue(created)
+    const enriched = {
+      id: 1, choreTemplateId: 1, assignedToId: 2, dueDate: new Date('2026-07-15'),
+      status: 'PENDING', pointsAwarded: null, notes: null,
+      template: { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen' },
+      assignedTo: { id: 2, name: 'Alice', color: '#10B981', ntfyTopic: 'alice-topic' },
+    }
+    freshPrisma.choreAssignment.findUnique.mockResolvedValue(enriched)
+
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(new Response())
+
+    const result = await freshService.create({ choreTemplateId: 1, assignedToId: 2, dueDate: '2026-07-15' })
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(result).toBe(enriched)
+    fetchSpy.mockRestore()
+  })
+
+  it('assignment succeeds even when ntfy fetch throws', async () => {
+    prisma.choreTemplate.findUnique.mockResolvedValue({ id: 1 })
+    const created = {
+      id: 1, choreTemplateId: 1, assignedToId: 2, dueDate: new Date('2026-07-15'),
+      status: 'PENDING', pointsAwarded: null, notes: null,
+    }
+    prisma.choreAssignment.create.mockResolvedValue(created)
+    const enriched = {
+      id: 1, choreTemplateId: 1, assignedToId: 2, dueDate: new Date('2026-07-15'),
+      status: 'PENDING', pointsAwarded: null, notes: null,
+      template: { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen' },
+      assignedTo: { id: 2, name: 'Alice', color: '#10B981', ntfyTopic: 'alice-topic' },
+    }
+    prisma.choreAssignment.findUnique.mockResolvedValue(enriched)
+
+    const fetchSpy = jest.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'))
+
+    const result = await assignmentService.create({ choreTemplateId: 1, assignedToId: 2, dueDate: '2026-07-15' })
+
+    expect(result).toBe(enriched)
+    expect(fetchSpy).toHaveBeenCalled()
+    fetchSpy.mockRestore()
   })
 })
 
