@@ -30,14 +30,16 @@ jest.mock('../../config/prisma', () => ({
   },
 }))
 
-const { prisma } = require('../../config/prisma')
 const { AppError } = require('../../middleware/errorHandler')
 
+let prisma: any
 let assignmentService: typeof import('../../services/assignment.service')
 
 beforeEach(() => {
   jest.clearAllMocks()
   delete require.cache[require.resolve('../../services/assignment.service')]
+  delete require.cache[require.resolve('../../config/prisma')]
+  prisma = require('../../config/prisma').prisma
   prisma.recurringChore.findMany.mockResolvedValue([])
   prisma.recurringOccurrence.findMany.mockResolvedValue([])
   assignmentService = require('../../services/assignment.service')
