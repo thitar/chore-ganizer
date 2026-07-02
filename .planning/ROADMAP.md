@@ -317,7 +317,10 @@ Plans:
   4. If the ntfy server is unreachable during the lazy sweep, the chore list still loads successfully and the error is logged
   5. Concurrent fetches (e.g. phone and laptop opened at the same time) only fire one notification per assignment per day — the conditional update inside `prisma.$transaction` prevents the double-fire
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 12-01-PLAN.md — TDD: sweep tests (RED) + production code (GREEN): sendNtfy boolean return, notifyChoreDueSoon async, notifyDueSoon sweep function, getAll wiring
 
 ### Phase 13: chore-completed trigger
 
