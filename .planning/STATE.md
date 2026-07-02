@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Notifications
-current_phase: 11
-current_phase_name: chore-assigned trigger
-status: verifying
+current_phase: 12
+current_phase_name: chore-due-soon lazy trigger
+status: executing
 stopped_at: Phase 11 context gathered
-last_updated: "2026-07-02T17:10:00.421Z"
-last_activity: 2026-07-01
-last_activity_desc: Phase 10 complete, transitioned to Phase 11
+last_updated: "2026-07-02T19:45:06.281Z"
+last_activity: 2026-07-02
+last_activity_desc: Phase 11 complete, transitioned to Phase 12
 progress:
   total_phases: 13
-  completed_phases: 1
-  total_plans: 6
-  completed_plans: 5
-  percent: 8
+  completed_phases: 2
+  total_plans: 7
+  completed_plans: 6
+  percent: 15
 ---
 
 # Project State
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v3.1 milestone init)
 
 **Core value:** Any family member can open the app, see their chores for today, and complete them — without the app requiring a devops engineer to maintain.
-**Current focus:** Phase 10 — profile-ui-user-topic-route
+**Current focus:** Phase 11 — chore-assigned-trigger
 
 ## Current Position
 
-Phase: 11 — chore-assigned trigger
+Phase: 12 — chore-due-soon lazy trigger
 Plan: Not started
-Status: All plans executed, ready for verification
-Last activity: 2026-07-01 — Phase 10 complete, transitioned to Phase 11
+Status: Executing Phase 11
+Last activity: 2026-07-02 — Phase 11 complete, transitioned to Phase 12
 
 Progress: [██████████] 100%
 

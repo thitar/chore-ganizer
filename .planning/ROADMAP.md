@@ -59,7 +59,7 @@
 
 - [x] **Phase 9: Foundation** — `notification.service.ts` + `config/notifications.ts` + `.env.example` + Prisma migration (`User.ntfyTopic`, `ChoreAssignment.dueNotifiedAt`, `RecurringOccurrence.dueNotifiedAt`) + body/Click format helpers (completed 2026-06-29)
 - [x] **Phase 10: Profile UI + User topic route** — `PUT /api/users/me/ntfy-topic` + `users.service.updateNtfyTopic` (Zod-validated) + Profile page "Notifications" section with "Generate random topic" helper + gap closure for navbar link and empty state UX (completed 2026-07-01)
-- [ ] **Phase 11: chore-assigned trigger** — Wire `assignment.service.create` to fire `sendNtfy` for the recipient (priority 3, 📋🔔)
+- [x] **Phase 11: chore-assigned trigger** — Wire `assignment.service.create` to fire `sendNtfy` for the recipient (priority 3, 📋🔔) (completed 2026-07-02)
 - [ ] **Phase 12: chore-due-soon lazy trigger** — Piggyback on `assignment.service.getAll` after `generateOccurrences`; conditional `prisma.$transaction` update for concurrent-dedup
 - [ ] **Phase 13: chore-completed trigger** — Wire `assignment.service.complete` + `recurring.service.completeOccurrence` to fan out to all parents' topics (priority 2, ✔️⭐)
 
@@ -302,7 +302,7 @@ Plans:
 **Plans**: 1 plan
 Plans:
 
-- [ ] 11-01-PLAN.md — Wire notifyChoreAssigned into assignment.service.create + TDD tests (RED: 4 notification test cases, GREEN: 3-line wiring)
+- [x] 11-01-PLAN.md — Wire notifyChoreAssigned into assignment.service.create + TDD tests (RED: 4 notification test cases, GREEN: 3-line wiring)
 
 ### Phase 12: chore-due-soon lazy trigger
 
@@ -362,6 +362,6 @@ Note: Phase 6 (User Management) depends on Phase 2 (Auth), not Phase 5. It can b
 | rewrite-8. Switchover                | v1-rewrite | 1/1            | ✅ Complete | 2026-06-29 |
 | 9. Foundation (Notifications)        | v3.1       | 0/2            | Planning    | -          |
 | 10. Profile UI + ntfy topic route    | v3.1       | 2/3            | Executing   | -          |
-| 11. chore-assigned trigger           | v3.1       | 0/1            | Planning    | -          |
+| 11. chore-assigned trigger           | v3.1       | 1/1 | Complete    | 2026-07-02 |
 | 12. chore-due-soon lazy trigger      | v3.1       | 0/TBD          | Not started | -          |
 | 13. chore-completed trigger          | v3.1       | 0/TBD          | Not started | -          |
