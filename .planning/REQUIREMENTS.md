@@ -10,7 +10,7 @@
 ### Notifications (ntfy.sh)
 
 - [x] **NOTIFY-01**: User can set their own ntfy topic in the Profile page; topic must be 12-64 chars `[A-Za-z0-9_-]` and unique across users
-- [ ] **NOTIFY-02**: Backend fires `chore-assigned` push (priority 3, 📋🔔) to the assigned user's ntfy topic when a new assignment is created
+- [x] **NOTIFY-02**: Backend fires `chore-assigned` push (priority 3, 📋🔔) to the assigned user's ntfy topic when a new assignment is created
 - [ ] **NOTIFY-03**: Backend fires `chore-due-soon` push (priority 4, ⚠️⏰) to the assigned user's topic when they view a due-today assignment that hasn't been notified yet today; deduped via `dueNotifiedAt` timestamp
 - [ ] **NOTIFY-04**: Backend fires `chore-completed` push (priority 2, ✔️⭐) to **all parents'** ntfy topics when an assignment is completed
 - [x] **NOTIFY-05**: `NTFY_BASE_URL` env var configures the ntfy server; missing/empty value disables notifications globally (warning logged once at startup, no errors)
@@ -61,7 +61,7 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | NOTIFY-01 | Phase 10 — Profile UI + User topic route | Complete |
-| NOTIFY-02 | Phase 11 — chore-assigned trigger | Pending |
+| NOTIFY-02 | Phase 11 — chore-assigned trigger | Complete |
 | NOTIFY-03 | Phase 12 — chore-due-soon lazy trigger | Pending |
 | NOTIFY-04 | Phase 13 — chore-completed trigger | Pending |
 | NOTIFY-05 | Phase 9 — Foundation | Complete |
