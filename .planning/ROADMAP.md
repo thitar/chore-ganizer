@@ -299,7 +299,10 @@ Plans:
   3. If the ntfy server is unreachable, the assignment still succeeds (201 Created) and the error is logged but does not surface to the client
   4. Tapping the push notification on a phone opens the app at `/chores/{id}` for the new assignment
 
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+
+- [ ] 11-01-PLAN.md — Wire notifyChoreAssigned into assignment.service.create + TDD tests (RED: 4 notification test cases, GREEN: 3-line wiring)
 
 ### Phase 12: chore-due-soon lazy trigger
 
@@ -359,6 +362,6 @@ Note: Phase 6 (User Management) depends on Phase 2 (Auth), not Phase 5. It can b
 | rewrite-8. Switchover                | v1-rewrite | 1/1            | ✅ Complete | 2026-06-29 |
 | 9. Foundation (Notifications)        | v3.1       | 0/2            | Planning    | -          |
 | 10. Profile UI + ntfy topic route    | v3.1       | 2/3            | Executing   | -          |
-| 11. chore-assigned trigger           | v3.1       | 0/TBD          | Not started | -          |
+| 11. chore-assigned trigger           | v3.1       | 0/1            | Planning    | -          |
 | 12. chore-due-soon lazy trigger      | v3.1       | 0/TBD          | Not started | -          |
 | 13. chore-completed trigger          | v3.1       | 0/TBD          | Not started | -          |
