@@ -132,10 +132,10 @@ None — v3.0.0 (rewrite) switchover complete (commit 38feb91), legacy archived 
 
 ## Operator Next Steps
 
-- Run `/gsd-discuss-phase 9` then `/gsd-plan-phase 9` to plan the Foundation phase (notification.service + config + schema migration)
+- Run `/gsd-plan-phase 12` to plan the chore-due-soon lazy trigger
 
 ## Session
 
-**Last session:** 2026-07-02T17:10:00.403Z
-**Stopped at:** Phase 11 context gathered
-**Resume file:** .planning/phases/11-chore-assigned-trigger/11-CONTEXT.md
+**Last session:** 2026-07-02T20:00:00.000Z
+**Stopped at:** Phase 12 context gathered
+**Resume file:** .planning/phases/12-chore-due-soon-lazy-trigger/12-CONTEXT.md
