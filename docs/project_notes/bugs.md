@@ -12,6 +12,13 @@ Date-ordered log of bugs and their solutions.
 
 ---
 
+### 2026-07-04 - Duplicate dueNotifiedAt Fields Break prisma validate
+
+- **Issue**: `npx prisma validate` failed with 2 errors; next container start would fail (entrypoint runs `prisma db push`)
+- **Root Cause**: v3.1.0 notifications merge resolved conflicts by keeping `dueNotifiedAt DateTime?` twice in both `ChoreAssignment` and `RecurringOccurrence`
+- **Solution**: Removed the duplicate declaration in each model; `prisma validate` + `prisma generate` + full test suite green
+- **Prevention**: After merges touching `schema.prisma`, always run `npx prisma validate` before committing
+
 ### 2026-07-04 - jest.resetModules() + jest.doMock() Leaves Stale Mock State
 
 - **Issue**: Tests fail or produce incorrect results when run in a certain order — `isNtfyConfigured` returns `false` for tests that expect it to be `true`

@@ -1763,7 +1763,7 @@ Run: `grep -rn "primary" frontend/src --include="*.tsx"` first — if any page s
 
 ```bash
 cd frontend && npm run build && npm test
-cd ../backend && npm run test:unit
+cd ../backend && npm test
 ```
 Expected: all PASS, build clean.
 
