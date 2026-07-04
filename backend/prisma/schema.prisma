@@ -51,7 +51,6 @@ model ChoreAssignment {
   completedAt     DateTime?
   pointsAwarded   Int?
   notes           String?
-  dueNotifiedAt   DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -106,7 +105,6 @@ model RecurringOccurrence {
   dueNotifiedAt   DateTime?
   pointsAwarded   Int?
   completedAt     DateTime?
-  dueNotifiedAt   DateTime?
   createdAt       DateTime @default(now())
 
   chore      RecurringChore? @relation(fields: [recurringChoreId], references: [id], onDelete: SetNull)

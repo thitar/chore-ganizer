@@ -16,7 +16,7 @@
 - **`prefers-reduced-motion: reduce` disables confetti and count-up** (values render instantly).
 - **Keep accessible names/labels stable** where the spec doesn't change copy — existing tests assert on them.
 - **API envelope:** `{ success, data, error }` (backend); frontend API mapping lives only in `frontend/src/api/` files.
-- **Tests:** frontend `cd frontend && npm test`; backend `cd backend && npm run test:unit`. Run the relevant file after every task.
+- **Tests:** frontend `cd frontend && npm test`; backend `cd backend && npm test`. Run the relevant file after every task.
 - **Commit after every task** (conventional commits, `feat(m1-XX): ...`).
 - Work on branch `feature/m1-the-look` (create from `main` at start).
 
@@ -917,7 +917,7 @@ describe('getLeaderboard', () => {
 
 - [ ] **Step 2: Run to verify failure**
 
-Run: `cd backend && npm run test:unit -- --testNamePattern="getLeaderboard"`
+Run: `cd backend && npm test -- --testNamePattern="getLeaderboard"`
 Expected: FAIL — `getLeaderboard` is not a function.
 
 - [ ] **Step 3: Implement in `backend/src/services/points.service.ts`** (append):
@@ -955,7 +955,7 @@ router.get('/leaderboard', authenticate, async (_req, res, next) => {
 
 - [ ] **Step 5: Run tests**
 
-Run: `cd backend && npm run test:unit`
+Run: `cd backend && npm test`
 Expected: PASS including the new test.
 
 - [ ] **Step 6: Commit**
