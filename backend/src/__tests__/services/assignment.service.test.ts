@@ -392,20 +392,25 @@ describe('assignmentService.getAll - notification sweep', () => {
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
-  it('getAll still succeeds and dueNotifiedAt NOT written when fetch throws', async () => {
+  it('getAll still succeeds and logs warning when fetch throws after optimistic write', async () => {
     fetchSpy.mockRestore()
-    jest.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'))
+    const localFetchSpy = jest.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'))
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
     prisma.choreAssignment.findMany.mockResolvedValue([makeRegularItem()])
 
-    const result = await assignmentService.getAll(1, 'PARENT')
-    await new Promise((resolve) => setImmediate(resolve))
+    try {
+      const result = await assignmentService.getAll(1, 'PARENT')
+      await new Promise((resolve) => setImmediate(resolve))
 
-    expect(result).toHaveLength(1)
-    expect(result[0].id).toBe(1)
-    expect(prisma.choreAssignment.updateMany).not.toHaveBeenCalled()
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('[ntfy] send failed'))
-    warnSpy.mockRestore()
+      expect(result).toHaveLength(1)
+      expect(result[0].id).toBe(1)
+      // Optimistic write happens before the network call, so updateMany IS called
+      expect(prisma.choreAssignment.updateMany).toHaveBeenCalled()
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('[ntfy] send failed'))
+    } finally {
+      warnSpy.mockRestore()
+      localFetchSpy.mockRestore()
+    }
   })
 
   it('REGULAR + RECURRING both trigger notifications', async () => {
