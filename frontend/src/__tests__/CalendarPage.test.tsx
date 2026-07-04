@@ -88,8 +88,13 @@ function renderPage() {
 
 describe('CalendarPage', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ now: new Date('2026-06-15T12:00:00'), toFake: ['Date'] })
     vi.clearAllMocks()
     mockCalendarState()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('renders loading spinner', () => {

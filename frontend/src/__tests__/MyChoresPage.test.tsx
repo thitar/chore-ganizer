@@ -71,7 +71,12 @@ function renderPage() {
 
 describe('MyChoresPage', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ now: new Date('2026-06-15T12:00:00'), toFake: ['Date'] })
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('renders loading spinner', () => {

@@ -73,7 +73,15 @@ function renderPage() {
 }
 
 describe('AssignmentsPage', () => {
-  beforeEach(() => { vi.clearAllMocks(); mockDefaultState() })
+  beforeEach(() => {
+    vi.useFakeTimers({ now: new Date('2026-06-15T12:00:00'), toFake: ['Date'] })
+    vi.clearAllMocks()
+    mockDefaultState()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 
   it('renders loading spinner', () => {
     mockAssignmentsState({ isLoading: true })
