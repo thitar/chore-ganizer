@@ -243,9 +243,9 @@ export async function notifyDueSoon(
       dueDate: new Date(item.dueDate + 'T00:00:00'),
     })
 
-    const ok = await sendNtfy(topic, title, body, { priority, tags, click })
-    if (!ok) continue
-
+    // Optimistic write: mark as notified BEFORE the async network call.
+    // This eliminates the race window where concurrent getAll() calls could
+    // both see dueNotifiedAt: null and send duplicate notifications.
     if (item.type === 'REGULAR') {
       await prisma.choreAssignment.updateMany({
         where: { id: item.id, dueNotifiedAt: null },
@@ -258,7 +258,8 @@ export async function notifyDueSoon(
       })
     }
 
-    notified.add(item.id)
+    const ok = await sendNtfy(topic, title, body, { priority, tags, click })
+    if (ok) notified.add(item.id)
   }
 
   return notified
