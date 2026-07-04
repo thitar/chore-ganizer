@@ -1,3 +1,8 @@
+jest.mock('../../config/notifications', () => ({
+  isNtfyConfigured: true,
+  getNtfyConfig: () => ({ baseUrl: 'https://ntfy.example.com' }),
+}))
+
 jest.mock('../../config/prisma', () => ({
   prisma: {
     choreTemplate: {
@@ -9,6 +14,7 @@ jest.mock('../../config/prisma', () => ({
       findMany: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       delete: jest.fn(),
     },
     pointLog: {
@@ -20,6 +26,7 @@ jest.mock('../../config/prisma', () => ({
     recurringOccurrence: {
       findMany: jest.fn(),
       createMany: jest.fn(),
+      updateMany: jest.fn(),
     },
     $transaction: jest.fn(),
   },
@@ -71,12 +78,13 @@ describe('assignmentService.getAll', () => {
         assignedToId: 3,
         dueDate: new Date('2026-06-15T00:00:00Z'),
         status: 'PENDING',
+        dueNotifiedAt: null,
         completedAt: null,
         pointsAwarded: null,
         notes: null,
         createdAt: new Date('2026-06-01T00:00:00Z'),
         template: { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen' },
-        assignedTo: { id: 3, name: 'Alice', color: '#10B981' },
+        assignedTo: { id: 3, name: 'Alice', color: '#10B981', ntfyTopic: 'alice-topic' },
       },
     ]
     prisma.choreAssignment.findMany.mockResolvedValue(assignments)
@@ -88,6 +96,7 @@ describe('assignmentService.getAll', () => {
     )
     expect(result[0]).toMatchObject({ id: 1, type: 'REGULAR' })
     expect(result[0].dueDate).toBe('2026-06-15')
+    expect(result[0].dueNotifiedAt).toBeNull()
   })
 
   it('returns only own assignments for CHILD role', async () => {
@@ -98,12 +107,13 @@ describe('assignmentService.getAll', () => {
         assignedToId: 3,
         dueDate: new Date('2026-06-20T00:00:00Z'),
         status: 'PENDING',
+        dueNotifiedAt: null,
         completedAt: null,
         pointsAwarded: null,
         notes: null,
         createdAt: new Date('2026-06-05T00:00:00Z'),
         template: { id: 2, title: 'Clean Room', points: 15, category: 'bedroom' },
-        assignedTo: { id: 3, name: 'Alice', color: '#10B981' },
+        assignedTo: { id: 3, name: 'Alice', color: '#10B981', ntfyTopic: null },
       },
     ]
     prisma.choreAssignment.findMany.mockResolvedValue(assignments)
@@ -116,6 +126,7 @@ describe('assignmentService.getAll', () => {
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe(3)
     expect(result[0].type).toBe('REGULAR')
+    expect(result[0].dueNotifiedAt).toBeNull()
   })
 })
 
@@ -249,5 +260,169 @@ describe('assignmentService.delete_', () => {
 
     await expect(assignmentService.delete_(999))
       .rejects.toMatchObject({ statusCode: 404 })
+  })
+})
+
+describe('assignmentService.getAll - notification sweep', () => {
+  let fetchSpy: jest.SpyInstance
+
+  function makeRegularItem(overrides: Record<string, unknown> = {}) {
+    const today = new Date()
+    return {
+      id: 1,
+      choreTemplateId: 1,
+      assignedToId: 3,
+      dueDate: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+      status: 'PENDING',
+      dueNotifiedAt: null,
+      completedAt: null,
+      pointsAwarded: null,
+      notes: null,
+      createdAt: new Date('2026-06-01T00:00:00Z'),
+      template: { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen' },
+      assignedTo: { id: 3, name: 'Alice', color: '#10B981', ntfyTopic: 'alice-topic' },
+      ...overrides,
+    }
+  }
+
+  function makeRecurringItem(overrides: Record<string, unknown> = {}) {
+    const today = new Date()
+    return {
+      id: 10,
+      recurringChoreId: 5,
+      assignedToId: 3,
+      dueDate: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+      status: 'PENDING',
+      dueNotifiedAt: null,
+      completedAt: null,
+      pointsAwarded: null,
+      createdAt: new Date('2026-06-01T00:00:00Z'),
+      chore: {
+        id: 5,
+        choreTemplateId: 1,
+        template: { id: 1, title: 'Sweep Floor', points: 5, category: 'kitchen' },
+      },
+      assignedTo: { id: 3, name: 'Alice', color: '#10B981', ntfyTopic: 'alice-topic' },
+      ...overrides,
+    }
+  }
+
+  function tomorrow(): Date {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    return d
+  }
+
+  beforeEach(() => {
+    fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(new Response())
+    jest.clearAllMocks()
+    delete require.cache[require.resolve('../../services/assignment.service')]
+    prisma.recurringChore.findMany.mockResolvedValue([])
+    prisma.recurringOccurrence.findMany.mockResolvedValue([])
+    assignmentService = require('../../services/assignment.service')
+  })
+
+  afterEach(() => {
+    fetchSpy.mockRestore()
+  })
+
+  it('fires ntfy fetch with correct payload for due-today un-notified item', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([makeRegularItem()])
+
+    await assignmentService.getAll(1, 'PARENT')
+    await new Promise((resolve) => setImmediate(resolve))
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://ntfy.example.com/alice-topic',
+      expect.objectContaining({
+        method: 'POST',
+        body: 'Wash Dishes — 10 pts, due today',
+        headers: expect.objectContaining({
+          Title: 'Chore-Ganizer',
+          Priority: '4',
+          Tags: 'warning,alarm_clock',
+          Click: '/chores/1',
+        }),
+      })
+    )
+    expect(prisma.choreAssignment.updateMany).toHaveBeenCalledWith({
+      where: { id: 1, dueNotifiedAt: null },
+      data: { dueNotifiedAt: expect.any(Date) },
+    })
+  })
+
+  it('does not fire for already-notified due-today item', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([
+      makeRegularItem({ dueNotifiedAt: new Date() }),
+    ])
+
+    await assignmentService.getAll(1, 'PARENT')
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(prisma.choreAssignment.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('does not fire for item due tomorrow', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([
+      makeRegularItem({ dueDate: tomorrow() }),
+    ])
+
+    await assignmentService.getAll(1, 'PARENT')
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('does not fire when assignedTo.ntfyTopic is null', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([
+      makeRegularItem({ assignedTo: { id: 3, name: 'Alice', color: '#10B981', ntfyTopic: null } }),
+    ])
+
+    await assignmentService.getAll(1, 'PARENT')
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('does not fire for COMPLETED item', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([
+      makeRegularItem({ status: 'COMPLETED' }),
+    ])
+
+    await assignmentService.getAll(1, 'PARENT')
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('getAll still succeeds and dueNotifiedAt NOT written when fetch throws', async () => {
+    fetchSpy.mockRestore()
+    jest.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'))
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+    prisma.choreAssignment.findMany.mockResolvedValue([makeRegularItem()])
+
+    const result = await assignmentService.getAll(1, 'PARENT')
+    await new Promise((resolve) => setImmediate(resolve))
+
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe(1)
+    expect(prisma.choreAssignment.updateMany).not.toHaveBeenCalled()
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('[ntfy] send failed'))
+    warnSpy.mockRestore()
+  })
+
+  it('REGULAR + RECURRING both trigger notifications', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([makeRegularItem()])
+    prisma.recurringOccurrence.findMany.mockResolvedValue([makeRecurringItem()])
+
+    await assignmentService.getAll(1, 'PARENT')
+    await new Promise((resolve) => setImmediate(resolve))
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    expect(prisma.choreAssignment.updateMany).toHaveBeenCalledWith({
+      where: { id: 1, dueNotifiedAt: null },
+      data: { dueNotifiedAt: expect.any(Date) },
+    })
+    expect(prisma.recurringOccurrence.updateMany).toHaveBeenCalledWith({
+      where: { id: 10, dueNotifiedAt: null },
+      data: { dueNotifiedAt: expect.any(Date) },
+    })
   })
 })
