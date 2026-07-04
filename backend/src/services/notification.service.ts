@@ -25,12 +25,16 @@ export async function sendNtfy(
   }
   if (opts.tags?.length) headers['Tags'] = opts.tags.join(',')
   if (opts.click) headers['Click'] = opts.click
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 3000)
   try {
-    await fetch(url, { method: 'POST', body, headers, signal: AbortSignal.timeout(3000) })
+    await fetch(url, { method: 'POST', body, headers, signal: controller.signal })
     return true
   } catch (err) {
     console.warn(`[ntfy] send failed for topic ${topic}: ${err instanceof Error ? err.message : String(err)}`)
     return false
+  } finally {
+    clearTimeout(timeoutId)
   }
 }
 
