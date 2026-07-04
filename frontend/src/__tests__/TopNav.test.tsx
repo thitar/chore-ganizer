@@ -36,6 +36,18 @@ describe('TopNav', () => {
     renderNav(child, <TopNav />)
     expect(screen.queryByRole('button', { name: /manage/i })).not.toBeInTheDocument()
   })
+
+  it('closes the Manage dropdown on Escape and returns focus to the trigger', async () => {
+    renderNav(parent, <TopNav />)
+    const trigger = screen.getByRole('button', { name: /manage/i })
+    await userEvent.click(trigger)
+    expect(screen.getByRole('link', { name: /templates/i })).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(screen.queryByRole('link', { name: /templates/i })).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
+  })
 })
 
 describe('BottomTabBar', () => {

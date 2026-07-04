@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { CalendarDays, Home, ListChecks, Settings, Star, User } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
@@ -16,7 +16,20 @@ export function BottomTabBar() {
   const { user } = useAuth()
   const location = useLocation()
   const [sheetOpen, setSheetOpen] = useState(false)
+  const manageTriggerRef = useRef<HTMLButtonElement>(null)
   const isParent = user?.role === 'PARENT'
+
+  useEffect(() => {
+    if (!sheetOpen) return
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setSheetOpen(false)
+        manageTriggerRef.current?.focus()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [sheetOpen])
 
   return (
     <>
@@ -58,6 +71,7 @@ export function BottomTabBar() {
           })}
           {isParent && (
             <button
+              ref={manageTriggerRef}
               onClick={() => setSheetOpen(o => !o)}
               className={`flex min-h-[56px] flex-col items-center gap-0.5 py-2 text-[11px] ${sheetOpen ? 'text-accent' : 'text-zinc-500'}`}
             >

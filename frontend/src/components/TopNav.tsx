@@ -23,14 +23,26 @@ export function TopNav() {
   const location = useLocation()
   const [manageOpen, setManageOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const manageTriggerRef = useRef<HTMLButtonElement>(null)
   const isParent = user?.role === 'PARENT'
 
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setManageOpen(false)
     }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return
+      setManageOpen(prev => {
+        if (prev) manageTriggerRef.current?.focus()
+        return false
+      })
+    }
     document.addEventListener('mousedown', onMouseDown)
-    return () => document.removeEventListener('mousedown', onMouseDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
   }, [])
 
   function linkClass(path: string) {
@@ -62,8 +74,10 @@ export function TopNav() {
           {isParent && (
             <div className="relative" ref={menuRef}>
               <button
+                ref={manageTriggerRef}
                 onClick={() => setManageOpen(o => !o)}
                 aria-expanded={manageOpen}
+                aria-haspopup="true"
                 className="inline-flex min-h-[44px] items-center gap-1 rounded-xl px-3 text-sm font-medium text-zinc-400 hover:text-zinc-100"
               >
                 Manage <ChevronDown className="h-4 w-4" aria-hidden />
