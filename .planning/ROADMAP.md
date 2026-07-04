@@ -57,7 +57,7 @@
 
 **Phase Numbering (v3.1):** Continues from v3.0.0 (which ended at Phase 8 of the rewrite). v3.1 phases are numbered 9–13.
 
-- [ ] **Phase 9: Foundation** — `notification.service.ts` + `config/notifications.ts` + `.env.example` + Prisma migration (`User.ntfyTopic`, `ChoreAssignment.dueNotifiedAt`, `RecurringOccurrence.dueNotifiedAt`) + body/Click format helpers
+- [x] **Phase 9: Foundation** — `notification.service.ts` + `config/notifications.ts` + `.env.example` + Prisma migration (`User.ntfyTopic`, `ChoreAssignment.dueNotifiedAt`, `RecurringOccurrence.dueNotifiedAt`) + body/Click format helpers (completed 2026-06-29)
 - [ ] **Phase 10: Profile UI + User topic route** — `PUT /api/users/me/ntfy-topic` + `users.service.updateNtfyTopic` (Zod-validated) + Profile page "Notifications" section with "Generate random topic" helper
 - [ ] **Phase 11: chore-assigned trigger** — Wire `assignment.service.create` to fire `sendNtfy` for the recipient (priority 3, 📋🔔)
 - [ ] **Phase 12: chore-due-soon lazy trigger** — Piggyback on `assignment.service.getAll` after `generateOccurrences`; conditional `prisma.$transaction` update for concurrent-dedup
@@ -129,19 +129,24 @@ Plans:
 
 Plans:
 **Wave 0** *(foundation — schema, validation, database)*
+
 - [x] 03-01-PLAN.md — Prisma schema changes (PointLog, pointsAwarded), zod install, validator middleware, db push
 
 **Wave 1** *(backend TDD — parallel)*
+
 - [x] 03-02-PLAN.md — ChoreTemplate CRUD service + routes (TDD)
 - [x] 03-03-PLAN.md — ChoreAssignment CRUD + complete/uncomplete service + routes (TDD)
 
 **Wave 2** *(frontend data layer + shared components — parallel)*
+
 - [x] 03-04-PLAN.md — Frontend API layer (templates.api.ts, assignments.api.ts) + React Query hooks
 - [x] 03-05-PLAN.md — Shared components: NavBar extraction, FilterBar, StatusBadge, ConfirmDelete
 
 **Wave 3** *(frontend pages — parallel)*
+
 - [x] 03-06-PLAN.md — TemplatesPage + MyChoresPage
 - [x] 03-07-PLAN.md — AssignmentsPage + Dashboard enhancements + App.tsx routes
+
 **UI hint**: yes
 
 ### Phase 4: Recurring Chores
@@ -161,17 +166,22 @@ Plans:
 
 Plans:
 **Wave 0** *(foundation — schema, seed)*
+
 - [x] 04-01-PLAN.md — Schema simplification (single assignee), pointsAwarded on RecurringOccurrence, seed update, db push
 
 **Wave 1** *(backend TDD — parallel)*
+
 - [x] 04-02-PLAN.md — RecurringChore service + routes (create, delete, lazy generation, complete occurrence) — TDD
 - [x] 04-03-PLAN.md — Merge occurrences into GET /api/assignments response with type discriminator
 
 **Wave 2** *(frontend — parallel)*
+
 - [x] 04-04-PLAN.md — Frontend API, hooks, RecurringChoresPage, NavBar link, App.tsx route
 
 **Wave 3** *(integration)*
+
 - [x] 04-05-PLAN.md — Wire type discriminator through completion flow, update MyChoresPage, full test suite verification
+
 **UI hint**: yes
 
 ### Phase 5: Points + Calendar
@@ -242,12 +252,18 @@ Plans:
 **Depends on**: Nothing (first phase of v3.1)
 **Requirements**: NOTIFY-01, NOTIFY-05, NOTIFY-06, NOTIFY-08
 **Success Criteria** (what must be TRUE):
+
   1. `backend/src/services/notification.service.ts` exports `sendNtfy(topic, title, body, opts)` that POSTs to `NTFY_BASE_URL` with `AbortSignal.timeout(3000)` and never throws
   2. When `NTFY_BASE_URL` is unset or empty, `sendNtfy()` silently no-ops and a single warning is logged at module-load (never per-request)
   3. `sendNtfy()` catches all errors internally — no unhandled promise rejection can escape the module, even if the ntfy server is unreachable
   4. The Prisma schema has `User.ntfyTopic String? @unique`, `ChoreAssignment.dueNotifiedAt DateTime?`, and `RecurringOccurrence.dueNotifiedAt DateTime?` — all applied via `prisma db push`
   5. Notification bodies contain the chore summary but never the user's name; the `Click` header is set to a relative path `/chores/{id}` (not an absolute URL)
-**Plans**: TBD
+
+**Plans**: 2/2 plans complete
+Plans:
+
+- [x] 09-01-PLAN.md — Prisma schema migration, config module, formatters + tests
+- [x] 09-02-PLAN.md — Notification transport service + domain wrappers + tests
 
 ### Phase 10: Profile UI + User topic route
 
@@ -255,11 +271,13 @@ Plans:
 **Depends on**: Phase 9
 **Requirements**: NOTIFY-01
 **Success Criteria** (what must be TRUE):
+
   1. User opens the Profile page and sees a "Notifications" section with an ntfy topic input pre-filled with their current topic (or empty)
   2. User enters a valid topic (12–64 chars, `[A-Za-z0-9_-]`) and clicks Save — the topic persists to their account via `PUT /api/users/me/ntfy-topic`
   3. User clicks "Generate random topic" — the input pre-fills with a valid random topic (e.g. `chore-{username}-{6chars}`, 12+ chars total)
   4. Attempting to save a topic that another user already has configured returns 409 Conflict with a friendly "topic in use" message
   5. User saves an empty value — their ntfy topic is cleared (set to `null`) and future notifications silently no-op for them
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -269,10 +287,12 @@ Plans:
 **Depends on**: Phase 9, Phase 10
 **Requirements**: NOTIFY-02
 **Success Criteria** (what must be TRUE):
+
   1. Parent assigns a chore to a child who has an ntfy topic configured — the child receives a `chore-assigned` push (priority 3, tags 📋🔔, title "{chore title}")
   2. Parent assigns a chore to a child without an ntfy topic — no push fires and no error is raised
   3. If the ntfy server is unreachable, the assignment still succeeds (201 Created) and the error is logged but does not surface to the client
   4. Tapping the push notification on a phone opens the app at `/chores/{id}` for the new assignment
+
 **Plans**: TBD
 
 ### Phase 12: chore-due-soon lazy trigger
@@ -281,11 +301,13 @@ Plans:
 **Depends on**: Phase 9, Phase 10, Phase 11
 **Requirements**: NOTIFY-03, NOTIFY-07
 **Success Criteria** (what must be TRUE):
+
   1. User opens the app with an un-notified assignment due today — they receive a `chore-due-soon` push (priority 4, tags ⚠️⏰, title "{chore title}")
   2. User opens the app again on the same day — no additional `chore-due-soon` push fires for that assignment (deduped via `dueNotifiedAt`)
   3. The assignment's `dueNotifiedAt` timestamp is written to the DB after the first notification fires
   4. If the ntfy server is unreachable during the lazy sweep, the chore list still loads successfully and the error is logged
   5. Concurrent fetches (e.g. phone and laptop opened at the same time) only fire one notification per assignment per day — the conditional update inside `prisma.$transaction` prevents the double-fire
+
 **Plans**: TBD
 
 ### Phase 13: chore-completed trigger
@@ -294,10 +316,12 @@ Plans:
 **Depends on**: Phase 9, Phase 10
 **Requirements**: NOTIFY-04
 **Success Criteria** (what must be TRUE):
+
   1. Child completes a one-off chore assignment — all parents with ntfy topics set receive a `chore-completed` push (priority 2, tags ✔️⭐, title "{chore title}")
   2. Child completes a recurring occurrence — the same push fires to all parents' topics
   3. If no parent has an ntfy topic configured, no push fires and no error is raised
   4. If the ntfy server is unreachable, the completion still succeeds (200 OK) and the error is logged but does not surface to the client
+
 **Plans**: TBD
 
 ## Progress
@@ -317,7 +341,7 @@ Note: Phase 6 (User Management) depends on Phase 2 (Auth), not Phase 5. It can b
 | 6. Admin Backend Service             | v2.2.0     | 1/1            | Complete    | 2026-05-03 |
 | 7. Routes, Controllers & Auth        | v2.2.0     | 1/1            | Complete    | 2026-05-03 |
 | 8. Backend Tests                     | v2.2.0     | 2/2            | Complete    | 2026-05-03 |
-| 9. Frontend Components               | v2.2.0     | 2/2            | Complete    | 2026-05-03 |
+| 9. Frontend Components               | v2.2.0     | 2/2 | Complete   | 2026-05-03 |
 | 10. Frontend Page & Integration      | v2.2.0     | 2/2            | Complete    | 2026-05-03 |
 | rewrite-1. Scaffold                  | v1-rewrite | 2/2            | ✅ Complete | 2026-05-22 |
 | rewrite-2. Authentication            | v1-rewrite | 4/4            | ✅ Complete | 2026-05-23 |
@@ -327,7 +351,7 @@ Note: Phase 6 (User Management) depends on Phase 2 (Auth), not Phase 5. It can b
 | rewrite-6. User Mgmt + Profile       | v1-rewrite | 3/3            | ✅ Complete | 2026-06-29 |
 | rewrite-7. Frontend Polish + Docker  | v1-rewrite | 2/2            | ✅ Complete | 2026-06-29 |
 | rewrite-8. Switchover                | v1-rewrite | 1/1            | ✅ Complete | 2026-06-29 |
-| 9. Foundation (Notifications)        | v3.1       | 0/TBD          | Not started | -          |
+| 9. Foundation (Notifications)        | v3.1       | 0/2            | Planning    | -          |
 | 10. Profile UI + ntfy topic route    | v3.1       | 0/TBD          | Not started | -          |
 | 11. chore-assigned trigger           | v3.1       | 0/TBD          | Not started | -          |
 | 12. chore-due-soon lazy trigger      | v3.1       | 0/TBD          | Not started | -          |
