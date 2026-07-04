@@ -240,7 +240,7 @@ export async function notifyDueSoon(
     const { title, body, priority, tags, click } = dueSoonBody({
       id: item.id,
       template: { title: item.template.title, points: item.template.points },
-      dueDate: new Date(item.dueDate + 'T00:00:00'),
+      dueDate: new Date(item.dueDate + 'T00:00:00Z'),
     })
 
     // Optimistic write: mark as notified BEFORE the async network call.
