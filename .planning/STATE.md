@@ -1,19 +1,19 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.1.0
-milestone_name: Notifications
-current_phase: null
-current_phase_name: null
-status: Awaiting next milestone
-last_updated: "2026-07-04T14:51:04.878Z"
+milestone: v3.2.0
+milestone_name: Teen Appeal Redesign
+current_phase: 13
+current_phase_name: M1 The Look
+status: Executing phase 13
+last_updated: "2026-07-04T17:10:00.000Z"
 last_activity: 2026-07-04
-last_activity_desc: Milestone v3.1.0 completed and archived
+last_activity_desc: Milestone v3.2.0 initialized — spec + M1 plan written, prisma dup-field bug fixed
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_phases: 2
+  completed_phases: 0
+  total_plans: 2
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -23,14 +23,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v3.1 milestone init)
 
 **Core value:** Any family member can open the app, see their chores for today, and complete them — without the app requiring a devops engineer to maintain.
-**Current focus:** Milestone v3.1.0 complete — awaiting next milestone
+**Current focus:** Milestone v3.2.0 Teen Appeal Redesign — Phase 13 (M1 "The Look")
 
 ## Current Position
 
-Phase: Milestone v3.1.0 complete
-Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-04 — Milestone v3.1.0 completed and archived
+Phase: 13 — M1 "The Look" (dark redesign + frontend gamification)
+Plan: docs/superpowers/plans/2026-07-04-frontend-redesign-m1-the-look.md (15 tasks)
+Spec: docs/superpowers/specs/2026-07-04-frontend-redesign-design.md
+Status: Executing (subagent-driven)
+Last activity: 2026-07-04 — Milestone initialized; spec + M1 plan committed; prisma duplicate dueNotifiedAt fields fixed (fe8496f)
+
+**Phase 14 (M2 "The Game"):** backend streaks, levels, badges — planned in detail after M1 ships and the kids give feedback.
 
 ## Performance Metrics
 
@@ -86,6 +89,11 @@ Recent decisions affecting current work:
 - [v3.1]: `dueNotifiedAt DateTime?` on `ChoreAssignment` + `RecurringOccurrence` — preferred over boolean for automatic day-rollover; concurrent-dedup via conditional `prisma.$transaction`
 - [v3.1]: Ntfy topic Zod-validated as `^[-_A-Za-z0-9]{12,64}$` — 12-char minimum because topic is an access token
 - [v3.1]: Click header is relative path `/chores/{id}` (not absolute URL) — avoids leaking internal hostname to lock screen
+- [v3.2]: Dark-only design system (no light theme) — one theme done well; teens are the audience
+- [v3.2]: Two milestones — M1 visual redesign + frontend-computable gamification first, M2 backend streaks/levels/badges after kid feedback
+- [v3.2]: Fonts self-hosted via @fontsource (Inter + Space Grotesk) — private network, no CDN
+- [v3.2]: `GET /api/points/leaderboard` is family-visible to all authenticated roles — intentional exception to child-own-data rule
+- [v3.2]: No framer-motion — CSS transitions + canvas-confetti only, keep bundle small
 
 ### Pending Todos
 
