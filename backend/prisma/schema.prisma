@@ -47,6 +47,7 @@ model ChoreAssignment {
   assignedToId    Int
   dueDate         DateTime
   status          String   @default("PENDING")
+  dueNotifiedAt   DateTime?
   completedAt     DateTime?
   pointsAwarded   Int?
   notes           String?
@@ -102,6 +103,7 @@ model RecurringOccurrence {
   assignedToId    Int
   dueDate         DateTime
   status          String   @default("PENDING")
+  dueNotifiedAt   DateTime?
   pointsAwarded   Int?
   completedAt     DateTime?
   dueNotifiedAt   DateTime?

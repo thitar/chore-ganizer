@@ -1,6 +1,6 @@
 jest.mock('../../config/notifications', () => ({
   isNtfyConfigured: true,
-  getNtfyConfig: jest.fn(() => ({ enabled: true, baseUrl: 'https://ntfy.example.com' })),
+  getNtfyConfig: jest.fn(() => ({ baseUrl: 'https://ntfy.example.com' })),
 }))
 
 jest.mock('../../config/prisma', () => ({
@@ -14,6 +14,7 @@ jest.mock('../../config/prisma', () => ({
       findMany: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       delete: jest.fn(),
     },
     pointLog: {
@@ -25,6 +26,7 @@ jest.mock('../../config/prisma', () => ({
     recurringOccurrence: {
       findMany: jest.fn(),
       createMany: jest.fn(),
+      updateMany: jest.fn(),
     },
     $transaction: jest.fn(),
   },
@@ -169,57 +171,31 @@ describe('assignmentService.create', () => {
 
 describe('assignmentService.create — ntfy disabled', () => {
   it('does not fire ntfy fetch when NTFY_BASE_URL is unset', async () => {
-    jest.resetModules()
-    jest.doMock('../../config/notifications', () => ({
-      isNtfyConfigured: false,
-      getNtfyConfig: jest.fn(() => ({ enabled: false, baseUrl: '' })),
-    }))
-    jest.doMock('../../config/prisma', () => ({
-      prisma: {
-        choreTemplate: {
-          findUnique: jest.fn(),
-          findMany: jest.fn(),
-        },
-        choreAssignment: {
-          create: jest.fn(),
-          findMany: jest.fn(),
-          findUnique: jest.fn(),
-          update: jest.fn(),
-          delete: jest.fn(),
-        },
-        pointLog: { create: jest.fn() },
-        recurringChore: { findMany: jest.fn() },
-        recurringOccurrence: { findMany: jest.fn(), createMany: jest.fn() },
-        $transaction: jest.fn(),
-      },
-    }))
+    const ns = require('../../services/notification.service')
+    jest.spyOn(ns, 'notifyChoreAssigned').mockImplementation(() => {})
 
-    const freshPrisma = require('../../config/prisma').prisma
-    freshPrisma.recurringChore.findMany.mockResolvedValue([])
-    freshPrisma.recurringOccurrence.findMany.mockResolvedValue([])
-    const freshService = require('../../services/assignment.service')
-
-    freshPrisma.choreTemplate.findUnique.mockResolvedValue({ id: 1 })
     const created = {
       id: 1, choreTemplateId: 1, assignedToId: 2, dueDate: new Date('2026-07-15'),
       status: 'PENDING', pointsAwarded: null, notes: null,
     }
-    freshPrisma.choreAssignment.create.mockResolvedValue(created)
     const enriched = {
       id: 1, choreTemplateId: 1, assignedToId: 2, dueDate: new Date('2026-07-15'),
       status: 'PENDING', pointsAwarded: null, notes: null,
       template: { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen' },
       assignedTo: { id: 2, name: 'Alice', color: '#10B981', ntfyTopic: 'alice-topic' },
     }
-    freshPrisma.choreAssignment.findUnique.mockResolvedValue(enriched)
+    prisma.choreTemplate.findUnique.mockResolvedValue({ id: 1 })
+    prisma.choreAssignment.create.mockResolvedValue(created)
+    prisma.choreAssignment.findUnique.mockResolvedValue(enriched)
 
     const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(new Response())
 
-    const result = await freshService.create({ choreTemplateId: 1, assignedToId: 2, dueDate: '2026-07-15' })
+    const result = await assignmentService.create({ choreTemplateId: 1, assignedToId: 2, dueDate: '2026-07-15' })
 
     expect(fetchSpy).not.toHaveBeenCalled()
     expect(result).toBe(enriched)
     fetchSpy.mockRestore()
+    ns.notifyChoreAssigned.mockRestore()
   })
 })
 
@@ -232,12 +208,13 @@ describe('assignmentService.getAll', () => {
         assignedToId: 3,
         dueDate: new Date('2026-06-15T00:00:00Z'),
         status: 'PENDING',
+        dueNotifiedAt: null,
         completedAt: null,
         pointsAwarded: null,
         notes: null,
         createdAt: new Date('2026-06-01T00:00:00Z'),
         template: { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen' },
-        assignedTo: { id: 3, name: 'Alice', color: '#10B981' },
+        assignedTo: { id: 3, name: 'Alice', color: '#10B981', ntfyTopic: 'alice-topic' },
       },
     ]
     prisma.choreAssignment.findMany.mockResolvedValue(assignments)
@@ -249,6 +226,7 @@ describe('assignmentService.getAll', () => {
     )
     expect(result[0]).toMatchObject({ id: 1, type: 'REGULAR' })
     expect(result[0].dueDate).toBe('2026-06-15')
+    expect(result[0].dueNotifiedAt).toBeNull()
   })
 
   it('returns only own assignments for CHILD role', async () => {
@@ -259,12 +237,13 @@ describe('assignmentService.getAll', () => {
         assignedToId: 3,
         dueDate: new Date('2026-06-20T00:00:00Z'),
         status: 'PENDING',
+        dueNotifiedAt: null,
         completedAt: null,
         pointsAwarded: null,
         notes: null,
         createdAt: new Date('2026-06-05T00:00:00Z'),
         template: { id: 2, title: 'Clean Room', points: 15, category: 'bedroom' },
-        assignedTo: { id: 3, name: 'Alice', color: '#10B981' },
+        assignedTo: { id: 3, name: 'Alice', color: '#10B981', ntfyTopic: null },
       },
     ]
     prisma.choreAssignment.findMany.mockResolvedValue(assignments)
@@ -277,6 +256,7 @@ describe('assignmentService.getAll', () => {
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe(3)
     expect(result[0].type).toBe('REGULAR')
+    expect(result[0].dueNotifiedAt).toBeNull()
   })
 })
 
@@ -410,5 +390,174 @@ describe('assignmentService.delete_', () => {
 
     await expect(assignmentService.delete_(999))
       .rejects.toMatchObject({ statusCode: 404 })
+  })
+})
+
+describe('assignmentService.getAll - notification sweep', () => {
+  let fetchSpy: jest.SpyInstance
+
+  function makeRegularItem(overrides: Record<string, unknown> = {}) {
+    const today = new Date()
+    return {
+      id: 1,
+      choreTemplateId: 1,
+      assignedToId: 3,
+      dueDate: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+      status: 'PENDING',
+      dueNotifiedAt: null,
+      completedAt: null,
+      pointsAwarded: null,
+      notes: null,
+      createdAt: new Date('2026-06-01T00:00:00Z'),
+      template: { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen' },
+      assignedTo: { id: 3, name: 'Alice', color: '#10B981', ntfyTopic: 'alice-topic' },
+      ...overrides,
+    }
+  }
+
+  function makeRecurringItem(overrides: Record<string, unknown> = {}) {
+    const today = new Date()
+    return {
+      id: 10,
+      recurringChoreId: 5,
+      assignedToId: 3,
+      dueDate: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+      status: 'PENDING',
+      dueNotifiedAt: null,
+      completedAt: null,
+      pointsAwarded: null,
+      createdAt: new Date('2026-06-01T00:00:00Z'),
+      chore: {
+        id: 5,
+        choreTemplateId: 1,
+        template: { id: 1, title: 'Sweep Floor', points: 5, category: 'kitchen' },
+      },
+      assignedTo: { id: 3, name: 'Alice', color: '#10B981', ntfyTopic: 'alice-topic' },
+      ...overrides,
+    }
+  }
+
+  function tomorrow(): Date {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    return d
+  }
+
+  beforeEach(() => {
+    fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(new Response())
+    jest.clearAllMocks()
+    delete require.cache[require.resolve('../../services/assignment.service')]
+    prisma.recurringChore.findMany.mockResolvedValue([])
+    prisma.recurringOccurrence.findMany.mockResolvedValue([])
+    assignmentService = require('../../services/assignment.service')
+  })
+
+  afterEach(() => {
+    fetchSpy.mockRestore()
+  })
+
+  it('fires ntfy fetch with correct payload for due-today un-notified item', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([makeRegularItem()])
+
+    await assignmentService.getAll(1, 'PARENT')
+    await new Promise((resolve) => setImmediate(resolve))
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://ntfy.example.com/alice-topic',
+      expect.objectContaining({
+        method: 'POST',
+        body: 'Wash Dishes — 10 pts, due today',
+        headers: expect.objectContaining({
+          Title: 'Chore-Ganizer',
+          Priority: '4',
+          Tags: 'warning,alarm_clock',
+          Click: '/chores/1',
+        }),
+      })
+    )
+    expect(prisma.choreAssignment.updateMany).toHaveBeenCalledWith({
+      where: { id: 1, dueNotifiedAt: null },
+      data: { dueNotifiedAt: expect.any(Date) },
+    })
+  })
+
+  it('does not fire for already-notified due-today item', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([
+      makeRegularItem({ dueNotifiedAt: new Date() }),
+    ])
+
+    await assignmentService.getAll(1, 'PARENT')
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(prisma.choreAssignment.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('does not fire for item due tomorrow', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([
+      makeRegularItem({ dueDate: tomorrow() }),
+    ])
+
+    await assignmentService.getAll(1, 'PARENT')
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('does not fire when assignedTo.ntfyTopic is null', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([
+      makeRegularItem({ assignedTo: { id: 3, name: 'Alice', color: '#10B981', ntfyTopic: null } }),
+    ])
+
+    await assignmentService.getAll(1, 'PARENT')
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('does not fire for COMPLETED item', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([
+      makeRegularItem({ status: 'COMPLETED' }),
+    ])
+
+    await assignmentService.getAll(1, 'PARENT')
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('getAll still succeeds and logs warning when fetch throws after optimistic write', async () => {
+    fetchSpy.mockRestore()
+    const localFetchSpy = jest.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'))
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+    prisma.choreAssignment.findMany.mockResolvedValue([makeRegularItem()])
+
+    try {
+      const result = await assignmentService.getAll(1, 'PARENT')
+      await new Promise((resolve) => setImmediate(resolve))
+
+      expect(result).toHaveLength(1)
+      expect(result[0].id).toBe(1)
+      // Optimistic write happens before the network call, so updateMany IS called
+      expect(prisma.choreAssignment.updateMany).toHaveBeenCalled()
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('[ntfy] send failed'))
+    } finally {
+      warnSpy.mockRestore()
+      localFetchSpy.mockRestore()
+    }
+  })
+
+  it('REGULAR + RECURRING both trigger notifications', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([makeRegularItem()])
+    prisma.recurringOccurrence.findMany.mockResolvedValue([makeRecurringItem()])
+
+    await assignmentService.getAll(1, 'PARENT')
+    await new Promise((resolve) => setImmediate(resolve))
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    expect(prisma.choreAssignment.updateMany).toHaveBeenCalledWith({
+      where: { id: 1, dueNotifiedAt: null },
+      data: { dueNotifiedAt: expect.any(Date) },
+    })
+    expect(prisma.recurringOccurrence.updateMany).toHaveBeenCalledWith({
+      where: { id: 10, dueNotifiedAt: null },
+      data: { dueNotifiedAt: expect.any(Date) },
+    })
   })
 })

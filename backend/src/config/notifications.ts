@@ -8,5 +8,5 @@ if (!isNtfyConfigured) {
 }
 
 export function getNtfyConfig() {
-  return { enabled: isNtfyConfigured, baseUrl: BASE_URL }
+  return { baseUrl: BASE_URL }
 }

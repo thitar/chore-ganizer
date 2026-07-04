@@ -1,7 +1,8 @@
 import { prisma } from '../config/prisma'
 import { AppError } from '../middleware/errorHandler'
 import { generateOccurrences } from './recurring.service'
-import { notifyChoreAssigned } from './notification.service'
+import { notifyChoreAssigned, isNtfyConfigured, sendNtfy } from './notification.service'
+import { dueSoonBody } from './notification.formatters'
 
 export async function create(data: {
   choreTemplateId: number
@@ -64,7 +65,7 @@ export async function getAll(userId: number, role: string, fromStr?: string, toS
       where,
       include: {
         template: { select: { id: true, title: true, points: true, category: true } },
-        assignedTo: { select: { id: true, name: true, color: true } },
+        assignedTo: { select: { id: true, name: true, color: true, ntfyTopic: true } },
       },
       orderBy: { dueDate: 'asc' },
     }),
@@ -76,7 +77,7 @@ export async function getAll(userId: number, role: string, fromStr?: string, toS
             template: { select: { id: true, title: true, points: true, category: true } },
           },
         },
-        assignedTo: { select: { id: true, name: true, color: true } },
+        assignedTo: { select: { id: true, name: true, color: true, ntfyTopic: true } },
       },
       orderBy: { dueDate: 'asc' },
     }),
@@ -92,6 +93,7 @@ export async function getAll(userId: number, role: string, fromStr?: string, toS
     completedAt: a.completedAt?.toISOString() ?? null,
     pointsAwarded: a.pointsAwarded,
     notes: a.notes,
+    dueNotifiedAt: a.dueNotifiedAt?.toISOString() ?? null,
     createdAt: a.createdAt.toISOString(),
     template: a.template,
     assignedTo: a.assignedTo,
@@ -108,13 +110,16 @@ export async function getAll(userId: number, role: string, fromStr?: string, toS
       status: o.status,
       completedAt: o.completedAt?.toISOString() ?? null,
       pointsAwarded: o.pointsAwarded,
+      dueNotifiedAt: o.dueNotifiedAt?.toISOString() ?? null,
       notes: null,
       createdAt: o.createdAt.toISOString(),
       template: o.chore!.template,
       assignedTo: o.assignedTo,
     }))
 
-  return [...regular, ...recurring].sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+  const combined = [...regular, ...recurring].sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+  void notifyDueSoon(combined)
+  return combined
 }
 
 export async function update(
@@ -163,7 +168,7 @@ export async function complete(assignmentId: number, userId: number) {
       where: { id: assignmentId },
       include: {
         template: { select: { id: true, title: true, points: true, category: true } },
-        assignedTo: { select: { id: true, name: true, color: true } },
+        assignedTo: { select: { id: true, name: true, color: true, ntfyTopic: true } },
       },
     })
   })
@@ -198,7 +203,7 @@ export async function uncomplete(assignmentId: number) {
       where: { id: assignmentId },
       include: {
         template: { select: { id: true, title: true, points: true, category: true } },
-        assignedTo: { select: { id: true, name: true, color: true } },
+        assignedTo: { select: { id: true, name: true, color: true, ntfyTopic: true } },
       },
     })
   })
@@ -213,6 +218,62 @@ export async function delete_(assignmentId: number) {
 
   await prisma.choreAssignment.delete({ where: { id: assignmentId } })
   return { deleted: true }
+}
+
+export async function notifyDueSoon(
+  items: Array<{
+    id: number
+    type: 'REGULAR' | 'RECURRING'
+    dueDate: string
+    status: string
+    dueNotifiedAt: string | null
+    assignedTo: { ntfyTopic: string | null } | null
+    template: { title: string; points: number }
+  }>
+): Promise<Set<number>> {
+  if (!isNtfyConfigured) return new Set()
+
+  const today = new Date().toISOString().slice(0, 10)
+  const dueItems = items.filter(
+    (i) =>
+      i.dueDate === today &&
+      (i.status === 'PENDING' || i.status === 'PARTIALLY_COMPLETE') &&
+      !i.dueNotifiedAt &&
+      i.assignedTo?.ntfyTopic
+  )
+
+  if (dueItems.length === 0) return new Set()
+
+  const notified = new Set<number>()
+
+  for (const item of dueItems) {
+    const topic = item.assignedTo!.ntfyTopic!
+    const { title, body, priority, tags, click } = dueSoonBody({
+      id: item.id,
+      template: { title: item.template.title, points: item.template.points },
+      dueDate: new Date(item.dueDate + 'T00:00:00Z'),
+    })
+
+    // Optimistic write: mark as notified BEFORE the async network call.
+    // This eliminates the race window where concurrent getAll() calls could
+    // both see dueNotifiedAt: null and send duplicate notifications.
+    if (item.type === 'REGULAR') {
+      await prisma.choreAssignment.updateMany({
+        where: { id: item.id, dueNotifiedAt: null },
+        data: { dueNotifiedAt: new Date() },
+      })
+    } else {
+      await prisma.recurringOccurrence.updateMany({
+        where: { id: item.id, dueNotifiedAt: null },
+        data: { dueNotifiedAt: new Date() },
+      })
+    }
+
+    const ok = await sendNtfy(topic, title, body, { priority, tags, click })
+    if (ok) notified.add(item.id)
+  }
+
+  return notified
 }
 
 function isRecordNotFoundError(err: unknown): boolean {

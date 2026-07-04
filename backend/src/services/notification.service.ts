@@ -3,8 +3,11 @@ import { assignedBody, dueSoonBody, completedBody } from './notification.formatt
 
 export { isNtfyConfigured }
 
-export function relativeChoreUrl(id: number): string {
-  return `/chores/${id}`
+type AssignmentWithIncludes = {
+  id: number
+  template: { title: string; points: number }
+  assignedTo: { ntfyTopic: string | null }
+  dueDate: Date
 }
 
 export async function sendNtfy(
@@ -12,8 +15,8 @@ export async function sendNtfy(
   title: string,
   body: string,
   opts: { priority?: 1 | 2 | 3 | 4 | 5; tags?: string[]; click?: string } = {}
-): Promise<void> {
-  if (!isNtfyConfigured || !topic) return
+): Promise<boolean> {
+  if (!isNtfyConfigured || !topic) return false
   const { baseUrl } = getNtfyConfig()
   const url = `${baseUrl}/${encodeURIComponent(topic)}`
   const headers: Record<string, string> = {
@@ -22,23 +25,17 @@ export async function sendNtfy(
   }
   if (opts.tags?.length) headers['Tags'] = opts.tags.join(',')
   if (opts.click) headers['Click'] = opts.click
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 3000)
   try {
-    await fetch(url, {
-      method: 'POST',
-      body,
-      headers,
-      signal: AbortSignal.timeout(3000),
-    })
+    await fetch(url, { method: 'POST', body, headers, signal: controller.signal })
+    return true
   } catch (err) {
     console.warn(`[ntfy] send failed for topic ${topic}: ${err instanceof Error ? err.message : String(err)}`)
+    return false
+  } finally {
+    clearTimeout(timeoutId)
   }
-}
-
-type AssignmentWithIncludes = {
-  id: number
-  template: { title: string; points: number }
-  assignedTo: { ntfyTopic: string | null }
-  dueDate: Date
 }
 
 export function notifyChoreAssigned(assignment: AssignmentWithIncludes): void {
@@ -48,11 +45,11 @@ export function notifyChoreAssigned(assignment: AssignmentWithIncludes): void {
   void sendNtfy(topic, title, body, { priority, tags, click })
 }
 
-export function notifyChoreDueSoon(assignment: AssignmentWithIncludes): void {
+export async function notifyChoreDueSoon(assignment: AssignmentWithIncludes): Promise<boolean> {
   const topic = assignment.assignedTo.ntfyTopic
-  if (!topic) return
+  if (!topic) return false
   const { title, body, priority, tags, click } = dueSoonBody(assignment)
-  void sendNtfy(topic, title, body, { priority, tags, click })
+  return sendNtfy(topic, title, body, { priority, tags, click })
 }
 
 export function notifyChoreCompleted(

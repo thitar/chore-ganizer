@@ -2,7 +2,7 @@ import { sendNtfy, notifyChoreAssigned, notifyChoreDueSoon, notifyChoreCompleted
 
 jest.mock('../../config/notifications', () => ({
   isNtfyConfigured: true,
-  getNtfyConfig: jest.fn(() => ({ enabled: true, baseUrl: 'https://ntfy.example.com' })),
+  getNtfyConfig: jest.fn(() => ({ baseUrl: 'https://ntfy.example.com' })),
 }))
 
 const mockAssignment = {
@@ -76,7 +76,7 @@ describe('notification.service', () => {
       expect(callArgs[1].headers.Click).toBe('/chores/42')
     })
 
-    it('uses AbortSignal.timeout(3000)', async () => {
+    it('uses AbortController with 3000ms timeout', async () => {
       await sendNtfy('topic', 'Title', 'body')
       const callArgs = (global.fetch as jest.Mock).mock.calls[0]
       expect(callArgs[1].signal).toBeDefined()
@@ -88,7 +88,7 @@ describe('notification.service', () => {
       jest.resetModules()
       jest.mock('../../config/notifications', () => ({
         isNtfyConfigured: false,
-        getNtfyConfig: jest.fn(() => ({ enabled: false, baseUrl: '' })),
+        getNtfyConfig: jest.fn(() => ({ baseUrl: '' })),
       }))
     })
 
@@ -140,6 +140,11 @@ describe('notification.service', () => {
     it('does not call sendNtfy when topic is null', () => {
       notifyChoreDueSoon({ ...mockAssignment, assignedTo: { ntfyTopic: null } })
       expect(global.fetch).not.toHaveBeenCalled()
+    })
+
+    it('returns false when topic is null', async () => {
+      const result = await notifyChoreDueSoon({ ...mockAssignment, assignedTo: { ntfyTopic: null } })
+      expect(result).toBe(false)
     })
   })
 

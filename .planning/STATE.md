@@ -1,20 +1,19 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.1
+milestone: v3.1.0
 milestone_name: Notifications
-current_phase: 12
-current_phase_name: chore-due-soon lazy trigger
-status: executing
-stopped_at: Phase 11 context gathered
-last_updated: "2026-07-02T19:45:06.281Z"
-last_activity: 2026-07-02
-last_activity_desc: Phase 11 complete, transitioned to Phase 12
+current_phase: null
+current_phase_name: null
+status: Awaiting next milestone
+last_updated: "2026-07-04T14:51:04.878Z"
+last_activity: 2026-07-04
+last_activity_desc: Milestone v3.1.0 completed and archived
 progress:
-  total_phases: 13
-  completed_phases: 2
-  total_plans: 7
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 6
   completed_plans: 6
-  percent: 15
+  percent: 100
 ---
 
 # Project State
@@ -24,16 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v3.1 milestone init)
 
 **Core value:** Any family member can open the app, see their chores for today, and complete them — without the app requiring a devops engineer to maintain.
-**Current focus:** Phase 11 — chore-assigned-trigger
+**Current focus:** Milestone v3.1.0 complete — awaiting next milestone
 
 ## Current Position
 
-Phase: 12 — chore-due-soon lazy trigger
-Plan: Not started
-Status: Executing Phase 11
-Last activity: 2026-07-02 — Phase 11 complete, transitioned to Phase 12
-
-Progress: [██████████] 100%
+Phase: Milestone v3.1.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-04 — Milestone v3.1.0 completed and archived
 
 ## Performance Metrics
 
@@ -56,8 +53,11 @@ Progress: [██████████] 100%
 | rewrite-7 Polish+Docker | 2/2 | ✅ Complete |
 | rewrite-8 Switchover | 1/1 | ✅ Complete |
 
-**By Phase (v3.1):** 1/5 — see ROADMAP.md
-| Phase 10 | 3/3 | ✅ Complete |
+**By Phase (v3.1):** 6/6 plans shipped across 4 phases — see ROADMAP.md
+| Phase 9 | 2/2 | ✅ Shipped | 2026-07-04
+| Phase 10 | 2/2 | ✅ Shipped | 2026-07-04
+| Phase 11 | 1/1 | ✅ Shipped | 2026-07-04
+| Phase 12 | 1/1 | ✅ Shipped | 2026-07-04 |
 
 **Test totals:** 162 backend + 81 frontend + 51 E2E = 294 passing (pre-v3.1 baseline).
 
@@ -132,10 +132,4 @@ None — v3.0.0 (rewrite) switchover complete (commit 38feb91), legacy archived 
 
 ## Operator Next Steps
 
-- Run `/gsd-plan-phase 12` to plan the chore-due-soon lazy trigger
-
-## Session
-
-**Last session:** 2026-07-02T20:00:00.000Z
-**Stopped at:** Phase 12 context gathered
-**Resume file:** .planning/phases/12-chore-due-soon-lazy-trigger/12-CONTEXT.md
+- Start the next milestone with /gsd-new-milestone
