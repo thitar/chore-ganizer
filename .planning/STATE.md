@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Notifications
-current_phase: 10
-current_phase_name: Profile UI + User topic route
+current_phase: 12
+current_phase_name: chore-due-soon lazy trigger
 status: executing
-stopped_at: Phase 10 context gathered
-last_updated: "2026-06-29T20:30:43.008Z"
-last_activity: 2026-06-29
-last_activity_desc: Phase 09 complete, transitioned to Phase 10
+stopped_at: Phase 11 context gathered
+last_updated: "2026-07-02T19:45:06.281Z"
+last_activity: 2026-07-02
+last_activity_desc: Phase 11 complete, transitioned to Phase 12
 progress:
   total_phases: 13
-  completed_phases: 0
-  total_plans: 3
-  completed_plans: 2
-  percent: 0
+  completed_phases: 2
+  total_plans: 7
+  completed_plans: 6
+  percent: 15
 ---
 
 # Project State
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v3.1 milestone init)
 
 **Core value:** Any family member can open the app, see their chores for today, and complete them — without the app requiring a devops engineer to maintain.
-**Current focus:** Phase 09 — foundation
+**Current focus:** Phase 11 — chore-assigned-trigger
 
 ## Current Position
 
-Phase: 10 — Profile UI + User topic route
+Phase: 12 — chore-due-soon lazy trigger
 Plan: Not started
-Status: Ready to execute
-Last activity: 2026-06-29 — Phase 09 complete, transitioned to Phase 10
+Status: Executing Phase 11
+Last activity: 2026-07-02 — Phase 11 complete, transitioned to Phase 12
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -56,11 +56,13 @@ Progress: [░░░░░░░░░░] 0%
 | rewrite-7 Polish+Docker | 2/2 | ✅ Complete |
 | rewrite-8 Switchover | 1/1 | ✅ Complete |
 
-**By Phase (v3.1):** 0/5 — see ROADMAP.md
+**By Phase (v3.1):** 1/5 — see ROADMAP.md
+| Phase 10 | 3/3 | ✅ Complete |
 
 **Test totals:** 162 backend + 81 frontend + 51 E2E = 294 passing (pre-v3.1 baseline).
 
 **Recent Trend:** v3.0.0 (rewrite) shipped on schedule. v3.1 research complete with HIGH confidence — zero new npm deps, fire-and-forget pattern, lazy due-soon sweep.
+| Phase 10 P02 | 4min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -130,10 +132,10 @@ None — v3.0.0 (rewrite) switchover complete (commit 38feb91), legacy archived 
 
 ## Operator Next Steps
 
-- Run `/gsd-discuss-phase 9` then `/gsd-plan-phase 9` to plan the Foundation phase (notification.service + config + schema migration)
+- Run `/gsd-plan-phase 12` to plan the chore-due-soon lazy trigger
 
 ## Session
 
-**Last session:** 2026-06-29T20:30:42.943Z
-**Stopped at:** Phase 10 context gathered
-**Resume file:** .planning/phases/10-profile-ui-user-topic-route/10-CONTEXT.md
+**Last session:** 2026-07-02T20:00:00.000Z
+**Stopped at:** Phase 12 context gathered
+**Resume file:** .planning/phases/12-chore-due-soon-lazy-trigger/12-CONTEXT.md

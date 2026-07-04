@@ -3,6 +3,7 @@ jest.mock('../../config/prisma', () => ({
     user: {
       findUnique: jest.fn(),
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -196,5 +197,90 @@ describe('usersService.updateColor', () => {
 
   it('throws 400 on invalid hex', async () => {
     await expect(usersService.updateColor(1, 'red')).rejects.toMatchObject({ statusCode: 400 })
+  })
+})
+
+describe('usersService.updateNtfyTopic', () => {
+  it('updates ntfyTopic with valid topic', async () => {
+    prisma.user.findFirst.mockResolvedValue(null) // no conflict
+    prisma.user.update.mockResolvedValue({ id: 1, name: 'Alice', email: 'alice@home.local', role: 'CHILD', color: '#3B82F6', ntfyTopic: 'chore-alice-a1b2c3' })
+
+    const result = await usersService.updateNtfyTopic(1, 'chore-alice-a1b2c3')
+
+    expect(prisma.user.findFirst).toHaveBeenCalledWith({
+      where: { ntfyTopic: 'chore-alice-a1b2c3', id: { not: 1 } },
+    })
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { ntfyTopic: 'chore-alice-a1b2c3' },
+      select: { id: true, name: true, email: true, role: true, color: true, ntfyTopic: true },
+    })
+    expect(result.ntfyTopic).toBe('chore-alice-a1b2c3')
+  })
+
+  it('clears ntfyTopic when null passed', async () => {
+    prisma.user.update.mockResolvedValue({ id: 1, name: 'Alice', email: 'alice@home.local', role: 'CHILD', color: '#3B82F6', ntfyTopic: null })
+
+    const result = await usersService.updateNtfyTopic(1, null)
+
+    expect(prisma.user.findFirst).not.toHaveBeenCalled()
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { ntfyTopic: null },
+      select: { id: true, name: true, email: true, role: true, color: true, ntfyTopic: true },
+    })
+    expect(result.ntfyTopic).toBeNull()
+  })
+
+  it('clears ntfyTopic when empty string passed', async () => {
+    prisma.user.update.mockResolvedValue({ id: 1, name: 'Alice', email: 'alice@home.local', role: 'CHILD', color: '#3B82F6', ntfyTopic: null })
+
+    const result = await usersService.updateNtfyTopic(1, '')
+
+    expect(prisma.user.findFirst).not.toHaveBeenCalled()
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { ntfyTopic: null },
+      select: { id: true, name: true, email: true, role: true, color: true, ntfyTopic: true },
+    })
+    expect(result.ntfyTopic).toBeNull()
+  })
+
+  it('throws 400 on topic too short (< 12 chars)', async () => {
+    await expect(usersService.updateNtfyTopic(1, 'short')).rejects.toMatchObject({ statusCode: 400 })
+    expect(prisma.user.findFirst).not.toHaveBeenCalled()
+    expect(prisma.user.update).not.toHaveBeenCalled()
+  })
+
+  it('throws 400 on topic with invalid characters (spaces, special chars)', async () => {
+    await expect(usersService.updateNtfyTopic(1, 'has spaces!')).rejects.toMatchObject({ statusCode: 400 })
+    expect(prisma.user.findFirst).not.toHaveBeenCalled()
+    expect(prisma.user.update).not.toHaveBeenCalled()
+  })
+
+  it('throws 409 when topic already taken by another user', async () => {
+    prisma.user.findFirst.mockResolvedValue({ id: 2, ntfyTopic: 'chore-bob-x1y2z3' })
+
+    await expect(usersService.updateNtfyTopic(1, 'chore-bob-x1y2z3')).rejects.toMatchObject({ statusCode: 409 })
+    expect(prisma.user.update).not.toHaveBeenCalled()
+  })
+
+  it('succeeds when topic is already owned by same user (no self-conflict)', async () => {
+    prisma.user.findFirst.mockResolvedValue(null) // no other user has it
+    prisma.user.update.mockResolvedValue({ id: 1, name: 'Alice', email: 'alice@home.local', role: 'CHILD', color: '#3B82F6', ntfyTopic: 'chore-alice-a1b2c3' })
+
+    const result = await usersService.updateNtfyTopic(1, 'chore-alice-a1b2c3')
+
+    expect(prisma.user.findFirst).toHaveBeenCalledWith({
+      where: { ntfyTopic: 'chore-alice-a1b2c3', id: { not: 1 } },
+    })
+    expect(result.ntfyTopic).toBe('chore-alice-a1b2c3')
+  })
+
+  it('throws 400 on topic too long (> 64 chars)', async () => {
+    const longTopic = 'a'.repeat(65)
+    await expect(usersService.updateNtfyTopic(1, longTopic)).rejects.toMatchObject({ statusCode: 400 })
+    expect(prisma.user.findFirst).not.toHaveBeenCalled()
+    expect(prisma.user.update).not.toHaveBeenCalled()
   })
 })

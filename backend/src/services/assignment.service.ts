@@ -1,6 +1,7 @@
 import { prisma } from '../config/prisma'
 import { AppError } from '../middleware/errorHandler'
 import { generateOccurrences } from './recurring.service'
+import { notifyChoreAssigned } from './notification.service'
 
 export async function create(data: {
   choreTemplateId: number
@@ -11,7 +12,7 @@ export async function create(data: {
   const template = await prisma.choreTemplate.findUnique({ where: { id: data.choreTemplateId } })
   if (!template) throw new AppError('Template not found', 404)
 
-  return prisma.choreAssignment.create({
+  const created = await prisma.choreAssignment.create({
     data: {
       choreTemplateId: data.choreTemplateId,
       assignedToId: data.assignedToId,
@@ -20,6 +21,18 @@ export async function create(data: {
       status: 'PENDING',
     },
   })
+
+  const enriched = await prisma.choreAssignment.findUnique({
+    where: { id: created.id },
+    include: {
+      template: { select: { id: true, title: true, points: true, category: true } },
+      assignedTo: { select: { id: true, name: true, color: true, ntfyTopic: true } },
+    },
+  })
+
+  if (enriched) void notifyChoreAssigned(enriched)
+
+  return enriched ?? created
 }
 
 export async function getAll(userId: number, role: string, fromStr?: string, toStr?: string) {

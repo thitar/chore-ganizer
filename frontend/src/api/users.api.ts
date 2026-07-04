@@ -7,6 +7,7 @@ export interface UserSummary {
   name: string
   role: string
   color: string
+  ntfyTopic: string | null
 }
 
 export interface UserWithEmail extends UserSummary {
@@ -44,5 +45,17 @@ export async function updatePassword(
 
 export async function updateColor(color: string): Promise<UserWithEmail> {
   const response = await api.put('/me/color', { color })
+  return response.data.data
+}
+
+export async function updateNtfyTopic(ntfyTopic: string | null): Promise<UserWithEmail> {
+  const payload = ntfyTopic === '' ? null : ntfyTopic
+  const response = await api.put('/me/ntfy-topic', { ntfyTopic: payload })
+  return response.data.data
+}
+
+export async function updateUserNtfyTopic(userId: number, ntfyTopic: string | null): Promise<UserWithEmail> {
+  const payload = ntfyTopic === '' ? null : ntfyTopic
+  const response = await api.put(`/${userId}/ntfy-topic`, { ntfyTopic: payload })
   return response.data.data
 }
