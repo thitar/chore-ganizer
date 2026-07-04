@@ -1,5 +1,29 @@
 # Milestones
 
+## v3.1.0 Notifications (Shipped: 2026-07-04)
+
+**Phases completed:** 9 phases, 27 plans, 26 tasks
+
+**Key accomplishments:**
+
+- Three security gaps from cross-AI review closed: session fixation, ghost sessions, and cookie residue — with updated test coverage proving each fix.
+- Four issues from cross-AI review closed: stale query cache on logout, no error type discrimination in ProtectedRoute, dashboard scope creep (points), and suboptimal auth caching — with React Router v7 future flags opted in.
+- Prisma schema updated with PointLog model, pointsAwarded field, Zod installed, and validation middleware created — all Phase 3 plans can now depend on this foundation.
+- TDD implementation of ChoreTemplate CRUD — 4 operations (create, list, update, delete) with auth gating, Zod validation, cascade logic, and 22 passing tests.
+- TDD implementation of full assignment lifecycle — 7 operations with role-scoped queries, transactional completion with PointLog audit trail, and 86 total tests passing across the backend.
+- Axios API clients and React Query hooks bridging backend API to frontend pages — type-safe, D-17 parameter mapping, automatic cache invalidation.
+- Four shared presentational components created — NavBar extracted from DashboardPage with role-conditional links, FilterBar with live controls, StatusBadge with status pills, and ConfirmDelete with inline confirmation panel.
+- Two full page components with comprehensive state coverage — TemplatesPage for parent-only template CRUD, MyChoresPage for role-scoped chore list with complete flow. 17 unit tests verify all states.
+- Final plan of Phase 3 — AssignmentsPage with full CRUD and user filtering, Dashboard updated with Upcoming Chores section, and all Phase 3 routes wired in App.tsx. Phase 3 is now feature-complete across frontend and backend.
+- Complete
+- Complete
+- Complete
+- Complete
+- Complete
+- Lazy due-soon ntfy push sweep piggybacking on assignment.getAll() — fires notifications for due-today un-notified items with concurrent-safe dueNotifiedAt dedup
+
+---
+
 ## v1-rewrite Simplified Rebuild (Shipped: 2026-06-29)
 
 **Phases completed:** 7 phases, 27 plans, 24 tasks

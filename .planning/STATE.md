@@ -1,17 +1,19 @@
 ---
 gsd_state_version: 1.0
-milestone: v1-rewrite
-milestone_name: Simplified Rebuild
-status: Shipped — awaiting next milestone
-last_updated: "2026-06-29T15:48:34.000Z"
-last_activity: 2026-06-29
-last_activity_desc: Milestone v1-rewrite merged to main and tagged
+milestone: v3.1.0
+milestone_name: Notifications
+current_phase: null
+status: Awaiting next milestone
+last_updated: "2026-07-04T14:51:04.878Z"
+last_activity: 2026-07-04
+last_activity_desc: Milestone v3.1.0 completed and archived
 progress:
-  total_phases: 8
-  completed_phases: 8
-  total_plans: 27
-  completed_plans: 27
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 6
+  completed_plans: 6
   percent: 100
+current_phase_name: null
 ---
 
 # Project State
@@ -21,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v1-rewrite ship)
 
 **Core value:** Any family member can open the app, see their chores for today, and complete them — without the app requiring a devops engineer to maintain.
-**Current focus:** Planning next milestone (V2 notifications + pocket money)
+**Current focus:** Phase 11 — chore-assigned-trigger
 
 ## Current Position
 
-Phase: Milestone v1-rewrite SHIPPED 2026-06-29
+Phase: Milestone v3.1.0 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-06-29 — v1-rewrite merged to main (b01a314) and tagged v1-rewrite
+Last activity: 2026-07-04 — Milestone v3.1.0 completed and archived
 
 ## Performance Metrics
 
@@ -112,4 +114,4 @@ None — switchover complete (commit 38feb91), legacy archived in `backend-v1-ar
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone (V2 candidates: ntfy.sh notifications, pocket money conversion rate)
+- Start the next milestone with /gsd-new-milestone
