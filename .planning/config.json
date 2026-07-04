@@ -21,7 +21,8 @@
     "research_before_questions": true,
     "discuss_mode": "discuss",
     "skip_discuss": false,
-    "use_worktrees": true
+    "use_worktrees": true,
+    "ai_integration_phase": true
   },
   "intel": {
     "enabled": true

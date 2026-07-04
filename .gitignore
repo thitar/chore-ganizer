@@ -96,3 +96,6 @@ graphify-out/
 e2e/screenshots/
 test-results/
 playwright-report/
+
+# Planning cache
+.planning/research/.cache/
