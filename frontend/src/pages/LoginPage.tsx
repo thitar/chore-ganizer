@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { LogIn } from 'lucide-react'
+import { Button } from '../components/ui/Button'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -26,42 +27,32 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-        <div className="text-center mb-8">
-          <LogIn className="mx-auto h-12 w-12 text-primary" />
-          <h1 className="text-2xl font-bold mt-4">Chore-Ganizer</h1>
-          <p className="text-gray-600 mt-2">Sign in to your account</p>
+    <div className="relative flex min-h-screen items-center justify-center bg-bg px-4">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.15),transparent_60%)]"
+      />
+      <div className="relative w-full max-w-md rounded-2xl border border-edge bg-surface p-8 shadow-glow">
+        <div className="mb-8 text-center">
+          <LogIn aria-hidden className="mx-auto h-12 w-12 text-accent" />
+          <h1 className="mt-4 bg-gradient-to-r from-accent to-accent-to bg-clip-text font-display text-3xl font-bold text-transparent">
+            Chore-Ganizer
+          </h1>
+          <p className="mt-2 text-zinc-400">Sign in to your account</p>
         </div>
-        {error && <div className="bg-red-50 text-red-600 p-3 rounded mb-4">{error}</div>}
+        {error && <div className="alert-error mb-4">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-normal text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring"
-              required
-            />
+            <label className="mb-1 block text-sm text-zinc-400">Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
           </div>
           <div>
-            <label className="block text-sm font-normal text-gray-700 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring"
-              required
-            />
+            <label className="mb-1 block text-sm text-zinc-400">Password</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="input" required />
           </div>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-primary text-white py-2 min-h-[44px] rounded-lg hover:bg-primary-hover disabled:opacity-50"
-          >
+          <Button type="submit" loading={isSubmitting} className="w-full">
             {isSubmitting ? 'Signing in...' : 'Sign in'}
-          </button>
+          </Button>
         </form>
       </div>
     </div>
