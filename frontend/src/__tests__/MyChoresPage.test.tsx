@@ -3,6 +3,8 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MyChoresPage } from '../pages/MyChoresPage'
 
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }))
+
 const mockComplete = vi.fn()
 
 const queryClient = new QueryClient({
@@ -79,10 +81,10 @@ describe('MyChoresPage', () => {
     vi.useRealTimers()
   })
 
-  it('renders loading spinner', () => {
+  it('renders loading skeleton', () => {
     mockAssignmentsState({ isLoading: true })
-    renderPage()
-    expect(screen.getByText('Loading your chores...')).toBeInTheDocument()
+    const { container } = renderPage()
+    expect(container.querySelectorAll('.animate-\\[shimmer_1\\.5s_infinite\\]').length).toBeGreaterThan(0)
   })
 
   it('renders empty state', () => {
