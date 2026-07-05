@@ -34,7 +34,7 @@ export function PointsPage() {
   const { data: myPoints, isLoading, error } = useMyPoints()
   const { users } = useUsers()
   const adjustMutation = useAdjustPoints()
-  const { data: leaderboard } = useLeaderboard()
+  const { data: leaderboard, isLoading: isLeaderboardLoading } = useLeaderboard()
   const [adjustUserId, setAdjustUserId] = useState<number | null>(null)
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
@@ -124,7 +124,12 @@ export function PointsPage() {
         </div>
 
         <h3 className="mb-3 font-display text-base font-bold text-zinc-100">Family Leaderboard</h3>
-        {leaderboard && leaderboard.length > 0 ? (
+        {isLeaderboardLoading ? (
+          <div className="mb-6 space-y-3">
+            <Skeleton className="h-16" />
+            <Skeleton className="h-16" />
+          </div>
+        ) : leaderboard && leaderboard.length > 0 ? (
           <div className="mb-6">
             <Leaderboard entries={leaderboard} />
           </div>

@@ -43,12 +43,12 @@ export function LoginPage() {
         {error && <div className="alert-error mb-4">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm text-zinc-400">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
+            <label htmlFor="login-email" className="mb-1 block text-sm text-zinc-400">Email</label>
+            <input id="login-email" type="email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-zinc-400">Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="input" required />
+            <label htmlFor="login-password" className="mb-1 block text-sm text-zinc-400">Password</label>
+            <input id="login-password" type="password" value={password} onChange={e => setPassword(e.target.value)} className="input" required />
           </div>
           <Button type="submit" loading={isSubmitting} className="w-full">
             {isSubmitting ? 'Signing in...' : 'Sign in'}

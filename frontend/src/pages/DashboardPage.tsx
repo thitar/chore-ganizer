@@ -17,7 +17,7 @@ export function DashboardPage() {
   const { user } = useAuth()
   const { assignments, isLoading, error } = useAssignments()
   const { data: myPoints } = useMyPoints()
-  const { data: leaderboard } = useLeaderboard()
+  const { data: leaderboard, isLoading: isLeaderboardLoading } = useLeaderboard()
 
   const mine = useMemo(
     () => assignments.filter(a => a.assignedToId === user?.id),
@@ -156,7 +156,12 @@ export function DashboardPage() {
 
         <section>
           <h3 className="mb-4 font-display text-base font-bold text-zinc-100">Leaderboard</h3>
-          {leaderboard && leaderboard.length > 0 ? (
+          {isLeaderboardLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-16" />
+              <Skeleton className="h-16" />
+            </div>
+          ) : leaderboard && leaderboard.length > 0 ? (
             <Leaderboard entries={leaderboard} limit={3} />
           ) : (
             <p className="text-sm text-zinc-500">No points earned yet.</p>

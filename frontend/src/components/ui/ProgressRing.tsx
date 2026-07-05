@@ -1,3 +1,5 @@
+import { useId } from 'react'
+
 interface ProgressRingProps {
   value: number
   max: number
@@ -6,6 +8,7 @@ interface ProgressRingProps {
 }
 
 export function ProgressRing({ value, max, size = 96, label }: ProgressRingProps) {
+  const gradientId = useId()
   const radius = (size - 12) / 2
   const circumference = 2 * Math.PI * radius
   const fraction = max > 0 ? Math.min(value / max, 1) : 0
@@ -19,7 +22,7 @@ export function ProgressRing({ value, max, size = 96, label }: ProgressRingProps
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="url(#progress-ring-gradient)"
+          stroke={`url(#${gradientId})`}
           strokeWidth="8"
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -27,7 +30,7 @@ export function ProgressRing({ value, max, size = 96, label }: ProgressRingProps
           className="transition-[stroke-dashoffset] duration-700 ease-out"
         />
         <defs>
-          <linearGradient id="progress-ring-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#8B5CF6" />
             <stop offset="100%" stopColor="#6366F1" />
           </linearGradient>

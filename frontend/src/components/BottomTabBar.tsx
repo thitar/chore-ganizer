@@ -34,7 +34,7 @@ export function BottomTabBar() {
   return (
     <>
       {sheetOpen && (
-        <div className="fixed inset-0 z-40 md:hidden" onClick={() => setSheetOpen(false)}>
+        <div className="fixed inset-0 z-50 md:hidden" onClick={() => setSheetOpen(false)}>
           <div className="absolute inset-0 bg-black/60" />
           <div
             className="absolute inset-x-2 bottom-16 animate-fade-up rounded-2xl border border-edge bg-surface-raised p-2"
@@ -53,7 +53,7 @@ export function BottomTabBar() {
           </div>
         </div>
       )}
-      <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-50 border-t border-edge bg-bg/90 backdrop-blur md:hidden">
+      <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-[51] border-t border-edge bg-bg/90 backdrop-blur md:hidden">
         <div className="grid auto-cols-fr grid-flow-col">
           {TABS.map(t => {
             const active = location.pathname === t.to
