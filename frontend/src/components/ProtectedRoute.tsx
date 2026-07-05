@@ -14,7 +14,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
       </div>
     )
   }
@@ -31,7 +31,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
           <p className="text-gray-600 mb-4">Unable to reach the server. Please check your connection and try again.</p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover"
+            className="bg-accent text-white px-4 py-2 rounded-lg hover:opacity-90"
           >
             Retry
           </button>

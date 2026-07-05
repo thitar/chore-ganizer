@@ -17,13 +17,7 @@ export default {
           DEFAULT: '#8B5CF6',
           to: '#6366F1',
         },
-        // Legacy alias kept so unmigrated pages keep compiling mid-milestone.
-        primary: {
-          DEFAULT: '#8B5CF6',
-          hover: '#7C3AED',
-          light: 'rgba(139,92,246,0.12)',
-          ring: '#8B5CF6',
-        },
+
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
