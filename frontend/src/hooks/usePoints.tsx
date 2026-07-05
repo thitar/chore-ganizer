@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as pointsApi from '../api/points.api'
+import { getLeaderboard } from '../api/points.api'
 
 export function useMyPoints() {
   return useQuery({
@@ -24,5 +25,12 @@ export function useAdjustPoints() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['points'] })
     },
+  })
+}
+
+export function useLeaderboard() {
+  return useQuery({
+    queryKey: ['points', 'leaderboard'],
+    queryFn: getLeaderboard,
   })
 }

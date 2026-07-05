@@ -46,3 +46,13 @@ export async function adjustPoints(
   const response = await api.post('/adjust', { userId, amount, reason })
   return response.data.data
 }
+
+export interface LeaderboardEntry {
+  user: { id: number; name: string; color: string; role: string }
+  balance: number
+}
+
+export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+  const response = await api.get('/leaderboard')
+  return response.data.data
+}
