@@ -58,3 +58,19 @@ export async function adjustPoints(userId: number, amount: number, reason: strin
     },
   })
 }
+
+export async function getLeaderboard() {
+  const [users, sums] = await Promise.all([
+    prisma.user.findMany({
+      select: { id: true, name: true, color: true, role: true },
+    }),
+    prisma.pointLog.groupBy({
+      by: ['userId'],
+      _sum: { amount: true },
+    }),
+  ])
+  const balanceByUser = new Map(sums.map(s => [s.userId, s._sum.amount ?? 0]))
+  return users
+    .map(user => ({ user, balance: balanceByUser.get(user.id) ?? 0 }))
+    .sort((a, b) => b.balance - a.balance)
+}

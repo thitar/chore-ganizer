@@ -4,9 +4,11 @@ jest.mock('../../config/prisma', () => ({
       aggregate: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
+      groupBy: jest.fn(),
     },
     user: {
       findUnique: jest.fn(),
+      findMany: jest.fn(),
     },
   },
 }))
@@ -160,5 +162,25 @@ describe('pointsService.adjustPoints', () => {
   it('throws 404 if target user does not exist', async () => {
     prisma.user.findUnique.mockResolvedValue(null)
     await expect(pointsService.adjustPoints(999, 5, 'Test')).rejects.toMatchObject({ statusCode: 404 })
+  })
+})
+
+describe('getLeaderboard', () => {
+  it('returns all users with balances sorted descending, defaulting to 0', async () => {
+    prisma.user.findMany.mockResolvedValue([
+      { id: 1, name: 'Dad', color: '#3B82F6', role: 'PARENT' },
+      { id: 2, name: 'Alice', color: '#F59E0B', role: 'CHILD' },
+      { id: 3, name: 'Bob', color: '#10B981', role: 'CHILD' },
+    ])
+    prisma.pointLog.groupBy.mockResolvedValue([
+      { userId: 2, _sum: { amount: 120 } },
+      { userId: 1, _sum: { amount: 30 } },
+    ])
+
+    const result = await pointsService.getLeaderboard()
+
+    expect(result.map((e: { user: { id: number } }) => e.user.id)).toEqual([2, 1, 3])
+    expect(result[0].balance).toBe(120)
+    expect(result[2].balance).toBe(0)
   })
 })

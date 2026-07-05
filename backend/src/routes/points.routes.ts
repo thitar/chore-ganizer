@@ -14,6 +14,15 @@ router.get('/me', authenticate, async (req, res, next) => {
   }
 })
 
+router.get('/leaderboard', authenticate, async (_req, res, next) => {
+  try {
+    const result = await pointsService.getLeaderboard()
+    res.json({ success: true, data: result, error: null })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.get('/users/:id', authenticate, async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10)
