@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../hooks/useAuth'
 import { useUsers } from '../hooks/useUsers'
-import { NavBar } from '../components/NavBar'
+import { AppShell } from '../components/AppShell'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { Avatar } from '../components/ui/Avatar'
+import { Toast } from '../components/ui/Toast'
 import * as usersApi from '../api/users.api'
 
 function generateRandomTopic(username: string): string {
@@ -163,129 +168,125 @@ export function ProfilePage() {
 
   if (usersLoading && !currentUserFull) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <NavBar />
+      <AppShell>
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-          <span className="ml-3 text-gray-500">Loading profile...</span>
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-500 border-t-accent" />
+          <span className="ml-3 text-zinc-400">Loading profile...</span>
         </div>
-      </div>
+      </AppShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavBar />
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">My Profile</h2>
+    <AppShell>
+      <div className="mx-auto max-w-4xl">
+        <PageHeader title="My Profile" />
 
-        {/* User Info */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center gap-4">
-            <span className="w-12 h-12 rounded-full" style={{ backgroundColor: user?.color ?? '#4F46E5' }} />
-            <div>
-              <div className="text-lg font-bold text-gray-900">{user?.name}</div>
-              <div className="text-sm text-gray-600">{currentUserFull ? (currentUserFull as any).email : ''}</div>
-              <div className="text-xs text-gray-500">Role: {user?.role}</div>
-            </div>
+        {/* Identity header */}
+        <div className="mb-6 flex items-center gap-4">
+          <Avatar name={user?.name ?? ''} color={user?.color ?? '#4F46E5'} size="lg" />
+          <div>
+            <p className="font-display text-xl font-bold text-zinc-100">{user?.name}</p>
+            <p className="text-sm text-zinc-400">{currentUserFull ? (currentUserFull as any).email : ''}</p>
+            <p className="text-xs text-zinc-500">Role: {user?.role}</p>
           </div>
         </div>
 
         {/* Change Password */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Change Password</h3>
+        <Card className="p-6 mb-6">
+          <h3 className="mb-4 font-display text-lg font-bold text-zinc-100">Change Password</h3>
           <form onSubmit={handlePasswordChange} className="space-y-3">
             <div>
-              <label htmlFor="current-password" className="block text-sm font-normal text-gray-700 mb-1">Current password</label>
-              <input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring" />
+              <label htmlFor="current-password" className="mb-1 block text-sm font-normal text-zinc-300">Current password</label>
+              <input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="input" />
             </div>
             <div>
-              <label htmlFor="new-password" className="block text-sm font-normal text-gray-700 mb-1">New password (min 6)</label>
-              <input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring" />
+              <label htmlFor="new-password" className="mb-1 block text-sm font-normal text-zinc-300">New password (min 6)</label>
+              <input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="input" />
             </div>
             <div>
-              <label htmlFor="confirm-password" className="block text-sm font-normal text-gray-700 mb-1">Confirm new password</label>
-              <input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring" />
+              <label htmlFor="confirm-password" className="mb-1 block text-sm font-normal text-zinc-300">Confirm new password</label>
+              <input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="input" />
             </div>
-            {passwordError && <div className="bg-red-50 text-red-600 p-3 rounded text-sm">{passwordError}</div>}
-            <button type="submit" disabled={isUpdatingPassword} className="bg-primary text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-primary-hover disabled:opacity-50">
+            {passwordError && <div className="alert-error">{passwordError}</div>}
+            <Button type="submit" loading={isUpdatingPassword}>
               {isUpdatingPassword ? 'Updating...' : 'Update Password'}
-            </button>
+            </Button>
           </form>
-        </div>
+        </Card>
 
         {/* Display Color */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Display Color</h3>
-          <p className="text-sm text-gray-600 mb-4">Choose a color to identify yourself across the app.</p>
+        <Card className="p-6 mb-6">
+          <h3 className="mb-4 font-display text-lg font-bold text-zinc-100">Display Color</h3>
+          <p className="mb-4 text-sm text-zinc-400">Choose a color to identify yourself across the app.</p>
           <form onSubmit={handleColorChange} className="space-y-3">
             <div>
-              <label htmlFor="profile-color" className="block text-sm font-normal text-gray-700 mb-1">Color</label>
-              <input id="profile-color" type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-16 h-10 border rounded-lg" />
+              <label htmlFor="profile-color" className="mb-1 block text-sm font-normal text-zinc-300">Color</label>
+              <input id="profile-color" type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 w-16 rounded-lg border border-edge" />
             </div>
-            {colorError && <div className="bg-red-50 text-red-600 p-3 rounded text-sm">{colorError}</div>}
-            <button type="submit" disabled={isUpdatingColor} className="bg-primary text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-primary-hover disabled:opacity-50">
+            {colorError && <div className="alert-error">{colorError}</div>}
+            <Button type="submit" loading={isUpdatingColor}>
               {isUpdatingColor ? 'Updating...' : 'Update Color'}
-            </button>
+            </Button>
           </form>
-        </div>
+        </Card>
 
         {/* Push Notifications */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Push Notifications</h3>
-          <p className="text-sm text-gray-600 mb-4">Set your ntfy topic to receive push notifications when chores are assigned or due.</p>
+        <Card className="p-6 mb-6">
+          <h3 className="mb-2 font-display text-lg font-bold text-zinc-100">Push Notifications</h3>
+          <p className="mb-4 text-sm text-zinc-400">Set your ntfy topic to receive push notifications when chores are assigned or due.</p>
 
           {!topicEdit ? (
             /* View mode */
             ownTopic ? (
               <div>
-                <div className="text-sm text-gray-700 mb-2">
+                <div className="mb-2 text-sm text-zinc-300">
                   <span className="font-mono">{ownTopic}</span>
                 </div>
-                <button
+                <Button
+                  variant="secondary"
                   type="button"
                   onClick={() => { setTopicValue(ownTopic); setTopicEdit(true); setTopicError(null); }}
-                  className="bg-white border border-gray-300 text-gray-700 px-3 py-2 min-h-[44px] rounded-lg text-sm hover:bg-gray-50"
                 >
                   Change
-                </button>
+                </Button>
               </div>
             ) : (
               /* Empty state - show input directly */
               <div className="space-y-3">
                 <div>
-                  <label htmlFor="topic-input" className="block text-sm font-normal text-gray-700 mb-1">Topic</label>
+                  <label htmlFor="topic-input" className="mb-1 block text-sm font-normal text-zinc-300">Topic</label>
                   <input
                     id="topic-input"
                     type="text"
                     value={topicValue}
                     onChange={(e) => setTopicValue(e.target.value)}
                     placeholder="Enter your topic or generate one below"
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring font-mono"
+                    className="input font-mono"
                   />
                 </div>
                 <div className="flex gap-2">
-                  <button
+                  <Button
+                    variant="secondary"
                     type="button"
                     onClick={() => {
                       const topic = generateRandomTopic(user?.name ?? 'user')
                       setTopicValue(topic)
                     }}
-                    className="bg-white border border-gray-300 text-gray-700 px-3 py-2 min-h-[44px] rounded-lg text-sm hover:bg-gray-50"
                   >
                     Generate random topic
-                  </button>
+                  </Button>
                 </div>
-                {topicError && <div className="bg-red-50 text-red-600 p-3 rounded text-sm">{topicError}</div>}
+                {topicError && <div className="alert-error">{topicError}</div>}
                 <div className="flex gap-2">
-                  <button
+                  <Button
                     type="button"
                     onClick={handleTopicSave}
                     disabled={isUpdatingTopic || !topicValue.trim()}
-                    className="bg-indigo-600 text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                    loading={isUpdatingTopic}
                   >
                     {isUpdatingTopic ? 'Saving...' : 'Save'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )
@@ -293,53 +294,53 @@ export function ProfilePage() {
             /* Edit mode */
             <div className="space-y-3">
               <div>
-                <label htmlFor="topic-input" className="block text-sm font-normal text-gray-700 mb-1">Topic</label>
+                <label htmlFor="topic-input" className="mb-1 block text-sm font-normal text-zinc-300">Topic</label>
                 <input
                   id="topic-input"
                   type="text"
                   value={topicValue}
                   onChange={(e) => setTopicValue(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring font-mono"
+                  className="input font-mono"
                 />
               </div>
               <div className="flex gap-2">
-                <button
+                <Button
+                  variant="secondary"
                   type="button"
                   onClick={() => {
                     const topic = generateRandomTopic(user?.name ?? 'user')
                     setTopicValue(topic)
                   }}
-                  className="bg-white border border-gray-300 text-gray-700 px-3 py-2 min-h-[44px] rounded-lg text-sm hover:bg-gray-50"
                 >
                   Generate random topic
-                </button>
+                </Button>
               </div>
-              {topicError && <div className="bg-red-50 text-red-600 p-3 rounded text-sm">{topicError}</div>}
+              {topicError && <div className="alert-error">{topicError}</div>}
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={handleTopicSave}
                   disabled={isUpdatingTopic}
-                  className="bg-indigo-600 text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                  loading={isUpdatingTopic}
                 >
                   {isUpdatingTopic ? 'Saving...' : 'Save'}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="secondary"
                   type="button"
                   onClick={() => { setTopicEdit(false); setTopicError(null); }}
-                  className="bg-white border border-gray-300 text-gray-700 px-3 py-2 min-h-[44px] rounded-lg text-sm hover:bg-gray-50"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Family Topics (Parent only) */}
         {user?.role === 'PARENT' && familyMembers.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Family Topics</h3>
+          <Card className="p-6 mb-6">
+            <h3 className="mb-4 font-display text-lg font-bold text-zinc-100">Family Topics</h3>
             <div className="space-y-3">
               {familyMembers.map((member) => {
                 const isEditing = familyEditMap[member.id] ?? false
@@ -348,28 +349,28 @@ export function ProfilePage() {
                 const isSaving = familyUpdatingMap[member.id] ?? false
 
                 return (
-                  <div key={member.id} className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-gray-900">{member.name}</span>
+                  <div key={member.id} className="rounded-xl bg-white/5 p-4">
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="font-medium text-zinc-100">{member.name}</span>
                     </div>
 
                     {!isEditing ? (
                       /* View mode */
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600 font-mono">
+                        <span className="font-mono text-sm text-zinc-400">
                           {member.ntfyTopic ?? 'Not set'}
                         </span>
-                        <button
+                        <Button
+                          variant="secondary"
                           type="button"
                           onClick={() => {
                             setFamilyEditMap((prev) => ({ ...prev, [member.id]: true }))
                             setFamilyValueMap((prev) => ({ ...prev, [member.id]: member.ntfyTopic ?? '' }))
                             setFamilyErrorMap((prev) => ({ ...prev, [member.id]: null }))
                           }}
-                          className="bg-white border border-gray-300 text-gray-700 px-3 py-2 min-h-[44px] rounded-lg text-sm hover:bg-gray-50"
                         >
                           Edit
-                        </button>
+                        </Button>
                       </div>
                     ) : (
                       /* Edit mode */
@@ -379,41 +380,41 @@ export function ProfilePage() {
                             type="text"
                             value={editValue}
                             onChange={(e) => setFamilyValueMap((prev) => ({ ...prev, [member.id]: e.target.value }))}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring font-mono"
+                            className="input font-mono"
                           />
                         </div>
                         <div className="flex gap-2">
-                          <button
+                          <Button
+                            variant="secondary"
                             type="button"
                             onClick={() => {
                               const topic = generateRandomTopic(member.name)
                               setFamilyValueMap((prev) => ({ ...prev, [member.id]: topic }))
                             }}
-                            className="bg-white border border-gray-300 text-gray-700 px-3 py-2 min-h-[44px] rounded-lg text-sm hover:bg-gray-50"
                           >
                             Generate random topic
-                          </button>
+                          </Button>
                         </div>
-                        {editError && <div className="bg-red-50 text-red-600 p-3 rounded text-sm">{editError}</div>}
+                        {editError && <div className="alert-error">{editError}</div>}
                         <div className="flex gap-2">
-                          <button
+                          <Button
                             type="button"
                             onClick={() => handleFamilyTopicSave(member.id)}
                             disabled={isSaving}
-                            className="bg-indigo-600 text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                            loading={isSaving}
                           >
                             {isSaving ? 'Saving...' : 'Save'}
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="secondary"
                             type="button"
                             onClick={() => {
                               setFamilyEditMap((prev) => ({ ...prev, [member.id]: false }))
                               setFamilyErrorMap((prev) => ({ ...prev, [member.id]: null }))
                             }}
-                            className="bg-white border border-gray-300 text-gray-700 px-3 py-2 min-h-[44px] rounded-lg text-sm hover:bg-gray-50"
                           >
                             Cancel
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     )}
@@ -421,25 +422,13 @@ export function ProfilePage() {
                 )
               })}
             </div>
-          </div>
+          </Card>
         )}
-      </main>
+      </div>
 
-      {passwordSuccess && (
-        <div className="fixed top-4 right-4 z-50 bg-green-50 text-green-700 px-4 py-2 rounded-lg shadow-md">
-          {passwordSuccess}
-        </div>
-      )}
-      {colorSuccess && (
-        <div className="fixed top-4 right-4 z-50 bg-green-50 text-green-700 px-4 py-2 rounded-lg shadow-md">
-          {colorSuccess}
-        </div>
-      )}
-      {topicSuccess && (
-        <div className="fixed top-4 right-4 z-50 bg-green-50 text-green-700 px-4 py-2 rounded-lg shadow-md">
-          {topicSuccess}
-        </div>
-      )}
-    </div>
+      {passwordSuccess && <Toast kind="success">{passwordSuccess}</Toast>}
+      {colorSuccess && <Toast kind="success">{colorSuccess}</Toast>}
+      {topicSuccess && <Toast kind="success">{topicSuccess}</Toast>}
+    </AppShell>
   )
 }
