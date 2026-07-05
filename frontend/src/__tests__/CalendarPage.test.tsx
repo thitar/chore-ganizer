@@ -97,10 +97,10 @@ describe('CalendarPage', () => {
     vi.useRealTimers()
   })
 
-  it('renders loading spinner', () => {
+  it('renders loading skeleton', () => {
     mockCalendarState({ isLoading: true })
-    renderPage()
-    expect(screen.getByText('Loading calendar...')).toBeInTheDocument()
+    const { container } = renderPage()
+    expect(container.querySelectorAll('.animate-\\[shimmer_1\\.5s_infinite\\]').length).toBeGreaterThan(0)
   })
 
   it('renders error state with retry', () => {
