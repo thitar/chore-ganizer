@@ -2,8 +2,24 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MyChoresPage } from '../pages/MyChoresPage'
+import confetti from 'canvas-confetti'
 
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }))
+
+// jsdom has no matchMedia — simulate prefers-reduced-motion explicitly so
+// celebrate()'s confetti call is deterministic regardless of jsdom defaults.
+function mockMatchMedia(reduced: boolean) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockImplementation((query: string) => ({
+      matches: reduced && query.includes('prefers-reduced-motion'),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  )
+  window.matchMedia = globalThis.matchMedia as typeof window.matchMedia
+}
 
 const mockComplete = vi.fn()
 
@@ -139,6 +155,31 @@ describe('MyChoresPage', () => {
     await waitFor(() => {
       expect(mockComplete).toHaveBeenCalledWith(99, 'RECURRING')
     })
+  })
+
+  it('fires confetti celebration when completion succeeds', async () => {
+    mockMatchMedia(false)
+    mockComplete.mockResolvedValue({ ...defaultAssignment, status: 'COMPLETED' })
+    mockAssignmentsState({ assignments: [defaultAssignment] })
+    renderPage()
+    fireEvent.click(screen.getByText('Mark Complete'))
+    await waitFor(() => {
+      expect(mockComplete).toHaveBeenCalledWith(1, 'REGULAR')
+    })
+    expect(vi.mocked(confetti)).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not fire confetti when completion fails', async () => {
+    mockMatchMedia(false)
+    mockComplete.mockRejectedValueOnce(new Error('Network error'))
+    mockAssignmentsState({ assignments: [defaultAssignment] })
+    renderPage()
+    fireEvent.click(screen.getByText('Mark Complete'))
+    await waitFor(() => {
+      expect(screen.getByText(/failed to complete chore/i)).toBeInTheDocument()
+    })
+    expect(vi.mocked(confetti)).not.toHaveBeenCalled()
+    expect(screen.queryByText(/chore marked complete/i)).not.toBeInTheDocument()
   })
 
   it('shows Completing... when isCompleting is true', () => {
