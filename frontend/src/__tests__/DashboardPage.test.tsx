@@ -216,9 +216,11 @@ describe('DashboardPage', () => {
             choreTemplateId: 4,
             assignedToId: mockUser.id,
             dueDate: new Date('2026-06-14T09:00:00').toISOString(), // prior Sun, out of week
-            status: 'COMPLETED',
-            completedAt: new Date('2026-06-14T09:30:00').toISOString(),
-            pointsAwarded: 5,
+            // PENDING (not COMPLETED) so a Monday-vs-Sunday week-start regression
+            // changes the done/total counts instead of passing coincidentally
+            status: 'PENDING',
+            completedAt: null,
+            pointsAwarded: null,
             notes: null,
             createdAt: new Date('2026-06-01T09:00:00').toISOString(),
             template: { id: 4, title: 'Prior Sun Chore', points: 5, category: 'Kitchen' },
