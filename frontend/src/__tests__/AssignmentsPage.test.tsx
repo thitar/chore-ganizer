@@ -83,12 +83,12 @@ describe('AssignmentsPage', () => {
     vi.useRealTimers()
   })
 
-  it('renders loading spinner', () => {
+  it('renders loading skeleton', () => {
     mockAssignmentsState({ isLoading: true })
     mockTemplatesState({ templates: [{ id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen', description: null, createdById: 1, createdAt: '', updatedAt: '' }] })
     mockUsersState({ users: [] })
-    renderPage()
-    expect(screen.getByText('Loading assignments...')).toBeInTheDocument()
+    const { container } = renderPage()
+    expect(container.querySelector('.animate-\\[shimmer_1\\.5s_infinite\\]')).toBeInTheDocument()
   })
 
   it('renders empty state', () => {

@@ -8,6 +8,7 @@ import { Toast } from '../components/ui/Toast'
 import { ConfirmDelete } from '../components/ConfirmDelete'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import type { Template } from '../api/templates.api'
+import { Skeleton } from '../components/ui/Skeleton'
 
 export function TemplatesPage() {
   const {
@@ -108,9 +109,10 @@ export function TemplatesPage() {
   if (isLoading) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-          <span className="ml-3 text-zinc-400">Loading templates...</span>
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-48" />
         </div>
       </AppShell>
     )
@@ -153,19 +155,19 @@ export function TemplatesPage() {
               {formError && <div className="alert-error mb-4">{formError}</div>}
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="title" className="block text-sm font-normal text-zinc-400 mb-1">Title</label>
+                  <label htmlFor="title" className="block text-sm font-normal text-zinc-300 mb-1">Title</label>
                   <input id="title" type="text" value={title} onChange={e => setTitle(e.target.value)} className="input" required />
                 </div>
                 <div>
-                  <label htmlFor="description" className="block text-sm font-normal text-zinc-400 mb-1">Description</label>
+                  <label htmlFor="description" className="block text-sm font-normal text-zinc-300 mb-1">Description</label>
                   <textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={3} className="input" />
                 </div>
                 <div>
-                  <label htmlFor="points" className="block text-sm font-normal text-zinc-400 mb-1">Points</label>
+                  <label htmlFor="points" className="block text-sm font-normal text-zinc-300 mb-1">Points</label>
                   <input id="points" type="number" min="1" value={points} onChange={e => setPoints(e.target.value)} className="input" required />
                 </div>
                 <div>
-                  <label htmlFor="category" className="block text-sm font-normal text-zinc-400 mb-1">Category</label>
+                  <label htmlFor="category" className="block text-sm font-normal text-zinc-300 mb-1">Category</label>
                   <input id="category" type="text" value={category} onChange={e => setCategory(e.target.value)} className="input" required />
                 </div>
               </div>

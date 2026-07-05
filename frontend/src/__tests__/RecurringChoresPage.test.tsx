@@ -115,10 +115,10 @@ describe('RecurringChoresPage', () => {
     mockUsersState()
   })
 
-  it('renders loading spinner', () => {
+  it('renders loading skeleton', () => {
     mockRecurringState({ isLoading: true })
-    renderPage()
-    expect(screen.getByText('Loading recurring chores...')).toBeInTheDocument()
+    const { container } = renderPage()
+    expect(container.querySelector('.animate-\\[shimmer_1\\.5s_infinite\\]')).toBeInTheDocument()
   })
 
   it('renders empty state with Create button', () => {

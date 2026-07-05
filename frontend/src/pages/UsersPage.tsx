@@ -9,6 +9,7 @@ import { Toast } from '../components/ui/Toast'
 import { Avatar } from '../components/ui/Avatar'
 import { ConfirmDelete } from '../components/ConfirmDelete'
 import { Plus, Trash2 } from 'lucide-react'
+import { Skeleton } from '../components/ui/Skeleton'
 
 const ROLE_BADGE: Record<string, string> = {
   PARENT: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
@@ -74,9 +75,11 @@ export function UsersPage() {
   if (isLoading) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-          <span className="ml-3 text-zinc-400">Loading users...</span>
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-64" />
         </div>
       </AppShell>
     )
@@ -121,26 +124,26 @@ export function UsersPage() {
               <h3 className="text-lg font-bold text-zinc-100 mb-4">New Family Member</h3>
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-normal text-zinc-400 mb-1">Name</label>
+                  <label htmlFor="name" className="block text-sm font-normal text-zinc-300 mb-1">Name</label>
                   <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} className="input" required />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-normal text-zinc-400 mb-1">Email</label>
+                  <label htmlFor="email" className="block text-sm font-normal text-zinc-300 mb-1">Email</label>
                   <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input" required />
                 </div>
                 <div>
-                  <label htmlFor="password" className="block text-sm font-normal text-zinc-400 mb-1">Password (min 6 chars)</label>
+                  <label htmlFor="password" className="block text-sm font-normal text-zinc-300 mb-1">Password (min 6 chars)</label>
                   <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input" required minLength={6} />
                 </div>
                 <div>
-                  <label htmlFor="role" className="block text-sm font-normal text-zinc-400 mb-1">Role</label>
+                  <label htmlFor="role" className="block text-sm font-normal text-zinc-300 mb-1">Role</label>
                   <select id="role" value={role} onChange={(e) => setRole(e.target.value as 'PARENT' | 'CHILD')} className="input">
                     <option value="CHILD">Child</option>
                     <option value="PARENT">Parent</option>
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="color" className="block text-sm font-normal text-zinc-400 mb-1">Color</label>
+                  <label htmlFor="color" className="block text-sm font-normal text-zinc-300 mb-1">Color</label>
                   <input id="color" type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-16 h-10 rounded-xl border border-edge" />
                 </div>
               </div>

@@ -12,6 +12,7 @@ import { StatusBadge } from '../components/StatusBadge'
 import { ConfirmDelete } from '../components/ConfirmDelete'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import type { Assignment } from '../api/assignments.api'
+import { Skeleton } from '../components/ui/Skeleton'
 
 function currentMonthDates(): { from: string; to: string } {
   const now = new Date()
@@ -151,9 +152,11 @@ export function AssignmentsPage() {
   if (isLoading) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-          <span className="ml-3 text-zinc-400">Loading assignments...</span>
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-64" />
         </div>
       </AppShell>
     )
@@ -196,7 +199,7 @@ export function AssignmentsPage() {
               {formError && <div className="alert-error mb-4">{formError}</div>}
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="template" className="block text-sm font-normal text-zinc-400 mb-1">Template</label>
+                  <label htmlFor="template" className="block text-sm font-normal text-zinc-300 mb-1">Template</label>
                   <select id="template" value={selectedTemplateId} onChange={e => setSelectedTemplateId(e.target.value)}
                     className="input" required>
                     <option value="">Select a template...</option>
@@ -206,7 +209,7 @@ export function AssignmentsPage() {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="assignTo" className="block text-sm font-normal text-zinc-400 mb-1">Assign To</label>
+                  <label htmlFor="assignTo" className="block text-sm font-normal text-zinc-300 mb-1">Assign To</label>
                   <select id="assignTo" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)}
                     className="input" required>
                     <option value="">Select a family member...</option>
@@ -216,7 +219,7 @@ export function AssignmentsPage() {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="dueDate" className="block text-sm font-normal text-zinc-400 mb-1">Due Date</label>
+                  <label htmlFor="dueDate" className="block text-sm font-normal text-zinc-300 mb-1">Due Date</label>
                   <input id="dueDate" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
                     className="input" required />
                 </div>

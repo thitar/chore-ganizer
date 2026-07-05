@@ -9,6 +9,7 @@ import { Button } from '../components/ui/Button'
 import { Toast } from '../components/ui/Toast'
 import { ConfirmDelete } from '../components/ConfirmDelete'
 import { Plus, Trash2 } from 'lucide-react'
+import { Skeleton } from '../components/ui/Skeleton'
 
 const WEEKDAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -108,9 +109,11 @@ export function RecurringChoresPage() {
   if (isLoading) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-          <span className="ml-3 text-zinc-400">Loading recurring chores...</span>
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-64" />
         </div>
       </AppShell>
     )
@@ -156,7 +159,7 @@ export function RecurringChoresPage() {
               {formError && <div className="alert-error mb-4">{formError}</div>}
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="template" className="block text-sm font-normal text-zinc-400 mb-1">Template</label>
+                  <label htmlFor="template" className="block text-sm font-normal text-zinc-300 mb-1">Template</label>
                   <select id="template" value={templateId} onChange={e => setTemplateId(e.target.value)} className="input" required>
                     <option value="">Select a chore template...</option>
                     {templates.map(t => (
@@ -165,7 +168,7 @@ export function RecurringChoresPage() {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="frequency" className="block text-sm font-normal text-zinc-400 mb-1">Frequency</label>
+                  <label htmlFor="frequency" className="block text-sm font-normal text-zinc-300 mb-1">Frequency</label>
                   <select id="frequency" value={frequency} onChange={e => setFrequency(e.target.value as 'DAILY' | 'WEEKLY' | 'MONTHLY')} className="input">
                     <option value="DAILY">Daily</option>
                     <option value="WEEKLY">Weekly</option>
@@ -174,7 +177,7 @@ export function RecurringChoresPage() {
                 </div>
                 {frequency === 'WEEKLY' && (
                   <div>
-                    <label htmlFor="dayOfWeek" className="block text-sm font-normal text-zinc-400 mb-1">Day of Week</label>
+                    <label htmlFor="dayOfWeek" className="block text-sm font-normal text-zinc-300 mb-1">Day of Week</label>
                     <select id="dayOfWeek" value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)} className="input">
                       {WEEKDAY_LABELS.map((label, i) => (
                         <option key={i} value={i}>{label}</option>
@@ -184,13 +187,13 @@ export function RecurringChoresPage() {
                 )}
                 {frequency === 'MONTHLY' && (
                   <div>
-                    <label htmlFor="dayOfMonth" className="block text-sm font-normal text-zinc-400 mb-1">Day of Month</label>
+                    <label htmlFor="dayOfMonth" className="block text-sm font-normal text-zinc-300 mb-1">Day of Month</label>
                     <input id="dayOfMonth" type="number" min="1" max="31" value={dayOfMonth} onChange={e => setDayOfMonth(e.target.value)} className="input" required />
                     <p className="text-xs text-zinc-500 mt-1">If the month has fewer days, the chore will appear on the last day of the month.</p>
                   </div>
                 )}
                 <div>
-                  <label htmlFor="assignedTo" className="block text-sm font-normal text-zinc-400 mb-1">Assigned To</label>
+                  <label htmlFor="assignedTo" className="block text-sm font-normal text-zinc-300 mb-1">Assigned To</label>
                   <select id="assignedTo" value={assignedToId} onChange={e => setAssignedToId(e.target.value)} className="input" required>
                     <option value="">Select a child...</option>
                     {childUsers.map(u => (
