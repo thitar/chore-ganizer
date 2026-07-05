@@ -159,4 +159,182 @@ describe('DashboardPage', () => {
     renderPage()
     expect(screen.getByText('No points earned yet.')).toBeInTheDocument()
   })
+
+  describe('weekly progress and due-today (frozen clock)', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ now: new Date('2026-06-17T12:00:00'), toFake: ['Date'] })
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('computes week math including boundaries, excluding other users and out-of-week dates', () => {
+      mockAssignmentsState({
+        assignments: [
+          {
+            id: 1,
+            choreTemplateId: 1,
+            assignedToId: mockUser.id,
+            dueDate: new Date('2026-06-15T09:00:00').toISOString(), // Mon, in-week
+            status: 'COMPLETED',
+            completedAt: new Date('2026-06-15T09:30:00').toISOString(),
+            pointsAwarded: 5,
+            notes: null,
+            createdAt: new Date('2026-06-10T09:00:00').toISOString(),
+            template: { id: 1, title: 'Mon Chore', points: 5, category: 'Kitchen' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+          },
+          {
+            id: 2,
+            choreTemplateId: 2,
+            assignedToId: mockUser.id,
+            dueDate: new Date('2026-06-17T09:00:00').toISOString(), // Wed, in-week (today)
+            status: 'PENDING',
+            completedAt: null,
+            pointsAwarded: null,
+            notes: null,
+            createdAt: new Date('2026-06-10T09:00:00').toISOString(),
+            template: { id: 2, title: 'Wed Chore', points: 5, category: 'Kitchen' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+          },
+          {
+            id: 3,
+            choreTemplateId: 3,
+            assignedToId: mockUser.id,
+            dueDate: new Date('2026-06-21T09:00:00').toISOString(), // Sun, in-week
+            status: 'COMPLETED',
+            completedAt: new Date('2026-06-21T09:30:00').toISOString(),
+            pointsAwarded: 5,
+            notes: null,
+            createdAt: new Date('2026-06-10T09:00:00').toISOString(),
+            template: { id: 3, title: 'Sun Chore', points: 5, category: 'Kitchen' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+          },
+          {
+            id: 4,
+            choreTemplateId: 4,
+            assignedToId: mockUser.id,
+            dueDate: new Date('2026-06-14T09:00:00').toISOString(), // prior Sun, out of week
+            status: 'COMPLETED',
+            completedAt: new Date('2026-06-14T09:30:00').toISOString(),
+            pointsAwarded: 5,
+            notes: null,
+            createdAt: new Date('2026-06-01T09:00:00').toISOString(),
+            template: { id: 4, title: 'Prior Sun Chore', points: 5, category: 'Kitchen' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+          },
+          {
+            id: 5,
+            choreTemplateId: 5,
+            assignedToId: mockUser.id,
+            dueDate: new Date('2026-06-22T09:00:00').toISOString(), // next Mon, out of week
+            status: 'COMPLETED',
+            completedAt: new Date('2026-06-22T09:30:00').toISOString(),
+            pointsAwarded: 5,
+            notes: null,
+            createdAt: new Date('2026-06-10T09:00:00').toISOString(),
+            template: { id: 5, title: 'Next Mon Chore', points: 5, category: 'Kitchen' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+          },
+          {
+            id: 6,
+            choreTemplateId: 6,
+            assignedToId: 999, // other user, in-week — must be excluded from counts
+            dueDate: new Date('2026-06-16T09:00:00').toISOString(), // Tue, in-week
+            status: 'COMPLETED',
+            completedAt: new Date('2026-06-16T09:30:00').toISOString(),
+            pointsAwarded: 5,
+            notes: null,
+            createdAt: new Date('2026-06-10T09:00:00').toISOString(),
+            template: { id: 6, title: 'Other User Chore', points: 5, category: 'Kitchen' },
+            assignedTo: { id: 999, name: 'Bob', color: '#F59E0B' },
+          },
+        ],
+      })
+
+      renderPage()
+
+      expect(screen.getByRole('img', { name: '2 of 3' })).toBeInTheDocument()
+      expect(screen.getByText('2 of 3 done')).toBeInTheDocument()
+      expect(screen.getByText(/keep it going!/i)).toBeInTheDocument()
+    })
+
+    it('counts only in-week, current-user PENDING assignments due today for "Due today"', () => {
+      mockAssignmentsState({
+        assignments: [
+          {
+            id: 1,
+            choreTemplateId: 1,
+            assignedToId: mockUser.id,
+            dueDate: new Date('2026-06-17T09:00:00').toISOString(), // today
+            status: 'PENDING',
+            completedAt: null,
+            pointsAwarded: null,
+            notes: null,
+            createdAt: new Date('2026-06-10T09:00:00').toISOString(),
+            template: { id: 1, title: 'Today Chore', points: 5, category: 'Kitchen' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+          },
+          {
+            id: 2,
+            choreTemplateId: 2,
+            assignedToId: mockUser.id,
+            dueDate: new Date('2026-06-18T09:00:00').toISOString(), // tomorrow
+            status: 'PENDING',
+            completedAt: null,
+            pointsAwarded: null,
+            notes: null,
+            createdAt: new Date('2026-06-10T09:00:00').toISOString(),
+            template: { id: 2, title: 'Tomorrow Chore', points: 5, category: 'Kitchen' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+          },
+        ],
+      })
+
+      renderPage()
+
+      const dueTodayCard = screen.getByText('Due today').closest('div')
+      expect(dueTodayCard).not.toBeNull()
+      expect(dueTodayCard).toHaveTextContent('1')
+    })
+
+    it('shows the week-complete message when all in-week assignments are done', () => {
+      mockAssignmentsState({
+        assignments: [
+          {
+            id: 1,
+            choreTemplateId: 1,
+            assignedToId: mockUser.id,
+            dueDate: new Date('2026-06-15T09:00:00').toISOString(), // Mon, in-week
+            status: 'COMPLETED',
+            completedAt: new Date('2026-06-15T09:30:00').toISOString(),
+            pointsAwarded: 5,
+            notes: null,
+            createdAt: new Date('2026-06-10T09:00:00').toISOString(),
+            template: { id: 1, title: 'Mon Chore', points: 5, category: 'Kitchen' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+          },
+          {
+            id: 2,
+            choreTemplateId: 2,
+            assignedToId: mockUser.id,
+            dueDate: new Date('2026-06-17T09:00:00').toISOString(), // Wed, in-week
+            status: 'COMPLETED',
+            completedAt: new Date('2026-06-17T09:30:00').toISOString(),
+            pointsAwarded: 5,
+            notes: null,
+            createdAt: new Date('2026-06-10T09:00:00').toISOString(),
+            template: { id: 2, title: 'Wed Chore', points: 5, category: 'Kitchen' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+          },
+        ],
+      })
+
+      renderPage()
+
+      expect(screen.getByRole('img', { name: '2 of 2' })).toBeInTheDocument()
+      expect(screen.getByText(/week complete/i)).toBeInTheDocument()
+    })
+  })
 })
