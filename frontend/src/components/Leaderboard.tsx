@@ -10,8 +10,15 @@ export function Leaderboard({ entries, limit }: { entries: LeaderboardEntry[]; l
     <Card className="divide-y divide-edge p-0">
       {shown.map((entry, i) => (
         <div key={entry.user.id} className="flex items-center gap-3 px-4 py-3">
-          <span className="w-6 text-center" aria-hidden>
-            {MEDALS[i] ?? <span className="text-sm text-zinc-500">{i + 1}</span>}
+          <span className="w-6 text-center">
+            {MEDALS[i] ? (
+              <>
+                <span aria-hidden>{MEDALS[i]}</span>
+                <span className="sr-only">{i + 1}</span>
+              </>
+            ) : (
+              <span className="text-sm text-zinc-500">{i + 1}</span>
+            )}
           </span>
           <Avatar name={entry.user.name} color={entry.user.color} size="sm" />
           <span className="flex-1 font-medium text-zinc-200">{entry.user.name}</span>

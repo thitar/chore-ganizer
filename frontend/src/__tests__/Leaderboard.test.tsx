@@ -19,4 +19,14 @@ describe('Leaderboard', () => {
     render(<Leaderboard entries={entries} limit={2} />)
     expect(screen.queryByText('Bob')).not.toBeInTheDocument()
   })
+
+  it('exposes numeric rank to assistive tech for rows past the medals, while medals stay decorative', () => {
+    const fourEntries = [
+      ...entries,
+      { user: { id: 4, name: 'Eve', color: '#EC4899', role: 'CHILD' }, balance: -10 },
+    ]
+    render(<Leaderboard entries={fourEntries} />)
+    expect(screen.getByText('4')).toBeInTheDocument()
+    expect(screen.getByText('🥇')).toBeInTheDocument()
+  })
 })
