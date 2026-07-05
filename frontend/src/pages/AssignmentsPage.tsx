@@ -2,7 +2,11 @@ import { useState, useMemo, useEffect } from 'react'
 import { useAssignments } from '../hooks/useAssignments'
 import { useTemplates } from '../hooks/useTemplates'
 import { useUsers } from '../hooks/useUsers'
-import { NavBar } from '../components/NavBar'
+import { AppShell } from '../components/AppShell'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { Toast } from '../components/ui/Toast'
 import { FilterBar } from '../components/FilterBar'
 import { StatusBadge } from '../components/StatusBadge'
 import { ConfirmDelete } from '../components/ConfirmDelete'
@@ -146,170 +150,161 @@ export function AssignmentsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <NavBar />
+      <AppShell>
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-          <span className="ml-3 text-gray-500">Loading assignments...</span>
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+          <span className="ml-3 text-zinc-400">Loading assignments...</span>
         </div>
-      </div>
+      </AppShell>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <NavBar />
-        <div className="max-w-7xl mx-auto px-4 py-12 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h2>
-          <p className="text-gray-600 mb-4">Unable to load assignments. Check your connection and try again.</p>
-          <button onClick={() => window.location.reload()} className="bg-primary text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-primary-hover">
-            Try again
-          </button>
+      <AppShell>
+        <div className="text-center py-12">
+          <h2 className="font-display text-2xl font-bold text-zinc-100 mb-2">Something went wrong</h2>
+          <p className="text-zinc-400 mb-4">Unable to load assignments. Check your connection and try again.</p>
+          <Button onClick={() => window.location.reload()}>Try again</Button>
         </div>
-      </div>
+      </AppShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavBar />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Chore Assignments</h2>
+    <AppShell>
+      <PageHeader title="Chore Assignments" />
 
-        {assignments.length === 0 && !showForm ? (
-          <div className="text-center py-12">
-            <p className="text-lg font-bold text-gray-900 mb-1">No assignments yet</p>
-            <p className="text-gray-600 mb-4">Assign a chore to a family member to get started.</p>
-            <button onClick={openCreate} className="bg-primary text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-primary-hover flex items-center gap-1 mx-auto">
+      {assignments.length === 0 && !showForm ? (
+        <div className="text-center py-12">
+          <p className="text-lg font-bold text-zinc-100 mb-1">No assignments yet</p>
+          <p className="text-zinc-400 mb-4">Assign a chore to a family member to get started.</p>
+          <Button onClick={openCreate} className="mx-auto">
+            <Plus className="h-4 w-4" /> Assign Chore
+          </Button>
+        </div>
+      ) : (
+        <>
+          {!showForm && (
+            <Button onClick={openCreate} className="mb-4">
               <Plus className="h-4 w-4" /> Assign Chore
-            </button>
-          </div>
-        ) : (
-          <>
-            {!showForm && (
-              <button onClick={openCreate} className="bg-primary text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-primary-hover mb-4 flex items-center gap-1">
-                <Plus className="h-4 w-4" /> Assign Chore
-              </button>
-            )}
+            </Button>
+          )}
 
-            {showForm && (
-              <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 mb-4">
-                {formError && <div className="bg-red-50 text-red-600 p-3 rounded mb-4">{formError}</div>}
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="template" className="block text-sm font-normal text-gray-700 mb-1">Template</label>
-                    <select id="template" value={selectedTemplateId} onChange={e => setSelectedTemplateId(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring bg-white" required>
-                      <option value="">Select a template...</option>
-                      {templates.map(t => (
-                        <option key={t.id} value={t.id}>{t.title} ({t.points} pts)</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="assignTo" className="block text-sm font-normal text-gray-700 mb-1">Assign To</label>
-                    <select id="assignTo" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring bg-white" required>
-                      <option value="">Select a family member...</option>
-                      {children.map(u => (
-                        <option key={u.id} value={u.id}>{u.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="dueDate" className="block text-sm font-normal text-gray-700 mb-1">Due Date</label>
-                    <input id="dueDate" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring" required />
-                  </div>
+          {showForm && (
+            <Card className="p-6 mb-4">
+              {formError && <div className="alert-error mb-4">{formError}</div>}
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="template" className="block text-sm font-normal text-zinc-400 mb-1">Template</label>
+                  <select id="template" value={selectedTemplateId} onChange={e => setSelectedTemplateId(e.target.value)}
+                    className="input" required>
+                    <option value="">Select a template...</option>
+                    {templates.map(t => (
+                      <option key={t.id} value={t.id}>{t.title} ({t.points} pts)</option>
+                    ))}
+                  </select>
                 </div>
-                <div className="flex gap-2 mt-4">
-                  <button type="submit" disabled={isCreating || isUpdating} className="bg-primary text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-primary-hover disabled:opacity-50">
-                    {isCreating || isUpdating ? 'Saving...' : 'Save Assignment'}
-                  </button>
-                  <button type="button" onClick={cancelForm} disabled={isCreating || isUpdating} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50">
-                    Discard changes
-                  </button>
+                <div>
+                  <label htmlFor="assignTo" className="block text-sm font-normal text-zinc-400 mb-1">Assign To</label>
+                  <select id="assignTo" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)}
+                    className="input" required>
+                    <option value="">Select a family member...</option>
+                    {children.map(u => (
+                      <option key={u.id} value={u.id}>{u.name}</option>
+                    ))}
+                  </select>
                 </div>
-              </form>
-            )}
-
-            <FilterBar
-              statusFilter={statusFilter} onStatusChange={setStatusFilter}
-              userFilter={userFilter} onUserChange={setUserFilter}
-              users={users}
-              dateFrom={dateFrom} onDateFromChange={setDateFrom}
-              dateTo={dateTo} onDateToChange={setDateTo}
-              onClear={clearFilters} showUserFilter
-            />
-
-            {filtered.length === 0 && assignments.length > 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No assignments match your filters.{' '}
-                <button onClick={clearFilters} className="text-primary hover:underline">Clear filters</button>
+                <div>
+                  <label htmlFor="dueDate" className="block text-sm font-normal text-zinc-400 mb-1">Due Date</label>
+                  <input id="dueDate" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
+                    className="input" required />
+                </div>
               </div>
-            ) : filtered.length > 0 ? (
-              <div className="bg-white rounded-lg shadow-sm mt-4">
-                <div className="grid grid-cols-5 px-4 py-3 border-b bg-gray-50 text-sm font-normal text-gray-500">
-                  <div>Chore</div>
-                  <div>Due Date</div>
-                  <div>Status</div>
-                  <div>Points</div>
-                  <div>Actions</div>
-                </div>
-                {filtered.map(assignment => {
-                  const { label: dueDateLabel, isOverdue } = formatDate(assignment.dueDate)
-                  return (
-                    <div key={assignment.id}>
-                      <div className="grid grid-cols-5 gap-2 px-4 py-3 items-center hover:bg-gray-50">
-                        <div>
-                          <div className="font-bold text-gray-900">{assignment.template.title}</div>
-                          <div className="text-sm text-gray-500">{assignment.assignedTo.name}</div>
-                        </div>
-                        <div className={isOverdue && assignment.status === 'PENDING' ? 'text-red-600 font-bold' : 'text-gray-600'}>
-                          {dueDateLabel}
-                        </div>
-                        <div>
-                          <StatusBadge status={assignment.status} overdue={isOverdue && assignment.status === 'PENDING'} />
-                        </div>
-                        <div className="text-gray-600 text-sm">
-                          {assignment.pointsAwarded !== null ? `${assignment.pointsAwarded} pts` : `${assignment.template.points} pts`}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => openEdit(assignment)} className="p-1 text-gray-400 hover:text-gray-600" aria-label="Edit assignment">
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button onClick={() => setDeletingAssignmentId(assignment.id)} className="p-1 text-gray-400 hover:text-red-600" aria-label="Delete assignment">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
+              <div className="flex gap-2 mt-4">
+                <Button type="submit" loading={isCreating || isUpdating} onClick={handleSubmit}>
+                  {isCreating || isUpdating ? 'Saving...' : 'Save Assignment'}
+                </Button>
+                <Button type="button" variant="secondary" onClick={cancelForm} disabled={isCreating || isUpdating}>
+                  Discard changes
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          <FilterBar
+            statusFilter={statusFilter} onStatusChange={setStatusFilter}
+            userFilter={userFilter} onUserChange={setUserFilter}
+            users={users}
+            dateFrom={dateFrom} onDateFromChange={setDateFrom}
+            dateTo={dateTo} onDateToChange={setDateTo}
+            onClear={clearFilters} showUserFilter
+          />
+
+          {filtered.length === 0 && assignments.length > 0 ? (
+            <div className="text-center py-8 text-zinc-400">
+              No assignments match your filters.{' '}
+              <button onClick={clearFilters} className="text-accent hover:underline">Clear filters</button>
+            </div>
+          ) : filtered.length > 0 ? (
+            <Card className="mt-4">
+              <div className="grid grid-cols-5 px-4 py-3 border-b border-edge bg-white/5 text-sm font-normal text-zinc-400">
+                <div>Chore</div>
+                <div>Due Date</div>
+                <div>Status</div>
+                <div>Points</div>
+                <div>Actions</div>
+              </div>
+              {filtered.map(assignment => {
+                const { label: dueDateLabel, isOverdue } = formatDate(assignment.dueDate)
+                return (
+                  <div key={assignment.id}>
+                    <div className="grid grid-cols-5 gap-2 px-4 py-3 items-center hover:bg-white/5">
+                      <div>
+                        <div className="font-bold text-zinc-100">{assignment.template.title}</div>
+                        <div className="text-sm text-zinc-400">{assignment.assignedTo.name}</div>
                       </div>
-                      {deletingAssignmentId === assignment.id && (
-                        <div className="px-4 pb-3">
-                          <ConfirmDelete
-                            message="This assignment will be permanently removed. The chore template will not be affected. Continue?"
-                            deleteLabel="Delete Assignment"
-                            keepLabel="Keep Assignment"
-                            onDelete={() => handleDelete(assignment.id)}
-                            onCancel={() => setDeletingAssignmentId(null)}
-                            isDeleting={isDeleting}
-                          />
-                        </div>
-                      )}
+                      <div className={isOverdue && assignment.status === 'PENDING' ? 'text-rose-400 font-bold' : 'text-zinc-400'}>
+                        {dueDateLabel}
+                      </div>
+                      <div>
+                        <StatusBadge status={assignment.status} overdue={isOverdue && assignment.status === 'PENDING'} />
+                      </div>
+                      <div className="text-zinc-400 text-sm">
+                        {assignment.pointsAwarded !== null ? `${assignment.pointsAwarded} pts` : `${assignment.template.points} pts`}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => openEdit(assignment)} className="p-1 text-zinc-500 hover:text-zinc-100" aria-label="Edit assignment">
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => setDeletingAssignmentId(assignment.id)} className="p-1 text-zinc-500 hover:text-rose-400" aria-label="Delete assignment">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
-                  )
-                })}
-              </div>
-            ) : null}
-          </>
-        )}
-      </main>
+                    {deletingAssignmentId === assignment.id && (
+                      <div className="px-4 pb-3">
+                        <ConfirmDelete
+                          message="This assignment will be permanently removed. The chore template will not be affected. Continue?"
+                          deleteLabel="Delete Assignment"
+                          keepLabel="Keep Assignment"
+                          onDelete={() => handleDelete(assignment.id)}
+                          onCancel={() => setDeletingAssignmentId(null)}
+                          isDeleting={isDeleting}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </Card>
+          ) : null}
+        </>
+      )}
 
       {successMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-green-50 text-green-700 px-4 py-2 rounded-lg shadow-md">
-          {successMessage}
-        </div>
+        <Toast kind="success">{successMessage}</Toast>
       )}
-    </div>
+    </AppShell>
   )
 }
