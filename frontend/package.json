@@ -1,7 +1,7 @@
 {
   "name": "chore-ganizer-frontend-v2",
   "private": true,
-  "version": "2.1.10",
+  "version": "2.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
