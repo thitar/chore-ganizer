@@ -11,8 +11,8 @@
 | Branch | `feature/m1-the-look`, branched from `main` at `cdbbf20` |
 | Spec (design) | `docs/superpowers/specs/2026-07-04-frontend-redesign-design.md` |
 | Plan (15 tasks) | `docs/superpowers/plans/2026-07-04-frontend-redesign-m1-the-look.md` |
-| SDD ledger | `.superpowers/sdd/progress.md` — **source of truth for what's done**; read this first |
-| SDD scratch (briefs/reports/review diffs) | `.superpowers/sdd/task-N-brief.md`, `task-N-report.md`, `review-BASE..HEAD.diff` |
+| SDD ledger | `.superpowers/sdd/progress.md` — **source of truth for what's done**; read this first. **Git-ignored, local to this checkout** — not committed, won't survive a fresh clone or `git clean -fdx`. If it's ever missing, rebuild your understanding from `git log --oneline main..feature/m1-the-look` and this handoff doc instead. |
+| SDD scratch (briefs/reports/review diffs) | `.superpowers/sdd/task-N-brief.md`, `task-N-report.md`, `review-BASE..HEAD.diff` — same git-ignored caveat applies |
 | GSD state | `.planning/STATE.md`, `.planning/ROADMAP.md` — milestone `v3.2.0 Teen Appeal Redesign`, phase 13 = this plan, phase 14 = M2 "The Game" (not started, not planned in detail yet) |
 
 **Unrelated pre-existing state, do not touch:**
