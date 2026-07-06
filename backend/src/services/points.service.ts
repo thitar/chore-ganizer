@@ -2,7 +2,10 @@ import { prisma } from '../config/prisma'
 import { AppError } from '../middleware/errorHandler'
 
 export async function getMyPoints(userId: number) {
-  const user = await prisma.user.findUnique({ where: { id: userId } })
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, color: true, role: true },
+  })
   if (!user) throw new AppError('User not found', 404)
 
   const [aggregate, logs] = await Promise.all([
@@ -46,7 +49,10 @@ export async function adjustPoints(userId: number, amount: number, reason: strin
     throw new AppError('Reason must be 200 characters or fewer', 400)
   }
 
-  const user = await prisma.user.findUnique({ where: { id: userId } })
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  })
   if (!user) throw new AppError('User not found', 404)
 
   return prisma.pointLog.create({
@@ -62,6 +68,7 @@ export async function adjustPoints(userId: number, amount: number, reason: strin
 export async function getLeaderboard() {
   const [users, sums] = await Promise.all([
     prisma.user.findMany({
+      where: { role: 'CHILD' },
       select: { id: true, name: true, color: true, role: true },
     }),
     prisma.pointLog.groupBy({

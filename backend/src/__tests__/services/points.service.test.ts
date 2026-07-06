@@ -37,7 +37,10 @@ describe('pointsService.getMyPoints', () => {
 
     const result = await pointsService.getMyPoints(3)
 
-    expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { id: 3 } })
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      where: { id: 3 },
+      select: { id: true, name: true, color: true, role: true },
+    })
     expect(prisma.pointLog.aggregate).toHaveBeenCalledWith({
       where: { userId: 3 },
       _sum: { amount: true },
@@ -166,9 +169,8 @@ describe('pointsService.adjustPoints', () => {
 })
 
 describe('getLeaderboard', () => {
-  it('returns all users with balances sorted descending, defaulting to 0', async () => {
+  it('returns only CHILD users with balances sorted descending, defaulting to 0', async () => {
     prisma.user.findMany.mockResolvedValue([
-      { id: 1, name: 'Dad', color: '#3B82F6', role: 'PARENT' },
       { id: 2, name: 'Alice', color: '#F59E0B', role: 'CHILD' },
       { id: 3, name: 'Bob', color: '#10B981', role: 'CHILD' },
     ])
@@ -179,8 +181,12 @@ describe('getLeaderboard', () => {
 
     const result = await pointsService.getLeaderboard()
 
-    expect(result.map((e: { user: { id: number } }) => e.user.id)).toEqual([2, 1, 3])
+    expect(prisma.user.findMany).toHaveBeenCalledWith({
+      where: { role: 'CHILD' },
+      select: { id: true, name: true, color: true, role: true },
+    })
+    expect(result.map((e: { user: { id: number } }) => e.user.id)).toEqual([2, 3])
     expect(result[0].balance).toBe(120)
-    expect(result[2].balance).toBe(0)
+    expect(result[1].balance).toBe(0)
   })
 })

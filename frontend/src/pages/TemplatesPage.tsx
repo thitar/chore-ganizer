@@ -151,7 +151,7 @@ export function TemplatesPage() {
           )}
 
           {showForm && (
-            <Card className="p-6 mb-4">
+            <form onSubmit={handleSubmit} className="p-6 mb-4 rounded-2xl border border-edge bg-surface">
               {formError && <div className="alert-error mb-4">{formError}</div>}
               <div className="space-y-4">
                 <div>
@@ -172,14 +172,14 @@ export function TemplatesPage() {
                 </div>
               </div>
               <div className="flex gap-2 mt-4">
-                <Button type="submit" loading={isCreating || isUpdating} onClick={handleSubmit}>
+                <Button type="submit" loading={isCreating || isUpdating}>
                   {isCreating || isUpdating ? 'Saving...' : 'Save Template'}
                 </Button>
                 <Button type="button" variant="secondary" onClick={cancelForm} disabled={isCreating || isUpdating}>
                   Discard changes
                 </Button>
               </div>
-            </Card>
+            </form>
           )}
 
           {templates.length > 0 && (
