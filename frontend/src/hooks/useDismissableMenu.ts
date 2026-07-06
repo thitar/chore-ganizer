@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 
 interface UseDismissableMenuOptions {
   /** Whether the menu is currently open */
