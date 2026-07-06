@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { AuthError } from '../api/auth.api'
+import { Button } from './ui/Button'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -29,12 +30,9 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
         <div className="text-center max-w-md">
           <h1 className="text-2xl font-bold text-rose-400 mb-2">Connection Error</h1>
           <p className="text-zinc-400 mb-4">Unable to reach the server. Please check your connection and try again.</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-accent text-white px-4 py-2 rounded-lg hover:opacity-90"
-          >
+          <Button onClick={() => window.location.reload()}>
             Retry
-          </button>
+          </Button>
         </div>
       </div>
     )
