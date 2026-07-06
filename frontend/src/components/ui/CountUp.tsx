@@ -1,10 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-
-export function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
+import { prefersReducedMotion } from '../../utils/a11y'
 
 export function CountUp({ value, duration = 800, className = '' }: { value: number; duration?: number; className?: string }) {
   const reduced = prefersReducedMotion()

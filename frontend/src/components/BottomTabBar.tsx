@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { CalendarDays, Home, ListChecks, Settings, Star, User } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { useDismissableMenu } from '../hooks/useDismissableMenu'
 import { MANAGE_LINKS } from './TopNav'
 
 const TABS = [
@@ -16,29 +17,20 @@ export function BottomTabBar() {
   const { user } = useAuth()
   const location = useLocation()
   const [sheetOpen, setSheetOpen] = useState(false)
-  const manageTriggerRef = useRef<HTMLButtonElement>(null)
   const isParent = user?.role === 'PARENT'
-
-  useEffect(() => {
-    if (!sheetOpen) return
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        setSheetOpen(false)
-        manageTriggerRef.current?.focus()
-      }
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [sheetOpen])
+  const { menuRef, triggerRef } = useDismissableMenu({
+    isOpen: sheetOpen,
+    onClose: () => setSheetOpen(false),
+  })
 
   return (
     <>
       {sheetOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" onClick={() => setSheetOpen(false)}>
+        <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/60" />
           <div
+            ref={menuRef}
             className="absolute inset-x-2 bottom-16 animate-fade-up rounded-2xl border border-edge bg-surface-raised p-2"
-            onClick={e => e.stopPropagation()}
           >
             {MANAGE_LINKS.map(l => (
               <Link
@@ -71,7 +63,7 @@ export function BottomTabBar() {
           })}
           {isParent && (
             <button
-              ref={manageTriggerRef}
+              ref={triggerRef}
               onClick={() => setSheetOpen(o => !o)}
               className={`flex min-h-[56px] flex-col items-center gap-0.5 py-2 text-[11px] ${sheetOpen ? 'text-accent' : 'text-zinc-500'}`}
             >

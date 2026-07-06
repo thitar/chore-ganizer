@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ChevronDown, LogOut } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { useDismissableMenu } from '../hooks/useDismissableMenu'
 import { Avatar } from './ui/Avatar'
 
 const MAIN_LINKS = [
@@ -22,28 +23,11 @@ export function TopNav() {
   const { user, logout } = useAuth()
   const location = useLocation()
   const [manageOpen, setManageOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const manageTriggerRef = useRef<HTMLButtonElement>(null)
   const isParent = user?.role === 'PARENT'
-
-  useEffect(() => {
-    function onMouseDown(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setManageOpen(false)
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== 'Escape') return
-      setManageOpen(prev => {
-        if (prev) manageTriggerRef.current?.focus()
-        return false
-      })
-    }
-    document.addEventListener('mousedown', onMouseDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', onMouseDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [])
+  const { menuRef, triggerRef } = useDismissableMenu({
+    isOpen: manageOpen,
+    onClose: () => setManageOpen(false),
+  })
 
   function linkClass(path: string) {
     return location.pathname === path
@@ -74,7 +58,7 @@ export function TopNav() {
           {isParent && (
             <div className="relative" ref={menuRef}>
               <button
-                ref={manageTriggerRef}
+                ref={triggerRef}
                 onClick={() => setManageOpen(o => !o)}
                 aria-expanded={manageOpen}
                 aria-haspopup="true"

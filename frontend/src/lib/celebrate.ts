@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti'
-import { prefersReducedMotion } from '../components/ui/CountUp'
+import { prefersReducedMotion } from '../utils/a11y'
 
 export function celebrate(): void {
   if (prefersReducedMotion()) return
