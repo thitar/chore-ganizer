@@ -1,4 +1,4 @@
-import { assignedBody, dueSoonBody, completedBody } from '../../services/notification.formatters'
+import { assignedBody, dueSoonBody, completedBody, badgeEarnedBody } from '../../services/notification.formatters'
 
 describe('notification.formatters', () => {
   const mockAssignment = {
@@ -86,6 +86,20 @@ describe('notification.formatters', () => {
     it('completer.name is any string — body does not include it', () => {
       const result = completedBody(mockAssignment, { name: 'AnyName123' })
       expect(result.body).not.toContain('AnyName123')
+    })
+  })
+
+  describe('badgeEarnedBody', () => {
+    it('formats a badge-earned push', () => {
+      const r = badgeEarnedBody({
+        name: 'First Chore',
+        description: 'Complete your first chore',
+        emoji: '\u{1F389}',
+      })
+      expect(r.title).toBe('Chore-Ganizer')
+      expect(r.body).toBe('\u{1F389} Badge earned: First Chore \u2014 Complete your first chore')
+      expect(r.priority).toBe(3)
+      expect(r.click).toBe('/profile')
     })
   })
 })
