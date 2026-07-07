@@ -1,3 +1,4 @@
+jest.mock('../../services/gamification.service', () => ({ awardBadges: jest.fn() }))
 jest.mock('../../config/prisma', () => ({
   prisma: {
     choreTemplate: {

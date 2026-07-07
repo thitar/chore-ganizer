@@ -1,5 +1,6 @@
 import { prisma } from '../config/prisma'
 import { AppError } from '../middleware/errorHandler'
+import { awardBadges } from './gamification.service'
 
 function toUtcDate(d: Date): string {
   return d.toISOString().slice(0, 10)
@@ -123,7 +124,7 @@ export async function completeOccurrence(occurrenceId: number, userId: number) {
   const pointsAwarded = occurrence.chore.template.points
   const reason = occurrence.chore.template.title
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     await tx.recurringOccurrence.update({
       where: { id: occurrenceId },
       data: { status: 'COMPLETED', completedAt: new Date(), pointsAwarded },
@@ -148,6 +149,8 @@ export async function completeOccurrence(occurrenceId: number, userId: number) {
       },
     })
   })
+  void awardBadges(occurrence.assignedToId)
+  return result
 }
 
 export async function delete_(id: number) {

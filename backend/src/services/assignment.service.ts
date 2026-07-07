@@ -3,6 +3,7 @@ import { AppError } from '../middleware/errorHandler'
 import { generateOccurrences } from './recurring.service'
 import { notifyChoreAssigned, isNtfyConfigured, sendNtfy } from './notification.service'
 import { dueSoonBody } from './notification.formatters'
+import { awardBadges } from './gamification.service'
 
 export async function create(data: {
   choreTemplateId: number
@@ -172,6 +173,8 @@ export async function complete(assignmentId: number, userId: number) {
       },
     })
   })
+
+  void awardBadges(assignment.assignedToId)
 
   return updated
 }

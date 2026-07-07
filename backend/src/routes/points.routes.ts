@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import * as pointsService from '../services/points.service'
+import * as gamificationService from '../services/gamification.service'
 import { authenticate } from '../middleware/auth'
 import { authorize } from '../middleware/auth'
 
@@ -17,6 +18,15 @@ router.get('/me', authenticate, async (req, res, next) => {
 router.get('/leaderboard', authenticate, async (_req, res, next) => {
   try {
     const result = await pointsService.getLeaderboard()
+    res.json({ success: true, data: result, error: null })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.get('/gamification', authenticate, async (req, res, next) => {
+  try {
+    const result = await gamificationService.getGamification(req.session.userId!)
     res.json({ success: true, data: result, error: null })
   } catch (err) {
     next(err)
