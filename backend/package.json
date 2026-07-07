@@ -1,6 +1,6 @@
 {
   "name": "chore-ganizer-backend-v2",
-  "version": "2.1.10",
+  "version": "2.2.0",
   "private": true,
   "type": "commonjs",
   "main": "dist/server.js",

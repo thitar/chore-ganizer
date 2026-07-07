@@ -62,10 +62,10 @@ describe('UsersPage', () => {
     mockUsersState()
   })
 
-  it('renders loading spinner', () => {
+  it('renders loading skeleton', () => {
     mockUsersState({ isLoading: true })
-    renderPage()
-    expect(screen.getByText('Loading users...')).toBeInTheDocument()
+    const { container } = renderPage()
+    expect(container.querySelector('.animate-\\[shimmer_1\\.5s_infinite\\]')).toBeInTheDocument()
   })
 
   it('renders error state with retry', () => {

@@ -61,10 +61,10 @@ describe('TemplatesPage', () => {
     vi.clearAllMocks()
   })
 
-  it('renders loading spinner', () => {
+  it('renders loading skeleton', () => {
     mockTemplatesState({ isLoading: true })
-    renderPage()
-    expect(screen.getByText('Loading templates...')).toBeInTheDocument()
+    const { container } = renderPage()
+    expect(container.querySelector('.animate-\\[shimmer_1\\.5s_infinite\\]')).toBeInTheDocument()
   })
 
   it('renders empty state', () => {

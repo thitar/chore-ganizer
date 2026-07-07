@@ -88,14 +88,19 @@ function renderPage() {
 
 describe('CalendarPage', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ now: new Date('2026-06-15T12:00:00'), toFake: ['Date'] })
     vi.clearAllMocks()
     mockCalendarState()
   })
 
-  it('renders loading spinner', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('renders loading skeleton', () => {
     mockCalendarState({ isLoading: true })
-    renderPage()
-    expect(screen.getByText('Loading calendar...')).toBeInTheDocument()
+    const { container } = renderPage()
+    expect(container.querySelectorAll('.animate-\\[shimmer_1\\.5s_infinite\\]').length).toBeGreaterThan(0)
   })
 
   it('renders error state with retry', () => {

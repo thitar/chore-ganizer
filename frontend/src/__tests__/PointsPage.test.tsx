@@ -23,14 +23,26 @@ vi.mock('../hooks/usePoints', () => ({
   useMyPoints: vi.fn(),
   useUserPoints: vi.fn(),
   useAdjustPoints: vi.fn(),
+  useLeaderboard: vi.fn(),
 }))
 
 vi.mock('../hooks/useUsers', () => ({
   useUsers: vi.fn(),
 }))
 
-import { useMyPoints, useUserPoints, useAdjustPoints } from '../hooks/usePoints'
+import { useMyPoints, useUserPoints, useAdjustPoints, useLeaderboard } from '../hooks/usePoints'
 import { useUsers } from '../hooks/useUsers'
+
+// jsdom has no matchMedia — simulate reduced motion so CountUp values render instantly.
+function mockMatchMedia(reduced: boolean) {
+  vi.stubGlobal('matchMedia', vi.fn().mockImplementation((query: string) => ({
+    matches: reduced && query.includes('prefers-reduced-motion'),
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  })))
+  window.matchMedia = globalThis.matchMedia as typeof window.matchMedia
+}
 
 const defaultPoints = {
   user: { id: 3, name: 'Alice', color: '#10B981', role: 'CHILD' },
@@ -71,6 +83,10 @@ function mockMyPointsState(overrides: Record<string, unknown> = {}) {
     isLoading: false,
     error: null,
   })
+  ;(useLeaderboard as ReturnType<typeof vi.fn>).mockReturnValue({
+    data: [],
+    isLoading: false,
+  })
 }
 
 function renderPage() {
@@ -89,22 +105,24 @@ describe('PointsPage', () => {
     mockMyPointsState()
   })
 
-  it('renders loading spinner', () => {
+  it('renders loading skeleton', () => {
     mockMyPointsState({ isLoading: true })
-    renderPage()
-    expect(screen.getByText('Loading points...')).toBeInTheDocument()
+    const { container } = renderPage()
+    expect(container.querySelector('.animate-\\[shimmer_1\\.5s_infinite\\]')).toBeInTheDocument()
   })
 
   it('renders error state with retry', () => {
     mockMyPointsState({ error: new Error('Network error') })
     renderPage()
     expect(screen.getByText('Something went wrong')).toBeInTheDocument()
+    expect(screen.getByText('Unable to load points. Check your connection and try again.')).toBeInTheDocument()
     expect(screen.getByText('Try again')).toBeInTheDocument()
   })
 
-  it('renders balance and log entries for parent', () => {
+  it('renders balance and log entries for parent', async () => {
+    mockMatchMedia(true)
     renderPage()
-    expect(screen.getByText('30 pts')).toBeInTheDocument()
+    expect(await screen.findByText('30')).toBeInTheDocument()
     expect(screen.getByText('Wash Dishes')).toBeInTheDocument()
     expect(screen.getByText('Great week')).toBeInTheDocument()
   })

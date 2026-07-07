@@ -1,10 +1,17 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useAssignments } from '../hooks/useAssignments'
-import { useAuth } from '../hooks/useAuth'
-import { NavBar } from '../components/NavBar'
 import { FilterBar } from '../components/FilterBar'
 import { StatusBadge } from '../components/StatusBadge'
-import { CheckCircle2 } from 'lucide-react'
+import { AppShell } from '../components/AppShell'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { EmptyState } from '../components/ui/EmptyState'
+import { Skeleton } from '../components/ui/Skeleton'
+import { Toast } from '../components/ui/Toast'
+import { celebrate } from '../lib/celebrate'
+import { formatDateStatus } from '../utils/dateFormat'
+import { CheckCircle2, ClipboardList } from 'lucide-react'
 
 function currentMonthDates(): { from: string; to: string } {
   const now = new Date()
@@ -15,7 +22,6 @@ function currentMonthDates(): { from: string; to: string } {
 }
 
 export function MyChoresPage() {
-  const { user } = useAuth()
   const {
     assignments,
     isLoading,
@@ -58,142 +64,117 @@ export function MyChoresPage() {
     setCompleteError(null)
     try {
       await completeAssignment(id, type)
-      setSuccessMessage('Chore marked complete!')
+      celebrate()
+      setSuccessMessage('Chore marked complete! 🎉')
     } catch {
       setCompleteError('Failed to complete chore.')
     }
   }
 
-  function formatDate(dateStr: string): { label: string; isOverdue: boolean; isToday: boolean } {
-    const date = new Date(dateStr)
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const dueDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    const label = `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
-
-    return {
-      label,
-      isOverdue: dueDate < today,
-      isToday: dueDate.getTime() === today.getTime(),
-    }
-  }
-
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <NavBar />
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-          <span className="ml-3 text-gray-500">Loading your chores...</span>
+      <AppShell>
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
         </div>
-      </div>
+      </AppShell>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <NavBar />
-        <div className="max-w-7xl mx-auto px-4 py-12 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h2>
-          <p className="text-gray-600 mb-4">Unable to load your chores. Check your connection and try again.</p>
-          <button onClick={() => window.location.reload()} className="bg-primary text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-primary-hover">
-            Try again
-          </button>
+      <AppShell>
+        <div className="py-12 text-center">
+          <h2 className="mb-2 font-display text-2xl font-bold text-zinc-100">Something went wrong</h2>
+          <p className="mb-4 text-zinc-400">Unable to load your chores. Check your connection and try again.</p>
+          <Button onClick={() => window.location.reload()}>Try again</Button>
         </div>
-      </div>
+      </AppShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-       <NavBar />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">My Chores</h2>
+    <AppShell>
+      <PageHeader title="My Chores" />
 
-        {assignments.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-lg font-bold text-gray-900 mb-1">No chores assigned yet</p>
-            <p className="text-gray-600">A parent needs to assign a chore before it appears here.</p>
-          </div>
-        ) : (
-          <>
-            <FilterBar
-              statusFilter={statusFilter}
-              onStatusChange={setStatusFilter}
-              dateFrom={dateFrom}
-              onDateFromChange={setDateFrom}
-              dateTo={dateTo}
-              onDateToChange={setDateTo}
-              onClear={clearFilters}
-            />
+      {assignments.length === 0 ? (
+        <EmptyState
+          icon={ClipboardList}
+          title="No chores assigned yet"
+          hint="A parent needs to assign a chore before it appears here."
+        />
+      ) : (
+        <>
+          <FilterBar
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+            dateFrom={dateFrom}
+            onDateFromChange={setDateFrom}
+            dateTo={dateTo}
+            onDateToChange={setDateTo}
+            onClear={clearFilters}
+          />
 
-            {filtered.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No assignments match your filters.{' '}
-                <button onClick={clearFilters} className="text-primary hover:underline">
-                  Clear filters
-                </button>
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow-sm mt-4">
-                <div className="grid grid-cols-4 px-4 py-3 border-b bg-gray-50 text-sm font-normal text-gray-500">
-                  <div>Chore</div>
-                  <div>Due Date</div>
-                  <div>Status</div>
-                  <div>Action</div>
-                </div>
-                {filtered.map(assignment => {
-                  const { label: dueDateLabel, isOverdue, isToday } = formatDate(assignment.dueDate)
-
-                  return (
-                    <div key={assignment.id} className={`grid grid-cols-4 gap-4 px-4 py-3 items-center${assignment.status === 'COMPLETED' ? ' bg-green-50' : ''}`}>
-                      <div>
-                        <div className="font-bold text-gray-900">{assignment.template.title}</div>
-                        {assignment.template.category && <div className="text-sm text-gray-500">{assignment.template.category}</div>}
+          {filtered.length === 0 ? (
+            <div className="py-8 text-center text-zinc-400">
+              No assignments match your filters.{' '}
+              <button onClick={clearFilters} className="text-accent hover:underline">
+                Clear filters
+              </button>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {filtered.map(assignment => {
+                const { label: dueDateLabel, isOverdue, isToday } = formatDateStatus(assignment.dueDate)
+                const overdue = isOverdue && assignment.status === 'PENDING'
+                const completed = assignment.status === 'COMPLETED'
+                return (
+                  <Card
+                    key={assignment.id}
+                    className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${
+                      overdue ? 'border-rose-500/40' : ''
+                    } ${completed ? 'opacity-60' : ''}`}
+                  >
+                    <div className="min-w-0">
+                      <div className={`font-bold text-zinc-100 ${completed ? 'line-through decoration-zinc-500' : ''}`}>
+                        {assignment.template.title}
                       </div>
-                      <div className={isOverdue && assignment.status === 'PENDING' ? 'text-red-600 font-bold' : 'text-gray-600'}>
-                        {isToday ? 'Today' : dueDateLabel}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={assignment.status} overdue={isOverdue && assignment.status === 'PENDING'} />
-                        <span className="text-sm text-gray-500">{assignment.template.points} pts</span>
-                      </div>
-                      <div>
-                        {assignment.status === 'PENDING' ? (
-                          <button
-                            onClick={() => handleComplete(assignment.id, assignment.type)}
-                            disabled={isCompleting}
-                            className="bg-primary text-white text-sm px-3 py-1 rounded-lg hover:bg-primary-hover disabled:opacity-50 flex items-center gap-1"
-                          >
-                            <CheckCircle2 className="h-4 w-4" />
-                            {isCompleting ? 'Completing...' : 'Mark Complete'}
-                          </button>
-                        ) : (
-                          <span className="text-sm text-gray-400">Completed</span>
-                        )}
+                      <div className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
+                        {assignment.template.category && <span>{assignment.template.category}</span>}
+                        <span className={overdue ? 'font-bold text-rose-400' : ''}>
+                          {isToday ? 'Today' : dueDateLabel}
+                        </span>
+                        <StatusBadge status={assignment.status} overdue={overdue} />
+                        <span className="font-display font-bold text-accent">{assignment.template.points} pts</span>
                       </div>
                     </div>
-                  )
-                })}
-              </div>
-            )}
-          </>
-        )}
-      </main>
+                    <div className="shrink-0">
+                      {assignment.status === 'PENDING' ? (
+                        <Button
+                          onClick={() => handleComplete(assignment.id, assignment.type)}
+                          loading={isCompleting}
+                          className="w-full sm:w-auto"
+                        >
+                          <CheckCircle2 className="h-4 w-4" aria-hidden />
+                          {isCompleting ? 'Completing...' : 'Mark Complete'}
+                        </Button>
+                      ) : (
+                        <span className="text-sm text-zinc-500">Completed</span>
+                      )}
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
 
-      {successMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-green-50 text-green-700 px-4 py-2 rounded-lg shadow-md">
-          {successMessage}
-        </div>
-      )}
-      {completeError && (
-        <div className="fixed top-4 right-4 z-50 bg-red-50 text-red-600 px-4 py-2 rounded-lg shadow-md">
-          {completeError}
-        </div>
-      )}
-    </div>
+      {successMessage && <Toast kind="success">{successMessage}</Toast>}
+      {completeError && <Toast kind="error">{completeError}</Toast>}
+    </AppShell>
   )
 }

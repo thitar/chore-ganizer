@@ -12,6 +12,11 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-07-05 — M1 The Look — dark redesign + frontend gamification, all pages
+
+- **Status**: Completed
+- **Description**: Task 15 cleanup: removed legacy NavBar.tsx and its test, migrated ProtectedRoute.tsx from primary to accent colors, removed legacy primary alias from tailwind.config.js. All frontend (98) and backend (213) tests pass. Build clean.
+
 ### 2026-07-04 - v3.1.0 Notifications Milestone: Merge & Verify
 
 - **Status**: Completed

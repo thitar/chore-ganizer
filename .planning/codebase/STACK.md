@@ -1,87 +1,71 @@
 # Technology Stack
 
-**Analysis Date:** 2026-04-28
+**Analysis Date:** 2026-07-04
 
 ## Languages
 
 **Primary:**
-- TypeScript 5.3.3 - Backend (`backend/`) and Frontend (`frontend/`) codebases
-
-**Secondary:**
-- SQL (SQLite) - Database schema definitions in `backend/prisma/schema.prisma`
+- TypeScript 5.3.3 - Used for both backend and frontend logic.
 
 ## Runtime
 
 **Environment:**
-- Node.js 18+ (required for local development, per AGENTS.md Quick Start)
+- Node.js >=18.0.0
 
 **Package Manager:**
-- npm (used for all dependency management and scripts)
-- Lockfile: `backend/package-lock.json`, `frontend/package-lock.json` (present)
+- npm
+- Lockfile: `package-lock.json` (implied by monorepo)
 
 ## Frameworks
 
 **Core:**
-- Express.js 4.18.x - Backend web framework (`backend/package.json`)
-- React 18.2.x - Frontend UI library (`frontend/package.json`)
+- Express.js 4.18.2 - Backend API server.
+- React 18.2.0 - Frontend UI.
+- Vite 6.2.0 - Frontend build tool and dev server.
 
 **Testing:**
-- Jest 30.0.x - Backend unit and integration tests (`backend/package.json`)
-- Vitest 4.1.x - Frontend unit tests (`frontend/package.json`)
-- Playwright - End-to-end tests (e2e/ directory, per AGENTS.md)
+- Jest 30.0.0 - Backend testing.
+- Vitest 4.1.0 - Frontend testing.
+- Playwright 1.50.1 - E2E testing.
 
 **Build/Dev:**
-- Vite 6.2.x - Frontend build tool and dev server (`frontend/package.json`)
-- TypeScript 5.3.x - Type checking and compilation for both backend and frontend
-- ts-node/nodemon - Backend dev server execution (used by `npm run dev` in backend)
+- TypeScript - Type checking and compilation.
+- Tailwind CSS 3.4.0 - Styling.
+- Prisma 5.7.1 - ORM for database.
 
 ## Key Dependencies
 
 **Critical:**
-- Prisma 5.22.x (runtime: @prisma/client ^5.22.0, CLI: prisma ^5.7.1 dev) - ORM for SQLite database
-- Express.js 4.18.x - Backend web framework
-- React 18.2.x - Frontend UI library
-- Axios 1.13.x (frontend), 1.14.x (backend) - HTTP client for API requests
-- express-session 1.17.x - Session management for authentication (`backend/package.json`)
-- bcrypt 6.0.x - Password hashing for user authentication (`backend/package.json`)
-- Tailwind CSS 3.4.x - Frontend utility-first styling (`frontend/package.json`)
-- Zod 4.3.x - Request/response validation (shared between backend and frontend)
+- @prisma/client 5.22.0 - Database interaction.
+- Zod 4.4.3 - Validation schema definition.
+- Axios 1.13.6 - Frontend API requests.
+- @tanstack/react-query 5.95.2 - Frontend data fetching and caching.
 
 **Infrastructure:**
-- SQLite 3 - Embedded relational database (no separate server required)
-- Docker 24.x+ - Containerization for development and production
-- nginx - Static file serving and reverse proxy for frontend container
-- node-cache 5.1.x - In-memory caching for backend (`backend/package.json`)
-- prom-client 15.1.x - Prometheus metrics collection (`backend/package.json`)
-- winston 3.11.x - Structured logging for backend (`backend/package.json`)
+- express-session - Session management.
+- bcrypt - Password hashing.
+- helmet - Express security.
+- express-rate-limit - Rate limiting for API protection.
 
 ## Configuration
 
 **Environment:**
-- Configured via `.env` file in project root (copy from `.env.example`)
-- Critical required variables: `SESSION_SECRET`, `APP_VERSION`
-- Full list of variables documented in AGENTS.md and INTEGRATIONS.md
+- Configured via `.env` files (e.g., `.env`, `.env.example`).
+- Key configs: `SESSION_SECRET`, `APP_VERSION`, `VITE_API_URL`, `BACKEND_PORT`, `DATABASE_URL`.
 
 **Build:**
-- `backend/tsconfig.json` - TypeScript configuration for backend
-- `frontend/tsconfig.json` - TypeScript configuration for frontend
-- `frontend/vite.config.ts` - Vite build and dev server configuration
-- `docker-compose.yml` - Docker Compose orchestration for backend and frontend containers
-- `frontend/postcss.config.js` - PostCSS configuration for Tailwind CSS
+- `tsconfig.json` (root, backend, frontend).
+- `vite.config.ts` (implied for frontend).
+- `prisma/schema.prisma` (DB schema).
 
 ## Platform Requirements
 
 **Development:**
 - Node.js 18+
-- Docker and Docker Compose (for containerized run)
-- SQLite (embedded, no separate installation required)
-- Git
 
 **Production:**
-- Docker-compatible hosting platform
-- Persistent volume for data (configured via `DATA_DIR` env var)
-- Network access for container ports (frontend: 3002, backend: 3010 by default)
+- Docker / Docker Compose.
 
 ---
 
-*Stack analysis: 2026-04-28*
+*Stack analysis: 2026-07-04*

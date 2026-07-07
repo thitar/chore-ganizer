@@ -26,11 +26,11 @@ export function FilterBar({
   showUserFilter,
 }: FilterBarProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 flex flex-wrap items-center gap-3">
+    <div className="rounded-2xl border border-edge bg-surface p-4 flex flex-wrap items-center gap-3">
       <select
         value={statusFilter}
         onChange={e => onStatusChange(e.target.value)}
-        className="px-3 py-1 border rounded-lg text-sm focus:ring-2 focus:ring-primary-ring bg-white"
+        className="input !w-auto text-sm"
       >
         <option value="all">All</option>
         <option value="pending">Pending</option>
@@ -41,7 +41,7 @@ export function FilterBar({
         <select
           value={userFilter}
           onChange={e => onUserChange?.(e.target.value)}
-          className="px-3 py-1 border rounded-lg text-sm focus:ring-2 focus:ring-primary-ring bg-white"
+          className="input !w-auto text-sm"
         >
           <option value="all">All Users</option>
           {users.map(u => (
@@ -54,16 +54,16 @@ export function FilterBar({
         type="date"
         value={dateFrom}
         onChange={e => onDateFromChange(e.target.value)}
-        className="px-3 py-1 border rounded-lg text-sm focus:ring-2 focus:ring-primary-ring"
+        className="input !w-auto text-sm"
       />
       <input
         type="date"
         value={dateTo}
         onChange={e => onDateToChange(e.target.value)}
-        className="px-3 py-1 border rounded-lg text-sm focus:ring-2 focus:ring-primary-ring"
+        className="input !w-auto text-sm"
       />
 
-      <button onClick={onClear} className="text-sm text-gray-500 hover:text-gray-700">
+      <button onClick={onClear} className="text-sm text-zinc-400 hover:text-zinc-100">
         Reset filters
       </button>
     </div>

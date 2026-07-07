@@ -26,3 +26,10 @@ export function useAdjustPoints() {
     },
   })
 }
+
+export function useLeaderboard() {
+  return useQuery({
+    queryKey: ['points', 'leaderboard'],
+    queryFn: pointsApi.getLeaderboard,
+  })
+}

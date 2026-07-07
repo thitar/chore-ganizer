@@ -1,25 +1,27 @@
 import { useState, useEffect } from 'react'
-import { useMyPoints, useAdjustPoints } from '../hooks/usePoints'
+import { useMyPoints, useAdjustPoints, useLeaderboard } from '../hooks/usePoints'
 import { useUsers } from '../hooks/useUsers'
 import { useAuth } from '../hooks/useAuth'
-import { NavBar } from '../components/NavBar'
+import { AppShell } from '../components/AppShell'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { Skeleton } from '../components/ui/Skeleton'
+import { Toast } from '../components/ui/Toast'
+import { CountUp } from '../components/ui/CountUp'
+import { Leaderboard } from '../components/Leaderboard'
 import { Plus } from 'lucide-react'
+import { formatDateLabel } from '../utils/dateFormat'
 
 const TYPE_BADGE_CLASS: Record<string, string> = {
-  EARNED: 'bg-green-100 text-green-800',
-  BONUS: 'bg-blue-100 text-blue-800',
-  DEDUCTION: 'bg-red-100 text-red-800',
-  PENALTY: 'bg-red-100 text-red-800',
-  REVERSED: 'bg-gray-100 text-gray-600',
-  ADJUSTMENT: 'bg-purple-100 text-purple-800',
-  PAYOUT: 'bg-yellow-100 text-yellow-800',
-  ADVANCE: 'bg-indigo-100 text-indigo-800',
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
+  EARNED: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+  BONUS: 'bg-sky-500/10 text-sky-400 border border-sky-500/20',
+  DEDUCTION: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
+  PENALTY: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
+  REVERSED: 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20',
+  ADJUSTMENT: 'bg-violet-500/10 text-violet-400 border border-violet-500/20',
+  PAYOUT: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+  ADVANCE: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20',
 }
 
 export function PointsPage() {
@@ -27,6 +29,7 @@ export function PointsPage() {
   const { data: myPoints, isLoading, error } = useMyPoints()
   const { users } = useUsers()
   const adjustMutation = useAdjustPoints()
+  const { data: leaderboard, isLoading: isLeaderboardLoading } = useLeaderboard()
   const [adjustUserId, setAdjustUserId] = useState<number | null>(null)
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
@@ -77,28 +80,26 @@ export function PointsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <NavBar />
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-          <span className="ml-3 text-gray-500">Loading points...</span>
+      <AppShell>
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-40" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
         </div>
-      </div>
+      </AppShell>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <NavBar />
-        <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h2>
-          <p className="text-gray-600 mb-4">Unable to load points. Check your connection and try again.</p>
-          <button onClick={() => window.location.reload()} className="bg-primary text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-primary-hover">
-            Try again
-          </button>
+      <AppShell>
+        <div className="py-12 text-center">
+          <h2 className="mb-2 font-display text-2xl font-bold text-zinc-100">Something went wrong</h2>
+          <p className="mb-4 text-zinc-400">Unable to load points. Check your connection and try again.</p>
+          <Button onClick={() => window.location.reload()}>Try again</Button>
         </div>
-      </div>
+      </AppShell>
     )
   }
 
@@ -106,27 +107,42 @@ export function PointsPage() {
   const { balance, logs } = myPoints
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavBar />
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">My Points</h2>
+    <AppShell>
+      <div className="mx-auto max-w-4xl">
+        <PageHeader title="My Points" />
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6 text-center">
-          <p className="text-sm font-normal text-gray-500 mb-1">Current Balance</p>
-          <p className="text-4xl font-bold text-primary">{balance} pts</p>
+        <div className="relative mb-6 overflow-hidden rounded-2xl border border-edge bg-gradient-to-br from-accent/20 via-surface to-surface p-8 text-center shadow-glow">
+          <p className="mb-1 text-xs uppercase tracking-wider text-zinc-400">Current Balance</p>
+          <p className="font-display text-5xl font-bold text-zinc-100">
+            <CountUp value={balance} /> <span className="text-2xl text-accent">pts</span>
+          </p>
         </div>
 
+        <h3 className="mb-3 font-display text-base font-bold text-zinc-100">Family Leaderboard</h3>
+        {isLeaderboardLoading ? (
+          <div className="mb-6 space-y-3">
+            <Skeleton className="h-16" />
+            <Skeleton className="h-16" />
+          </div>
+        ) : leaderboard && leaderboard.length > 0 ? (
+          <div className="mb-6">
+            <Leaderboard entries={leaderboard} />
+          </div>
+        ) : (
+          <p className="mb-6 text-sm text-zinc-500">No points earned yet.</p>
+        )}
+
         {isParent && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Adjust Points</h3>
+          <Card className="mb-6 p-6">
+            <h3 className="mb-4 font-display text-lg font-bold text-zinc-100">Adjust Points</h3>
             <form onSubmit={handleAdjust} className="space-y-3">
               <div>
-                <label htmlFor="user-select" className="block text-sm font-normal text-gray-700 mb-1">User</label>
+                <label htmlFor="user-select" className="mb-1 block text-sm text-zinc-400">User</label>
                 <select
                   id="user-select"
                   value={adjustUserId ?? ''}
                   onChange={(e) => setAdjustUserId(e.target.value ? parseInt(e.target.value, 10) : null)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring bg-white"
+                  className="input"
                 >
                   <option value="">Select a user...</option>
                   {userList.map((u) => (
@@ -135,85 +151,73 @@ export function PointsPage() {
                 </select>
               </div>
               <div>
-                <label htmlFor="amount" className="block text-sm font-normal text-gray-700 mb-1">Amount</label>
+                <label htmlFor="amount" className="mb-1 block text-sm text-zinc-400">Amount</label>
                 <input
                   id="amount"
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="Positive to add, negative to deduct"
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring"
+                  className="input"
                 />
               </div>
               <div>
-                <label htmlFor="reason" className="block text-sm font-normal text-gray-700 mb-1">Reason</label>
+                <label htmlFor="reason" className="mb-1 block text-sm text-zinc-400">Reason</label>
                 <input
                   id="reason"
                   type="text"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="Why this adjustment?"
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-ring"
+                  className="input"
                 />
               </div>
-              {formError && <div className="bg-red-50 text-red-600 p-3 rounded text-sm">{formError}</div>}
+              {formError && <div className="alert-error">{formError}</div>}
               <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={adjustMutation.isPending}
-                  className="bg-primary text-white px-4 py-2 min-h-[44px] rounded-lg hover:bg-primary-hover disabled:opacity-50 flex items-center gap-1"
-                >
+                <Button type="submit" loading={adjustMutation.isPending}>
                   {adjustMutation.isPending ? 'Adjusting...' : (<><Plus className="h-4 w-4" /> Adjust</>)}
-                </button>
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50"
-                >
+                </Button>
+                <Button type="button" variant="secondary" onClick={resetForm}>
                   Clear
-                </button>
+                </Button>
               </div>
             </form>
-          </div>
+          </Card>
         )}
 
-        <div className="bg-white rounded-lg shadow-md">
-          <div className="bg-gray-50 px-4 py-3 border-b text-sm font-normal text-gray-500 grid grid-cols-12 gap-4">
-            <div className="col-span-2">Date</div>
-            <div className="col-span-2">Type</div>
+        <Card className="p-0">
+          <div className="grid grid-cols-12 gap-4 border-b border-edge px-4 py-3 text-sm text-zinc-500">
+            <div className="col-span-3 sm:col-span-2">Date</div>
+            <div className="col-span-3 sm:col-span-2">Type</div>
             <div className="col-span-2">Amount</div>
-            <div className="col-span-6">Reason</div>
+            <div className="col-span-4 sm:col-span-6">Reason</div>
           </div>
           {logs.length === 0 ? (
-            <div className="px-4 py-8 text-center text-gray-500">
+            <div className="px-4 py-8 text-center text-zinc-500">
               No point history yet. Complete a chore to start earning points!
             </div>
           ) : (
-            <div className="divide-y">
-              {logs.map((log) => (
-                <div key={log.id} className="px-4 py-3 grid grid-cols-12 gap-4 items-center hover:bg-gray-50">
-                  <div className="col-span-2 text-sm text-gray-600">{formatDate(log.createdAt)}</div>
-                  <div className="col-span-2">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-normal ${TYPE_BADGE_CLASS[log.type] ?? 'bg-gray-100 text-gray-800'}`}>
+            <div className="divide-y divide-edge">
+              {logs.map(log => (
+                <div key={log.id} className="grid grid-cols-12 items-center gap-4 px-4 py-3 hover:bg-white/5">
+                  <div className="col-span-3 text-sm text-zinc-400 sm:col-span-2">{formatDateLabel(log.createdAt)}</div>
+                  <div className="col-span-3 sm:col-span-2">
+                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs ${TYPE_BADGE_CLASS[log.type] ?? 'bg-zinc-500/10 text-zinc-400'}`}>
                       {log.type}
                     </span>
                   </div>
-                  <div className={`col-span-2 font-bold ${log.amount > 0 ? 'text-green-600' : log.amount < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                  <div className={`col-span-2 font-display font-bold ${log.amount > 0 ? 'text-emerald-400' : log.amount < 0 ? 'text-rose-400' : 'text-zinc-100'}`}>
                     {log.amount > 0 ? '+' : ''}{log.amount}
                   </div>
-                  <div className="col-span-6 text-sm text-gray-600">{log.reason}</div>
+                  <div className="col-span-4 text-sm text-zinc-400 sm:col-span-6">{log.reason}</div>
                 </div>
               ))}
             </div>
           )}
-        </div>
-      </main>
+        </Card>
+      </div>
 
-      {successMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-green-50 text-green-700 px-4 py-2 rounded-lg shadow-md">
-          {successMessage}
-        </div>
-      )}
-    </div>
+      {successMessage && <Toast kind="success">{successMessage}</Toast>}
+    </AppShell>
   )
 }

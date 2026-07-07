@@ -1,3 +1,5 @@
+import { Button } from './ui/Button'
+
 interface ConfirmDeleteProps {
   message: string
   deleteLabel: string
@@ -16,23 +18,15 @@ export function ConfirmDelete({
   isDeleting,
 }: ConfirmDeleteProps) {
   return (
-    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-      <p className="text-sm text-red-800 mb-3">{message}</p>
+    <div className="rounded-2xl border border-edge bg-surface-raised p-4">
+      <p className="text-sm text-zinc-300 mb-3">{message}</p>
       <div className="flex gap-2">
-        <button
-          onClick={onDelete}
-          disabled={isDeleting}
-          className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-700 disabled:opacity-50"
-        >
+        <Button onClick={onDelete} disabled={isDeleting} variant="danger">
           {isDeleting ? 'Deleting...' : deleteLabel}
-        </button>
-        <button
-          onClick={onCancel}
-          disabled={isDeleting}
-          className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50"
-        >
+        </Button>
+        <Button onClick={onCancel} disabled={isDeleting} variant="secondary">
           {keepLabel}
-        </button>
+        </Button>
       </div>
     </div>
   )

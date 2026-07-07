@@ -73,14 +73,22 @@ function renderPage() {
 }
 
 describe('AssignmentsPage', () => {
-  beforeEach(() => { vi.clearAllMocks(); mockDefaultState() })
+  beforeEach(() => {
+    vi.useFakeTimers({ now: new Date('2026-06-15T12:00:00'), toFake: ['Date'] })
+    vi.clearAllMocks()
+    mockDefaultState()
+  })
 
-  it('renders loading spinner', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('renders loading skeleton', () => {
     mockAssignmentsState({ isLoading: true })
     mockTemplatesState({ templates: [{ id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen', description: null, createdById: 1, createdAt: '', updatedAt: '' }] })
     mockUsersState({ users: [] })
-    renderPage()
-    expect(screen.getByText('Loading assignments...')).toBeInTheDocument()
+    const { container } = renderPage()
+    expect(container.querySelector('.animate-\\[shimmer_1\\.5s_infinite\\]')).toBeInTheDocument()
   })
 
   it('renders empty state', () => {

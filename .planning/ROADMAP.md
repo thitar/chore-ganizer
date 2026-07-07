@@ -7,6 +7,7 @@
 - ⏸ **v2.3.0 Production Readiness** — Phases 11-14 (superseded by rewrite)
 - ✅ **v1-rewrite Simplified Rebuild** (v3.0.0) — Phases 1-8 (shipped 2026-06-29)
 - ✅ **v3.1.0 Notifications** — Phases 9-12 (shipped 2026-07-04)
+- 🔄 **v3.2.0 Teen Appeal Redesign** — Phases 13-14 (in progress)
 
 > **Note:** v2.3.0 is superseded. The ground-up rewrite in `backend-v2/` + `frontend-v2/` replaces further work on the old codebase. Old phases (1-14) are preserved in git history. v1-rewrite is the codebase label; the same work shipped as **v3.0.0**.
 
@@ -21,6 +22,15 @@
 - [x] Phase 12: Due-Soon Lazy Trigger (1/1 plan)
 
 </details>
+
+### 🔄 v3.2.0 Teen Appeal Redesign (Phases 13-14) — IN PROGRESS
+
+**Milestone Goal:** Make the frontend visually appealing to the two teenage users — dark, sleek design system plus gamification (celebrations, progress, leaderboard now; streaks, levels, badges later).
+
+**Spec:** `docs/superpowers/specs/2026-07-04-frontend-redesign-design.md`
+
+- [ ] **Phase 13: M1 "The Look"** — Dark design system, shared component library, TopNav + mobile bottom tab bar, all 10 pages restyled, confetti/count-up/progress-ring gamification, `GET /api/points/leaderboard` (plan: `docs/superpowers/plans/2026-07-04-frontend-redesign-m1-the-look.md`, 15 tasks)
+- [ ] **Phase 14: M2 "The Game"** — Backend weekly streaks (lazy computation), levels from lifetime points, badge catalog + UserBadge table, ntfy badge notifications (planned after M1 feedback)
 
 ## Phases
 

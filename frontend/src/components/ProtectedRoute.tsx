@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { AuthError } from '../api/auth.api'
+import { Button } from './ui/Button'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -14,7 +15,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
       </div>
     )
   }
@@ -27,14 +28,11 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md">
-          <h1 className="text-2xl font-bold text-red-600 mb-2">Connection Error</h1>
-          <p className="text-gray-600 mb-4">Unable to reach the server. Please check your connection and try again.</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover"
-          >
+          <h1 className="text-2xl font-bold text-rose-400 mb-2">Connection Error</h1>
+          <p className="text-zinc-400 mb-4">Unable to reach the server. Please check your connection and try again.</p>
+          <Button onClick={() => window.location.reload()}>
             Retry
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -48,8 +46,8 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">403 Forbidden</h1>
-          <p className="text-gray-600 mt-2">You don&apos;t have permission to access this page.</p>
+          <h1 className="text-2xl font-bold text-rose-400">403 Forbidden</h1>
+          <p className="text-zinc-400 mt-2">You don&apos;t have permission to access this page.</p>
         </div>
       </div>
     )
