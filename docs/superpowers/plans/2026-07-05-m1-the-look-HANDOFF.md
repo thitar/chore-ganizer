@@ -1,5 +1,7 @@
 # Handoff: M1 "The Look" — Dark Redesign + Frontend Gamification
 
+> **SUPERSEDED 2026-07-07:** All 15 tasks completed; PR #142 merged to main (a4f5b49) as v2.2.0. This document is kept for historical context only — do not resume from it. Current state: `.planning/STATE.md`.
+
 **Written:** 2026-07-05, mid-execution, for any agent picking this up cold.
 **Executing skill:** `superpowers:subagent-driven-development` (fresh implementer subagent per task, task-reviewer subagent per task, ledger-tracked).
 

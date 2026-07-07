@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v3.2.0
 milestone_name: Teen Appeal Redesign
-current_phase: 13
-current_phase_name: M1 The Look
-status: Executing phase 13
-last_updated: "2026-07-04T17:10:00.000Z"
-last_activity: 2026-07-04
-last_activity_desc: Milestone v3.2.0 initialized — spec + M1 plan written, prisma dup-field bug fixed
+current_phase: 14
+current_phase_name: M2 The Game
+status: Phase 13 complete — phase 14 awaiting kid feedback + detailed plan
+last_updated: "2026-07-07T08:00:00.000Z"
+last_activity: 2026-07-07
+last_activity_desc: Phase 13 (M1 The Look) shipped — PR #142 merged to main (a4f5b49), v2.2.0
 progress:
   total_phases: 2
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 50
 ---
 
 # Project State
@@ -23,17 +23,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v3.1 milestone init)
 
 **Core value:** Any family member can open the app, see their chores for today, and complete them — without the app requiring a devops engineer to maintain.
-**Current focus:** Milestone v3.2.0 Teen Appeal Redesign — Phase 13 (M1 "The Look")
+**Current focus:** Milestone v3.2.0 Teen Appeal Redesign — Phase 13 shipped; Phase 14 (M2 "The Game") next
 
 ## Current Position
 
-Phase: 13 — M1 "The Look" (dark redesign + frontend gamification)
-Plan: docs/superpowers/plans/2026-07-04-frontend-redesign-m1-the-look.md (15 tasks)
-Spec: docs/superpowers/specs/2026-07-04-frontend-redesign-design.md
-Status: Executing (subagent-driven)
-Last activity: 2026-07-04 — Milestone initialized; spec + M1 plan committed; prisma duplicate dueNotifiedAt fields fixed (fe8496f)
+Phase: 14 — M2 "The Game" (backend streaks, levels, badges)
+Plan: not yet written — per spec, plan in detail after the kids give feedback on M1
+Spec: docs/superpowers/specs/2026-07-04-frontend-redesign-design.md (Milestone 2 section)
+Status: Awaiting M1 feedback before detailed planning
+Last activity: 2026-07-07 — Phase 13 (M1 "The Look") complete: all 15 tasks done, multi-round review fixes applied, PR #142 squash-merged to main (a4f5b49) as v2.2.0
 
-**Phase 14 (M2 "The Game"):** backend streaks, levels, badges — planned in detail after M1 ships and the kids give feedback.
+**Phase 13 (M1 "The Look") — COMPLETE:** dark design system, UI primitives, motion components, TopNav/BottomTabBar/AppShell, leaderboard endpoint + UI, all 10 pages restyled, legacy NavBar removed. Deferred minors (from PR #142 description): CountUp backward-jump on rapid value changes, ProgressRing reduced-motion CSS gate, ProtectedRoute dedicated tests, E2E selector validation.
 
 ## Performance Metrics
 

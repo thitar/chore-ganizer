@@ -12,6 +12,12 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-07-07 — M1 The Look shipped: PR #142 merged as v2.2.0
+
+- **Status**: Completed
+- **Description**: PR #142 squash-merged to main (a4f5b49) after multi-round review. Final review round migrated pages to shared dateFormat util, added aria-expanded/haspopup to BottomTabBar Manage button. Phase 13 complete; Phase 14 (M2 The Game) awaits kid feedback before detailed planning.
+- **URL**: https://github.com/thitar/chore-ganizer/pull/142
+
 ### 2026-07-05 — M1 The Look — dark redesign + frontend gamification, all pages
 
 - **Status**: Completed

@@ -29,7 +29,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-07-04-frontend-redesign-design.md`
 
-- [ ] **Phase 13: M1 "The Look"** — Dark design system, shared component library, TopNav + mobile bottom tab bar, all 10 pages restyled, confetti/count-up/progress-ring gamification, `GET /api/points/leaderboard` (plan: `docs/superpowers/plans/2026-07-04-frontend-redesign-m1-the-look.md`, 15 tasks)
+- [x] **Phase 13: M1 "The Look"** — Dark design system, shared component library, TopNav + mobile bottom tab bar, all 10 pages restyled, confetti/count-up/progress-ring gamification, `GET /api/points/leaderboard` (plan: `docs/superpowers/plans/2026-07-04-frontend-redesign-m1-the-look.md`, 15 tasks) — shipped 2026-07-07 as v2.2.0, PR #142
 - [ ] **Phase 14: M2 "The Game"** — Backend weekly streaks (lazy computation), levels from lifetime points, badge catalog + UserBadge table, ntfy badge notifications (planned after M1 feedback)
 
 ## Phases
