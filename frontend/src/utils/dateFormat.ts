@@ -24,3 +24,33 @@ export function formatDateStatus(dateStr: string): {
     isToday: dueDate.getTime() === today.getTime(),
   }
 }
+
+export function formatDueDate(dateStr: string): {
+  label: string
+  isOverdue: boolean
+  isToday: boolean
+  isTomorrow: boolean
+} {
+  const date = new Date(dateStr)
+  const today = startOfDay(new Date())
+  const dueDate = startOfDay(date)
+  const diffDays = Math.round((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+  let label: string
+  if (diffDays === 0) {
+    label = 'Today'
+  } else if (diffDays === 1) {
+    label = 'Tomorrow'
+  } else if (diffDays > 0 && diffDays <= 6) {
+    label = `in ${diffDays} days`
+  } else {
+    label = formatDateLabel(dateStr)
+  }
+
+  return {
+    label,
+    isOverdue: diffDays < 0,
+    isToday: diffDays === 0,
+    isTomorrow: diffDays === 1,
+  }
+}

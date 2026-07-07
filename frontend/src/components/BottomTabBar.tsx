@@ -65,6 +65,8 @@ export function BottomTabBar() {
             <button
               ref={triggerRef}
               onClick={() => setSheetOpen(o => !o)}
+              aria-expanded={sheetOpen}
+              aria-haspopup="true"
               className={`flex min-h-[56px] flex-col items-center gap-0.5 py-2 text-[11px] ${sheetOpen ? 'text-accent' : 'text-zinc-500'}`}
             >
               <Settings className="h-5 w-5" aria-hidden />

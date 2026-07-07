@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { ClipboardList } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { formatDueDate } from '../utils/dateFormat'
 import { useAssignments } from '../hooks/useAssignments'
 import { useMyPoints, useLeaderboard } from '../hooks/usePoints'
 import { AppShell } from '../components/AppShell'
@@ -59,36 +60,6 @@ export function DashboardPage() {
       )
     }).length
   }, [mine])
-
-  function formatDueDate(dateStr: string): { label: string; isOverdue: boolean; isToday: boolean; isTomorrow: boolean } {
-    const date = new Date(dateStr)
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const dueDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    const diffDays = Math.round((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-    let label: string
-    if (dueDate.getTime() === today.getTime()) {
-      label = 'Today'
-    } else if (dueDate.getTime() === tomorrow.getTime()) {
-      label = 'Tomorrow'
-    } else if (diffDays > 0 && diffDays <= 6) {
-      label = `in ${diffDays} days`
-    } else {
-      label = `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
-    }
-
-    return {
-      label,
-      isOverdue: dueDate < today,
-      isToday: dueDate.getTime() === today.getTime(),
-      isTomorrow: dueDate.getTime() === tomorrow.getTime(),
-    }
-  }
 
   return (
     <AppShell>

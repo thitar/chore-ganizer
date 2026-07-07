@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useAssignments } from '../hooks/useAssignments'
-import { useAuth } from '../hooks/useAuth'
 import { FilterBar } from '../components/FilterBar'
 import { StatusBadge } from '../components/StatusBadge'
 import { AppShell } from '../components/AppShell'
@@ -11,6 +10,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Skeleton } from '../components/ui/Skeleton'
 import { Toast } from '../components/ui/Toast'
 import { celebrate } from '../lib/celebrate'
+import { formatDateStatus } from '../utils/dateFormat'
 import { CheckCircle2, ClipboardList } from 'lucide-react'
 
 function currentMonthDates(): { from: string; to: string } {
@@ -22,7 +22,6 @@ function currentMonthDates(): { from: string; to: string } {
 }
 
 export function MyChoresPage() {
-  const { user } = useAuth()
   const {
     assignments,
     isLoading,
@@ -69,22 +68,6 @@ export function MyChoresPage() {
       setSuccessMessage('Chore marked complete! 🎉')
     } catch {
       setCompleteError('Failed to complete chore.')
-    }
-  }
-
-  function formatDate(dateStr: string): { label: string; isOverdue: boolean; isToday: boolean } {
-    const date = new Date(dateStr)
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const dueDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    const label = `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
-
-    return {
-      label,
-      isOverdue: dueDate < today,
-      isToday: dueDate.getTime() === today.getTime(),
     }
   }
 
@@ -145,7 +128,7 @@ export function MyChoresPage() {
           ) : (
             <div className="mt-4 space-y-3">
               {filtered.map(assignment => {
-                const { label: dueDateLabel, isOverdue, isToday } = formatDate(assignment.dueDate)
+                const { label: dueDateLabel, isOverdue, isToday } = formatDateStatus(assignment.dueDate)
                 const overdue = isOverdue && assignment.status === 'PENDING'
                 const completed = assignment.status === 'COMPLETED'
                 return (

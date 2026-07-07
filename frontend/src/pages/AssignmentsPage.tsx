@@ -13,6 +13,7 @@ import { ConfirmDelete } from '../components/ConfirmDelete'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import type { Assignment } from '../api/assignments.api'
 import { Skeleton } from '../components/ui/Skeleton'
+import { formatDateStatus } from '../utils/dateFormat'
 
 function currentMonthDates(): { from: string; to: string } {
   const now = new Date()
@@ -138,17 +139,6 @@ export function AssignmentsPage() {
     })
   }, [assignments, statusFilter, userFilter, dateFrom, dateTo])
 
-  function formatDate(dateStr: string): { label: string; isOverdue: boolean } {
-    const date = new Date(dateStr)
-    const today = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
-    const dueDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    return {
-      label: `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`,
-      isOverdue: dueDateOnly < today,
-    }
-  }
-
   if (isLoading) {
     return (
       <AppShell>
@@ -259,7 +249,7 @@ export function AssignmentsPage() {
                 <div>Actions</div>
               </div>
               {filtered.map(assignment => {
-                const { label: dueDateLabel, isOverdue } = formatDate(assignment.dueDate)
+                const { label: dueDateLabel, isOverdue } = formatDateStatus(assignment.dueDate)
                 return (
                   <div key={assignment.id}>
                     <div className="grid grid-cols-5 gap-2 px-4 py-3 items-center hover:bg-white/5">

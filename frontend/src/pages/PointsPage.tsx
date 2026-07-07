@@ -11,6 +11,7 @@ import { Toast } from '../components/ui/Toast'
 import { CountUp } from '../components/ui/CountUp'
 import { Leaderboard } from '../components/Leaderboard'
 import { Plus } from 'lucide-react'
+import { formatDateLabel } from '../utils/dateFormat'
 
 const TYPE_BADGE_CLASS: Record<string, string> = {
   EARNED: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
@@ -21,12 +22,6 @@ const TYPE_BADGE_CLASS: Record<string, string> = {
   ADJUSTMENT: 'bg-violet-500/10 text-violet-400 border border-violet-500/20',
   PAYOUT: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
   ADVANCE: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20',
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
 }
 
 export function PointsPage() {
@@ -205,7 +200,7 @@ export function PointsPage() {
             <div className="divide-y divide-edge">
               {logs.map(log => (
                 <div key={log.id} className="grid grid-cols-12 items-center gap-4 px-4 py-3 hover:bg-white/5">
-                  <div className="col-span-3 text-sm text-zinc-400 sm:col-span-2">{formatDate(log.createdAt)}</div>
+                  <div className="col-span-3 text-sm text-zinc-400 sm:col-span-2">{formatDateLabel(log.createdAt)}</div>
                   <div className="col-span-3 sm:col-span-2">
                     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs ${TYPE_BADGE_CLASS[log.type] ?? 'bg-zinc-500/10 text-zinc-400'}`}>
                       {log.type}
