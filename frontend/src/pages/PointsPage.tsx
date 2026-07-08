@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useMyPoints, useAdjustPoints, useLeaderboard } from '../hooks/usePoints'
+import { useMyPoints, useAdjustPoints, useLeaderboard, useGamification } from '../hooks/usePoints'
 import { useUsers } from '../hooks/useUsers'
 import { useAuth } from '../hooks/useAuth'
 import { AppShell } from '../components/AppShell'
@@ -10,6 +10,7 @@ import { Skeleton } from '../components/ui/Skeleton'
 import { Toast } from '../components/ui/Toast'
 import { CountUp } from '../components/ui/CountUp'
 import { Leaderboard } from '../components/Leaderboard'
+import { LevelBar } from '../components/LevelBar'
 import { Plus } from 'lucide-react'
 import { formatDateLabel } from '../utils/dateFormat'
 
@@ -30,6 +31,7 @@ export function PointsPage() {
   const { users } = useUsers()
   const adjustMutation = useAdjustPoints()
   const { data: leaderboard, isLoading: isLeaderboardLoading } = useLeaderboard()
+  const { data: gamification } = useGamification()
   const [adjustUserId, setAdjustUserId] = useState<number | null>(null)
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
@@ -116,6 +118,11 @@ export function PointsPage() {
           <p className="font-display text-5xl font-bold text-zinc-100">
             <CountUp value={balance} /> <span className="text-2xl text-accent">pts</span>
           </p>
+          {gamification && (
+            <div className="mt-4">
+              <LevelBar level={gamification.level} />
+            </div>
+          )}
         </div>
 
         <h3 className="mb-3 font-display text-base font-bold text-zinc-100">Family Leaderboard</h3>

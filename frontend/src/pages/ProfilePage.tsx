@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../hooks/useAuth'
 import { useUsers } from '../hooks/useUsers'
+import { useGamification } from '../hooks/usePoints'
 import { AppShell } from '../components/AppShell'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Avatar } from '../components/ui/Avatar'
+import { BadgeGrid } from '../components/BadgeGrid'
 import { Toast } from '../components/ui/Toast'
 import * as usersApi from '../api/users.api'
 
@@ -22,6 +24,7 @@ function generateRandomTopic(username: string): string {
 export function ProfilePage() {
   const { user } = useAuth()
   const { users, isLoading: usersLoading } = useUsers()
+  const { data: gamification } = useGamification()
   const queryClient = useQueryClient()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -229,6 +232,16 @@ export function ProfilePage() {
               {isUpdatingColor ? 'Updating...' : 'Update Color'}
             </Button>
           </form>
+        </Card>
+
+        {/* Badges */}
+        <Card className="p-6 mb-6">
+          <h3 className="mb-4 font-display text-base font-bold text-zinc-100">Badges</h3>
+          {gamification ? (
+            <BadgeGrid badges={gamification.badges} />
+          ) : (
+            <p className="text-sm text-zinc-500">Loading badges…</p>
+          )}
         </Card>
 
         {/* Push Notifications */}

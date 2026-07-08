@@ -3,7 +3,7 @@ import { ClipboardList } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { formatDueDate } from '../utils/dateFormat'
 import { useAssignments } from '../hooks/useAssignments'
-import { useMyPoints, useLeaderboard } from '../hooks/usePoints'
+import { useMyPoints, useLeaderboard, useGamification } from '../hooks/usePoints'
 import { AppShell } from '../components/AppShell'
 import { StatusBadge } from '../components/StatusBadge'
 import { Leaderboard } from '../components/Leaderboard'
@@ -19,6 +19,7 @@ export function DashboardPage() {
   const { assignments, isLoading, error } = useAssignments()
   const { data: myPoints } = useMyPoints()
   const { data: leaderboard, isLoading: isLeaderboardLoading } = useLeaderboard()
+  const { data: gamification } = useGamification()
 
   const mine = useMemo(
     () => assignments.filter(a => a.assignedToId === user?.id),
@@ -72,6 +73,10 @@ export function DashboardPage() {
           <CountUp value={myPoints?.balance ?? 0} /> <span className="text-base text-zinc-500">pts</span>
         </StatCard>
         <StatCard label="Due today">{dueToday}</StatCard>
+        <StatCard label="Streak">
+          <span aria-hidden>🔥</span> {gamification?.streak ?? 0}{' '}
+          <span className="text-base text-zinc-500">wk</span>
+        </StatCard>
         <Card className="col-span-2 flex items-center justify-between lg:col-span-2">
           <div>
             <span className="text-xs uppercase tracking-wider text-zinc-500">This week</span>

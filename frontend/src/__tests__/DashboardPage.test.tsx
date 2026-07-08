@@ -28,11 +28,12 @@ vi.mock('../hooks/useAssignments', () => ({
 vi.mock('../hooks/usePoints', () => ({
   useMyPoints: vi.fn(),
   useLeaderboard: vi.fn(),
+  useGamification: vi.fn(),
 }))
 
 import { useAuth } from '../hooks/useAuth'
 import { useAssignments } from '../hooks/useAssignments'
-import { useMyPoints, useLeaderboard } from '../hooks/usePoints'
+import { useMyPoints, useLeaderboard, useGamification } from '../hooks/usePoints'
 
 const mockUser = { id: 1, name: 'Alice', role: 'CHILD', email: 'alice@home.local', color: '#10B981' }
 
@@ -63,6 +64,14 @@ function mockPointsState(overrides: Record<string, unknown> = {}) {
     ...overrides,
   })
   ;(useLeaderboard as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false })
+  ;(useGamification as ReturnType<typeof vi.fn>).mockReturnValue({
+    data: {
+      streak: 3,
+      level: { level: 1, lifetimePoints: 0, currentThreshold: 0, nextThreshold: 50, progress: 0 },
+      badges: [],
+    },
+    isLoading: false,
+  })
 }
 
 function renderPage() {
@@ -89,6 +98,13 @@ describe('DashboardPage', () => {
   it('shows the points balance', () => {
     renderPage()
     expect(screen.getByText('30')).toBeInTheDocument()
+  })
+
+  it('shows the weekly streak stat', () => {
+    renderPage()
+    const streakCard = screen.getByText('Streak').closest('div')
+    expect(streakCard).not.toBeNull()
+    expect(streakCard).toHaveTextContent('3')
   })
 
   it('shows an empty state when there are no upcoming chores', () => {
