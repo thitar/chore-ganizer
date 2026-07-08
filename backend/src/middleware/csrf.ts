@@ -17,10 +17,10 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
   }
 
   // Ensure a CSRF cookie exists on every response
-  let token = req.cookies?.[CSRF_COOKIE]
-  if (!token) {
-    token = generateToken()
-    res.cookie(CSRF_COOKIE, token, {
+  let csrfCookieToken = req.cookies?.[CSRF_COOKIE]
+  if (!csrfCookieToken) {
+    csrfCookieToken = generateToken()
+    res.cookie(CSRF_COOKIE, csrfCookieToken, {
       httpOnly: false,
       sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production' && process.env.SECURE_COOKIES !== 'false',
@@ -36,8 +36,8 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
   }
 
   // Validate header matches cookie on mutating requests
-  const headerToken = req.headers[CSRF_HEADER] as string | undefined
-  if (!headerToken || headerToken !== token) {
+  const csrfHeaderToken = req.headers[CSRF_HEADER] as string | undefined
+  if (!csrfHeaderToken || csrfHeaderToken !== csrfCookieToken) {
     res.status(403).json({
       success: false,
       error: { message: 'Invalid CSRF token' },

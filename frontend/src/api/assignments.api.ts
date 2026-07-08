@@ -1,6 +1,7 @@
 import axios from 'axios'
+import { applyCsrfInterceptor } from '../lib/csrf'
 
-const api = axios.create({ baseURL: '/api/assignments', withCredentials: true })
+const api = applyCsrfInterceptor(axios.create({ baseURL: '/api/assignments', withCredentials: true }))
 
 export interface Assignment {
   id: number

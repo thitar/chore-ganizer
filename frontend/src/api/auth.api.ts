@@ -1,6 +1,7 @@
 import axios from 'axios'
+import { applyCsrfInterceptor } from '../lib/csrf'
 
-const api = axios.create({ baseURL: '/api/auth', withCredentials: true })
+const api = applyCsrfInterceptor(axios.create({ baseURL: '/api/auth', withCredentials: true }))
 
 export class AuthError extends Error {
   statusCode: number
