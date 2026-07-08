@@ -20,6 +20,10 @@ vi.mock('../hooks/useTemplates', () => ({
   useTemplates: vi.fn(),
 }))
 
+vi.mock('../hooks/usePoints', () => ({
+  useGamification: vi.fn().mockReturnValue({ data: undefined, isLoading: false }),
+}))
+
 import { useTemplates } from '../hooks/useTemplates'
 
 const defaultTemplate = {
