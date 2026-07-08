@@ -12,6 +12,11 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-07-07 — M2 The Game implemented — streaks, levels, badges (Phase 14)
+
+- **Status**: Implementation complete on `feature/m2-the-game`, not yet merged
+- **Description**: Weekly streaks (lazy compute, cached on User), levels from lifetime EARNED+BONUS points (10 thresholds), 8-badge catalog + UserBadge table, fire-and-forget ntfy award on chore completion, GET /api/points/gamification endpoint, LevelBar/BadgeGrid/GamificationMoments UI wired into Dashboard/Points/Profile/AppShell. Backend 242 tests passing, frontend 106 tests passing, both typecheck clean, build clean. User directed implementation to proceed inline without subagents, waiving the spec's "plan M2 after kid feedback" gate.
+
 ### 2026-07-07 — M1 The Look shipped: PR #142 merged as v3.2.0
 
 - **Status**: Completed

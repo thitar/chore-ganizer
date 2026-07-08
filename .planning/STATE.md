@@ -4,16 +4,16 @@ milestone: v3.2.0
 milestone_name: Teen Appeal Redesign
 current_phase: 14
 current_phase_name: M2 The Game
-status: Executing phase 14 (inline)
-last_updated: "2026-07-07T09:00:00.000Z"
+status: Phase 14 implementation complete — pending PR + merge + tag
+last_updated: "2026-07-07T10:00:00.000Z"
 last_activity: 2026-07-07
-last_activity_desc: M2 plan written (docs/superpowers/plans/2026-07-07-m2-the-game.md, 11 tasks) — executing inline
+last_activity_desc: M2 tasks 1-10 implemented on feature/m2-the-game (schema, service, routes, UI) — 242 backend + 106 frontend tests passing, clean build
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 2
-  completed_plans: 1
-  percent: 50
+  completed_plans: 2
+  percent: 90
 ---
 
 # Project State
@@ -23,15 +23,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v3.1 milestone init)
 
 **Core value:** Any family member can open the app, see their chores for today, and complete them — without the app requiring a devops engineer to maintain.
-**Current focus:** Milestone v3.2.0 Teen Appeal Redesign — Phase 13 shipped; Phase 14 (M2 "The Game") next
+**Current focus:** Milestone v3.2.0 Teen Appeal Redesign — Phase 13 shipped; Phase 14 (M2 "The Game") implementation done on branch, PR not yet opened
 
 ## Current Position
 
 Phase: 14 — M2 "The Game" (backend streaks, levels, badges)
-Plan: docs/superpowers/plans/2026-07-07-m2-the-game.md (11 tasks)
+Plan: docs/superpowers/plans/2026-07-07-m2-the-game.md (11 tasks — tasks 1-10 done, task 11 is PR/merge/tag)
 Spec: docs/superpowers/specs/2026-07-04-frontend-redesign-design.md (Milestone 2 section)
-Status: Executing (inline, no subagents — user decision 2026-07-07; feedback gate waived by user)
-Last activity: 2026-07-07 — Phase 13 (M1 "The Look") complete: all 15 tasks done, multi-round review fixes applied, PR #142 squash-merged to main (a4f5b49) as v3.2.0
+Branch: feature/m2-the-game (off main, 10 commits)
+Status: Implementation complete and verified inline (no subagents — user decision 2026-07-07). Remaining: open PR, merge, tag v3.2.0.
+Last activity: 2026-07-07 — All M2 tasks (schema, gamification.service.ts, GET /api/points/gamification, badge award on completion, LevelBar/BadgeGrid/GamificationMoments UI wired into Dashboard/Points/Profile/AppShell) implemented and tested.
+
+**Phase 14 (M2 "The Game") — implementation complete, unmerged:** weekly streaks (lazy, cached on User), levels from lifetime EARNED+BONUS points (10 thresholds), 8-badge catalog with UserBadge table + fire-and-forget ntfy award on chore completion, level-up/badge-earned toast+confetti. Backend 242 tests passing (was 213), frontend 106 tests passing (was 98), both typecheck clean, frontend build clean. Deviation from spec: used existing Toast+confetti instead of a new level-up modal (recorded in plan's self-review notes).
 
 **Phase 13 (M1 "The Look") — COMPLETE:** dark design system, UI primitives, motion components, TopNav/BottomTabBar/AppShell, leaderboard endpoint + UI, all 10 pages restyled, legacy NavBar removed. Deferred minors (from PR #142 description): CountUp backward-jump on rapid value changes, ProgressRing reduced-motion CSS gate, ProtectedRoute dedicated tests, E2E selector validation.
 
