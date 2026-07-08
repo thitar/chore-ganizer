@@ -51,14 +51,11 @@ export function DashboardPage() {
 
   const dueToday = useMemo(() => {
     const now = new Date()
+    const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    const tomorrowUTC = todayUTC + 86400000
     return mine.filter(a => {
-      const due = new Date(a.dueDate)
-      return (
-        a.status === 'PENDING' &&
-        due.getFullYear() === now.getFullYear() &&
-        due.getMonth() === now.getMonth() &&
-        due.getDate() === now.getDate()
-      )
+      const due = new Date(a.dueDate).getTime()
+      return a.status === 'PENDING' && due >= todayUTC && due < tomorrowUTC
     }).length
   }, [mine])
 

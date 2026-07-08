@@ -178,7 +178,7 @@ describe('DashboardPage', () => {
 
   describe('weekly progress and due-today (frozen clock)', () => {
     beforeEach(() => {
-      vi.useFakeTimers({ now: new Date('2026-06-17T12:00:00'), toFake: ['Date'] })
+      vi.useFakeTimers({ now: new Date('2026-06-17T12:00:00Z'), toFake: ['Date'] })
     })
 
     afterEach(() => {

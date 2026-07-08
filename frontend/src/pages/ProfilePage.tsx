@@ -157,7 +157,7 @@ export function ProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
       setFamilyEditMap((prev) => ({ ...prev, [userId]: false }))
-      setTopicSuccess('Topic saved!')
+      setTopicSuccess('Family member topic saved!')
     } catch (err: any) {
       if (err?.response?.status === 409) {
         setFamilyErrorMap((prev) => ({ ...prev, [userId]: 'This topic is already in use. Please choose another.' }))

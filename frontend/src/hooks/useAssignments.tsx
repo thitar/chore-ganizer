@@ -30,6 +30,7 @@ export function useAssignments() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments'] })
       queryClient.invalidateQueries({ queryKey: ['points'] })
+      queryClient.invalidateQueries({ queryKey: ['points', 'gamification'] })
     },
   })
 
@@ -38,6 +39,7 @@ export function useAssignments() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments'] })
       queryClient.invalidateQueries({ queryKey: ['points'] })
+      queryClient.invalidateQueries({ queryKey: ['points', 'gamification'] })
     },
   })
 

@@ -19,9 +19,9 @@ export function GamificationMoments() {
     if (data.level.level > prev.level) {
       newMessages.push(`🎉 Level up! You reached Level ${data.level.level}`)
     }
-    const newBadge = data.badges.find(b => b.earnedAt !== null && !prev.earnedIds.has(b.id))
-    if (newBadge) {
-      newMessages.push(`${newBadge.emoji} Badge earned: ${newBadge.name}!`)
+    const newBadges = data.badges.filter(b => b.earnedAt !== null && !prev.earnedIds.has(b.id))
+    for (const badge of newBadges) {
+      newMessages.push(`${badge.emoji} Badge earned: ${badge.name}!`)
     }
     if (newMessages.length > 0) {
       celebrate()

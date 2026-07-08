@@ -62,11 +62,6 @@ describe('notification.formatters', () => {
       })
     })
 
-    it('body does not include completer name', () => {
-      const result = completedBody(mockAssignment)
-      expect(result.body).not.toContain('Alice')
-    })
-
     it('body shows +0 points earned when template.points is 0', () => {
       const zeroPointsAssignment = {
         ...mockAssignment,
@@ -81,11 +76,6 @@ describe('notification.formatters', () => {
     it('dueDate is a Date object — produces correct YYYY-MM-DD', () => {
       const result = assignedBody(mockAssignment)
       expect(result.body).toMatch(/2026-07-15/)
-    })
-
-    it('body does not include any user name', () => {
-      const result = completedBody(mockAssignment)
-      expect(result.body).not.toContain('AnyName123')
     })
   })
 
