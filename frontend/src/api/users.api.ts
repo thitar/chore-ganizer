@@ -8,6 +8,7 @@ export interface UserSummary {
   role: string
   color: string
   ntfyTopic: string | null
+  email?: string
 }
 
 export interface UserWithEmail extends UserSummary {

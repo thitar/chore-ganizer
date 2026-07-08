@@ -3,6 +3,8 @@ import * as pointsService from '../services/points.service'
 import * as gamificationService from '../services/gamification.service'
 import { authenticate } from '../middleware/auth'
 import { authorize } from '../middleware/auth'
+import { validate } from '../middleware/validator'
+import { adjustPointsSchema } from '../schemas/points.schema'
 
 const router = Router()
 
@@ -47,7 +49,7 @@ router.get('/users/:id', authenticate, async (req, res, next) => {
   }
 })
 
-router.post('/adjust', authenticate, authorize('PARENT'), async (req, res, next) => {
+router.post('/adjust', authenticate, authorize('PARENT'), validate(adjustPointsSchema), async (req, res, next) => {
   try {
     const { userId, amount, reason } = req.body
     const log = await pointsService.adjustPoints(userId, amount, reason)

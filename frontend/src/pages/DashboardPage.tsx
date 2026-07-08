@@ -35,10 +35,10 @@ export function DashboardPage() {
 
   const week = useMemo(() => {
     const now = new Date()
-    const day = (now.getDay() + 6) % 7 // 0 = Monday
-    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day)
+    const day = (now.getUTCDay() + 6) % 7 // 0 = Monday
+    const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - day))
     const nextMonday = new Date(monday)
-    nextMonday.setDate(monday.getDate() + 7)
+    nextMonday.setUTCDate(monday.getUTCDate() + 7)
     const thisWeek = mine.filter(a => {
       const due = new Date(a.dueDate)
       return due >= monday && due < nextMonday

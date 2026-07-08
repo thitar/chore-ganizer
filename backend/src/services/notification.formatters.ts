@@ -4,10 +4,6 @@ interface AssignmentInfo {
   dueDate: Date
 }
 
-interface UserInfo {
-  name: string
-}
-
 export function assignedBody(a: AssignmentInfo) {
   return {
     title: 'Chore-Ganizer',
@@ -38,7 +34,7 @@ export function badgeEarnedBody(badge: { name: string; description: string; emoj
   }
 }
 
-export function completedBody(a: AssignmentInfo, _completer: UserInfo) {
+export function completedBody(a: AssignmentInfo) {
   return {
     title: 'Chore-Ganizer',
     body: `${a.template.title} — +${a.template.points} points earned`,

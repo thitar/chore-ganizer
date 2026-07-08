@@ -31,7 +31,7 @@ export function computeLevel(lifetimePoints: number): LevelInfo {
 
 export async function getLifetimePoints(userId: number): Promise<number> {
   const aggregate = await prisma.pointLog.aggregate({
-    where: { userId, type: { in: ['EARNED', 'BONUS'] }, amount: { gt: 0 } },
+    where: { userId, amount: { gt: 0 } },
     _sum: { amount: true },
   })
   return aggregate._sum.amount ?? 0
@@ -177,10 +177,21 @@ export async function evaluateBadges(userId: number): Promise<BadgeDef[]> {
     (badge) => !owned.has(badge.id) && BADGE_RULES[badge.id](stats)
   )
   // SQLite has no createMany skipDuplicates; create sequentially (small N)
+  // Use try/catch per badge to handle race conditions from concurrent calls
+  const created: BadgeDef[] = []
   for (const badge of newlyEarned) {
-    await prisma.userBadge.create({ data: { userId, badgeId: badge.id } })
+    try {
+      await prisma.userBadge.create({ data: { userId, badgeId: badge.id } })
+      created.push(badge)
+    } catch (err: unknown) {
+      // Ignore unique constraint violations (P2002) from concurrent creations
+      if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'P2002') {
+        continue
+      }
+      throw err
+    }
   }
-  return newlyEarned
+  return created
 }
 
 export async function getGamification(userId: number) {

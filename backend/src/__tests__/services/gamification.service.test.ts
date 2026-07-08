@@ -56,12 +56,12 @@ describe('computeLevel', () => {
 })
 
 describe('getLifetimePoints', () => {
-  it('sums positive EARNED and BONUS logs only', async () => {
+  it('sums all positive amount logs', async () => {
     prisma.pointLog.aggregate.mockResolvedValue({ _sum: { amount: 140 } })
     const total = await gamification.getLifetimePoints(3)
     expect(total).toBe(140)
     expect(prisma.pointLog.aggregate).toHaveBeenCalledWith({
-      where: { userId: 3, type: { in: ['EARNED', 'BONUS'] }, amount: { gt: 0 } },
+      where: { userId: 3, amount: { gt: 0 } },
       _sum: { amount: true },
     })
   })

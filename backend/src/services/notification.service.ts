@@ -59,7 +59,7 @@ export function notifyChoreCompleted(
   for (const parent of parents) {
     const topic = parent.ntfyTopic
     if (!topic) continue
-    const { title, body, priority, tags, click } = completedBody(assignment, { name: '' })
+    const { title, body, priority, tags, click } = completedBody(assignment)
     void sendNtfy(topic, title, body, { priority, tags, click })
   }
 }

@@ -190,7 +190,7 @@ export function ProfilePage() {
           <Avatar name={user?.name ?? ''} color={user?.color ?? '#4F46E5'} size="lg" />
           <div>
             <p className="font-display text-xl font-bold text-zinc-100">{user?.name}</p>
-            <p className="text-sm text-zinc-400">{currentUserFull ? (currentUserFull as any).email : ''}</p>
+            <p className="text-sm text-zinc-400">{currentUserFull?.email ?? ''}</p>
             <p className="text-xs text-zinc-500">Role: {user?.role}</p>
           </div>
         </div>

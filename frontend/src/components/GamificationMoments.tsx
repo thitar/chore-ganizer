@@ -6,7 +6,7 @@ import { Toast } from './ui/Toast'
 export function GamificationMoments() {
   const { data } = useGamification()
   const prevRef = useRef<{ level: number; earnedIds: Set<string> } | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
+  const [messages, setMessages] = useState<string[]>([])
 
   useEffect(() => {
     if (!data) return
@@ -15,24 +15,26 @@ export function GamificationMoments() {
     prevRef.current = { level: data.level.level, earnedIds }
     if (!prev) return // first load primes the baseline silently
 
+    const newMessages: string[] = []
     if (data.level.level > prev.level) {
-      setMessage(`🎉 Level up! You reached Level ${data.level.level}`)
-      celebrate()
-      return
+      newMessages.push(`🎉 Level up! You reached Level ${data.level.level}`)
     }
     const newBadge = data.badges.find(b => b.earnedAt !== null && !prev.earnedIds.has(b.id))
     if (newBadge) {
-      setMessage(`${newBadge.emoji} Badge earned: ${newBadge.name}!`)
+      newMessages.push(`${newBadge.emoji} Badge earned: ${newBadge.name}!`)
+    }
+    if (newMessages.length > 0) {
       celebrate()
+      setMessages(prev => [...prev, ...newMessages])
     }
   }, [data])
 
   useEffect(() => {
-    if (!message) return
-    const timer = setTimeout(() => setMessage(null), 4000)
+    if (messages.length === 0) return
+    const timer = setTimeout(() => setMessages(prev => prev.slice(1)), 4000)
     return () => clearTimeout(timer)
-  }, [message])
+  }, [messages])
 
-  if (!message) return null
-  return <Toast kind="success">{message}</Toast>
+  if (messages.length === 0) return null
+  return <Toast kind="success">{messages[0]}</Toast>
 }

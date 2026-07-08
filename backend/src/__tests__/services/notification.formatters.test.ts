@@ -52,7 +52,7 @@ describe('notification.formatters', () => {
 
   describe('completedBody', () => {
     it('returns correct title, body with points earned, priority 2, tags, and click URL', () => {
-      const result = completedBody(mockAssignment, { name: 'Alice' })
+      const result = completedBody(mockAssignment)
       expect(result).toEqual({
         title: 'Chore-Ganizer',
         body: 'Wash Dishes — +10 points earned',
@@ -62,8 +62,8 @@ describe('notification.formatters', () => {
       })
     })
 
-    it('body does not use the completer parameter', () => {
-      const result = completedBody(mockAssignment, { name: 'Alice' })
+    it('body does not include completer name', () => {
+      const result = completedBody(mockAssignment)
       expect(result.body).not.toContain('Alice')
     })
 
@@ -72,7 +72,7 @@ describe('notification.formatters', () => {
         ...mockAssignment,
         template: { title: 'Clean Room', points: 0 },
       }
-      const result = completedBody(zeroPointsAssignment, { name: 'Bob' })
+      const result = completedBody(zeroPointsAssignment)
       expect(result.body).toContain('+0 points earned')
     })
   })
@@ -83,8 +83,8 @@ describe('notification.formatters', () => {
       expect(result.body).toMatch(/2026-07-15/)
     })
 
-    it('completer.name is any string — body does not include it', () => {
-      const result = completedBody(mockAssignment, { name: 'AnyName123' })
+    it('body does not include any user name', () => {
+      const result = completedBody(mockAssignment)
       expect(result.body).not.toContain('AnyName123')
     })
   })
