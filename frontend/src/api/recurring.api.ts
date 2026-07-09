@@ -1,8 +1,7 @@
-import axios from 'axios'
-import { applyCsrfInterceptor } from '../lib/csrf'
+import { createApiClient } from '../lib/apiClient'
 
-const api = applyCsrfInterceptor(axios.create({ baseURL: '/api/recurring', withCredentials: true }))
-const occurrencesApi = applyCsrfInterceptor(axios.create({ baseURL: '/api/occurrences', withCredentials: true }))
+const api = createApiClient('/api/recurring')
+const occurrencesApi = createApiClient('/api/occurrences')
 
 export interface RecurringOccurrence {
   id: number

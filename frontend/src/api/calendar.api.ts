@@ -1,7 +1,6 @@
-import axios from 'axios'
-import { applyCsrfInterceptor } from '../lib/csrf'
+import { createApiClient } from '../lib/apiClient'
 
-const api = applyCsrfInterceptor(axios.create({ baseURL: '/api/assignments', withCredentials: true }))
+const api = createApiClient('/api/assignments')
 
 export interface CalendarAssignment {
   id: number
