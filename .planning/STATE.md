@@ -4,16 +4,16 @@ milestone: v3.2.0
 milestone_name: Teen Appeal Redesign
 current_phase: 14
 current_phase_name: M2 The Game
-status: Phase 14 implementation complete — pending PR + merge + tag
-last_updated: "2026-07-07T10:00:00.000Z"
-last_activity: 2026-07-07
-last_activity_desc: M2 tasks 1-10 implemented on feature/m2-the-game (schema, service, routes, UI) — 242 backend + 106 frontend tests passing, clean build
+status: Milestone v3.2.0 complete — Phase 14 (M2 The Game) shipped via PR #146
+last_updated: "2026-07-09T11:24:43.000Z"
+last_activity: 2026-07-09
+last_activity_desc: Phase 14 (M2 The Game) squash-merged to main (12572b0) via PR #146 — milestone v3.2.0 complete, all 15 review findings across 3 passes resolved or explicitly deferred
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 2
   completed_plans: 2
-  percent: 90
+  percent: 100
 ---
 
 # Project State
@@ -23,18 +23,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v3.1 milestone init)
 
 **Core value:** Any family member can open the app, see their chores for today, and complete them — without the app requiring a devops engineer to maintain.
-**Current focus:** Milestone v3.2.0 Teen Appeal Redesign — Phase 13 shipped; Phase 14 (M2 "The Game") implementation done on branch, PR not yet opened
+**Current focus:** Milestone v3.2.0 Teen Appeal Redesign — COMPLETE. Both Phase 13 (M1 "The Look") and Phase 14 (M2 "The Game") shipped to main.
 
 ## Current Position
 
-Phase: 14 — M2 "The Game" (backend streaks, levels, badges)
-Plan: docs/superpowers/plans/2026-07-07-m2-the-game.md (11 tasks — tasks 1-10 done, task 11 is PR/merge/tag)
+Phase: 14 — M2 "The Game" (backend streaks, levels, badges) — COMPLETE
+Plan: docs/superpowers/plans/2026-07-07-m2-the-game.md (11 tasks — all done, including PR/merge/tag)
 Spec: docs/superpowers/specs/2026-07-04-frontend-redesign-design.md (Milestone 2 section)
-Branch: feature/m2-the-game (off main, 10 commits)
-Status: Implementation complete and verified inline (no subagents — user decision 2026-07-07). Remaining: open PR, merge, tag v3.2.0.
-Last activity: 2026-07-07 — All M2 tasks (schema, gamification.service.ts, GET /api/points/gamification, badge award on completion, LevelBar/BadgeGrid/GamificationMoments UI wired into Dashboard/Points/Profile/AppShell) implemented and tested.
+Branch: feature/m2-the-game — merged to main via PR #146 (squash commit 12572b0), safe to delete
+Status: Milestone v3.2.0 complete — both phases shipped. Tag v3.2.0 next.
+Last activity: 2026-07-09 — PR #146 merged after three review passes (two by Claude Code, one independent pass by Hermes); post-merge doc sync and milestone closeout.
 
-**Phase 14 (M2 "The Game") — implementation complete, unmerged:** weekly streaks (lazy, cached on User), levels from lifetime EARNED+BONUS points (10 thresholds), 8-badge catalog with UserBadge table + fire-and-forget ntfy award on chore completion, level-up/badge-earned toast+confetti. Backend 242 tests passing (was 213), frontend 106 tests passing (was 98), both typecheck clean, frontend build clean. Deviation from spec: used existing Toast+confetti instead of a new level-up modal (recorded in plan's self-review notes).
+**Phase 14 (M2 "The Game") — COMPLETE, merged to main:** weekly streaks (lazy, cached on User), levels from lifetime EARNED+BONUS points (10 thresholds), 8-badge catalog with UserBadge table + fire-and-forget ntfy award on chore completion, level-up/badge-earned toast+confetti, CSRF protection (double-submit cookie) added alongside as a CodeQL-driven security fix. Backend 247 tests passing (was 213), frontend 106 tests passing (was 98), both typecheck clean, frontend build clean. Verified live: login/logout/points-adjust/chore-completion CSRF flow, real ntfy badge push delivered to a live topic, mobile-viewport (390×844) visual pass on Dashboard/Points/Profile — all confirmed via Playwright against an isolated throwaway DB, production containers untouched throughout. Deviation from spec: used existing Toast+confetti instead of a new level-up modal (recorded in plan's self-review notes). Deferred (see issues.md 2026-07-09 entry): gamification read-path duplicate queries, `SESSION_SECRET` fallback hardening, `MyChoresPage` duplicate-key bug (unrelated pre-existing issue found during verification).
 
 **Phase 13 (M1 "The Look") — COMPLETE:** dark design system, UI primitives, motion components, TopNav/BottomTabBar/AppShell, leaderboard endpoint + UI, all 10 pages restyled, legacy NavBar removed. Deferred minors (from PR #142 description): CountUp backward-jump on rapid value changes, ProgressRing reduced-motion CSS gate, ProtectedRoute dedicated tests, E2E selector validation.
 
