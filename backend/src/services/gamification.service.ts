@@ -168,11 +168,17 @@ const BADGE_RULES: Record<string, (s: Stats) => boolean> = {
 }
 
 export async function evaluateBadges(userId: number): Promise<BadgeDef[]> {
-  const [stats, existing] = await Promise.all([
-    collectStats(userId),
-    prisma.userBadge.findMany({ where: { userId }, select: { badgeId: true } }),
-  ])
+  const existing = await prisma.userBadge.findMany({ where: { userId }, select: { badgeId: true } })
   const owned = new Set(existing.map((b: { badgeId: string }) => b.badgeId))
+  // Once every badge is owned, collectStats's full-history scan is pure waste
+  // on every future completion — short-circuit before running it. The
+  // remaining read-path duplication (getGamification vs. this function both
+  // hitting getStreak/getLifetimePoints independently) is tracked in
+  // docs/project_notes/issues.md (2026-07-09) — deliberately not cached on
+  // User without a migration/backfill story.
+  if (owned.size >= BADGE_CATALOG.length) return []
+
+  const stats = await collectStats(userId)
   const newlyEarned = BADGE_CATALOG.filter(
     (badge) => !owned.has(badge.id) && BADGE_RULES[badge.id](stats)
   )

@@ -4,19 +4,28 @@ import { useUsers } from '../hooks/useUsers'
 import { AppShell } from '../components/AppShell'
 import { Skeleton } from '../components/ui/Skeleton'
 import { Button } from '../components/ui/Button'
+import { assignmentKey } from '../utils/assignmentKey'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+interface CalendarDayAssignment {
+  id: number
+  type: 'REGULAR' | 'RECURRING'
+  title: string
+  color: string
+  status: string
+}
+
 interface DayCell {
   date: Date
   inMonth: boolean
   isToday: boolean
-  assignments: Array<{ id: number; title: string; color: string; status: string }>
+  assignments: CalendarDayAssignment[]
 }
 
-function buildCalendarDays(year: number, month: number, assignmentsByDate: Record<string, Array<{ id: number; title: string; color: string; status: string }>>): DayCell[] {
+function buildCalendarDays(year: number, month: number, assignmentsByDate: Record<string, CalendarDayAssignment[]>): DayCell[] {
   const firstDay = new Date(year, month, 1)
   const startOfWeek = firstDay.getDay()
   const startDate = new Date(year, month, 1 - startOfWeek)
@@ -58,12 +67,13 @@ export function CalendarPage() {
   const { users } = useUsers()
 
   const assignmentsByDate = useMemo(() => {
-    const map: Record<string, Array<{ id: number; title: string; color: string; status: string }>> = {}
+    const map: Record<string, CalendarDayAssignment[]> = {}
     ;(assignments ?? []).forEach((a) => {
       const key = a.dueDate
       if (!map[key]) map[key] = []
       map[key].push({
         id: a.id,
+        type: a.type,
         title: a.template.title,
         color: a.assignedTo.color,
         status: a.status,
@@ -163,7 +173,7 @@ export function CalendarPage() {
               <div className="space-y-0.5">
                 {day.assignments.slice(0, 3).map((a) => (
                   <div
-                    key={a.id}
+                    key={assignmentKey(a)}
                     className={`text-xs px-1 py-0.5 rounded truncate flex items-center gap-1 ${a.status === 'COMPLETED' ? 'opacity-50 line-through' : ''}`}
                     style={{
                       backgroundColor: colorWithAlpha(a.color, 0.15),

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useAssignments } from '../hooks/useAssignments'
+import { assignmentKey } from '../utils/assignmentKey'
 import { FilterBar } from '../components/FilterBar'
 import { StatusBadge } from '../components/StatusBadge'
 import { AppShell } from '../components/AppShell'
@@ -133,7 +134,7 @@ export function MyChoresPage() {
                 const completed = assignment.status === 'COMPLETED'
                 return (
                   <Card
-                    key={assignment.id}
+                    key={assignmentKey(assignment)}
                     className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${
                       overdue ? 'border-rose-500/40' : ''
                     } ${completed ? 'opacity-60' : ''}`}

@@ -12,6 +12,16 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-07-09 — Chased the three items deferred from PR #146's review round
+
+- **Status**: Completed on `fix/m2-followups` (off `main`, post-v3.2.0)
+- **Description**: Addressed all three items logged in the entry below.
+  - **`MyChoresPage` duplicate-key bug** — fixed by keying on `` `${type}-${id}` `` instead of raw `.id`. While fixing it, found the identical latent bug in three more pages that render the same merged assignment+occurrence list (`DashboardPage`, `AssignmentsPage`, `CalendarPage` — the last required threading `type` through its `assignmentsByDate` transform, which previously dropped it). Fixed all four consistently. Verified live: recreated the exact id-collision (a `ChoreAssignment` landing on the same id as an existing `RecurringOccurrence`) against an isolated DB and confirmed zero console warnings across all four pages, including after a live completion.
+  - **`SESSION_SECRET` fallback** — `backend/src/app.ts` now throws at startup when `NODE_ENV==='production'` and `SESSION_SECRET` is unset, refusing to run on the dev fallback secret. Chose fail-fast over warn-only since a silently-running prod instance on a public dev secret is a real risk, not just a footgun. 3 new tests in `app.test.ts`.
+  - **Gamification duplicate queries (High #1/#2)** — did *not* implement full `lifetimePoints` caching on `User` (the "correct" architectural fix Hermes and I both flagged): it requires a schema migration + backfill against a live database with real family data, and this project has no migration tooling (schema-push only) — the risk of a subtle points/level correctness bug outweighed the documented "negligible" performance win. Implemented the safe subset instead: `awardBadges` now short-circuits with one cheap `userBadge.count` check once a user has earned all 8 badges, skipping the full-history stats scan entirely on every future completion for maxed-out accounts — this is the part that genuinely compounds over time, unlike the single indexed `lifetimePoints` aggregate. The read-path duplication between `getGamification` and `evaluateBadges` remains as documented (streak side is already cache-protected; lifetime-points side is one cheap aggregate).
+- **Tests**: 251 backend (was 247), 106 frontend, both typecheck clean, both builds clean.
+- **URL**: https://github.com/thitar/chore-ganizer (no PR yet — branch `fix/m2-followups`)
+
 ### 2026-07-09 — PR #146 third review (Hermes): applied cheap fixes, deferred perf/scope items
 
 - **Status**: Completed the agreed subset; three items deferred (not blocking)

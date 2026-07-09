@@ -254,6 +254,18 @@ describe('evaluateBadges', () => {
     const earned = await gamification.evaluateBadges(3)
     expect(earned.map((b) => b.id)).not.toContain('weekend-warrior')
   })
+
+  it('short-circuits before collectStats once every badge is already owned, without a separate count query', async () => {
+    prisma.userBadge.findMany.mockResolvedValue(
+      gamification.BADGE_CATALOG.map((b) => ({ badgeId: b.id }))
+    )
+    const earned = await gamification.evaluateBadges(3)
+    expect(earned).toEqual([])
+    expect(prisma.choreAssignment.count).not.toHaveBeenCalled()
+    expect(prisma.choreAssignment.findMany).not.toHaveBeenCalled()
+    expect(prisma.pointLog.aggregate).not.toHaveBeenCalled()
+    expect(prisma.userBadge.create).not.toHaveBeenCalled()
+  })
 })
 
 describe('getGamification', () => {
@@ -315,5 +327,18 @@ describe('awardBadges', () => {
     prisma.pointLog.aggregate.mockResolvedValue({ _sum: { amount: null } })
     prisma.user.findUnique.mockResolvedValue({ streakCount: 0, streakComputedAt: new Date() })
     await expect(gamification.awardBadges(3)).resolves.toBeUndefined()
+  })
+
+  it('skips the stats scan entirely once every badge is already owned', async () => {
+    const { sendNtfy } = require('../../services/notification.service')
+    prisma.userBadge.findMany.mockResolvedValue(
+      gamification.BADGE_CATALOG.map((b) => ({ badgeId: b.id }))
+    )
+
+    await gamification.awardBadges(3)
+
+    expect(prisma.choreAssignment.count).not.toHaveBeenCalled()
+    expect(prisma.pointLog.aggregate).not.toHaveBeenCalled()
+    expect(sendNtfy).not.toHaveBeenCalled()
   })
 })

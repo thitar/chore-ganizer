@@ -16,6 +16,9 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }))
 app.use(cookieParser())
 
 // Session configuration
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET must be set when NODE_ENV=production — refusing to start with the dev fallback secret')
+}
 const sessionSecret = process.env.SESSION_SECRET || 'dev-secret'
 const raw = Number(process.env.SESSION_MAX_AGE)
 const sessionMaxAge = (!process.env.SESSION_MAX_AGE || isNaN(raw) || raw <= 0) ? 604800000 : raw
