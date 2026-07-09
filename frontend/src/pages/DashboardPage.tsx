@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { ClipboardList } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { formatDueDate } from '../utils/dateFormat'
+import { assignmentKey } from '../utils/assignmentKey'
 import { useAssignments } from '../hooks/useAssignments'
 import { useMyPoints, useLeaderboard, useGamification } from '../hooks/usePoints'
 import { AppShell } from '../components/AppShell'
@@ -106,7 +107,7 @@ export function DashboardPage() {
               {upcoming.map(assignment => {
                 const { label: dueLabel, isOverdue } = formatDueDate(assignment.dueDate)
                 return (
-                  <Card key={`${assignment.type}-${assignment.id}`} className="flex items-center justify-between">
+                  <Card key={assignmentKey(assignment)} className="flex items-center justify-between">
                     <div>
                       <div className="font-bold text-zinc-100">{assignment.template.title}</div>
                       <div className="text-sm text-zinc-400">

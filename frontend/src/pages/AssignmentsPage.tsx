@@ -14,6 +14,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react'
 import type { Assignment } from '../api/assignments.api'
 import { Skeleton } from '../components/ui/Skeleton'
 import { formatDateStatus } from '../utils/dateFormat'
+import { assignmentKey } from '../utils/assignmentKey'
 
 function currentMonthDates(): { from: string; to: string } {
   const now = new Date()
@@ -47,7 +48,7 @@ export function AssignmentsPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null)
-  const [deletingAssignmentId, setDeletingAssignmentId] = useState<number | null>(null)
+  const [deletingAssignmentKey, setDeletingAssignmentKey] = useState<string | null>(null)
   const [selectedTemplateId, setSelectedTemplateId] = useState('')
   const [selectedUserId, setSelectedUserId] = useState('')
   const [dueDate, setDueDate] = useState('')
@@ -120,7 +121,7 @@ export function AssignmentsPage() {
   async function handleDelete(id: number) {
     try {
       await deleteAssignment(id)
-      setDeletingAssignmentId(null)
+      setDeletingAssignmentKey(null)
       setSuccessMessage('Assignment removed.')
     } catch {
       setFormError('Failed to delete assignment. It may be completed — uncomplete it first.')
@@ -251,7 +252,7 @@ export function AssignmentsPage() {
               {filtered.map(assignment => {
                 const { label: dueDateLabel, isOverdue } = formatDateStatus(assignment.dueDate)
                 return (
-                  <div key={`${assignment.type}-${assignment.id}`}>
+                  <div key={assignmentKey(assignment)}>
                     <div className="grid grid-cols-5 gap-2 px-4 py-3 items-center hover:bg-white/5">
                       <div>
                         <div className="font-bold text-zinc-100">{assignment.template.title}</div>
@@ -270,19 +271,19 @@ export function AssignmentsPage() {
                         <button onClick={() => openEdit(assignment)} className="p-1 text-zinc-500 hover:text-zinc-100" aria-label="Edit assignment">
                           <Pencil className="h-4 w-4" />
                         </button>
-                        <button onClick={() => setDeletingAssignmentId(assignment.id)} className="p-1 text-zinc-500 hover:text-rose-400" aria-label="Delete assignment">
+                        <button onClick={() => setDeletingAssignmentKey(assignmentKey(assignment))} className="p-1 text-zinc-500 hover:text-rose-400" aria-label="Delete assignment">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </div>
-                    {deletingAssignmentId === assignment.id && (
+                    {deletingAssignmentKey === assignmentKey(assignment) && (
                       <div className="px-4 pb-3">
                         <ConfirmDelete
                           message="This assignment will be permanently removed. The chore template will not be affected. Continue?"
                           deleteLabel="Delete Assignment"
                           keepLabel="Keep Assignment"
                           onDelete={() => handleDelete(assignment.id)}
-                          onCancel={() => setDeletingAssignmentId(null)}
+                          onCancel={() => setDeletingAssignmentKey(null)}
                           isDeleting={isDeleting}
                         />
                       </div>

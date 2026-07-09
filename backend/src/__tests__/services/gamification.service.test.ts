@@ -4,7 +4,7 @@ jest.mock('../../config/prisma', () => ({
     pointLog: { aggregate: jest.fn() },
     choreAssignment: { findMany: jest.fn(), count: jest.fn() },
     recurringOccurrence: { findMany: jest.fn(), count: jest.fn() },
-    userBadge: { findMany: jest.fn(), create: jest.fn(), count: jest.fn() },
+    userBadge: { findMany: jest.fn(), create: jest.fn() },
   },
 }))
 jest.mock('../../services/notification.service', () => ({
@@ -254,6 +254,18 @@ describe('evaluateBadges', () => {
     const earned = await gamification.evaluateBadges(3)
     expect(earned.map((b) => b.id)).not.toContain('weekend-warrior')
   })
+
+  it('short-circuits before collectStats once every badge is already owned, without a separate count query', async () => {
+    prisma.userBadge.findMany.mockResolvedValue(
+      gamification.BADGE_CATALOG.map((b) => ({ badgeId: b.id }))
+    )
+    const earned = await gamification.evaluateBadges(3)
+    expect(earned).toEqual([])
+    expect(prisma.choreAssignment.count).not.toHaveBeenCalled()
+    expect(prisma.choreAssignment.findMany).not.toHaveBeenCalled()
+    expect(prisma.pointLog.aggregate).not.toHaveBeenCalled()
+    expect(prisma.userBadge.create).not.toHaveBeenCalled()
+  })
 })
 
 describe('getGamification', () => {
@@ -291,7 +303,6 @@ describe('awardBadges', () => {
     prisma.pointLog.aggregate.mockResolvedValue({ _sum: { amount: null } })
     prisma.userBadge.findMany.mockResolvedValue([])
     prisma.userBadge.create.mockResolvedValue({})
-    prisma.userBadge.count.mockResolvedValue(0)
     prisma.user.findUnique
       .mockResolvedValueOnce({ streakCount: 0, streakComputedAt: new Date() }) // getStreak
       .mockResolvedValueOnce({ ntfyTopic: 'alice-topic-123' }) // topic lookup
@@ -308,7 +319,6 @@ describe('awardBadges', () => {
   })
 
   it('never throws even if evaluation fails', async () => {
-    prisma.userBadge.count.mockResolvedValue(0)
     prisma.userBadge.findMany.mockRejectedValue(new Error('db gone'))
     prisma.choreAssignment.count.mockResolvedValue(0)
     prisma.recurringOccurrence.count.mockResolvedValue(0)
@@ -321,11 +331,12 @@ describe('awardBadges', () => {
 
   it('skips the stats scan entirely once every badge is already owned', async () => {
     const { sendNtfy } = require('../../services/notification.service')
-    prisma.userBadge.count.mockResolvedValue(gamification.BADGE_CATALOG.length)
+    prisma.userBadge.findMany.mockResolvedValue(
+      gamification.BADGE_CATALOG.map((b) => ({ badgeId: b.id }))
+    )
 
     await gamification.awardBadges(3)
 
-    expect(prisma.userBadge.findMany).not.toHaveBeenCalled()
     expect(prisma.choreAssignment.count).not.toHaveBeenCalled()
     expect(prisma.pointLog.aggregate).not.toHaveBeenCalled()
     expect(sendNtfy).not.toHaveBeenCalled()
