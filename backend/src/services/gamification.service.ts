@@ -218,6 +218,11 @@ export async function getGamification(userId: number) {
 
 export async function awardBadges(userId: number): Promise<void> {
   try {
+    // Once every badge is earned, evaluateBadges's full-history stats scan is
+    // pure waste on every future completion — short-circuit on a cheap count.
+    const ownedCount = await prisma.userBadge.count({ where: { userId } })
+    if (ownedCount >= BADGE_CATALOG.length) return
+
     const newlyEarned = await evaluateBadges(userId)
     if (newlyEarned.length === 0) return
     const user = await prisma.user.findUnique({

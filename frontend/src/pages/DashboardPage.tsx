@@ -106,7 +106,7 @@ export function DashboardPage() {
               {upcoming.map(assignment => {
                 const { label: dueLabel, isOverdue } = formatDueDate(assignment.dueDate)
                 return (
-                  <Card key={assignment.id} className="flex items-center justify-between">
+                  <Card key={`${assignment.type}-${assignment.id}`} className="flex items-center justify-between">
                     <div>
                       <div className="font-bold text-zinc-100">{assignment.template.title}</div>
                       <div className="text-sm text-zinc-400">

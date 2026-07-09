@@ -251,7 +251,7 @@ export function AssignmentsPage() {
               {filtered.map(assignment => {
                 const { label: dueDateLabel, isOverdue } = formatDateStatus(assignment.dueDate)
                 return (
-                  <div key={assignment.id}>
+                  <div key={`${assignment.type}-${assignment.id}`}>
                     <div className="grid grid-cols-5 gap-2 px-4 py-3 items-center hover:bg-white/5">
                       <div>
                         <div className="font-bold text-zinc-100">{assignment.template.title}</div>

@@ -133,7 +133,7 @@ export function MyChoresPage() {
                 const completed = assignment.status === 'COMPLETED'
                 return (
                   <Card
-                    key={assignment.id}
+                    key={`${assignment.type}-${assignment.id}`}
                     className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${
                       overdue ? 'border-rose-500/40' : ''
                     } ${completed ? 'opacity-60' : ''}`}
