@@ -12,6 +12,26 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-07-09 — PR #146 third review (Hermes): applied cheap fixes, deferred perf/scope items
+
+- **Status**: Completed the agreed subset; three items deferred (not blocking)
+- **Description**: `.planning/reviews/PR146-REVIEW-3.md` raised 9 findings (0 critical, 2 high, 4 medium, 3 low). Verified each before acting — one (Medium #3, "CSRF cookie set on every response") was factually wrong, the code already guards with `if (!token)`. Two (Medium #6 hardcoded game config, Low #7 role-string literals) were judged YAGNI/pre-existing-pattern and skipped. Fixed: consolidated all 7 `frontend/src/api/*.ts` axios instances behind one `createApiClient()` factory (`frontend/src/lib/apiClient.ts`) so the CSRF interceptor can't be forgotten on a new module (was Medium #5); added `backend/src/__tests__/middleware/csrf.test.ts` with real coverage of the 403-rejection logic, since it's fully bypassed under `NODE_ENV=test` in the app (was Low #8); documented the CodeQL literal-cookie-name requirement and the `createApiClient()` rule in `AGENTS.md` (was Low #9).
+- **Deferred** (tracked here, not fixed in PR #146):
+  - **High #1/#2** — `awardBadges`/`getGamification` each recompute stats independently (no shared per-request cache); the expensive 52-week streak scan is already cache-protected weekly via `streakComputedAt`, so the real duplicate cost today is just one extra indexed `pointLog.aggregate()` per completion — negligible at this app's household scale. Worth revisiting if a future feature builds on top of `awardBadges`/`getGamification` and the redundant computation compounds.
+  - **Medium #4** — `SESSION_SECRET || 'dev-secret'` fallback in `backend/src/app.ts` ships silently; pre-existing on `main`, unrelated to this PR's diff. Should fail startup (or at minimum warn loudly) when `NODE_ENV==='production'` and `SESSION_SECRET` is unset.
+- **URL**: https://github.com/thitar/chore-ganizer/pull/146
+
+### 2026-07-08 — PR #146 review fixes: CSRF interceptor wiring + CodeQL detection
+
+- **Status**: Completed, pushed to `feature/m2-the-game`
+- **Description**: Third review pass on PR #146 found the CSRF token was never actually sent by the frontend (axios `create()` instances don't inherit interceptors from the default export — see bugs.md). Fixed by applying the interceptor per-instance. Separately, CodeQL kept flagging the backend CSRF middleware as "missing" despite it being correct; root-caused to CodeQL requiring a literal cookie-name string in `res.cookie()`, not a variable — see bugs.md for both entries. Both CodeQL checks now pass, 240 backend + 106 frontend tests green.
+- **URL**: https://github.com/thitar/chore-ganizer/pull/146
+
+### 2026-07-07 — M2 The Game implemented — streaks, levels, badges (Phase 14)
+
+- **Status**: Implementation complete on `feature/m2-the-game`, not yet merged
+- **Description**: Weekly streaks (lazy compute, cached on User), levels from lifetime EARNED+BONUS points (10 thresholds), 8-badge catalog + UserBadge table, fire-and-forget ntfy award on chore completion, GET /api/points/gamification endpoint, LevelBar/BadgeGrid/GamificationMoments UI wired into Dashboard/Points/Profile/AppShell. Backend 242 tests passing, frontend 106 tests passing, both typecheck clean, build clean. User directed implementation to proceed inline without subagents, waiving the spec's "plan M2 after kid feedback" gate.
+
 ### 2026-07-07 — M1 The Look shipped: PR #142 merged as v3.2.0
 
 - **Status**: Completed
@@ -47,3 +67,17 @@ Date-ordered log of completed work and in-progress tickets.
 
 - **Status**: Completed
 - **Description**: notification.service.ts, config/notifications.ts, Prisma migration (User.ntfyTopic, dueNotifiedAt fields). Formatters with body/Click helpers. Graceful noop when NTFY_BASE_URL unset.
+
+### 2026-07-08 — Multi-Agent Coding Setup established (Hermes + Claude Code + OpenCode)
+
+- **Status**: Completed
+- **Description**: Wired Hermes (lyra.lab) to assist coding on docker.lab via SSH as `hermes`, group `hermes-data` (gid 1002). Two clean zones: `~/dev` (group-shared repos, no move/symlink) and `/var/lib/hermes/shared` (Hermes scratch). Git enabled via `safe.directory` + `core.fileMode=false`. Push/auth split: GitHub SSH (`hermes@docker.lab`, verified) for historical repos, Forgejo HTTPS token for new repos. Adopted Spillwave `project-memory` skill (`docs/project_notes/`) as the shared convention across all three agents; Hermes's own skill made convention-aware. OpenCode wired via `.opencode/instructions.md`. Recorded as ADR-005.
+- **Decision ref**: ADR-005
+- **Notes**: Mandatory human review before every push remains in force (Hermes preps, Thitar signs off). `reco`/`beacon`/`argus` scaffolded this session; `data` is a subdir of `argus`.
+
+### 2026-07-08 — PR #146 third-pass deep code review (Hermes)
+
+- **Status**: Open (pending user review 2026-07-09)
+- **Description**: Independent third-pass review of PR #146 (M2 "The Game") by Hermes. Reviewed gamification/csrf/points/auth paths + full 44-file diff. Findings: 2 High (per-completion full stats recompute in `awardBadges`; duplicate streak/lifetime queries in read path — shared root cause: gamification state recomputed from history instead of incrementally cached), 4 Medium (CSRF cookie set on every response; `SESSION_SECRET||'dev-secret'` fallback; fragile per-instance CSRF interceptor; hardcoded LEVEL_THRESHOLDS/BADGE_CATALOG), 3 Low (role-string literals; CSRF disabled in tests = no integration coverage; CodeQL literal-cookie hack). Verified fine: `dueDate` indexed, `GamificationMoments` shows all new badges (prior WR-05 resolved), P2002 handling, streak caching, route layering, schema constraints. Full report: `.planning/reviews/PR146-REVIEW-3.md`.
+- **Decision ref**: PR146-REVIEW-3
+- **Notes**: Read-only; no code changed. User to review 2026-07-09. Recommend resolving the 2 High items before merge as they set performance precedent for the rest of the project.

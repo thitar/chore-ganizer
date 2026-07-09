@@ -1,6 +1,7 @@
 import axios from 'axios'
+import { createApiClient } from '../lib/apiClient'
 
-const api = axios.create({ baseURL: '/api/auth', withCredentials: true })
+const api = createApiClient('/api/auth')
 
 export class AuthError extends Error {
   statusCode: number

@@ -111,3 +111,23 @@ describe('POST /api/points/adjust', () => {
     expect(res.status).toBe(400)
   })
 })
+
+describe('GET /api/points/gamification', () => {
+  it('returns 401 without authentication', async () => {
+    const res = await request(app).get(`${BASE}/gamification`)
+    expect(res.status).toBe(401)
+  })
+
+  it('returns streak, level, and badge catalog for the session user', async () => {
+    const res = await request(app).get(`${BASE}/gamification`).set('Cookie', childCookies)
+    expect(res.status).toBe(200)
+    expect(res.body.success).toBe(true)
+    expect(res.body.data).toHaveProperty('streak')
+    expect(typeof res.body.data.streak).toBe('number')
+    expect(res.body.data.level).toHaveProperty('level')
+    expect(res.body.data.level).toHaveProperty('progress')
+    expect(Array.isArray(res.body.data.badges)).toBe(true)
+    expect(res.body.data.badges).toHaveLength(8)
+    expect(res.body.data.badges[0]).toHaveProperty('earnedAt')
+  })
+})

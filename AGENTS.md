@@ -213,6 +213,7 @@ Frontend uses simplified parameter names internally, mapped to backend API expec
 - **401 responses** trigger auto-logout via a `auth:unauthorized` custom DOM event (see `client.ts`)
 - **Integration test DB** lives at `test-db/integration-test.db` — created/destroyed per test run by global setup/teardown
 - **E2E tests** use `.spec.ts` suffix; unit/integration tests use `.test.ts`
+- **CSRF cookie name must stay an inline string literal**: `backend/src/middleware/csrf.ts` sets `res.cookie('XSRF-TOKEN', ...)` with the literal instead of the `CSRF_COOKIE` const, because CodeQL's `js/missing-token-validation` check only resolves literal string arguments (no constant propagation) to recognize hand-rolled CSRF middleware. Don't "clean this up" by switching back to the const — it silently regresses CodeQL's security scan. Frontend: every `frontend/src/api/*.ts` module must build its axios instance via `createApiClient()` in `frontend/src/lib/apiClient.ts`, never `axios.create()` directly — instances created independently don't share interceptors with the CSRF-token-injecting one, so a raw `axios.create()` silently drops the `x-xsrf-token` header on every mutating request
 
 ### Monorepo Structure
 This is a monorepo with two independent npm packages:

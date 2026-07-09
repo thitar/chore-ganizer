@@ -1,7 +1,9 @@
 import express from 'express'
 import session from 'express-session'
+import cookieParser from 'cookie-parser'
 import routes from './routes/index'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler'
+import { csrfProtection } from './middleware/csrf'
 
 const app = express()
 
@@ -11,6 +13,7 @@ app.set('trust proxy', 1)
 // Body parsing with size limits
 app.use(express.json({ limit: '10kb' }))
 app.use(express.urlencoded({ extended: true, limit: '10kb' }))
+app.use(cookieParser())
 
 // Session configuration
 const sessionSecret = process.env.SESSION_SECRET || 'dev-secret'
@@ -37,6 +40,9 @@ app.use(session({
     path: '/',
   },
 }))
+
+// CSRF protection (double-submit cookie pattern)
+app.use('/api', csrfProtection)
 
 // API routes
 app.use('/api', routes)

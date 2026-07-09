@@ -33,3 +33,10 @@ export function useLeaderboard() {
     queryFn: pointsApi.getLeaderboard,
   })
 }
+
+export function useGamification() {
+  return useQuery({
+    queryKey: ['points', 'gamification'],
+    queryFn: pointsApi.getMyGamification,
+  })
+}

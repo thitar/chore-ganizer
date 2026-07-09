@@ -1,6 +1,6 @@
-import axios from 'axios'
+import { createApiClient } from '../lib/apiClient'
 
-const api = axios.create({ baseURL: '/api/points', withCredentials: true })
+const api = createApiClient('/api/points')
 
 export type PointLogType =
   | 'EARNED'
@@ -54,5 +54,30 @@ export interface LeaderboardEntry {
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
   const response = await api.get('/leaderboard')
+  return response.data.data
+}
+
+export interface GamificationBadge {
+  id: string
+  name: string
+  description: string
+  emoji: string
+  earnedAt: string | null
+}
+
+export interface Gamification {
+  streak: number
+  level: {
+    level: number
+    lifetimePoints: number
+    currentThreshold: number
+    nextThreshold: number | null
+    progress: number
+  }
+  badges: GamificationBadge[]
+}
+
+export async function getMyGamification(): Promise<Gamification> {
+  const response = await api.get('/gamification')
   return response.data.data
 }

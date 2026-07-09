@@ -27,17 +27,28 @@ export function useAssignments() {
 
   const completeMutation = useMutation({
     mutationFn: assignmentsApi.complete,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assignments'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assignments'] })
+      queryClient.invalidateQueries({ queryKey: ['points'] })
+      queryClient.invalidateQueries({ queryKey: ['points', 'gamification'] })
+    },
   })
 
   const completeRecurringMutation = useMutation({
     mutationFn: recurringApi.complete,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assignments'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assignments'] })
+      queryClient.invalidateQueries({ queryKey: ['points'] })
+      queryClient.invalidateQueries({ queryKey: ['points', 'gamification'] })
+    },
   })
 
   const uncompleteMutation = useMutation({
     mutationFn: assignmentsApi.uncomplete,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assignments'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assignments'] })
+      queryClient.invalidateQueries({ queryKey: ['points'] })
+    },
   })
 
   const deleteMutation = useMutation({

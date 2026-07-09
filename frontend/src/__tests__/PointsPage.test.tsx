@@ -24,13 +24,14 @@ vi.mock('../hooks/usePoints', () => ({
   useUserPoints: vi.fn(),
   useAdjustPoints: vi.fn(),
   useLeaderboard: vi.fn(),
+  useGamification: vi.fn(),
 }))
 
 vi.mock('../hooks/useUsers', () => ({
   useUsers: vi.fn(),
 }))
 
-import { useMyPoints, useUserPoints, useAdjustPoints, useLeaderboard } from '../hooks/usePoints'
+import { useMyPoints, useUserPoints, useAdjustPoints, useLeaderboard, useGamification } from '../hooks/usePoints'
 import { useUsers } from '../hooks/useUsers'
 
 // jsdom has no matchMedia — simulate reduced motion so CountUp values render instantly.
@@ -87,6 +88,14 @@ function mockMyPointsState(overrides: Record<string, unknown> = {}) {
     data: [],
     isLoading: false,
   })
+  ;(useGamification as ReturnType<typeof vi.fn>).mockReturnValue({
+    data: {
+      streak: 0,
+      level: { level: 1, lifetimePoints: 30, currentThreshold: 0, nextThreshold: 50, progress: 0.6 },
+      badges: [],
+    },
+    isLoading: false,
+  })
 }
 
 function renderPage() {
@@ -125,6 +134,11 @@ describe('PointsPage', () => {
     expect(await screen.findByText('30')).toBeInTheDocument()
     expect(screen.getByText('Wash Dishes')).toBeInTheDocument()
     expect(screen.getByText('Great week')).toBeInTheDocument()
+  })
+
+  it('renders the level bar', () => {
+    renderPage()
+    expect(screen.getByText('Level 1')).toBeInTheDocument()
   })
 
   it('renders type badges with correct colors', () => {

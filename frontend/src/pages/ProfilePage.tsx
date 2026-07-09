@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../hooks/useAuth'
 import { useUsers } from '../hooks/useUsers'
+import { useGamification } from '../hooks/usePoints'
 import { AppShell } from '../components/AppShell'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Avatar } from '../components/ui/Avatar'
+import { BadgeGrid } from '../components/BadgeGrid'
 import { Toast } from '../components/ui/Toast'
 import * as usersApi from '../api/users.api'
 
@@ -22,6 +24,7 @@ function generateRandomTopic(username: string): string {
 export function ProfilePage() {
   const { user } = useAuth()
   const { users, isLoading: usersLoading } = useUsers()
+  const { data: gamification } = useGamification()
   const queryClient = useQueryClient()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -154,7 +157,7 @@ export function ProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
       setFamilyEditMap((prev) => ({ ...prev, [userId]: false }))
-      setTopicSuccess('Topic saved!')
+      setTopicSuccess('Family member topic saved!')
     } catch (err: any) {
       if (err?.response?.status === 409) {
         setFamilyErrorMap((prev) => ({ ...prev, [userId]: 'This topic is already in use. Please choose another.' }))
@@ -187,7 +190,7 @@ export function ProfilePage() {
           <Avatar name={user?.name ?? ''} color={user?.color ?? '#4F46E5'} size="lg" />
           <div>
             <p className="font-display text-xl font-bold text-zinc-100">{user?.name}</p>
-            <p className="text-sm text-zinc-400">{currentUserFull ? (currentUserFull as any).email : ''}</p>
+            <p className="text-sm text-zinc-400">{currentUserFull?.email ?? ''}</p>
             <p className="text-xs text-zinc-500">Role: {user?.role}</p>
           </div>
         </div>
@@ -229,6 +232,16 @@ export function ProfilePage() {
               {isUpdatingColor ? 'Updating...' : 'Update Color'}
             </Button>
           </form>
+        </Card>
+
+        {/* Badges */}
+        <Card className="p-6 mb-6">
+          <h3 className="mb-4 font-display text-base font-bold text-zinc-100">Badges</h3>
+          {gamification ? (
+            <BadgeGrid badges={gamification.badges} />
+          ) : (
+            <p className="text-sm text-zinc-500">Loading badges…</p>
+          )}
         </Card>
 
         {/* Push Notifications */}

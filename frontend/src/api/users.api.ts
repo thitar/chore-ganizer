@@ -1,6 +1,6 @@
-import axios from 'axios'
+import { createApiClient } from '../lib/apiClient'
 
-const api = axios.create({ baseURL: '/api/users', withCredentials: true })
+const api = createApiClient('/api/users')
 
 export interface UserSummary {
   id: number
@@ -8,6 +8,7 @@ export interface UserSummary {
   role: string
   color: string
   ntfyTopic: string | null
+  email?: string
 }
 
 export interface UserWithEmail extends UserSummary {

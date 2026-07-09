@@ -1,4 +1,4 @@
-import { assignedBody, dueSoonBody, completedBody } from '../../services/notification.formatters'
+import { assignedBody, dueSoonBody, completedBody, badgeEarnedBody } from '../../services/notification.formatters'
 
 describe('notification.formatters', () => {
   const mockAssignment = {
@@ -52,7 +52,7 @@ describe('notification.formatters', () => {
 
   describe('completedBody', () => {
     it('returns correct title, body with points earned, priority 2, tags, and click URL', () => {
-      const result = completedBody(mockAssignment, { name: 'Alice' })
+      const result = completedBody(mockAssignment)
       expect(result).toEqual({
         title: 'Chore-Ganizer',
         body: 'Wash Dishes — +10 points earned',
@@ -62,17 +62,12 @@ describe('notification.formatters', () => {
       })
     })
 
-    it('body does not use the completer parameter', () => {
-      const result = completedBody(mockAssignment, { name: 'Alice' })
-      expect(result.body).not.toContain('Alice')
-    })
-
     it('body shows +0 points earned when template.points is 0', () => {
       const zeroPointsAssignment = {
         ...mockAssignment,
         template: { title: 'Clean Room', points: 0 },
       }
-      const result = completedBody(zeroPointsAssignment, { name: 'Bob' })
+      const result = completedBody(zeroPointsAssignment)
       expect(result.body).toContain('+0 points earned')
     })
   })
@@ -82,10 +77,19 @@ describe('notification.formatters', () => {
       const result = assignedBody(mockAssignment)
       expect(result.body).toMatch(/2026-07-15/)
     })
+  })
 
-    it('completer.name is any string — body does not include it', () => {
-      const result = completedBody(mockAssignment, { name: 'AnyName123' })
-      expect(result.body).not.toContain('AnyName123')
+  describe('badgeEarnedBody', () => {
+    it('formats a badge-earned push', () => {
+      const r = badgeEarnedBody({
+        name: 'First Chore',
+        description: 'Complete your first chore',
+        emoji: '\u{1F389}',
+      })
+      expect(r.title).toBe('Chore-Ganizer')
+      expect(r.body).toBe('\u{1F389} Badge earned: First Chore \u2014 Complete your first chore')
+      expect(r.priority).toBe(3)
+      expect(r.click).toBe('/profile')
     })
   })
 })

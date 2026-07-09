@@ -21,6 +21,19 @@ vi.mock('../hooks/useUsers', () => ({
   useUsers: vi.fn(),
 }))
 
+vi.mock('../hooks/usePoints', () => ({
+  useGamification: vi.fn().mockReturnValue({
+    data: {
+      streak: 0,
+      level: { level: 1, lifetimePoints: 0, currentThreshold: 0, nextThreshold: 50, progress: 0 },
+      badges: [
+        { id: 'first-chore', name: 'First Chore', description: 'Complete your first chore', emoji: '🎉', earnedAt: null },
+      ],
+    },
+    isLoading: false,
+  }),
+}))
+
 vi.mock('../api/users.api', () => ({
   updateColor: vi.fn().mockResolvedValue({ color: '#FF00FF' }),
   updatePassword: vi.fn().mockResolvedValue({ updated: true }),
@@ -58,6 +71,12 @@ describe('ProfilePage', () => {
     renderPage()
     expect(screen.getAllByText('Alice').length).toBeGreaterThan(0)
     expect(screen.getByText(/Role: CHILD/)).toBeInTheDocument()
+  })
+
+  it('renders the badges section', () => {
+    renderPage()
+    expect(screen.getByText('Badges')).toBeInTheDocument()
+    expect(screen.getByText('First Chore')).toBeInTheDocument()
   })
 
   it('renders change password form', () => {

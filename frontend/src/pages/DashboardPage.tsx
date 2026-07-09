@@ -3,7 +3,7 @@ import { ClipboardList } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { formatDueDate } from '../utils/dateFormat'
 import { useAssignments } from '../hooks/useAssignments'
-import { useMyPoints, useLeaderboard } from '../hooks/usePoints'
+import { useMyPoints, useLeaderboard, useGamification } from '../hooks/usePoints'
 import { AppShell } from '../components/AppShell'
 import { StatusBadge } from '../components/StatusBadge'
 import { Leaderboard } from '../components/Leaderboard'
@@ -19,6 +19,7 @@ export function DashboardPage() {
   const { assignments, isLoading, error } = useAssignments()
   const { data: myPoints } = useMyPoints()
   const { data: leaderboard, isLoading: isLeaderboardLoading } = useLeaderboard()
+  const { data: gamification } = useGamification()
 
   const mine = useMemo(
     () => assignments.filter(a => a.assignedToId === user?.id),
@@ -34,10 +35,10 @@ export function DashboardPage() {
 
   const week = useMemo(() => {
     const now = new Date()
-    const day = (now.getDay() + 6) % 7 // 0 = Monday
-    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day)
+    const day = (now.getUTCDay() + 6) % 7 // 0 = Monday
+    const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - day))
     const nextMonday = new Date(monday)
-    nextMonday.setDate(monday.getDate() + 7)
+    nextMonday.setUTCDate(monday.getUTCDate() + 7)
     const thisWeek = mine.filter(a => {
       const due = new Date(a.dueDate)
       return due >= monday && due < nextMonday
@@ -50,14 +51,11 @@ export function DashboardPage() {
 
   const dueToday = useMemo(() => {
     const now = new Date()
+    const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    const tomorrowUTC = todayUTC + 86400000
     return mine.filter(a => {
-      const due = new Date(a.dueDate)
-      return (
-        a.status === 'PENDING' &&
-        due.getFullYear() === now.getFullYear() &&
-        due.getMonth() === now.getMonth() &&
-        due.getDate() === now.getDate()
-      )
+      const due = new Date(a.dueDate).getTime()
+      return a.status === 'PENDING' && due >= todayUTC && due < tomorrowUTC
     }).length
   }, [mine])
 
@@ -72,6 +70,10 @@ export function DashboardPage() {
           <CountUp value={myPoints?.balance ?? 0} /> <span className="text-base text-zinc-500">pts</span>
         </StatCard>
         <StatCard label="Due today">{dueToday}</StatCard>
+        <StatCard label="Streak">
+          <span aria-hidden>🔥</span> {gamification?.streak ?? 0}{' '}
+          <span className="text-base text-zinc-500">wk</span>
+        </StatCard>
         <Card className="col-span-2 flex items-center justify-between lg:col-span-2">
           <div>
             <span className="text-xs uppercase tracking-wider text-zinc-500">This week</span>
