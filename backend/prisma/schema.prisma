@@ -8,17 +8,19 @@ datasource db {
 }
 
 model User {
-  id               Int       @id @default(autoincrement())
-  email            String    @unique
-  name             String
-  password         String
-  role             String    @default("CHILD")
-  color            String    @default("#3B82F6")
-  ntfyTopic        String?   @unique
-  streakCount      Int       @default(0)
-  streakComputedAt DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                     Int       @id @default(autoincrement())
+  email                  String    @unique
+  name                   String
+  password               String
+  role                   String    @default("CHILD")
+  color                  String    @default("#3B82F6")
+  ntfyTopic              String?   @unique
+  streakCount            Int       @default(0)
+  streakComputedAt       DateTime?
+  lifetimePoints         Int       @default(0)
+  lifetimePointsSyncedAt DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   assignments             ChoreAssignment[]
   pointLogs               PointLog[]
