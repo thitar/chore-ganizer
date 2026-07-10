@@ -1,8 +1,0 @@
-# Chore-Ganizer Cron Schedule
-# ============================================
-# Cron jobs for automated backup tasks
-
-# Run backup daily at 2 AM, then verify the backup
-0 2 * * * root /app/backup.sh && /app/restore-test.sh >> /var/log/backup.log 2>&1
-
-# Leave this line at the end - required for cron
