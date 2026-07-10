@@ -29,12 +29,34 @@ export function computeLevel(lifetimePoints: number): LevelInfo {
   return { level, lifetimePoints, currentThreshold, nextThreshold, progress }
 }
 
+// Lazy self-healing cache, mirroring getStreak's pattern below. Unlike
+// streak (which re-syncs weekly), lifetimePoints never re-syncs once
+// lifetimePointsSyncedAt is set — it has no natural staleness window and is
+// kept accurate going forward by incrementing it at every positive PointLog
+// write site (see assignment/recurring/points services), not by periodic
+// recomputation. A null lifetimePointsSyncedAt means "never synced" (true
+// for every user immediately after the column was added), which triggers a
+// one-time backfill from the real PointLog history — this self-heal-on-
+// first-read IS the backfill, no separate migration script needed.
 export async function getLifetimePoints(userId: number): Promise<number> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { lifetimePoints: true, lifetimePointsSyncedAt: true },
+  })
+  if (!user) return 0
+  if (user.lifetimePointsSyncedAt !== null) {
+    return user.lifetimePoints
+  }
   const aggregate = await prisma.pointLog.aggregate({
     where: { userId, amount: { gt: 0 } },
     _sum: { amount: true },
   })
-  return aggregate._sum.amount ?? 0
+  const total = aggregate._sum.amount ?? 0
+  await prisma.user.update({
+    where: { id: userId },
+    data: { lifetimePoints: total, lifetimePointsSyncedAt: new Date() },
+  })
+  return total
 }
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000

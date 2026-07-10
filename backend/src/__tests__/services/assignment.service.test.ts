@@ -291,10 +291,12 @@ describe('assignmentService.complete', () => {
 
   it('completes assignment in transaction, awards points, creates PointLog', async () => {
     prisma.choreAssignment.findUnique.mockResolvedValue(mockAssignment)
+    let tx: { choreAssignment: unknown; pointLog: unknown; user: { update: jest.Mock } }
     prisma.$transaction.mockImplementation(async (cb: Function) => {
-      const tx = {
+      tx = {
         choreAssignment: { update: jest.fn(), findUnique: jest.fn().mockResolvedValue(completed) },
         pointLog: { create: jest.fn() },
+        user: { update: jest.fn() },
       }
       return cb(tx)
     })
@@ -303,6 +305,10 @@ describe('assignmentService.complete', () => {
 
     expect(result).toBe(completed)
     expect(prisma.$transaction).toHaveBeenCalled()
+    expect(tx!.user.update).toHaveBeenCalledWith({
+      where: { id: mockAssignment.assignedToId },
+      data: { lifetimePoints: { increment: 10 } },
+    })
   })
 
   it('throws AppError 403 when non-owner tries to complete', async () => {

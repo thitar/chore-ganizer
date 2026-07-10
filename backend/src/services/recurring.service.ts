@@ -137,6 +137,12 @@ export async function completeOccurrence(occurrenceId: number, userId: number) {
         reason,
       },
     })
+    if (pointsAwarded > 0) {
+      await tx.user.update({
+        where: { id: occurrence.assignedToId },
+        data: { lifetimePoints: { increment: pointsAwarded } },
+      })
+    }
     return tx.recurringOccurrence.findUnique({
       where: { id: occurrenceId },
       include: {

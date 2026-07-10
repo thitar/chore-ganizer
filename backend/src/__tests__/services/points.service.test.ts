@@ -9,7 +9,9 @@ jest.mock('../../config/prisma', () => ({
     user: {
       findUnique: jest.fn(),
       findMany: jest.fn(),
+      update: jest.fn(),
     },
+    $transaction: jest.fn(),
   },
 }))
 
@@ -20,6 +22,10 @@ let pointsService: typeof import('../../services/points.service')
 
 beforeEach(() => {
   jest.clearAllMocks()
+  // Mirror the real prisma.$transaction shape (invokes the callback with a
+  // tx client) using the same mocked prisma object as tx, so existing
+  // assertions against prisma.pointLog.create etc. keep working unchanged.
+  prisma.$transaction.mockImplementation((cb: (tx: typeof prisma) => unknown) => cb(prisma))
   delete require.cache[require.resolve('../../services/points.service')]
   pointsService = require('../../services/points.service')
 })
@@ -165,6 +171,27 @@ describe('pointsService.adjustPoints', () => {
   it('throws 404 if target user does not exist', async () => {
     prisma.user.findUnique.mockResolvedValue(null)
     await expect(pointsService.adjustPoints(999, 5, 'Test')).rejects.toMatchObject({ statusCode: 404 })
+  })
+
+  it('increments lifetimePoints when the adjustment amount is positive', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 5 })
+    prisma.pointLog.create.mockResolvedValue({ id: 1, userId: 5, amount: 20, type: 'ADJUSTMENT' })
+
+    await pointsService.adjustPoints(5, 20, 'Bonus for extra effort')
+
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 5 },
+      data: { lifetimePoints: { increment: 20 } },
+    })
+  })
+
+  it('does not increment lifetimePoints when the adjustment amount is negative', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 5 })
+    prisma.pointLog.create.mockResolvedValue({ id: 1, userId: 5, amount: -10, type: 'ADJUSTMENT' })
+
+    await pointsService.adjustPoints(5, -10, 'Deduction')
+
+    expect(prisma.user.update).not.toHaveBeenCalled()
   })
 })
 

@@ -165,6 +165,12 @@ export async function complete(assignmentId: number, userId: number) {
         reason: assignment.template.title,
       },
     })
+    if (pointsAwarded > 0) {
+      await tx.user.update({
+        where: { id: assignment.assignedToId },
+        data: { lifetimePoints: { increment: pointsAwarded } },
+      })
+    }
     return tx.choreAssignment.findUnique({
       where: { id: assignmentId },
       include: {
