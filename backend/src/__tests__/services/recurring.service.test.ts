@@ -20,6 +20,9 @@ jest.mock('../../config/prisma', () => ({
     pointLog: {
       create: jest.fn(),
     },
+    user: {
+      update: jest.fn(),
+    },
     $transaction: jest.fn(),
   },
 }))
@@ -239,6 +242,10 @@ describe('recurringService.completeOccurrence', () => {
         type: 'EARNED',
         reason: 'Make Bed',
       },
+    })
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 3 },
+      data: { lifetimePoints: { increment: 5 } },
     })
     expect(result?.status).toBe('COMPLETED')
   })

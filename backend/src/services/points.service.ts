@@ -55,13 +55,22 @@ export async function adjustPoints(userId: number, amount: number, reason: strin
   })
   if (!user) throw new AppError('User not found', 404)
 
-  return prisma.pointLog.create({
-    data: {
-      userId,
-      amount,
-      type: 'ADJUSTMENT',
-      reason: reason.trim(),
-    },
+  return prisma.$transaction(async (tx) => {
+    const log = await tx.pointLog.create({
+      data: {
+        userId,
+        amount,
+        type: 'ADJUSTMENT',
+        reason: reason.trim(),
+      },
+    })
+    if (amount > 0) {
+      await tx.user.update({
+        where: { id: userId },
+        data: { lifetimePoints: { increment: amount } },
+      })
+    }
+    return log
   })
 }
 
