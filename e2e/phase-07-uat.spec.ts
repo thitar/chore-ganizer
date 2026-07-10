@@ -2,14 +2,15 @@
  * Phase 7 UAT — Frontend Polish + Docker
  *
  * Final E2E walkthrough: verify all pages work and mobile viewport.
- * Screenshots to /home/thitar/dev/chore-ganizer/e2e/screenshots/phase-07/.
+ * Screenshots to e2e/screenshots/phase-07/.
  */
 
 import { test, expect, Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import { login } from './helpers/auth';
 
-const SCREENSHOTS_DIR = '/home/thitar/dev/chore-ganizer/e2e/screenshots/phase-07';
+const SCREENSHOTS_DIR = path.join(__dirname, 'screenshots', 'phase-07');
 fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 
 const DAD = { email: 'dad@home.local', password: 'password123' };
@@ -17,14 +18,6 @@ const ALICE = { email: 'alice@home.local', password: 'password123' };
 
 async function shot(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `${name}.png`), fullPage: true });
-}
-
-async function login(page: Page, user: { email: string; password: string }): Promise<void> {
-  await page.goto('/login');
-  await page.fill('input[type="email"]', user.email);
-  await page.fill('input[type="password"]', user.password);
-  await page.click('button[type="submit"]');
-  await page.waitForURL('/', { timeout: 10000 });
 }
 
 test.describe('Phase 7 UAT — Frontend Polish + Docker', () => {
