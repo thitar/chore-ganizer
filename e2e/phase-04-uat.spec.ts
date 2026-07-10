@@ -2,7 +2,7 @@
  * Phase 4 UAT — Recurring Chores
  *
  * Automated E2E walkthrough for all 15 UAT scenarios.
- * Takes screenshots at each step to /home/thitar/dev/chore-ganizer/e2e/screenshots/phase-04/.
+ * Takes screenshots at each step to e2e/screenshots/phase-04/.
  *
  * Runs against:
  * - Backend: backend-v2 on http://localhost:3010
@@ -12,8 +12,10 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import { login } from './helpers/auth';
+import { goToManageLink } from './helpers/nav';
 
-const SCREENSHOTS_DIR = '/home/thitar/dev/chore-ganizer/e2e/screenshots/phase-04';
+const SCREENSHOTS_DIR = path.join(__dirname, 'screenshots', 'phase-04');
 fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 
 const DAD = { email: 'dad@home.local', password: 'password123' };
@@ -21,19 +23,6 @@ const ALICE = { email: 'alice@home.local', password: 'password123' };
 
 async function shot(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `${name}.png`), fullPage: true });
-}
-
-async function login(page: Page, user: { email: string; password: string }): Promise<void> {
-  await page.goto('/login');
-  await page.fill('input[type="email"]', user.email);
-  await page.fill('input[type="password"]', user.password);
-  await page.click('button[type="submit"]');
-  await page.waitForURL('/', { timeout: 10000 });
-}
-
-async function logout(page: Page): Promise<void> {
-  await page.click('button:has-text("Logout")');
-  await page.waitForURL('/login', { timeout: 5000 });
 }
 
 test.describe('Phase 4 UAT — Recurring Chores', () => {
@@ -46,13 +35,13 @@ test.describe('Phase 4 UAT — Recurring Chores', () => {
 
   test('Test 2: Login as parent', async ({ page }) => {
     await login(page, DAD);
-    await page.waitForSelector('text=/Welcome, Dad/', { timeout: 10000 });
+    await page.waitForSelector('text=/Hey Dad/', { timeout: 10000 });
     await shot(page, '02-dad-dashboard');
   });
 
   test('Test 3: Navigate to Recurring Chores page', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Recurring")');
+    await goToManageLink(page, 'Recurring');
     await page.waitForURL('**/recurring-chores');
     await page.waitForSelector('h2:has-text("Recurring Chores")', { timeout: 10000 });
     await shot(page, '03-recurring-page');
@@ -60,7 +49,7 @@ test.describe('Phase 4 UAT — Recurring Chores', () => {
 
   test('Test 4: Create daily recurring chore', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Recurring")');
+    await goToManageLink(page, 'Recurring');
     await page.waitForSelector('h2:has-text("Recurring Chores")');
 
     await page.click('button:has-text("Create Recurring Chore")');
@@ -82,7 +71,7 @@ test.describe('Phase 4 UAT — Recurring Chores', () => {
 
   test('Test 5: Create weekly recurring chore (Monday)', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Recurring")');
+    await goToManageLink(page, 'Recurring');
     await page.waitForSelector('h2:has-text("Recurring Chores")');
 
     await page.click('button:has-text("Create Recurring Chore")');
@@ -104,7 +93,7 @@ test.describe('Phase 4 UAT — Recurring Chores', () => {
 
   test('Test 6: Create monthly recurring chore (day 15)', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Recurring")');
+    await goToManageLink(page, 'Recurring');
     await page.waitForSelector('h2:has-text("Recurring Chores")');
 
     await page.click('button:has-text("Create Recurring Chore")');
@@ -170,7 +159,7 @@ test.describe('Phase 4 UAT — Recurring Chores', () => {
 
   test('Test 10: Delete recurring chore preserves completed occurrences', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Recurring")');
+    await goToManageLink(page, 'Recurring');
     await page.waitForSelector('h2:has-text("Recurring Chores")');
 
     // Find first delete button
@@ -183,7 +172,7 @@ test.describe('Phase 4 UAT — Recurring Chores', () => {
       await shot(page, '10a-delete-confirm');
 
       // Click the Delete button in confirm panel (not the icon button)
-      const confirmDelete = page.locator('div.bg-red-50 button:has-text("Delete")').first();
+      const confirmDelete = page.locator('div.bg-surface-raised button:has-text("Delete")').first();
       await confirmDelete.click();
       await page.waitForTimeout(1000);
       await shot(page, '10b-after-delete');
@@ -196,7 +185,7 @@ test.describe('Phase 4 UAT — Recurring Chores', () => {
     // Use a fresh parent to see empty state — but dad already has chores from earlier tests
     // Instead, navigate and screenshot the populated state, since the seeded data has 2 recurring
     await login(page, DAD);
-    await page.click('a:has-text("Recurring")');
+    await goToManageLink(page, 'Recurring');
     await page.waitForSelector('h2:has-text("Recurring Chores")');
     // If empty, page shows "No recurring chores yet" — capture whatever state exists
     const hasEmpty = await page.locator('text=/No recurring chores yet/').count();
@@ -224,7 +213,7 @@ test.describe('Phase 4 UAT — Recurring Chores', () => {
   test('Test 13: Error state on API failure', async ({ page, context }) => {
     // First login normally
     await login(page, DAD);
-    await page.click('a:has-text("Recurring")');
+    await goToManageLink(page, 'Recurring');
     await page.waitForSelector('h2:has-text("Recurring Chores")');
 
     // Set offline to simulate API failure
@@ -242,7 +231,7 @@ test.describe('Phase 4 UAT — Recurring Chores', () => {
 
   test('Test 14: Validation error on empty form submit', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Recurring")');
+    await goToManageLink(page, 'Recurring');
     await page.waitForSelector('h2:has-text("Recurring Chores")');
 
     await page.click('button:has-text("Create Recurring Chore")');
@@ -258,7 +247,7 @@ test.describe('Phase 4 UAT — Recurring Chores', () => {
 
   test('Test 15: Single fixed assignee only (RECUR-05)', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Recurring")');
+    await goToManageLink(page, 'Recurring');
     await page.waitForSelector('h2:has-text("Recurring Chores")');
 
     await page.click('button:has-text("Create Recurring Chore")');
