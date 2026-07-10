@@ -42,6 +42,8 @@ Single `.env` file at the project root (copy from `backend/.env.example` as a st
 | `NODE_ENV` | Optional | `production` | Also gates the `SESSION_SECRET` fail-fast check and secure-cookie defaults. |
 | `SESSION_MAX_AGE` | Optional | `604800000` (7 days, ms) | Session cookie max age. |
 | `SAMESITE_POLICY` | Optional | `strict` | `strict` \| `lax` \| `none`. |
+| `RATE_LIMIT_MAX` | Optional | `300` | Max requests per 15-minute window for the general rate limiter (`backend/src/middleware/rateLimiter.ts`). |
+| `AUTH_RATE_LIMIT_MAX` | Optional | `10` | Max requests per 15-minute window for the auth rate limiter (login/register). Raise this for e2e/load-testing runs that legitimately log in many times in one window. |
 | `SECURE_COOKIES` | Optional | `false` (`true` when `NODE_ENV=production` unless explicitly set to `false`) | Marks session/CSRF cookies `Secure` — requires HTTPS. |
 | `NTFY_BASE_URL` | Optional | unset (notifications disabled) | Base URL of an ntfy server (e.g. `https://ntfy.sh`). Unset = notifications silently no-op, logged once at startup. |
 | `VITE_API_URL` | Optional | empty (relative URLs, nginx proxies `/api/*`) | Set only if the frontend needs to reach a backend on a different origin. |

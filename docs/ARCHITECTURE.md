@@ -68,7 +68,7 @@ Verified against `backend/src/app.ts`:
 
 Core entities (`backend/prisma/schema.prisma`):
 
-- **User** — `role` (`PARENT` | `CHILD`), `color`, `ntfyTopic` (nullable, unique — per-user push notification channel), `streakCount` + `streakComputedAt` (lazily computed weekly streak)
+- **User** — `role` (`PARENT` | `CHILD`), `color`, `ntfyTopic` (nullable, unique — per-user push notification channel), `streakCount` + `streakComputedAt` (lazily computed weekly streak), `lifetimePoints` + `lifetimePointsSyncedAt` (lazy self-healing cache of total positive `PointLog` amounts, backfilled on first read and incremented at each positive-`PointLog` write site thereafter — never re-synced from scratch like the streak is)
 - **ChoreTemplate** — reusable chore definition (`title`, `points`, `category`), owned by the parent who created it (`createdById`)
 - **ChoreAssignment** — one-off instance of a template assigned to a user; `status` (`PENDING` | `COMPLETED` | `PARTIALLY_COMPLETE`), `dueNotifiedAt` (dedup flag for due-soon notifications), `pointsAwarded`
 - **RecurringChore** — a recurrence rule (`frequency`, `dayOfWeek`, `dayOfMonth`) assigned to one fixed user (`assignedToId`). **Only fixed assignment is implemented** — round-robin/mixed rotation is a deferred feature (see `.planning/STATE.md` Deferred Items), despite older docs describing it as shipped.
@@ -76,7 +76,7 @@ Core entities (`backend/prisma/schema.prisma`):
 - **PointLog** — append-only ledger, not a mutable balance. `type` values actually in use: `EARNED`, `BONUS`, `ADJUSTMENT`, `RECURRING`, `REGULAR`, `REVERSED`. There is no `PointTransaction` model and no pocket-money/currency conversion feature in the current backend — points are tracked as a simple integer log, not a banking system. (An older pre-rewrite backend had pocket money, overdue penalties, and a `PointTransaction` model; none of that carried over into the v1-rewrite.)
 - **UserBadge** — badge catalog award record (`userId` + `badgeId`, unique together), cascade-deletes with the user
 
-Lifetime points (for levels) are computed via `pointLog.aggregate()` summing positive amounts — see `services/gamification.service.ts`.
+Lifetime points (for levels) are served from `User.lifetimePoints` via `getLifetimePoints()` in `services/gamification.service.ts` — a one-time `pointLog.aggregate()` backfill on first read (when `lifetimePointsSyncedAt` is null), then incremented in place at each positive-`PointLog` write site (`assignment.service.ts`, `recurring.service.ts`, `points.service.ts`) rather than recomputed from the full ledger every time.
 
 ## Auth Flow
 

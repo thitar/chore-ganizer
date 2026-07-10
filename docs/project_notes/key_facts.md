@@ -14,7 +14,7 @@ Store secrets in `.env` (excluded via `.gitignore`) or a password manager.
 
 - **Name**: Chore-Ganizer
 - **Stack**: Express.js + TypeScript / React 18 + TypeScript / SQLite / Prisma
-- **Auth**: Express sessions (SQLite store), bcrypt, CSRF tokens
+- **Auth**: Express sessions (in-memory `MemoryStore` — no SQLite/Redis session store configured; sessions do not survive a backend restart), bcrypt, double-submit-cookie CSRF tokens
 - **Roles**: `PARENT`, `CHILD`
 
 ### Local Development
@@ -38,35 +38,37 @@ Store secrets in `.env` (excluded via `.gitignore`) or a password manager.
 - Backend: `ghcr.io/thitar/chore-ganizer-backend:VERSION`
 - Frontend: `ghcr.io/thitar/chore-ganizer-frontend:VERSION`
 
-**Compose file:** `docker-compose.yml` (single file)
-**Helper script:** `./docker-compose.sh`
+**Compose file:** `docker-compose.yml` (single file, no separate prod/dev compose files)
+**Helper script:** `./docker-compose.sh` (syncs `APP_VERSION` from `backend/package.json` into `.env`, then forwards to `docker compose`)
 
 **Ports:**
-- Frontend: `3002`
+- Frontend: `3002` (host, maps to nginx port 80 in the container)
 - Backend: `3010`
 
 ### Environment Variables
 
+Full reference: [docs/OPERATIONS.md#environment-variables](../OPERATIONS.md#environment-variables). Highlights:
+
 | Variable | Purpose |
 |---|---|
-| `APP_VERSION` | Must match `backend/package.json` version |
-| `SESSION_SECRET` | No default — must be explicitly set |
-| `DATA_DIR` | Host path for persistent data (default: `/opt/app-data/chore-ganizer`) |
+| `SESSION_SECRET` | No default — backend fails fast at startup if unset and `NODE_ENV=production` |
+| `APP_VERSION` | Must match `backend/package.json` version. Only used for Docker image tagging — not read by app code |
+| `DATA_DIR` | Host path for the SQLite file (default: `/opt/app-data/chore-ganizer`) |
 | `PUID` / `PGID` | Host UID/GID for bind mount file ownership (default: `1001`) |
-| `OVERDUE_PENALTY_*` | Configure automatic overdue point deductions |
-| `SLOW_REQUEST_THRESHOLD_MS` | Log requests slower than this threshold |
-| `COMPRESSION_ENABLED` | Toggle gzip/brotli response compression |
-| `ERROR_WEBHOOK_*` | ntfy.sh webhook URL for 500-error alerts |
-| `SMTP_*` / `NTFY_*` | Email and push notification config |
-| `BACKEND_PORT` | Backend port (default: `3010`) |
+| `RATE_LIMIT_MAX` | General rate limiter max requests/15min (default: `300`) |
+| `AUTH_RATE_LIMIT_MAX` | Auth (login) rate limiter max requests/15min (default: `10`) |
+| `NTFY_BASE_URL` | Base URL of an ntfy server; unset = push notifications silently disabled |
+| `BACKEND_PORT` | Backend port, used by frontend's nginx proxy config (default: `3010`) |
 | `VITE_API_URL` | Frontend API URL override (empty = relative/proxy) |
+| `CORS_ORIGIN` | Frontend origin for CORS (default: `http://localhost:3002`) |
+
+There is no `OVERDUE_PENALTY_*`, `SLOW_REQUEST_THRESHOLD_MS`, `COMPRESSION_ENABLED`, `ERROR_WEBHOOK_*`, or `SMTP_*` in the current backend — those were pre-rewrite features that did not carry over into the v1-rewrite.
 
 ### Health & Observability
 
-- `/api/health` — Full health check (DB, memory, disk)
-- `/api/health/live` — Liveness probe
-- `/api/health/ready` — Readiness probe (DB connectivity)
-- `/api/metrics` — Prometheus metrics
+- `/api/health` — the **only** health endpoint. Runs `prisma.user.count()`; `200` if the DB responds, `503` if it throws.
+- There is no `/api/health/live`, `/api/health/ready`, or `/api/metrics` endpoint in the current backend.
+- Logging is plain `console.log`/`console.warn` to stdout — no structured/JSON logging, no log file, no rotation config.
 
 ### API Response Envelope
 
@@ -77,17 +79,16 @@ Store secrets in `.env` (excluded via `.gitignore`) or a password manager.
 ### Testing
 
 **Backend:**
-- Unit tests: `npm test` or `npm run test:unit` (mocked Prisma)
-- Integration tests: `npm run test:integration` (real DB, `--runInBand`)
-- Test DB: `test-db/integration-test.db`
+- Unit tests: `npm test` (mocked Prisma via inline `jest.mock('../../config/prisma', ...)` per test file)
+- No integration test suite exists — no `jest.integration.config.js`, no test database, no `test:unit`/`test:integration` scripts
 
 **Frontend:**
-- Tests: `npm test` (Vitest)
-- Mock utils: `src/test/utils.tsx`
+- Tests: `npm test` (Vitest). `src/test/setup.ts` only wires up `jest-dom` + `cleanup()` — no shared `utils.tsx` mock-data-factory helper
+- API calls mocked per-test via `vi.mock()`
 
 **E2E:**
-- Playwright tests in `e2e/`
-- Run: `npm run test:e2e`
+- Playwright tests in `e2e/`, run via `npm run test:e2e` from the repo root
+- `e2e/auth.setup.ts` logs in once per seeded user and saves `storageState`; specs replay it via `login()` in `e2e/helpers/auth.ts` rather than re-driving the login form (works around the auth rate limiter)
 
 ### Default Credentials (Dev Only)
 
@@ -97,24 +98,23 @@ Store secrets in `.env` (excluded via `.gitignore`) or a password manager.
 
 ### Domain Concepts
 
-- **ChoreTemplate** — Reusable chore definition
-- **ChoreAssignment** — One-off instance assigned to a user
-- **RecurringChore** — Defines recurrence rule with JSON `recurrenceRule`
-- **ChoreOccurrence** — Instances pre-generated daily by background job
+- **ChoreTemplate** — reusable chore definition (`title`, `points`, `category`), owned by its creating parent
+- **ChoreAssignment** — one-off instance of a template assigned to a user
+- **RecurringChore** — recurrence rule (`frequency`, `dayOfWeek`, `dayOfMonth`) assigned to one fixed user; round-robin/mixed rotation is a deferred, unimplemented feature
+- **RecurringOccurrence** — a generated instance of a `RecurringChore` for a specific due date, generated lazily on read (`generateOccurrences()` in `assignment.service.ts`), not by a scheduled/cron background job
 - **Chore statuses**: `PENDING`, `COMPLETED`, `PARTIALLY_COMPLETE`
-- **PointTransaction types**: `EARNED`, `BONUS`, `DEDUCTION`, `PENALTY`, `PAYOUT`, `ADVANCE`, `ADJUSTMENT`
-- **Pocket money**: Stored in cents (integer), not floats
-- **OverduePenalty** — Auto point deduction for overdue chores
+- **PointLog** — append-only ledger (not a `PointTransaction` model). `type` values in use: `EARNED`, `BONUS`, `ADJUSTMENT`, `RECURRING`, `REGULAR`, `REVERSED`
+- **No pocket-money/currency conversion feature** — that, plus `OverduePenalty`, existed in a pre-rewrite backend and was not carried over
+- **Gamification**: `streakCount`/`streakComputedAt` (lazy weekly streak) and `lifetimePoints`/`lifetimePointsSyncedAt` (lazy self-healing cache of the `PointLog` total) on `User`; badges via `UserBadge` + `BADGE_CATALOG` in `gamification.service.ts`
 
 ### Frontend-Backend Parameter Mapping
 
-| Frontend | Backend |
-|---|---|
-| `userId` | `assignedToId` |
-| `fromDate` | `dueDateFrom` |
-| `toDate` | `dueDateTo` |
+| Frontend | Backend | File |
+|---|---|---|
+| `userId` | `assignedToId` | `frontend/src/api/assignments.api.ts` |
+| `templateId` | `choreTemplateId` | `frontend/src/api/assignments.api.ts` |
 
-Mapping happens in `frontend/src/api/` files, never in components or hooks.
+Mapping happens in `frontend/src/api/` files, never in components or hooks. (`calendar.api.ts` uses plain `from`/`to` query params — no renaming needed there.)
 
 ### Monorepo Structure
 
