@@ -12,6 +12,14 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-07-10 — Closed out the deferred `lifetimePoints` caching item (PR #146 round 3, fix/m2-followups)
+
+- **Status**: Completed
+- **Description**: Implemented the `User.lifetimePoints` cache that PR #146's third review and `fix/m2-followups` both deferred, citing "needs a schema migration + backfill against live data, and this project has no migration tooling" as the blocker. Resolved by mirroring the existing `streakCount`/`streakComputedAt` lazy-cache pattern exactly: a nullable `lifetimePointsSyncedAt` sentinel means every existing user's first post-deploy read self-heals from the real `PointLog` history via the same aggregate query as before, then writes the cache back — this self-heal-on-first-read *is* the backfill, no separate script needed. Write paths (`assignment.service.complete`, `recurring.service.completeOccurrence`, `points.service.adjustPoints` — newly transaction-wrapped) increment the cache in the same transaction as the `PointLog` they create, whenever the amount is positive; negative entries (`REVERSED` from uncomplete, negative `ADJUSTMENT`) are deliberately excluded, matching the pre-existing `amount>0` filter semantics.
+- **Verification**: Beyond the unit test suite, verified against real data in an isolated scratch clone — seeded a pre-migration DB, generated real `PointLog` history through the actual running app (points adjustment + chore completion), applied the new schema on top of that already-populated DB, then confirmed the backfilled `lifetimePoints` matched an independently-computed Prisma aggregate exactly (60), and that a subsequent chore completion incremented the cache by exactly its point value (65) without recomputing (the `lifetimePointsSyncedAt` timestamp didn't change).
+- **Tests**: 256 backend (was 252), 106 frontend, both typecheck clean.
+- **URL**: https://github.com/thitar/chore-ganizer (see docs/superpowers/plans/2026-07-09-gamification-lifetime-points-cache.md)
+
 ### 2026-07-09 — Chased the three items deferred from PR #146's review round
 
 - **Status**: Completed on `fix/m2-followups` (off `main`, post-v3.2.0)
