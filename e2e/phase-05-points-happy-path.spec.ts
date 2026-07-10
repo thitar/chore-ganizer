@@ -10,8 +10,10 @@
  */
 
 import { test, expect, Page } from '@playwright/test'
+import { login } from './helpers/auth'
+import { getCsrfToken } from './helpers/csrf'
 
-const SCREENSHOTS_DIR = '/home/thitar/dev/chore-ganizer/e2e/screenshots/phase-05-points'
+const SCREENSHOTS_DIR = require('path').join(__dirname, 'screenshots', 'phase-05-points')
 const fs = require('fs')
 const path = require('path')
 fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true })
@@ -23,14 +25,6 @@ const ASSIGNMENT_POINTS = 7
 
 async function shot(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `${name}.png`), fullPage: true })
-}
-
-async function login(page: Page, user: { email: string; password: string }): Promise<void> {
-  await page.goto('/login')
-  await page.fill('input[type="email"]', user.email)
-  await page.fill('input[type="password"]', user.password)
-  await page.click('button[type="submit"]')
-  await page.waitForURL('/', { timeout: 10000 })
 }
 
 test.describe('Phase 5 E2E — CHORE-07 + PTS-01 happy path', () => {
@@ -53,15 +47,16 @@ test.describe('Phase 5 E2E — CHORE-07 + PTS-01 happy path', () => {
 
     // Create a template with a unique title and the points value
     const uniqueTitle = `Phase05 E2E Chore ${Date.now()}`
-    const createTpl = await page.evaluate(async (args: { title: string; points: number }) => {
+    const csrfToken1 = await getCsrfToken(page)
+    const createTpl = await page.evaluate(async (args: { title: string; points: number; csrfToken: string }) => {
       const res = await fetch('/api/templates', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-xsrf-token': args.csrfToken },
         body: JSON.stringify({ title: args.title, points: args.points, category: 'e2e-phase05' }),
       })
       return res.json()
-    }, { title: uniqueTitle, points: ASSIGNMENT_POINTS })
+    }, { title: uniqueTitle, points: ASSIGNMENT_POINTS, csrfToken: csrfToken1 })
     expect(createTpl.data?.id, 'Template should be created').toBeDefined()
     const templateId = createTpl.data.id
 
@@ -76,11 +71,12 @@ test.describe('Phase 5 E2E — CHORE-07 + PTS-01 happy path', () => {
     const dueDate = new Date()
     dueDate.setMonth(dueDate.getMonth() + 1)
     const dueDateStr = dueDate.toISOString().slice(0, 10)
-    const createAssign = await page.evaluate(async (args: { templateId: number; userId: number; dueDate: string }) => {
+    const csrfToken2 = await getCsrfToken(page)
+    const createAssign = await page.evaluate(async (args: { templateId: number; userId: number; dueDate: string; csrfToken: string }) => {
       const res = await fetch('/api/assignments', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-xsrf-token': args.csrfToken },
         body: JSON.stringify({
           choreTemplateId: args.templateId,
           assignedToId: args.userId,
@@ -88,15 +84,17 @@ test.describe('Phase 5 E2E — CHORE-07 + PTS-01 happy path', () => {
         }),
       })
       return res.json()
-    }, { templateId, userId: alice.id, dueDate: dueDateStr })
+    }, { templateId, userId: alice.id, dueDate: dueDateStr, csrfToken: csrfToken2 })
     expect(createAssign.data?.id, 'Assignment should be created').toBeDefined()
     const assignmentId = createAssign.data.id
     await shot(page, '01-assignment-created')
 
-    // Switch to Alice and complete the assignment
-    await page.evaluate(async () => {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
-    })
+    // Switch to Alice. No need to log out first — login() replaces the
+    // session cookie directly rather than driving the login form, and an
+    // explicit logout here would destroy DAD's session server-side. Since
+    // every spec file replays the same setup-time session per user (see
+    // e2e/helpers/auth.ts), destroying it here would break every later test
+    // in the suite that logs in as DAD or Alice afterward.
     await login(page, ALICE)
 
     // Navigate to MyChoresPage
@@ -108,24 +106,31 @@ test.describe('Phase 5 E2E — CHORE-07 + PTS-01 happy path', () => {
 
     // Complete the assignment via the API (UI button click is brittle across
     // styles; the API call exercises the same CHORE-07 + PTS-01 path)
-    const complete = await page.evaluate(async (id: number) => {
-      const res = await fetch(`/api/assignments/${id}/complete`, {
+    const csrfToken3 = await getCsrfToken(page)
+    const complete = await page.evaluate(async (args: { id: number; csrfToken: string }) => {
+      const res = await fetch(`/api/assignments/${args.id}/complete`, {
         method: 'POST',
         credentials: 'include',
+        headers: { 'x-xsrf-token': args.csrfToken },
       })
       return res.json()
-    }, assignmentId)
+    }, { id: assignmentId, csrfToken: csrfToken3 })
     expect(complete.data?.status, 'Assignment should be marked COMPLETED').toBe('COMPLETED')
     expect(complete.data?.pointsAwarded, `pointsAwarded should equal template points (${ASSIGNMENT_POINTS})`).toBe(ASSIGNMENT_POINTS)
     await shot(page, '03-assignment-completed')
 
-    // Re-fetch Alice's balance and assert it increased by ASSIGNMENT_POINTS
+    // Re-fetch Alice's balance and assert it increased by at least
+    // ASSIGNMENT_POINTS. Not an exact-equality check: other spec files run
+    // concurrently against the same shared DB and may legitimately award
+    // Alice points of their own in the same window (e.g. phase-04-uat's
+    // recurring-occurrence completion) — the precise per-chore EARNED log
+    // check right below is the real correctness assertion for this test.
     const balanceAfter = await page.evaluate(async (userId: number) => {
       const r = await fetch(`/api/points/users/${userId}`, { credentials: 'include' })
       const d = (await r.json()).data as { balance: number; logs: Array<{ amount: number; type: string; reason: string }> }
       return d
     }, alice.id)
-    expect(balanceAfter.balance, `Balance should have increased by ${ASSIGNMENT_POINTS} (was ${aliceBalanceBefore}, now ${balanceAfter.balance})`).toBe(aliceBalanceBefore + ASSIGNMENT_POINTS)
+    expect(balanceAfter.balance, `Balance should have increased by at least ${ASSIGNMENT_POINTS} (was ${aliceBalanceBefore}, now ${balanceAfter.balance})`).toBeGreaterThanOrEqual(aliceBalanceBefore + ASSIGNMENT_POINTS)
 
     // Verify a new EARNED log was created for this chore
     const newEarnsForThisChore = balanceAfter.logs.filter(
@@ -135,11 +140,8 @@ test.describe('Phase 5 E2E — CHORE-07 + PTS-01 happy path', () => {
     expect(newEarnsForThisChore[0].amount).toBe(ASSIGNMENT_POINTS)
     await shot(page, '04-balance-increased')
 
-    // Cleanup: delete the template (cascade removes assignment + point log)
-    // (We can't easily delete point logs via the API; they remain in the
-    //  test DB. Acceptable for a homelab dev DB.)
-    await page.evaluate(async () => {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
-    })
+    // No cleanup logout — see the comment above; it's both unnecessary (each
+    // test gets a fresh browser context) and would destroy Alice's shared
+    // session for every later test in the suite.
   })
 })
