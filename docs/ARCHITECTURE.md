@@ -43,15 +43,18 @@ Chore-Ganizer is a family chore tracker: parents create and assign chores, child
 
 Verified against `backend/src/app.ts`:
 
-1. `express.json()` / `express.urlencoded()` (10kb body size limit)
-2. `cookie-parser`
-3. `express-session`
-4. Custom CSRF middleware (`csrfProtection`, mounted on `/api`)
-5. API routes (mounted on `/api`)
-6. 404 handler
-7. Global error handler
+1. `helmet()` — security headers
+2. `cors()` — honors `CORS_ORIGIN`, `credentials: true` (needed since auth relies on session + CSRF cookies)
+3. General rate limiter (`generalLimiter`, mounted on `/api`; 300 req/15min)
+4. `express.json()` / `express.urlencoded()` (10kb body size limit)
+5. `cookie-parser`
+6. `express-session`
+7. Custom CSRF middleware (`csrfProtection`, mounted on `/api`)
+8. API routes (mounted on `/api`) — `POST /api/auth/login` additionally has its own stricter `authLimiter` (10 req/15min), the substitute defense for the deliberately-excluded account lockout feature
+9. 404 handler
+10. Global error handler
 
-**Note:** `helmet`, `cors`, and `express-rate-limit` are listed in `backend/package.json` dependencies but are **not currently imported or wired into `app.ts`** — there is no Helmet security-headers middleware, no CORS middleware (despite a `CORS_ORIGIN` env var being passed through `docker-compose.yml`), and no rate limiting active in the running app. This is a real gap, not a doc inaccuracy — flagged here so it isn't silently lost. See `docs/project_notes/bugs.md` / `.planning/STATE.md` deferred items for tracking.
+**History note:** `helmet`, `cors`, and `express-rate-limit` were in `backend/package.json` since the v1-rewrite but were never wired into `app.ts` — confirmed via `.planning/milestones/v1-rewrite-REQUIREMENTS.md`'s "Out of Scope" table (which has explicit reasoning for every deliberate cut, e.g. CSRF, account lockout) to be an accidental gap rather than a reasoned exclusion; fixed 2026-07-10. The in-memory session store (no persistence across restarts) predates the rewrite — a Node 25 crash workaround on the old codebase — and remains a known, deliberately undeferred gap; see `docs/OPERATIONS.md` for the tradeoff.
 
 ## Frontend Structure
 

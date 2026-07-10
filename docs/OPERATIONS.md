@@ -45,7 +45,7 @@ Single `.env` file at the project root (copy from `backend/.env.example` as a st
 | `SECURE_COOKIES` | Optional | `false` (`true` when `NODE_ENV=production` unless explicitly set to `false`) | Marks session/CSRF cookies `Secure` — requires HTTPS. |
 | `NTFY_BASE_URL` | Optional | unset (notifications disabled) | Base URL of an ntfy server (e.g. `https://ntfy.sh`). Unset = notifications silently no-op, logged once at startup. |
 | `VITE_API_URL` | Optional | empty (relative URLs, nginx proxies `/api/*`) | Set only if the frontend needs to reach a backend on a different origin. |
-| `CORS_ORIGIN` | Passed through, **not consumed** | `http://localhost:3002` | Set in `docker-compose.yml` but there is no CORS middleware in `app.ts` currently reading it — see `ARCHITECTURE.md`'s middleware gap note. |
+| `CORS_ORIGIN` | Optional | `http://localhost:3002` | Now consumed by the CORS middleware in `app.ts` (fixed 2026-07-10 — was passed through but ignored since the v1-rewrite). Set it to your actual frontend origin if it differs from the default. |
 | `LOG_LEVEL` | Passed through, **not consumed** | `info` | No logging library reads this in the current backend (console logging only). |
 
 ## Version Bumps
