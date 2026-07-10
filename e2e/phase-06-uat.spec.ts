@@ -2,14 +2,16 @@
  * Phase 6 UAT — User Management + Profile
  *
  * Automated E2E walkthrough.
- * Screenshots to /home/thitar/dev/chore-ganizer/e2e/screenshots/phase-06/.
+ * Screenshots to e2e/screenshots/phase-06/.
  */
 
 import { test, expect, Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import { login } from './helpers/auth';
+import { goToManageLink } from './helpers/nav';
 
-const SCREENSHOTS_DIR = '/home/thitar/dev/chore-ganizer/e2e/screenshots/phase-06';
+const SCREENSHOTS_DIR = path.join(__dirname, 'screenshots', 'phase-06');
 fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 
 const DAD = { email: 'dad@home.local', password: 'password123' };
@@ -19,18 +21,10 @@ async function shot(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `${name}.png`), fullPage: true });
 }
 
-async function login(page: Page, user: { email: string; password: string }): Promise<void> {
-  await page.goto('/login');
-  await page.fill('input[type="email"]', user.email);
-  await page.fill('input[type="password"]', user.password);
-  await page.click('button[type="submit"]');
-  await page.waitForURL('/', { timeout: 10000 });
-}
-
 test.describe('Phase 6 UAT — User Management + Profile', () => {
   test('Test 1: Navigate to Profile page', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Profile")');
+    await page.goto('/profile');
     await page.waitForURL('**/profile');
     await page.waitForSelector('h2:has-text("My Profile")');
     await shot(page, '01-profile-page');
@@ -38,7 +32,7 @@ test.describe('Phase 6 UAT — User Management + Profile', () => {
 
   test('Test 2: Profile shows user info and password form', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Profile")');
+    await page.goto('/profile');
     await page.waitForSelector('h2:has-text("My Profile")');
     await page.waitForSelector('h3:has-text("Change Password")');
     await page.waitForSelector('h3:has-text("Display Color")');
@@ -47,7 +41,7 @@ test.describe('Phase 6 UAT — User Management + Profile', () => {
 
   test('Test 3: Profile password validation', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Profile")');
+    await page.goto('/profile');
     await page.waitForSelector('h2:has-text("My Profile")');
     // Click update with empty fields
     await page.click('button:has-text("Update Password")');
@@ -57,7 +51,7 @@ test.describe('Phase 6 UAT — User Management + Profile', () => {
 
   test('Test 4: Navigate to Users page (parent only)', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Users")');
+    await goToManageLink(page, 'Users');
     await page.waitForURL('**/users');
     await page.waitForSelector('h2:has-text("Family Members")');
     await shot(page, '04-users-page');
@@ -65,7 +59,7 @@ test.describe('Phase 6 UAT — User Management + Profile', () => {
 
   test('Test 5: Users page shows all family members', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Users")');
+    await goToManageLink(page, 'Users');
     await page.waitForSelector('h2:has-text("Family Members")');
     for (const name of ['Dad', 'Mom', 'Alice', 'Bob']) {
       expect(await page.getByText(name, { exact: true }).count()).toBeGreaterThan(0);
@@ -75,7 +69,7 @@ test.describe('Phase 6 UAT — User Management + Profile', () => {
 
   test('Test 6: Current user shows "You" indicator', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Users")');
+    await goToManageLink(page, 'Users');
     await page.waitForSelector('h2:has-text("Family Members")');
     const youCount = await page.getByText('You', { exact: true }).count();
     expect(youCount).toBeGreaterThan(0);
@@ -84,7 +78,7 @@ test.describe('Phase 6 UAT — User Management + Profile', () => {
 
   test('Test 7: Show create user form', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Users")');
+    await goToManageLink(page, 'Users');
     await page.waitForSelector('h2:has-text("Family Members")');
     await page.click('button:has-text("Create User")');
     await page.waitForSelector('h3:has-text("New Family Member")');
@@ -93,7 +87,7 @@ test.describe('Phase 6 UAT — User Management + Profile', () => {
 
   test('Test 8: Create user with valid data', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Users")');
+    await goToManageLink(page, 'Users');
     await page.waitForSelector('h2:has-text("Family Members")');
     await page.click('button:has-text("Create User")');
     await page.waitForSelector('h3:has-text("New Family Member")');
@@ -126,7 +120,7 @@ test.describe('Phase 6 UAT — User Management + Profile', () => {
 
   test('Test 11: Delete user with confirmation', async ({ page }) => {
     await login(page, DAD);
-    await page.click('a:has-text("Users")');
+    await goToManageLink(page, 'Users');
     await page.waitForSelector('h2:has-text("Family Members")');
 
     // Find any delete button (not for self)
@@ -137,7 +131,7 @@ test.describe('Phase 6 UAT — User Management + Profile', () => {
       await page.waitForSelector('text=Delete this family member');
       await shot(page, '11a-delete-confirm');
 
-      const confirmBtn = page.locator('div.bg-red-50 button:has-text("Delete")').first();
+      const confirmBtn = page.locator('div.bg-surface-raised button:has-text("Delete")').first();
       await confirmBtn.click();
       await page.waitForTimeout(2000);
       await shot(page, '11b-after-delete');

@@ -14,11 +14,11 @@ Local dev: `cd backend && npm install && npm run dev` (port 3010), `cd frontend 
 
 ## Testing Patterns
 
-- **Backend unit tests**: `jest.mock('../../config/prisma', () => ({ prisma: { ... } }))` inline per test file — there is no shared `__mocks__`/`prismaMock` helper. Look at an existing test file (e.g. `backend/src/__tests__/services/points.service.test.ts`) for the pattern before writing a new one.
-- **No integration test suite currently exists** — no `jest.integration.config.js`, no test database, no `test:unit`/`test:integration` npm scripts. `npm test` runs the full (mocked-Prisma) unit suite via plain `jest`.
-- **Frontend tests**: `frontend/src/test/setup.ts` only wires up `jest-dom` matchers and `cleanup()` — there is no shared `utils.tsx` with mock data factories or a `renderWithRouter` helper. API calls are mocked per-test via `vi.mock()`.
-- **E2E tests** (`e2e/`, root-level, Playwright): use `.spec.ts` suffix; run with `npm run test:e2e` from the repo root. Unit tests use `.test.ts`/`.test.tsx`.
-- **No lint or format npm scripts** currently exist in either package (`npm run lint`/`npm run format` are not defined) — there's no ESLint or Prettier config checked in for either `backend/` or `frontend/`. If you add one, wire it into CI too, since nothing currently gates on it.
+- **Backend unit tests**: `jest.mock('../../config/prisma', () => ({ prisma: { ... } }))` inline per test file — there is no shared `__mocks__`/`prismaMock` helper. Look at an existing test file (e.g. `backend/src/__tests__/services/points.service.test.ts`) for the pattern before writing a new one. `npm test` (plain `jest`) runs it.
+- **No integration test suite currently exists** — no `jest.integration.config.js`, no test database, no `test:unit`/`test:integration` npm scripts. `npm test` runs the full (mocked-Prisma) unit suite.
+- **Frontend tests**: `npm test` (`vitest run`). `frontend/src/test/setup.ts` only wires up `jest-dom` matchers and `cleanup()` — there is no shared `utils.tsx` with mock data factories or a `renderWithRouter` helper. API calls are mocked per-test via `vi.mock()`.
+- **E2E tests** (`e2e/`, root-level, Playwright): use `.spec.ts` suffix; run with `npm run test:e2e` from the repo root. Unit tests use `.test.ts`/`.test.tsx`. Auth is a `setup` project (`e2e/auth.setup.ts`) that logs in once per seeded user and saves `storageState` to `e2e/.auth/*.json`; specs call `login(page, user)` from `e2e/helpers/auth.ts` to replay that session instead of driving the login form again. This matters because the auth rate limiter (`AUTH_RATE_LIMIT_MAX`, default 10/15min — see `docs/OPERATIONS.md#environment-variables`) will otherwise 403 a full suite's worth of independent logins. **Don't call `/api/auth/logout` from a spec that uses a shared seeded-user session** — it destroys that session server-side for every other test still relying on the same `storageState`; switch identity with another `login(page, otherUser)` call instead, no logout needed first.
+- **No lint or format npm scripts** currently exist in either package (`npm run lint`/`npm run format` are not defined) — there's no ESLint or Prettier config checked in for either `backend/` or `frontend/`. If you add one, wire it into CI too, since nothing currently gates on it. (The only existing CI workflow, `.github/workflows/security.yml`, runs CodeQL/`npm audit`/Gitleaks/Semgrep/Trivy — no lint, no build, no test job at all.)
 
 ## Non-Obvious Conventions
 
@@ -31,23 +31,25 @@ Frontend uses simplified parameter names internally, mapped to backend API expec
 | `userId` | `assignedToId` | `frontend/src/api/assignments.api.ts` |
 | `templateId` | `choreTemplateId` | `frontend/src/api/assignments.api.ts` |
 
-**Rule:** Mapping always happens in `frontend/src/api/` files, never in components or hooks.
+**Rule:** Mapping always happens in `frontend/src/api/` files, never in components or hooks. Not every API module needs a mapping — `calendar.api.ts` passes `from`/`to` straight through unchanged.
 
 - **Children accessing parent-only routes** see an explicit "403 Forbidden" message rendered by `ProtectedRoute` (`frontend/src/components/ProtectedRoute.tsx`) — this is not a silent redirect to the dashboard.
 - **401 responses**: `frontend/src/api/auth.api.ts` catches a `401` and throws a typed `AuthError`; `useAuth` surfaces it via React Query's error state, and `ProtectedRoute` reacts by redirecting to `/login`. There is no custom DOM event involved.
 - **CSRF cookie name must stay an inline string literal**: `backend/src/middleware/csrf.ts` sets `res.cookie('XSRF-TOKEN', ...)` with the literal instead of a `CSRF_COOKIE` const, because CodeQL's `js/missing-token-validation` check only resolves literal string arguments (no constant propagation) to recognize hand-rolled CSRF middleware. Don't "clean this up" by switching back to a const — it silently regresses CodeQL's security scan.
 - **Every `frontend/src/api/*.ts` module must build its axios instance via `createApiClient()`** in `frontend/src/lib/apiClient.ts`, never `axios.create()` directly — instances created independently don't share interceptors with the CSRF-token-injecting one, so a raw `axios.create()` silently drops the `x-xsrf-token` header on every mutating request. (Root-caused in `docs/project_notes/bugs.md`, 2026-07-08 — this exact bug has happened before.)
+- **The `lifetimePoints` cache on `User` self-heals, it doesn't get backfilled by a migration**: a `null` `lifetimePointsSyncedAt` means "never synced" and triggers a one-time `pointLog.aggregate()` on next read (`getLifetimePoints()` in `gamification.service.ts`). After that it's incremented at each positive-`PointLog` write site (`assignment.service.ts`, `recurring.service.ts`, `points.service.ts`), not recomputed from the ledger again. If you add a new code path that writes a positive `PointLog`, you must increment `lifetimePoints` there too, or the cache will silently drift from reality.
+- **There is no CI/CD Docker publishing pipeline** — `.github/workflows/security.yml` (the only workflow) never builds or pushes images to `ghcr.io`, despite the `ghcr.io/thitar/chore-ganizer-{backend,frontend}` naming convention implying one exists. Don't assume a version bump alone gets a new image published anywhere; see `docs/OPERATIONS.md#version-bumps`.
 
 ### Monorepo Structure
 
-Two independent npm packages, `backend/` and `frontend/`, each producing its own Docker image (`ghcr.io/thitar/chore-ganizer-{backend,frontend}:VERSION`). Both `package.json` files must carry identical version numbers — see [docs/OPERATIONS.md#version-bumps](./docs/OPERATIONS.md#version-bumps). The root `package.json` exists only for Playwright e2e tooling and has its own independent (currently out-of-sync) version field — not part of that contract.
+Two independent npm packages, `backend/` and `frontend/`, each producing its own Docker image (`ghcr.io/thitar/chore-ganizer-{backend,frontend}:VERSION`) — built and tagged locally, since no CI workflow does this (see above). Both `package.json` files must carry identical version numbers — see [docs/OPERATIONS.md#version-bumps](./docs/OPERATIONS.md#version-bumps). The root `package.json` exists only for Playwright e2e tooling and has its own independent (currently out-of-sync) version field — not part of that contract.
 
 ### API Documentation (none — by design)
 
 The v1-rewrite intentionally does **not** generate OpenAPI/Swagger docs. A solo developer who wrote the API doesn't need docs to remember it. The `backend/src/routes/*.ts` and `backend/src/schemas/*.ts` files (Zod schemas) are the authoritative contract.
 
 If a future contributor wants API docs:
-- The Zod schemas in `backend/src/schemas/*.ts` are the single source of truth for request bodies
+- The Zod schemas in `backend/src/schemas/*.ts` are the source of truth for request bodies **where they exist** — only `assignments.routes.ts`, `points.routes.ts`, and `templates.routes.ts` actually run `validate(schema)`. `auth.routes.ts`, `users.routes.ts`, `recurring.routes.ts`, and `occurrences.routes.ts` read `req.body` directly with no Zod schema; for those, the route handler itself is the only contract.
 - The TypeScript return types in service methods document the response shapes
 - Run the dev server and curl endpoints; the Express middleware returns JSON `{success, data, error}` envelopes with descriptive error messages
 

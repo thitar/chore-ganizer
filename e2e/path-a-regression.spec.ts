@@ -16,8 +16,10 @@
 import { test, expect, Page, Request } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import { login } from './helpers/auth';
+import { getCsrfToken } from './helpers/csrf';
 
-const SCREENSHOTS_DIR = '/home/thitar/dev/chore-ganizer/e2e/screenshots/path-a-regression';
+const SCREENSHOTS_DIR = path.join(__dirname, 'screenshots', 'path-a-regression');
 fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 
 const DAD = { email: 'dad@home.local', password: 'password123' };
@@ -26,14 +28,6 @@ const ALICE_ORIGINAL_COLOR = '#10B981';
 
 async function shot(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `${name}.png`), fullPage: true });
-}
-
-async function login(page: Page, user: { email: string; password: string }): Promise<void> {
-  await page.goto('/login');
-  await page.fill('input[type="email"]', user.email);
-  await page.fill('input[type="password"]', user.password);
-  await page.click('button[type="submit"]');
-  await page.waitForURL('/', { timeout: 10000 });
 }
 
 interface AssignmentQueryCall {
@@ -125,18 +119,31 @@ test.describe('Path A Regression — Cross-Phase Wiring', () => {
     // Real assertion: the backend actually returns different data.
     // Before the fix, the backend ignored from/to and always returned the
     // current month — both calls returned the same data even though the
-    // URLs differed. With the fix, July returns July-only data.
+    // URLs differed. With the fix, the second call's month returns
+    // second-month-only data.
+    //
+    // Computed from the real clock at run time rather than hardcoded, since
+    // a fixed month/year assumption rots the moment the calendar turns over
+    // (see docs/project_notes/bugs.md, 2026-07-04 — the same class of bug
+    // already hit the frontend unit tests for June-2026 fixtures).
     expect(first.responseData, 'First call response should be captured').not.toBeNull()
     expect(second.responseData, 'Second call response should be captured').not.toBeNull()
+
+    const now = new Date()
+    const currentMonthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10)
+    const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    const nextMonthStart = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}-01`
+    const nextMonthEnd = new Date(nextMonthDate.getFullYear(), nextMonthDate.getMonth() + 1, 0).toISOString().slice(0, 10)
 
     // The dueDates in each response should match the requested range
     const firstDates = (first.responseData ?? []).map((a) => a.dueDate)
     const secondDates = (second.responseData ?? []).map((a) => a.dueDate)
     for (const d of firstDates) {
-      expect(d >= '2026-06-01' && d <= '2026-06-30', `First response should be in June 2026, got ${d}`).toBe(true)
+      expect(d >= currentMonthStart && d <= currentMonthEnd, `First response should be in the current month, got ${d}`).toBe(true)
     }
     for (const d of secondDates) {
-      expect(d >= '2026-07-01' && d <= '2026-07-31', `Second response should be in July 2026, got ${d}`).toBe(true)
+      expect(d >= nextMonthStart && d <= nextMonthEnd, `Second response should be in the next month, got ${d}`).toBe(true)
     }
     await shot(page, '01-calendar-next-month')
   })
@@ -199,11 +206,12 @@ test.describe('Path A Regression — Cross-Phase Wiring', () => {
     const futureDate = new Date()
     futureDate.setMonth(futureDate.getMonth() + 1)
     const dueDateStr = futureDate.toISOString().slice(0, 10)
-    const assignStatus = await page.evaluate(async (args: { templateId: number; userId: number; dueDate: string }) => {
+    const csrfToken = await getCsrfToken(page)
+    const assignStatus = await page.evaluate(async (args: { templateId: number; userId: number; dueDate: string; csrfToken: string }) => {
       const r = await fetch('/api/assignments', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-xsrf-token': args.csrfToken },
         body: JSON.stringify({
           choreTemplateId: args.templateId,
           assignedToId: args.userId,
@@ -211,7 +219,7 @@ test.describe('Path A Regression — Cross-Phase Wiring', () => {
         }),
       })
       return r.status
-    }, { templateId: template.id, userId: newChild.id, dueDate: dueDateStr })
+    }, { templateId: template.id, userId: newChild.id, dueDate: dueDateStr, csrfToken })
     expect(assignStatus, 'Assignment creation should succeed').toBe(201)
     await shot(page, '02b-assignment-created')
 
@@ -236,7 +244,7 @@ test.describe('Path A Regression — Cross-Phase Wiring', () => {
         const btn = allDeleteBtns.nth(i)
         // Click and see if the confirmation shows the right user
         await btn.click()
-        const confirmText = await page.locator('div.bg-red-50').first().textContent({ timeout: 1000 }).catch(() => '')
+        const confirmText = await page.locator('div.bg-surface-raised').first().textContent({ timeout: 1000 }).catch(() => '')
         if (confirmText?.includes(childName)) break
         // Cancel and try next
         await page.keyboard.press('Escape').catch(() => {})
@@ -247,14 +255,14 @@ test.describe('Path A Regression — Cross-Phase Wiring', () => {
     await shot(page, '02c-delete-confirm')
 
     // Confirm the delete
-    const confirmBtn = page.locator('div.bg-red-50 button:has-text("Delete")').first()
+    const confirmBtn = page.locator('div.bg-surface-raised button:has-text("Delete")').first()
     await confirmBtn.click()
     await page.waitForTimeout(2000)
     await shot(page, '02d-after-delete-attempt')
 
     // The bug: backend returned 500 (P2003). Fix: returns 409 with informative message.
     expect(deleteStatus, 'Expected DELETE /api/users/:id to respond with 409').toBe(409)
-    const errorMessage = deleteBody?.error?.message ?? ''
+    const errorMessage = (deleteBody as { error?: { message?: string } } | null)?.error?.message ?? ''
     expect(errorMessage.toLowerCase(), `Error message should mention assignment/chore. Got: "${errorMessage}"`).toMatch(/assignment|chore|recurring|conflict/)
   })
 
@@ -277,7 +285,7 @@ test.describe('Path A Regression — Cross-Phase Wiring', () => {
     await page.waitForTimeout(1500)
 
     // 2) Navigate to /profile via client-side nav (click the Profile link)
-    await page.click('a:has-text("Profile")')
+    await page.goto('/profile')
     await page.waitForURL('**/profile')
     await page.waitForSelector('h2:has-text("My Profile")')
 
@@ -305,7 +313,7 @@ test.describe('Path A Regression — Cross-Phase Wiring', () => {
     // specifically target the legend swatch which uses useUsers.
     const legendColor = await page.evaluate(() => {
       const aliceLabels = Array.from(document.querySelectorAll<HTMLElement>('span'))
-        .filter((el) => el.textContent?.trim() === 'Alice' && el.className.includes('text-gray-600'))
+        .filter((el) => el.textContent?.trim() === 'Alice' && el.className.includes('text-zinc-400'))
       for (const label of aliceLabels) {
         const swatch = label.previousElementSibling as HTMLElement | null
         if (swatch && swatch.className.includes('rounded-full')) {
@@ -320,7 +328,7 @@ test.describe('Path A Regression — Cross-Phase Wiring', () => {
     expect(legendColor.color, `Alice's legend swatch should show the new color (255, 0, 255) after change. Got: "${legendColor.color}"`).toContain('255, 0, 255')
 
     // 6) Restore Alice's color via client-side nav so the dev DB isn't polluted
-    await page.click('a:has-text("Profile")')
+    await page.goto('/profile')
     await page.waitForURL('**/profile')
     await page.waitForSelector('h2:has-text("My Profile")')
     const restoreInput = page.locator('input#profile-color')

@@ -15,37 +15,41 @@ export APP_VERSION=$(grep '"version"' backend/package.json | head -1 | sed 's/.*
 docker compose up --build -d
 ```
 
-`./docker-compose.sh` is a thin wrapper: it extracts `APP_VERSION` from `backend/package.json`, syncs it into `.env` if present and out of date, then forwards all arguments to `docker compose`. Use it whenever the version has just been bumped; otherwise plain `docker compose up -d` is fine if `.env` already has the right `APP_VERSION`.
+`./docker-compose.sh` is a thin wrapper: it extracts `APP_VERSION` from `backend/package.json`, syncs it into `.env` if present and out of date, then forwards all arguments to `docker compose`. Use it whenever the version has just been bumped; otherwise plain `docker compose up -d` is fine if `.env` already has the right `APP_VERSION`. Both images are built locally from `./backend/Dockerfile` and `./frontend/Dockerfile` — there is no registry pull step wired up (see [Version Bumps](#version-bumps) below).
 
 Frontend serves on `${FRONTEND_PORT:-3002}`, backend on `${PORT:-3010}`.
 
 ### What happens on container start
 
-- **Backend** (`backend/docker-entrypoint.sh`): runs as root → adjusts `appuser` UID/GID if `PUID`/`PGID` set → creates and chowns `DATA_DIR` → generates the Prisma client → `prisma db push` (auto-applies schema) → seeds the DB if empty → drops to `appuser` via `su-exec` → starts `node dist/server.js`.
-- **Frontend** (`frontend/docker-entrypoint.sh`): generates `/usr/share/nginx/html/config.js` with runtime env vars, substitutes `BACKEND_PORT` into the nginx config via `envsubst` → starts nginx.
+- **Backend** (`backend/docker-entrypoint.sh`): runs as root → adjusts `appuser` UID/GID if `PUID`/`PGID` differ from the image default (`1001`) → creates and chowns `DATA_DIR` → generates the Prisma client → `prisma db push --accept-data-loss` (auto-applies schema, dropping any column/table a schema change removed) → seeds the DB if `prisma.user.count()` is `0` → drops to `appuser` via `su-exec` → starts `node dist/server.js`.
+- **Frontend** (`frontend/docker-entrypoint.sh`): writes `/usr/share/nginx/html/config.js` (`window.APP_CONFIG = { apiUrl, debug, appVersion }` from `VITE_API_URL`/`VITE_DEBUG`/`VITE_APP_VERSION`), substitutes `BACKEND_PORT` into the nginx config via `envsubst`, then starts nginx.
 - Schema changes and seeding are automatic — no manual migration step on first run or after a schema change. `DATA_DIR` must exist on the host before starting (Docker creates it as root if missing).
 
 ## Environment Variables
 
-Single `.env` file at the project root (copy from `backend/.env.example` as a starting point, then add the compose-level vars below — there is no separate frontend `.env.example`).
+Single `.env` file at the project root (copy from `backend/.env.example` as a starting point, then add the compose-level vars below — there is no separate frontend `.env.example`, and `.env.example` itself only documents a subset of what's below).
 
 | Variable | Required? | Default | Purpose |
 |---|---|---|---|
-| `SESSION_SECRET` | **Required** | none | Session cookie signing secret. `app.ts` **fails fast at startup** if `NODE_ENV=production` and this is unset — refuses to run on the insecure dev fallback. Generate with `openssl rand -base64 32`. |
-| `APP_VERSION` | **Required** (for Docker tagging) | none | Used by `docker-compose.yml` to tag/pull images and pass `VITE_APP_VERSION` to the frontend build. **Not currently read by any application code** — no runtime version display or version-in-response feature exists yet, despite this being planned. Keep `backend/package.json` and `frontend/package.json` versions identical regardless. |
-| `DATABASE_URL` | Optional | `file:${DATA_DIR}/chore-ganizer.db` | SQLite connection string, read directly by Prisma. |
+| `SESSION_SECRET` | **Required** | none | Session cookie signing secret. `app.ts` **fails fast at startup** if `NODE_ENV=production` and this is unset — refuses to run on the insecure dev fallback (`'dev-secret'`). Generate with `openssl rand -base64 32`. |
+| `APP_VERSION` | **Required** (for Docker tagging) | none | Passed through to `VITE_APP_VERSION` for the frontend build/runtime config. **Not currently read by any backend application code** — no runtime version display or version-in-response feature exists yet. Keep `backend/package.json` and `frontend/package.json` versions identical regardless. |
+| `DATABASE_URL` | Optional | `file:${DATA_DIR}/chore-ganizer.db` | SQLite connection string, read directly by Prisma (`schema.prisma`'s `datasource db`). |
 | `DATA_DIR` | Optional | `/opt/app-data/chore-ganizer` | Host path bind-mounted into the backend container for the SQLite file. Must exist on the host (Docker creates it as root if missing). |
-| `PORT` | Optional | `3010` | Backend listen port. |
+| `PORT` | Optional | `3010` | Backend listen port (`server.ts`). |
+| `HOST` | Optional | `0.0.0.0` | Backend bind address (`server.ts`). Not surfaced in `docker-compose.yml`'s environment block — only relevant if running the backend outside Docker. |
 | `FRONTEND_PORT` | Optional | `3002` | Host port mapped to the frontend container's nginx (port 80). |
 | `BACKEND_PORT` | Optional | `3010` | Used by the frontend's nginx config (`envsubst` at container start) to know where to proxy `/api/*`. |
 | `PUID` / `PGID` | Optional | `1001` | Host UID/GID the backend entrypoint chowns `DATA_DIR` to, for bind-mount file ownership. |
 | `NODE_ENV` | Optional | `production` | Also gates the `SESSION_SECRET` fail-fast check and secure-cookie defaults. |
-| `SESSION_MAX_AGE` | Optional | `604800000` (7 days, ms) | Session cookie max age. |
-| `SAMESITE_POLICY` | Optional | `strict` | `strict` \| `lax` \| `none`. |
+| `SESSION_MAX_AGE` | Optional | `604800000` (7 days, ms) | Session cookie max age. Invalid/non-positive values silently fall back to the default (`app.ts`). |
+| `SAMESITE_POLICY` | Optional | `strict` | `strict` \| `lax` \| `none`. Any other value silently falls back to `strict`. |
 | `SECURE_COOKIES` | Optional | `false` (`true` when `NODE_ENV=production` unless explicitly set to `false`) | Marks session/CSRF cookies `Secure` — requires HTTPS. |
+| `RATE_LIMIT_MAX` | Optional | `300` | Max requests per 15-minute window for the general API rate limiter (`backend/src/middleware/rateLimiter.ts`), mounted on all of `/api`. |
+| `AUTH_RATE_LIMIT_MAX` | Optional | `10` | Max requests per 15-minute window for the stricter auth rate limiter (`POST /api/auth/login`). Raise this for e2e/load-testing runs that legitimately log in many times in one window — see `AGENTS.md`'s Testing Patterns. |
 | `NTFY_BASE_URL` | Optional | unset (notifications disabled) | Base URL of an ntfy server (e.g. `https://ntfy.sh`). Unset = notifications silently no-op, logged once at startup. |
 | `VITE_API_URL` | Optional | empty (relative URLs, nginx proxies `/api/*`) | Set only if the frontend needs to reach a backend on a different origin. |
-| `CORS_ORIGIN` | Optional | `http://localhost:3002` | Now consumed by the CORS middleware in `app.ts` (fixed 2026-07-10 — was passed through but ignored since the v1-rewrite). Set it to your actual frontend origin if it differs from the default. |
+| `VITE_DEBUG` | Optional | `false` | Written into the frontend's runtime `window.APP_CONFIG.debug` by `frontend/docker-entrypoint.sh`. |
+| `CORS_ORIGIN` | Optional | `http://localhost:3002` | Consumed by the CORS middleware in `app.ts` (fixed 2026-07-10 — was passed through but ignored since the v1-rewrite). Set it to your actual frontend origin if it differs from the default. |
 | `LOG_LEVEL` | Passed through, **not consumed** | `info` | No logging library reads this in the current backend (console logging only). |
 
 ## Version Bumps
@@ -53,7 +57,7 @@ Single `.env` file at the project root (copy from `backend/.env.example` as a st
 `backend/package.json` and `frontend/package.json` must always carry identical version numbers — this is the single source of truth. After bumping both:
 
 1. Update `.env`'s `APP_VERSION` to match (or just run `./docker-compose.sh up --build -d`, which syncs it automatically)
-2. CI/CD workflows read `APP_VERSION` to tag Docker images pushed to `ghcr.io/thitar/chore-ganizer-{backend,frontend}`
+2. Rebuild and (if publishing) push images yourself — **there is no CI/CD workflow that builds, tags, or pushes Docker images** to `ghcr.io/thitar/chore-ganizer-{backend,frontend}` despite the image naming convention implying a registry pipeline. `.github/workflows/security.yml` is the only workflow in the repo, and it only runs CodeQL, `npm audit`, Gitleaks, Semgrep, and a Trivy filesystem scan against source — it never builds an image or touches `ghcr.io`. If you want published images, that pipeline needs to be built; today, `APP_VERSION` only flows into local image tags via `docker-compose.sh`/`docker compose build`.
 
 Note the root `package.json` (used only for Playwright e2e tooling) has its own independent, currently out-of-sync version field — it is not part of this contract and doesn't need to match.
 
@@ -97,24 +101,27 @@ This is a documented gap, not an oversight to paper over — scheduled backups a
 
 ## Logs
 
-Both containers log to stdout only — `docker compose logs -f backend` / `docker compose logs -f frontend`. There is no separate log file, log rotation config, or structured/JSON logging in the current backend (plain `console.log`/`console.warn`).
+Both containers log to stdout only — `docker compose logs -f backend` / `docker compose logs -f frontend`. There is no separate log file, log rotation config, or structured/JSON logging in the current backend (plain `console.log`/`console.warn`). `LOG_LEVEL` is passed through by `docker-compose.yml` but nothing in the backend reads it.
 
 ## Common Troubleshooting
 
 **`SESSION_SECRET must be set when NODE_ENV=production` at startup**
-The backend now fails fast instead of silently falling back to an insecure dev secret (added after a security review). Set `SESSION_SECRET` in `.env` (generate with `openssl rand -base64 32`) and restart.
+The backend fails fast instead of silently falling back to the insecure dev secret (added after a security review). Set `SESSION_SECRET` in `.env` (generate with `openssl rand -base64 32`) and restart.
 
 **CSRF errors on every mutating request (403 "Invalid CSRF token"), UI otherwise looks fine**
 Historically caused by a frontend API module using `axios.create()` directly instead of the shared `createApiClient()` — new instances don't inherit the CSRF-token interceptor. If you add a new `frontend/src/api/*.ts` file, it must go through `createApiClient()` (see `docs/project_notes/bugs.md`, 2026-07-08).
 
 **Sessions don't survive a backend restart**
-Expected with the current setup — sessions use `express-session`'s default in-memory store (no SQLite/Redis session store is configured), so a container restart logs everyone out. See `ARCHITECTURE.md`'s Auth Flow section.
+Expected with the current setup — sessions use `express-session`'s default in-memory `MemoryStore` (no SQLite/Redis session store is configured), so a container restart logs everyone out. See `ARCHITECTURE.md`'s Auth Flow section.
 
 **`prisma validate` / container fails to start after a schema merge**
 Check for accidentally duplicated field declarations in `schema.prisma` (has happened once after a merge — see `docs/project_notes/bugs.md`, 2026-07-04). Run `npx prisma validate` locally before pushing any schema change.
 
 **Notifications never arrive**
 Confirm `NTFY_BASE_URL` is set — if unset, ntfy sends are a deliberate silent no-op (logged once at container startup: `[ntfy] NTFY_BASE_URL not set — notifications disabled`), not a bug.
+
+**Login/e2e requests getting 403'd unexpectedly**
+Check `AUTH_RATE_LIMIT_MAX` (default 10/15min) and `RATE_LIMIT_MAX` (default 300/15min) — a full automated test run or a burst of legitimate traffic can exhaust either. Both are configurable via env for exactly this reason.
 
 ## Notification Setup
 
@@ -127,4 +134,4 @@ docker compose pull
 docker compose up -d
 ```
 
-`prisma db push --accept-data-loss` runs automatically in the backend entrypoint on every container start — schema changes apply without a manual migration step. (`--accept-data-loss` is safe here because this is a solo/family deployment where schema changes are reviewed by the same person deploying them, not an unattended production migration path — be aware it will silently drop columns/tables that a schema change removes.) The database is seeded automatically only if it's empty (checked via `prisma.user.count()`).
+`docker compose pull` only does something useful if you're pulling pre-built images from a registry you've published to yourself — see [Version Bumps](#version-bumps) above; there is no upstream registry to pull from out of the box. `prisma db push --accept-data-loss` runs automatically in the backend entrypoint on every container start — schema changes apply without a manual migration step. (`--accept-data-loss` is safe here because this is a solo/family deployment where schema changes are reviewed by the same person deploying them, not an unattended production migration path — be aware it will silently drop columns/tables that a schema change removes.) The database is seeded automatically only if it's empty (checked via `prisma.user.count()`).

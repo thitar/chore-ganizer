@@ -2,14 +2,15 @@
  * Phase 10 UAT — Profile UI + User Topic Route
  *
  * E2E tests for ntfy topic management on Profile page.
- * Screenshots to /home/thitar/dev/chore-ganizer/e2e/screenshots/phase-10/.
+ * Screenshots to e2e/screenshots/phase-10/.
  */
 
 import { test, expect, Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import { login } from './helpers/auth';
 
-const SCREENSHOTS_DIR = '/home/thitar/dev/chore-ganizer/e2e/screenshots/phase-10';
+const SCREENSHOTS_DIR = path.join(__dirname, 'screenshots', 'phase-10');
 fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 
 const DAD = { email: 'dad@home.local', password: 'password123' };
@@ -19,14 +20,6 @@ const BOB = { email: 'bob@home.local', password: 'password123' };
 
 async function shot(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `${name}.png`), fullPage: true });
-}
-
-async function login(page: Page, user: { email: string; password: string }): Promise<void> {
-  await page.goto('/login');
-  await page.fill('input[type="email"]', user.email);
-  await page.fill('input[type="password"]', user.password);
-  await page.click('button[type="submit"]');
-  await page.waitForURL('/', { timeout: 10000 });
 }
 
 async function enterTopicEditMode(page: Page): Promise<void> {
@@ -41,6 +34,12 @@ async function enterTopicEditMode(page: Page): Promise<void> {
   }
   await page.waitForTimeout(300);
 }
+
+// Serial: every test in this file mutates DAD's shared ntfyTopic (set,
+// clear, conflict-check against Mom) and depends on the previous test's
+// topic state — under the default parallel scheduling, two of these can run
+// concurrently in different workers and race on the same user's topic.
+test.describe.configure({ mode: 'serial' });
 
 test.describe('Phase 10 UAT — Profile UI + User Topic Route', () => {
   test('Test 1: Push Notifications section renders on Profile page', async ({ page }) => {
@@ -179,9 +178,11 @@ test.describe('Phase 10 UAT — Profile UI + User Topic Route', () => {
     const toast = page.locator('text=Topic saved!');
     await expect(toast).toBeVisible({ timeout: 5000 });
     
-    // After save, edit mode closes — verify view mode shows empty state
-    const emptyState = page.locator('text=Topic required for notifications');
-    await expect(emptyState).toBeVisible({ timeout: 5000 });
+    // After save, edit mode closes; with no topic set, ProfilePage renders
+    // its empty state directly (the input + "Generate random topic" button),
+    // not a separate "not set" message.
+    const generateButton = page.locator('button:has-text("Generate random topic")');
+    await expect(generateButton).toBeVisible({ timeout: 5000 });
     
     await shot(page, '05-topic-cleared');
   });
@@ -216,29 +217,31 @@ test.describe('Phase 10 UAT — Profile UI + User Topic Route', () => {
   test('Test 6: Edit child topic flow', async ({ page }) => {
     await login(page, DAD);
     await page.goto('/profile');
-    
+
     await page.waitForSelector('h2:has-text("My Profile")', { timeout: 10000 });
     await page.waitForTimeout(1000);
-    
-    // Find and click Edit button for Alice
-    const editButtons = page.locator('button:has-text("Edit")');
-    const editButtonCount = await editButtons.count();
-    expect(editButtonCount).toBeGreaterThanOrEqual(1);
-    
-    await editButtons.first().click();
-    
+
+    // Scope to Alice's Family Topics card specifically — the logged-in
+    // user's own (possibly-empty) topic section also renders a Save button
+    // by default when they have no topic set yet, so an unscoped
+    // `button:has-text("Save")` can match two elements.
+    const aliceCard = page.locator('div.rounded-xl.bg-white\\/5', { hasText: 'Alice' });
+    const editButton = aliceCard.locator('button:has-text("Edit")');
+    await expect(editButton).toBeVisible({ timeout: 5000 });
+    await editButton.click();
+
     // Verify inline edit mode appears
-    const saveButton = page.locator('button:has-text("Save")');
-    const cancelButton = page.locator('button:has-text("Cancel")');
-    
+    const saveButton = aliceCard.locator('button:has-text("Save")');
+    const cancelButton = aliceCard.locator('button:has-text("Cancel")');
+
     await expect(saveButton).toBeVisible({ timeout: 5000 });
     await expect(cancelButton).toBeVisible({ timeout: 5000 });
-    
+
     await shot(page, '07-inline-edit-mode');
-    
+
     // Click Cancel
     await cancelButton.click();
-    
+
     // Verify edit mode closes
     await expect(saveButton).not.toBeVisible({ timeout: 5000 });
   });
