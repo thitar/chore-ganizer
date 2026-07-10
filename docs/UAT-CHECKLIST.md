@@ -52,6 +52,7 @@ Click-through verification for a running Chore-Ganizer instance. Each item is a 
 - [ ] Adjust with a negative amount → balance decreases, shown in red; positive entries shown in green
 - [ ] As a child, confirm the **Adjust Points** form is **not** visible (parent-only)
 - [ ] Leaderboard (visible on Dashboard and Points page) updates to reflect the new balances
+- [ ] Log in as Alice (child) and confirm she can also see the leaderboard with everyone's balances — this is deliberate (family-visible, not parent-only), not a bug to report
 
 ## 6. Gamification
 
