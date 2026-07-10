@@ -1,14 +1,33 @@
 import express from 'express'
 import session from 'express-session'
 import cookieParser from 'cookie-parser'
+import helmet from 'helmet'
+import cors from 'cors'
 import routes from './routes/index'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler'
 import { csrfProtection } from './middleware/csrf'
+import { generalLimiter } from './middleware/rateLimiter'
 
 const app = express()
 
 // Trust proxy for production (behind reverse proxy)
 app.set('trust proxy', 1)
+
+// Security headers
+app.use(helmet())
+
+// CORS — only relevant when the frontend isn't served same-origin via the
+// nginx proxy (e.g. VITE_API_URL pointing at a different host); credentials
+// must be allowed since auth relies on session + CSRF cookies.
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3002',
+  credentials: true,
+}))
+
+// General API rate limit — brute-force/abuse protection. Account lockout is
+// deliberately out of scope (see AGENTS.md); a stricter limit is applied to
+// /api/auth/login specifically.
+app.use('/api', generalLimiter)
 
 // Body parsing with size limits
 app.use(express.json({ limit: '10kb' }))

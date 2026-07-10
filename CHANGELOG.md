@@ -5,6 +5,62 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-07-09
+
+"Teen Appeal Redesign" — shipped as two milestones, M1 (frontend) then M2 (backend), via PRs #142 and #146.
+
+### Added
+- Dark-only design system with new UI primitives and motion components (M1)
+- `TopNav`/`BottomTabBar`/`AppShell` layout, all 10 pages restyled; legacy `NavBar` removed (M1)
+- Family leaderboard endpoint (`GET /api/points/leaderboard`) and UI, visible to all authenticated roles (M1)
+- Weekly streaks (lazily computed, cached on `User`), levels computed from lifetime `EARNED`+`BONUS` points across 10 thresholds, an 8-badge catalog with `UserBadge` table and fire-and-forget ntfy award on chore completion (M2)
+- Level-up and badge-earned toast notifications with confetti (M2)
+- CSRF protection (double-submit cookie middleware) — added as a CodeQL-driven security fix alongside M2, not part of the original M2 scope
+
+### Fixed
+- Various PR #146 follow-up items and self-review findings across three independent review passes
+
+## [3.1.0] - 2026-07-04
+
+"Notifications (ntfy.sh)" milestone.
+
+### Added
+- ntfy.sh push notification integration: transport service, message formatters, Prisma schema migration for notification state
+- Per-user `ntfyTopic` profile setting (`PUT /api/users/me/ntfy-topic`), Zod-validated as a 12–64 char token
+- Chore-assigned notification trigger, fired on `assignment.service.create`
+- Lazy "due-soon" notification sweep, piggybacked on the existing assignment-listing query (no cron job)
+
+### Fixed
+- Test spy isolation leak from `jest.resetModules()` polluting shared module state across tests
+- Due-date timezone mismatch — construct due dates in UTC to avoid off-by-one-day comparisons
+- Duplicate-notification race on due-soon sweep — resolved via optimistic write
+- `AbortController`-based fetch timeout instead of `AbortSignal.timeout()` for Node 18 compatibility
+
+## [3.0.0] - 2026-06-29
+
+The "v1-rewrite" (Simplified Rebuild) milestone — a full rewrite of both `backend/` and `frontend/`, replacing the pre-rewrite codebase in place (preserved for reference as `backend-v1-archive/`/`frontend-v1-archive/` until the 2026-07-10 repo cleanup removed them; git tag `v2.1.9` marks the last pre-rewrite commit).
+
+Two untagged milestones shipped on the old codebase before this rewrite began: **v2.1.10** (Codebase Remediation) and **v2.2.0** (Admin Dashboard) — see `.planning/milestones/v2.1.10-ROADMAP.md` and `MILESTONES.md` for their history. Notable changes from that period, folded into this rewrite's baseline:
+- User color customization with auto-save notification settings
+- Rate limit admin visibility UI, general API rate limit raised from 100 to 300 req/15min
+- Configurable `BACKEND_PORT` and bind-mount `PUID`/`PGID` for host ownership matching
+- SQLite session store removed after it caused crashes on Node 25 (sessions now use `express-session`'s in-memory store — see `docs/ARCHITECTURE.md`'s Auth Flow section for the current tradeoff)
+- `@swagger` JSDoc generation tooling added, then removed again in this rewrite's Phase 8 (see `AGENTS.md`'s "API Documentation" section)
+
+### Added
+- Rewritten backend: Express + TypeScript + Prisma + SQLite, thin routes calling services directly (no controller layer)
+- Rewritten frontend: React + TypeScript + Vite + Tailwind, TanStack Query for server state
+
+### Changed
+- Points model simplified: dropped the old `PointTransaction`-based banking/pocket-money system for a lightweight append-only `PointLog`
+- Recurring chore occurrences generated lazily on demand instead of via a cron job
+- Recurring chore assignment is fixed-only for now; round-robin/mixed rotation deferred (tracked in `.planning/STATE.md` Deferred Items)
+
+### Removed
+- Pocket money / currency conversion feature
+- Overdue penalty auto-deduction feature
+- Account lockout after failed login attempts
+
 ## [2.1.9] - 2026-03-19
 
 ### Added

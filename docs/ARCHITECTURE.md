@@ -1,0 +1,111 @@
+# Architecture
+
+System design reference for Chore-Ganizer. For "how do I run this", see [OPERATIONS.md](./OPERATIONS.md). For AI-agent-specific conventions, see [../AGENTS.md](../AGENTS.md).
+
+## Overview
+
+Chore-Ganizer is a family chore tracker: parents create and assign chores, children complete them and earn points, with recurring chores, a points/gamification layer (streaks, levels, badges), and push notifications. It's built for homelab/self-hosted deployment by a single family, not multi-tenant SaaS.
+
+**Core value:** any family member can open the app, see their chores for today, and complete them — without the app requiring a devops engineer to maintain.
+
+## Stack
+
+**Backend:** Express + TypeScript, Prisma ORM, SQLite, Jest (unit tests), `ts-node` for dev, `tsc` for build.
+
+**Frontend:** React 18 + TypeScript, Vite, Tailwind CSS, TanStack Query (`@tanstack/react-query`) for server state, React Router v6, Vitest + React Testing Library.
+
+**Auth:** `express-session` (see [Auth Flow](#auth-flow) below for session store caveats), `bcrypt` for password hashing, a hand-rolled double-submit-cookie CSRF middleware (`backend/src/middleware/csrf.ts`) — not a library like `csurf`.
+
+## Monorepo Layout
+
+| Path | Contents |
+|---|---|
+| `backend/` | Express API — routes, controllers, services, Prisma schema |
+| `frontend/` | React + Vite web app |
+| `e2e/` | Playwright end-to-end specs, run from the repo root |
+| `docs/` | This document, OPERATIONS.md, project_notes/ (bugs/decisions/key_facts/issues memory system) |
+| `.planning/` | Historical phase-based planning docs (GSD workflow) — not part of the app |
+| `docs/superpowers/plans/` | Implementation plans for in-progress or planned work |
+
+## Backend Structure
+
+`backend/src/`:
+- **`app.ts`** — Express app construction and middleware registration (see [exact order](#middleware-order) below)
+- **`server.ts`** — HTTP server bootstrap, listens on `PORT`, graceful shutdown on `SIGTERM`/`SIGINT`
+- **`routes/`** — one file per resource (`health`, `auth`, `templates`, `assignments`, `users`, `recurring`, `occurrences`, `points`), mounted under `/api/*` in `routes/index.ts`
+- **`services/`** — business logic; routes call services directly (there is no separate controller layer in the current backend — routes are thin wrappers around service calls)
+- **`middleware/`** — `auth.ts` (session-based `authenticate`/`authorize`), `csrf.ts`, `errorHandler.ts`, `validator.ts` (Zod-schema-driven request validation)
+- **`schemas/`** — Zod schemas consumed by `validate()` middleware
+- **`config/`** — `prisma.ts` (Prisma client singleton), `notifications.ts` (ntfy config)
+- **`prisma/schema.prisma`** — single source of truth for the DB model
+
+### Middleware order
+
+Verified against `backend/src/app.ts`:
+
+1. `helmet()` — security headers
+2. `cors()` — honors `CORS_ORIGIN`, `credentials: true` (needed since auth relies on session + CSRF cookies)
+3. General rate limiter (`generalLimiter`, mounted on `/api`; 300 req/15min)
+4. `express.json()` / `express.urlencoded()` (10kb body size limit)
+5. `cookie-parser`
+6. `express-session`
+7. Custom CSRF middleware (`csrfProtection`, mounted on `/api`)
+8. API routes (mounted on `/api`) — `POST /api/auth/login` additionally has its own stricter `authLimiter` (10 req/15min), the substitute defense for the deliberately-excluded account lockout feature
+9. 404 handler
+10. Global error handler
+
+**History note:** `helmet`, `cors`, and `express-rate-limit` were in `backend/package.json` since the v1-rewrite but were never wired into `app.ts` — confirmed via `.planning/milestones/v1-rewrite-REQUIREMENTS.md`'s "Out of Scope" table (which has explicit reasoning for every deliberate cut, e.g. CSRF, account lockout) to be an accidental gap rather than a reasoned exclusion; fixed 2026-07-10. The in-memory session store (no persistence across restarts) predates the rewrite — a Node 25 crash workaround on the old codebase — and remains a known, deliberately undeferred gap; see `docs/OPERATIONS.md` for the tradeoff.
+
+## Frontend Structure
+
+- **`App.tsx`** — route definitions via React Router v6. Most routes require auth (`ProtectedRoute`); `/templates`, `/recurring-chores`, `/assignments`, `/users` additionally require `requiredRole="PARENT"`.
+- **`api/`** — one file per domain (`auth`, `templates`, `assignments`, `users`, `recurring`, `points`, `calendar`), each built via `createApiClient()` in `frontend/src/lib/apiClient.ts`.
+- **`hooks/`** — TanStack Query hooks per domain (`useAuth`, `useAssignments`, `useTemplates`, `useUsers`, `useRecurringChores`, `usePoints`, `useCalendar`).
+
+**Why `createApiClient()` exists:** every API module must build its axios instance through this shared factory, never `axios.create()` directly. A 2026-07-08 bug (see `docs/project_notes/bugs.md`) traced every mutating request silently failing CSRF validation back to `axios.create()` instances not inheriting the default instance's `x-xsrf-token` interceptor — each instance has its own independent interceptor chain. `createApiClient()` applies the CSRF interceptor per-instance so this can't regress silently.
+
+## Data Model
+
+Core entities (`backend/prisma/schema.prisma`):
+
+- **User** — `role` (`PARENT` | `CHILD`), `color`, `ntfyTopic` (nullable, unique — per-user push notification channel), `streakCount` + `streakComputedAt` (lazily computed weekly streak)
+- **ChoreTemplate** — reusable chore definition (`title`, `points`, `category`), owned by the parent who created it (`createdById`)
+- **ChoreAssignment** — one-off instance of a template assigned to a user; `status` (`PENDING` | `COMPLETED` | `PARTIALLY_COMPLETE`), `dueNotifiedAt` (dedup flag for due-soon notifications), `pointsAwarded`
+- **RecurringChore** — a recurrence rule (`frequency`, `dayOfWeek`, `dayOfMonth`) assigned to one fixed user (`assignedToId`). **Only fixed assignment is implemented** — round-robin/mixed rotation is a deferred feature (see `.planning/STATE.md` Deferred Items), despite older docs describing it as shipped.
+- **RecurringOccurrence** — a generated instance of a `RecurringChore` for a specific due date; `recurringChoreId` is nullable with `onDelete: SetNull` so completed occurrences survive deletion of their parent recurrence rule (history-preserving)
+- **PointLog** — append-only ledger, not a mutable balance. `type` values actually in use: `EARNED`, `BONUS`, `ADJUSTMENT`, `RECURRING`, `REGULAR`, `REVERSED`. There is no `PointTransaction` model and no pocket-money/currency conversion feature in the current backend — points are tracked as a simple integer log, not a banking system. (An older pre-rewrite backend had pocket money, overdue penalties, and a `PointTransaction` model; none of that carried over into the v1-rewrite.)
+- **UserBadge** — badge catalog award record (`userId` + `badgeId`, unique together), cascade-deletes with the user
+
+Lifetime points (for levels) are computed via `pointLog.aggregate()` summing positive amounts — see `services/gamification.service.ts`.
+
+## Auth Flow
+
+1. `POST /api/auth/login` → validates credentials with `bcrypt`, sets a session cookie
+2. Every response ensures an `XSRF-TOKEN` cookie is set (`csrfProtection` middleware, first request or if missing)
+3. All mutating requests (`POST`/`PUT`/`PATCH`/`DELETE`) must include the `x-xsrf-token` header matching the cookie value, or the request is rejected with 403
+4. `middleware/auth.ts` → `authenticate` validates the session against the DB (`prisma.user.findUnique`); `authorize(...roles)` gates parent-only routes
+
+**Session store caveat:** `express-session` is configured with no explicit store, which means it defaults to the in-memory `MemoryStore` — sessions do **not** persist across backend restarts/redeploys, and `MemoryStore` is explicitly not recommended for production by `express-session` itself (unbounded memory growth). This works fine for the single-family/low-traffic homelab use case this app targets, but is worth knowing before assuming "logged in" survives a container restart.
+
+**CSRF cookie literal-string rule:** `csrf.ts` sets `res.cookie('XSRF-TOKEN', ...)` with the cookie name as an inline string literal rather than the `CSRF_COOKIE` constant, specifically so CodeQL's `js/missing-token-validation` check (which only resolves literal arguments, not constant-propagated ones) recognizes this as CSRF middleware. Don't "clean this up" — see `AGENTS.md` and `docs/project_notes/bugs.md` (2026-07-08).
+
+## Notification Flow
+
+Push notifications go through [ntfy.sh](https://ntfy.sh) (or a self-hosted ntfy server) via `NTFY_BASE_URL`. Pattern is fire-and-forget: `void sendNtfy(...)` is called from a service, never `await`ed in a route handler, and all errors are caught inside `notification.service.ts` so a notification failure never fails the underlying request. If `NTFY_BASE_URL` is unset, `isNtfyConfigured` is `false` and sends silently no-op (logged once at startup, not per-request).
+
+Triggered from: chore assigned, chore due soon (lazy sweep piggybacked on the existing assignment-listing query, no cron job), and badge earned.
+
+There is no email/SMTP notification channel, no in-app notification center, and no per-event notification toggles in the current backend — ntfy push is the only channel.
+
+## Key Architectural Decisions
+
+Pulled from `.planning/STATE.md`'s Accumulated Context (the permanent home for these now, rather than a milestone-scoped state file):
+
+- **Rewrite, not refactor** — the pre-v1-rewrite codebase (200+ files with cascading imports) was fully replaced rather than incrementally migrated; archived history is preserved via git tags `v2.1.9`/`v3.0.0`, not in the working tree.
+- **Lazy occurrence generation** — no cron job generates recurring chore occurrences; they're generated on demand when a user views the upcoming period.
+- **Points as integer + simple log** — deliberately dropped the old `PointTransaction`-based banking/pocket-money system in favor of a lightweight append-only `PointLog`.
+- **`SetNull` on `RecurringOccurrence.recurringChoreId`** — preserves completed occurrence history when a parent `RecurringChore` is deleted.
+- **Fire-and-forget notifications** — `void sendNtfy(...)`, never awaited in a route; all errors caught inside the service (see [Notification Flow](#notification-flow)).
+- **Single `User.ntfyTopic` column** — nullable + unique; per-user topic isolation is the multi-tenant boundary, `null` means silent no-op for that user.
+- **Dark-only design system** — no light theme; the target audience (teens) doesn't need one, and one theme done well beats two done half-well.
+- **CSRF added later, deliberately** — the original rewrite decision was "SameSite cookies, no CSRF, private network eliminates the threat"; a double-submit-cookie CSRF middleware was added afterward as a CodeQL-driven security fix (see `docs/project_notes/bugs.md`, 2026-07-08 entries) and is now load-bearing — don't remove it based on the original "private network" reasoning.
