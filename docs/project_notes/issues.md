@@ -12,6 +12,17 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-07-10 — Refreshed the e2e suite for M1/M2, added CSRF coverage, closed two rate-limit/M1 regressions
+
+- **Status**: Completed
+- **Description**: Implemented `docs/superpowers/plans/2026-07-09-uat-plan.md`. The `e2e/` Playwright suite predated the entire v3.2.0 milestone and was completely broken against the current app — audited first (ran the full suite cold), found it 100% blocked by two things: (1) the M1 redesign moved parent-only nav links behind a "Manage" dropdown and made logout icon-only, breaking every nav-click helper; (2) far more fundamentally, PR #149's new login rate limiter (10 req/15min) was hit almost immediately since every one of the suite's ~60 tests independently drove the login form. Fixed the root cause with a shared `e2e/auth.setup.ts` that logs in once per seeded user and replays the session via browser storage state (`e2e/helpers/auth.ts`), instead of one login per test. Also found and fixed a second self-inflicted issue: once CSRF-token attachment was fixed on raw `fetch()` calls, a test's explicit logout call started actually succeeding and destroying the shared replayed session for every later test in the suite — removed it, since switching identity via the shared login() (cookie replacement) needs no logout first.
+- Also fixed: several stale light-theme-era selectors (`bg-red-50`, `text-gray-600`) left over from before the M1 dark redesign, one hardcoded June-2026 date assumption in `path-a-regression.spec.ts` (same class of bug documented in this file's 2026-07-04 entries, just not caught until July actually arrived), and a cross-test race in `phase-10-uat.spec.ts` (serialized — every test in that file mutates the same shared user's ntfy topic).
+- Added `e2e/m1-the-look.spec.ts` (dark theme, TopNav/BottomTabBar, Leaderboard) and `e2e/m2-the-game.spec.ts` — the latter is the first automated coverage that would have caught the PR #146 CSRF-interceptor bug, since backend unit tests bypass CSRF under `NODE_ENV=test` and frontend unit tests mock axios entirely.
+- Made `RATE_LIMIT_MAX`/`AUTH_RATE_LIMIT_MAX` configurable via env (defaults unchanged) so a full e2e run's legitimate API volume doesn't collide with PR #149's rate limiting.
+- Added `docs/UAT-CHECKLIST.md` for manual click-through verification.
+- **Tests**: e2e suite went from 6 passing / 53 failing (cold) to 71/71 passing, confirmed clean across multiple repeat runs.
+- **URL**: https://github.com/thitar/chore-ganizer (see docs/superpowers/plans/2026-07-09-uat-plan.md)
+
 ### 2026-07-10 — Closed out the deferred `lifetimePoints` caching item (PR #146 round 3, fix/m2-followups)
 
 - **Status**: Completed
