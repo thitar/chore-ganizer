@@ -2,7 +2,7 @@
 
 Click-through verification for a running Chore-Ganizer instance. Each item is a concrete action and its expected result — check items off as you go.
 
-**Before you start:** bring the app up via `docker compose up -d` (see [OPERATIONS.md](./OPERATIONS.md#starting-the-app)) against a throwaway/dev database, never production data. Seeded accounts (verify against `backend/prisma/seed.ts` if these have changed):
+**Before you start:** bring the app up via `docker compose up --build -d` (see [OPERATIONS.md](./OPERATIONS.md#starting-the-app)) against a throwaway/dev database, never production data. The `--build` flag matters here — plain `docker compose up -d` only builds an image if one doesn't already exist for that service; if you've built before, it silently reuses the old image instead of picking up the code you're actually trying to verify. Seeded accounts (verify against `backend/prisma/seed.ts` if these have changed):
 
 | Role | Email | Password |
 |---|---|---|
