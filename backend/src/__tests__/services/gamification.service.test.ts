@@ -55,20 +55,47 @@ describe('computeLevel', () => {
   })
 })
 
-describe('getLifetimePoints', () => {
-  it('sums all positive amount logs', async () => {
-    prisma.pointLog.aggregate.mockResolvedValue({ _sum: { amount: 140 } })
+describe('getLifetimePoints (cache)', () => {
+  it('backfills from the real aggregate when never synced (lifetimePointsSyncedAt is null)', async () => {
+    prisma.user.findUnique.mockResolvedValue({ lifetimePoints: 0, lifetimePointsSyncedAt: null })
+    prisma.pointLog.aggregate.mockResolvedValue({ _sum: { amount: 340 } })
+    prisma.user.update.mockResolvedValue({})
+
     const total = await gamification.getLifetimePoints(3)
-    expect(total).toBe(140)
+
+    expect(total).toBe(340)
     expect(prisma.pointLog.aggregate).toHaveBeenCalledWith({
       where: { userId: 3, amount: { gt: 0 } },
       _sum: { amount: true },
     })
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 3 },
+      data: { lifetimePoints: 340, lifetimePointsSyncedAt: expect.any(Date) },
+    })
   })
 
-  it('returns 0 when there are no logs', async () => {
+  it('backfills to 0 when never synced and there is no positive history', async () => {
+    prisma.user.findUnique.mockResolvedValue({ lifetimePoints: 0, lifetimePointsSyncedAt: null })
     prisma.pointLog.aggregate.mockResolvedValue({ _sum: { amount: null } })
+    prisma.user.update.mockResolvedValue({})
+
     expect(await gamification.getLifetimePoints(3)).toBe(0)
+  })
+
+  it('returns the cached value without querying pointLog when already synced', async () => {
+    prisma.user.findUnique.mockResolvedValue({ lifetimePoints: 340, lifetimePointsSyncedAt: new Date() })
+
+    const total = await gamification.getLifetimePoints(3)
+
+    expect(total).toBe(340)
+    expect(prisma.pointLog.aggregate).not.toHaveBeenCalled()
+    expect(prisma.user.update).not.toHaveBeenCalled()
+  })
+
+  it('returns 0 for a user that does not exist', async () => {
+    prisma.user.findUnique.mockResolvedValue(null)
+    expect(await gamification.getLifetimePoints(999)).toBe(0)
+    expect(prisma.pointLog.aggregate).not.toHaveBeenCalled()
   })
 })
 
@@ -194,7 +221,10 @@ describe('evaluateBadges', () => {
     prisma.user.findUnique.mockResolvedValue({
       streakCount: 0,
       streakComputedAt: new Date(),
+      lifetimePoints: 0,
+      lifetimePointsSyncedAt: null,
     })
+    prisma.user.update.mockResolvedValue({})
   })
 
   it('awards first-chore and early-bird for one early completion', async () => {
@@ -230,6 +260,8 @@ describe('evaluateBadges', () => {
     prisma.user.findUnique.mockResolvedValue({
       streakCount: 4,
       streakComputedAt: new Date(),
+      lifetimePoints: 0,
+      lifetimePointsSyncedAt: null,
     })
     const earned = await gamification.evaluateBadges(3)
     expect(earned.map((b) => b.id)).toContain('four-week-streak')
@@ -273,7 +305,10 @@ describe('getGamification', () => {
     prisma.user.findUnique.mockResolvedValue({
       streakCount: 2,
       streakComputedAt: new Date(),
+      lifetimePoints: 0,
+      lifetimePointsSyncedAt: null,
     })
+    prisma.user.update.mockResolvedValue({})
     prisma.pointLog.aggregate.mockResolvedValue({ _sum: { amount: 85 } })
     prisma.userBadge.findMany.mockResolvedValue([
       { badgeId: 'first-chore', earnedAt: new Date('2026-07-01T10:00:00Z') },
@@ -304,6 +339,7 @@ describe('awardBadges', () => {
     prisma.userBadge.findMany.mockResolvedValue([])
     prisma.userBadge.create.mockResolvedValue({})
     prisma.user.findUnique
+      .mockResolvedValueOnce({ lifetimePoints: 0, lifetimePointsSyncedAt: new Date() }) // getLifetimePoints (collectStats invokes this before getStreak)
       .mockResolvedValueOnce({ streakCount: 0, streakComputedAt: new Date() }) // getStreak
       .mockResolvedValueOnce({ ntfyTopic: 'alice-topic-123' }) // topic lookup
 
