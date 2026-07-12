@@ -5,8 +5,8 @@ import { defineConfig, devices } from '@playwright/test';
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  // Test directory
-  testDir: './e2e',
+  // Test directory (this config lives in e2e/ itself)
+  testDir: '.',
 
   // Run tests in parallel
   fullyParallel: true,
@@ -65,16 +65,16 @@ export default defineConfig({
     },
   ],
 
-  // Start servers automatically
+  // Start servers automatically (paths relative to this config file, in e2e/)
   webServer: [
     {
-      command: 'cd backend && npm run dev',
+      command: 'cd ../backend && npm run dev',
       url: 'http://localhost:3010/api/health',
       reuseExistingServer: true,
       timeout: 30000,
     },
     {
-      command: 'cd frontend && npm run dev',
+      command: 'cd ../frontend && npm run dev',
       url: 'http://localhost:5173',
       reuseExistingServer: true,
       timeout: 30000,

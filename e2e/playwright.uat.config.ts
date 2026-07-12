@@ -5,7 +5,7 @@ import { defineConfig, devices } from '@playwright/test';
 // to the backend on :3010). We do NOT start dev servers (no webServer) — the
 // running containers are the system under test.
 export default defineConfig({
-  testDir: './e2e',
+  testDir: '.',
   fullyParallel: false, // many tests mutate shared seeded data; run sequentially
   forbidOnly: false,
   retries: 0,
@@ -20,7 +20,6 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     actionTimeout: 10000,
-    animations: 'disabled',
   },
   timeout: 60000,
   expect: { timeout: 6000 },
