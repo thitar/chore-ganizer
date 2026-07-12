@@ -94,6 +94,33 @@ Date-ordered Architectural Decision Records (ADRs).
 - ✅ Easy to mock in tests (one module to spy on, not two)
 - ❌ Adds one re-export line per config value used externally
 
+### ADR-006: Lazy Self-Healing Cache Pattern for lifetimePoints (2026-07-10)
+
+**Context:**
+- PR #146 deferred `User.lifetimePoints` caching, claiming "needs a schema migration + backfill against live data"
+- The app has no migration tooling — only schema-push (Prisma db push)
+- Yet `streakCount` was already cached successfully using a lazy pattern
+
+**Decision:**
+- Use the exact same nullable-sentinel pattern as `streakCount`:
+  - Add `lifetimePoints: Int` and `lifetimePointsSyncedAt: DateTime?` to User schema
+  - Treat `NULL` `lifetimePointsSyncedAt` as "never synced"; on first read, backfill from `PointLog.aggregate()`
+  - This self-heal-on-first-read *is* the backfill — no separate migration script needed
+  - Increment cache in the same transaction as every positive PointLog write (complete, adjustment, etc.)
+  - Negative entries (REVERSED, negative ADJUSTMENT) excluded, matching existing amount>0 filter semantics
+
+**Alternatives Considered:**
+- Full schema migration + offline backfill script → Rejected: not viable without migration tooling; risk of data loss
+- Lazy recomputation on read (no cache) → Too expensive; defeats the purpose
+- Keep PR #146's acceptance of duplicate queries → Fine for current scale; premature to pay migration cost
+
+**Consequences:**
+- ✅ Zero-downtime deployment: existing users self-heal on first read post-deploy
+- ✅ Matches project's existing pattern (streakCount); maintainable
+- ✅ No separate migration script; schema-push-only compatible
+- ❌ First read slightly slower (backfill query), then cached thereafter
+- ❌ Requires discipline: every positive PointLog write site must increment cache in same transaction, or cache drifts
+
 ### ADR-005: Multi-Agent Coding Setup — Hermes + Claude Code + OpenCode on docker.lab (2026-07-08)
 
 **Context:**

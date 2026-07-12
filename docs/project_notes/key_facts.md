@@ -103,9 +103,13 @@ There is no `OVERDUE_PENALTY_*`, `SLOW_REQUEST_THRESHOLD_MS`, `COMPRESSION_ENABL
 - **RecurringChore** — recurrence rule (`frequency`, `dayOfWeek`, `dayOfMonth`) assigned to one fixed user; round-robin/mixed rotation is a deferred, unimplemented feature
 - **RecurringOccurrence** — a generated instance of a `RecurringChore` for a specific due date, generated lazily on read (`generateOccurrences()` in `assignment.service.ts`), not by a scheduled/cron background job
 - **Chore statuses**: `PENDING`, `COMPLETED`, `PARTIALLY_COMPLETE`
-- **PointLog** — append-only ledger (not a `PointTransaction` model). `type` values in use: `EARNED`, `BONUS`, `ADJUSTMENT`, `RECURRING`, `REGULAR`, `REVERSED`
-- **No pocket-money/currency conversion feature** — that, plus `OverduePenalty`, existed in a pre-rewrite backend and was not carried over
-- **Gamification**: `streakCount`/`streakComputedAt` (lazy weekly streak) and `lifetimePoints`/`lifetimePointsSyncedAt` (lazy self-healing cache of the `PointLog` total) on `User`; badges via `UserBadge` + `BADGE_CATALOG` in `gamification.service.ts`
+- **PointLog** — append-only ledger (not `PointTransaction`). `type` values: `EARNED`, `BONUS`, `ADJUSTMENT`, `RECURRING`, `REGULAR`, `REVERSED`
+- **No pocket-money/currency conversion feature** — that, plus `OverduePenalty`, existed in pre-rewrite backend and was not carried over
+- **Gamification** (v3.2.0):
+  - `streakCount`/`streakComputedAt` — lazy weekly streak cache on User (re-syncs weekly)
+  - `lifetimePoints`/`lifetimePointsSyncedAt` — lazy self-healing cache of `PointLog` total (backfill on first read, then incremented at positive write sites, never re-synced)
+  - `UserBadge` table + `BADGE_CATALOG` in `gamification.service.ts` (8 badges total, never revoked)
+- **Push Notifications** (v3.1.0, optional): `User.ntfyTopic` + `dueNotifiedAt`/`completedNotifiedAt` timestamps; POST to ntfy.sh API; graceful noop if `NTFY_BASE_URL` unset
 
 ### Frontend-Backend Parameter Mapping
 

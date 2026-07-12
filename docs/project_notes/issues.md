@@ -12,6 +12,22 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-07-12 — Re-verified the UAT 54/54 claim; caught a doc bug and a host-memory false alarm along the way
+
+- **Status**: Completed — original 54/54 result reproduced and confirmed genuine
+- **Description**: Asked to check `UAT-CHECKLIST.md`/`UAT-RESULTS.md` were clean; re-running the suite to confirm the entry below's 54/54 claim exposed two problems, neither of which turned out to be an app regression. See `docs/project_notes/bugs.md`'s two 2026-07-12 entries for full root-cause detail:
+  1. The documented re-run command silently targets the wrong app (a stray `:5173` dev server) if `--config playwright.uat.config.ts` is omitted — it was omitted in `docs/UAT-RESULTS.md`, now fixed.
+  2. A corrected rerun then failed at login for 3/4 seeded users — traced to host memory pressure (~20 unrelated Docker containers competing for RAM on this shared box), not the app; confirmed by `bob`'s login succeeding and `:3002` serving 200 throughout.
+  3. Once memory pressure eased, reran with the corrected command: **54/54 PASS, 2.6 min**, including real ntfy push delivery for 7.2/7.3 — matches and confirms the prior entry's result.
+- **Notes**: `docs/UAT-RESULTS.md` now documents the full trail (original run → failed re-verification attempts → confirmed clean rerun) instead of just re-stamping a green that wasn't actually observed this session.
+- **URL**: local — `docs/UAT-RESULTS.md`, `docs/project_notes/bugs.md`
+
+### 2026-07-12 — Implemented Section 7 (Notifications) in UAT suite; full UAT run 54/54 PASS
+
+- **Status**: Completed
+- **Description**: The `e2e/uat-checklist.spec.ts` suite skipped Section 7 (Notifications). Implemented it as real ntfy push tests (7.0 env check, 7.1 set topic on profile, 7.2 chore-assigned push, 7.3 due-soon push) — verified notifications actually arrive on `chore-dad-1a54lu`. Required infra fixes discovered along the way: (1) `.env` `NTFY_BASE_URL` (renamed from `NTFY_DEFAULT_SERVER_URL`) must be passed to the backend via `docker-compose.yml` env (backend rebuilt); (2) `AUTH_RATE_LIMIT_MAX` raised to 500 — its in-memory counter persists across Playwright runs and exhausts, causing spurious "Invalid email or password"; (3) DB pollution across runs destabilized logins — must reset by deleting the host SQLite file and re-seeding from host (container runtime lacks `ts-node`); data dir must be `chmod 777/666` because container `appuser` is uid 1001 while host user is uid 1000, else "readonly database"; (4) headless Chromium crashes from `canvas-confetti` fixed via `--disable-gpu --disable-software-rasterizer` + `animations: 'disabled'`; toasts auto-dismiss in 3s so tests wait on `[role="status"]`. Final run: 54/54 PASS (~4.0 min). Created `docs/UAT-RESULTS.md` and checked off all items in `docs/UAT-CHECKLIST.md`.
+- **URL**: local — `e2e/uat-checklist.spec.ts`, `docs/UAT-RESULTS.md`
+
 ### 2026-07-10 — Refreshed the e2e suite for M1/M2, added CSRF coverage, closed two rate-limit/M1 regressions
 
 - **Status**: Completed
@@ -22,6 +38,17 @@ Date-ordered log of completed work and in-progress tickets.
 - Added `docs/UAT-CHECKLIST.md` for manual click-through verification.
 - **Tests**: e2e suite went from 6 passing / 53 failing (cold) to 71/71 passing, confirmed clean across multiple repeat runs.
 - **URL**: https://github.com/thitar/chore-ganizer (see docs/superpowers/plans/2026-07-09-uat-plan.md)
+
+### 2026-07-10 — Executed all four post-v3.2.0 implementation plans end-to-end; major cleanup and docs overhaul shipped
+
+- **Status**: Completed — all four plans executed and merged to main via PRs #148–#151
+- **Description**: Four-phase marathon session (S301–S304) executed and deployed all deferred post-v3.2.0 work:
+  - **PR #148 (Cleanup, commit 365b630)**: Removed backend-v1-archive/ + frontend-v1-archive/ (pre-rewrite scaffolds, ~11k files), plans/ + test-reports/ (old planning debris), unused data/ directory, dead playwright.p311.config.ts, outdated SWAGGER_JSDOC_GUIDE.md. Tree now reflects only v1-rewrite (v3.0.0+) codebase. 291 files deleted, 65k+ lines removed.
+  - **PR #149 (Docs Rewrite + helmet/CORS/rate-limit fix, commit bd35489)**: Shipped new ARCHITECTURE.md (system design, domain model, middleware stack, ADRs), OPERATIONS.md (env vars, startup, health/monitoring, troubleshooting, backup procedures, version bumps), refreshed README as lean entry point, trimmed AGENTS.md to agent-facing conventions only, updated CHANGELOG through v3.2.0. **ALSO implemented the helmet/CORS/rate-limit gap**: wired helmet() for security headers, cors() with CORS_ORIGIN support, general API rate limiter (300/15min on /api), and stricter login limiter (10/15min on POST /api/auth/login). All verified live (security headers present, rate-limit headers decrement, login 429s after threshold). Verified all docs against running code line-by-line.
+  - **PR #150 (Gamification Cache, commit f072576)**: Shipped lazy self-healing `User.lifetimePoints` cache (mirrors streakCount: nullable `lifetimePointsSyncedAt` sentinel, backfill on first read, no migration script needed). Transaction-wrapped all positive PointLog write sites (assignment.service.complete, recurring.service.completeOccurrence, points.service.adjustPoints) to increment cache atomically. Closes PR #146's deferred performance item. Backend tests: 256 (was 252). Updated docs/project_notes/issues.md to close out the deferred item.
+  - **PR #151 (E2E Refresh + docs sync, commit 4e56de3)**: Enhanced rate-limiter configurability via RATE_LIMIT_MAX/AUTH_RATE_LIMIT_MAX env vars (built on PR #149's implementation). Added shared e2e auth setup: e2e/auth.setup.ts logs in once per seeded user (dad/mom/alice/bob), saves storageState; e2e/helpers/auth.ts replays saved cookies instead of re-driving login form per test (fixed auth-limiter DoS where 50+ independent logins hit the 10/15min threshold). Added nav helpers (goToManageLink/logout) for M1's TopNav Manage dropdown. Added CSRF test helper (getCsrfToken). Fixed e2e regressions: stale light-theme selectors (text-gray-600→text-zinc-400), hardcoded June dates (→computed from clock), cross-test race in phase-10 (serialized ntfyTopic mutations). Fixed session-destroying logout bug: PR #149's CSRF fix made logout() actually work; removed explicit logout calls mid-test that were destroying shared session state. Added e2e/m1-the-look.spec.ts (dark theme, TopNav, leaderboard), e2e/m2-the-game.spec.ts (first automated CSRF end-to-end coverage—backend unit tests bypass CSRF under NODE_ENV=test, frontend tests mock axios). Suite: 6 passing/53 failing → 71/71 passing, stable across repeats. Added docs/UAT-CHECKLIST.md for manual click-through verification. Re-verified ARCHITECTURE.md, OPERATIONS.md, AGENTS.md, key_facts.md against current code (app.ts, routes, schema, entrypoint scripts, docker-compose.yml, .github/workflows/) and folded in findings: CI doesn't build/push Docker images (manual local step), HOST + VITE_DEBUG env vars missing from docs, Zod validation only partial (assignments/points/templates; auth/users/recurring/occurrences read req.body with no schema), role/status/type/frequency are plain Strings (no SQLite enums), RecurringOccurrence @@unique idempotency mechanism, session.userId/role typed non-optional but only after authenticate, GET /api/points/leaderboard + /gamification never documented, GamificationMoments/celebrate/ui primitives not mentioned in ARCHITECTURE.
+- **Execution**: All four plans completed, all documented issues fixed, all tests green (backend 256, frontend 106, e2e 71/71), all builds clean, all PRs code-reviewed and merged.
+- **URL**: https://github.com/thitar/chore-ganizer — commits 365b630 (#148), bd35489 (#149), f072576 (#150), 4e56de3 (#151)
 
 ### 2026-07-10 — Closed out the deferred `lifetimePoints` caching item (PR #146 round 3, fix/m2-followups)
 
