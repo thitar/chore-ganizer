@@ -1,111 +1,157 @@
-<!-- refreshed: 2026-07-04 -->
+---
+title: Architecture
+last_mapped_commit: HEAD
+date: 2026-07-12
+---
+
 # Architecture
 
-**Analysis Date:** 2026-07-04
+## Overall Pattern
 
-## System Overview
+**Monorepo with two independent packages** — client-server architecture. `backend/` (Express API) and `frontend/` (React SPA) deployed as separate Docker containers connected by nginx reverse proxy. Not microservices — single application, two deployable units.
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                      Client Layer (React)                    │
-│         `frontend/src/pages/`, `frontend/src/components/`    │
-├──────────────────┬──────────────────┬───────────────────────┤
-│   API Client     │   Domain Hooks   │      Router           │
-│  `api/*.api.ts`  │  `hooks/use*.tsx`│      `App.tsx`        │
-└────────┬─────────┴────────┬─────────┴──────────┬────────────┘
-         │                  │                    │
-         ▼                  ▼                    ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    API Gateway (Express)                     │
-│         `backend/src/routes/`                                │
-└──────────────────────────┬──────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Business Logic (Services)                 │
-│         `backend/src/services/`                              │
-└──────────────────────────┬──────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Data Layer (Prisma + SQLite)              │
-│         `backend/prisma/schema.prisma`                       │
-└─────────────────────────────────────────────────────────────┘
+## Backend Layer Structure
+
+**Pattern: Routes → Services → Prisma ORM → SQLite**
+
+```
+HTTP Request
+  → Express Router (routes/*.ts)         [thin: extracts params, calls service, wraps response]
+    → Service functions (services/*.ts)  [all business logic]
+      → Prisma Client (config/prisma.ts) [singleton PrismaClient]
+        → SQLite database
 ```
 
-## Component Responsibilities
+- **Routes** define endpoints, apply middleware (`authenticate`, `authorize`, `validate`), extract params, call services. No business logic.
+- **Services** are plain exported functions (not classes). Each file is a module of related functions.
+- **Schemas** (Zod) used by `validate()` middleware on 3 of 8 route files. Others read `req.body` directly.
+- **Middleware** is modular: `auth.ts`, `csrf.ts`, `errorHandler.ts`, `rateLimiter.ts`, `validator.ts`.
 
-| Component | Responsibility | File |
-|-----------|----------------|------|
-| Routes | HTTP routing | `backend/src/routes/` |
-| Services | Business logic | `backend/src/services/` |
-| Middleware| Security/Auth/Err| `backend/src/middleware/` |
-| API | Data fetching | `frontend/src/api/` |
-| Hooks | Domain state | `frontend/src/hooks/` |
-| Pages | UI/Routing | `frontend/src/pages/` |
+## Frontend Layer Structure
 
-## Pattern Overview
+**Pattern: Pages → Components + Hooks → API layer → Backend**
 
-**Overall:** Layered Monolith (Backend) / Component-Driven (Frontend)
+```
+React Component (pages/*.tsx)
+  → Custom Hook (hooks/use*.tsx)          [TanStack Query useQuery/useMutation]
+    → API module (api/*.api.ts)           [axios via createApiClient()]
+      → createApiClient() (lib/apiClient.ts) [CSRF interceptor]
+        → Backend /api/* endpoints
+```
 
-**Key Characteristics:**
-- Separation of HTTP/transport layer from business logic.
-- Domain-driven service organization.
-- Strict API/backend communication via defined domain API files.
+- **Pages** are top-level route components, wrapped in `<AppShell>` (TopNav + BottomTabBar + GamificationMoments).
+- **Components**: `components/ui/` (design primitives) and `components/` (page-level composites).
+- **Hooks** wrap TanStack Query for each domain. `useAuth` uses React Context.
+- **API modules** one per domain, each via `createApiClient()`. Parameter mapping happens here.
+- **Utils** (`assignmentKey.ts`, `dateFormat.ts`, `a11y.ts`) are pure helpers.
+- **Lib** (`apiClient.ts`, `csrf.ts`, `celebrate.ts`) are shared infrastructure.
 
-## Layers
+## Data Flow (Request Lifecycle)
 
-**Backend API Layer:**
-- Purpose: HTTP request handling
-- Location: `backend/src/routes/`
-- Contains: Express router definitions
-- Depends on: Services, Middleware
+**Inbound:**
+1. Client → axios (`withCredentials: true`)
+2. `helmet()` → security headers
+3. `cors()` → origin validation
+4. `generalLimiter` → rate check (300 req/15min)
+5. `express.json()` → body parse (10kb)
+6. `cookie-parser` → cookie parse
+7. `express-session` → session restore from `connect.sid`
+8. `csrfProtection` → validate `x-xsrf-token` header
+9. Route matching (`/api/*`)
+10. Per-route: `authenticate` → `authorize` → `validate`
+11. Service function → Prisma → SQLite
+12. Response: `{ success, data, error }` envelope
 
-**Backend Service Layer:**
-- Purpose: Core business rules
-- Location: `backend/src/services/`
-- Contains: TS classes/functions for data manipulation
-- Depends on: Prisma Client
-
-**Frontend API Layer:**
-- Purpose: Backend data communication
-- Location: `frontend/src/api/`
-- Contains: Axios clients with CSRF protection
-
-## Data Flow
-
-### Primary Request Path
-
-1. User interacts (e.g., clicks a chore) -> `frontend/src/pages/`
-2. UI triggers domain hook -> `frontend/src/hooks/useChores.tsx`
-3. Hook calls API client -> `frontend/src/api/assignments.api.ts`
-4. Backend route handler -> `backend/src/routes/assignments.routes.ts`
-5. Service processes logic -> `backend/src/services/assignment.service.ts`
-6. Database updated -> `backend/prisma/schema.prisma`
+**Outbound:**
+- Consistent JSON envelope: `{ success: boolean, data: T | null, error: { message, code?, details? } | null }`
+- `AppError` instances caught by `errorHandler` → appropriate status code
+- Unknown errors → 500 "Internal server error"
 
 ## Key Abstractions
 
-**Service Pattern:**
-- Purpose: Centralize business logic for entities.
-- Examples: `backend/src/services/users.service.ts`
+### Backend
+- `AppError` class (`middleware/errorHandler.ts`) — typed HTTP errors with status code
+- Prisma Client singleton (`config/prisma.ts`) — single export, imported everywhere
+- Service modules — plain exported functions, no classes
+- `BADGE_CATALOG` / `BADGE_RULES` — declarative badge definitions with evaluation functions
+- `LEVEL_THRESHOLDS` array — level computation from lifetime points
 
-**API Client Pattern:**
-- Purpose: Standardize API calls with CSRF tokens.
-- Examples: `frontend/src/api/client.ts`
+### Frontend
+- `AuthProvider` / `useAuth()` — React Context for authenticated user
+- `ProtectedRoute` — guards routes by auth state + optional role
+- `AppShell` — consistent page layout (TopNav + BottomTabBar + GamificationMoments)
+- `createApiClient()` factory — ensures every API module gets CSRF interceptor (hard requirement)
+- `celebrate()` / `GamificationMoments` — diff-based celebration system
 
 ## Entry Points
 
-**Backend Server:**
-- Location: `backend/src/server.ts`
+| Component | File |
+|-----------|------|
+| Backend HTTP server | `backend/src/server.ts` |
+| Express app construction | `backend/src/app.ts` |
+| React root | `frontend/src/main.tsx` |
+| Route definitions | `frontend/src/App.tsx` |
+| Docker Compose | `docker-compose.yml` |
+| Backend Dockerfile | `backend/Dockerfile` |
+| Frontend Dockerfile | `frontend/Dockerfile` |
 
-**Frontend App:**
-- Location: `frontend/src/main.tsx`
+## Module Graph
 
-## Architectural Constraints
+### Backend
+```
+server.ts → app.ts → routes/index.ts → routes/*.ts → services/*.ts → config/prisma.ts
+                                            |              |
+                                            |              +→ config/notifications.ts
+                                            |              +→ services/notification.service.ts
+                                            |              +→ services/gamification.service.ts
+                                            |              +→ services/recurring.service.ts
+                                            |
+                                            +→ middleware/auth.ts, csrf.ts, validator.ts, rateLimiter.ts, errorHandler.ts
+                                            +→ schemas/*.ts
+```
 
-- **Auth:** Strict PARENT/CHILD role enforcement.
-- **State:** Auth state lives in React Context (`frontend/src/hooks/useAuth.tsx`), not external state managers.
+### Frontend
+```
+main.tsx → App.tsx → pages/*.tsx → hooks/use*.tsx → api/*.api.ts → lib/apiClient.ts → lib/csrf.ts
+                     → components/ProtectedRoute.tsx → hooks/useAuth.tsx
+                     → components/AppShell.tsx → TopNav, BottomTabBar, GamificationMoments
+```
 
----
+## Auth/Authorization Flow
 
-*Architecture analysis: 2026-07-04*
+**Login:**
+1. `POST /api/auth/login` → `authLimiter` → `bcrypt.compare` → `session.regenerate()` → set `userId`/`role`
+2. Session cookie (`connect.sid`) returned
+
+**Request auth:**
+- `authenticate`: checks `req.session.userId` exists, validates user in DB
+- `authorize(...roles)`: checks `req.session.role` against allowed roles
+
+**Frontend auth:**
+- `AuthProvider` queries `GET /api/auth/me` on mount (`staleTime: Infinity`)
+- `ProtectedRoute` checks auth state: loading → spinner, 401 → redirect, role mismatch → 403
+
+## Error Handling
+
+**Backend:**
+- Services throw `AppError` with status code
+- Routes wrap in `try/catch`, call `next(err)`
+- Global `errorHandler` → `{ success: false, data: null, error: { message } }`
+- Prisma `P2025` (Record Not Found) → 404
+- Notification failures caught internally, never propagate
+
+**Frontend:**
+- API modules return typed data; `auth.api.ts` catches 401 → `AuthError`
+- Hooks expose `isLoading`, `error` from TanStack Query
+- Pages render loading skeletons or error states with retry
+- Mutation errors caught in page-level `try/catch`
+
+## State Management
+
+| Layer | Approach |
+|-------|----------|
+| Server state | TanStack Query v5 (query keys follow domain pattern) |
+| Client state | React Context (`AuthContext`) + local `useState` |
+| No Redux/Zustand | — |
+
+**Cache invalidation:** Mutations invalidate related query keys on success. `AuthProvider.logout()` calls `queryClient.clear()`.
