@@ -12,13 +12,31 @@ Date-ordered log of bugs and their solutions.
 
 ---
 
-### 2026-07-12 - UAT Suite Silently Targets Wrong App When `--config` Flag Omitted
+### 2026-07-12 - Mixed local/UTC `Date` methods in `getAll()`'s default month range
 
-- **Issue**: Re-running `docs/UAT-RESULTS.md`'s documented "How to re-run" command produced 52/54 passing with 2 odd Chromium-crash/timeout failures — looked like a real regression, but the app hadn't actually been tested
-- **Root Cause**: The documented command (`npx playwright test e2e/uat-checklist.spec.ts --project=chromium --reporter=list`) doesn't pass `--config playwright.uat.config.ts`. Playwright then falls back to the repo's *other* `playwright.config.ts` (used for frontend dev-server e2e work), whose `baseURL` is `http://localhost:5173`. A leftover `vite` dev server happened to be running on that port from an unrelated session, so the suite silently tested it instead of the Docker deployment on `:3002` — no error, no warning, just the wrong target. The 2 failures were themselves artifacts of the wrong config (missing `--disable-gpu` launch args; default 30s test timeout too short for a 30s ntfy poll), not app bugs
-- **Solution**: Always pass `--config playwright.uat.config.ts` explicitly. No npm script (`test:e2e`, `test:e2e:chromium`) supplies it either — added the flag to `docs/UAT-RESULTS.md`'s re-run command
-- **Prevention**: When two Playwright configs coexist in one repo pointing at different targets, the target-specific one must never be invoked without `--config`, and neither should a target-agnostic npm script — verify `npx playwright test --list` isn't silently picking the wrong `baseURL` before trusting a "clean" run, especially if results look unexpectedly flaky
-- **File**: `docs/UAT-RESULTS.md`, `playwright.uat.config.ts` vs `playwright.config.ts`
+- **Issue**: `GET /api/assignments` with no `from`/`to` params (the dashboard/assignments-page default) could compute the wrong month boundary near a UTC month rollover
+- **Root Cause**: `backend/src/services/assignment.service.ts`'s no-params branch built `from` with `new Date(now.getFullYear(), now.getUTCMonth(), 1)` — local-time year paired with UTC month. Every other branch in the same function used UTC consistently. If local date and UTC date fall in different months (possible for part of each day depending on server timezone), `from` could land in the wrong month
+- **Solution**: Changed to `now.getUTCFullYear()` to match the rest of the function
+- **Prevention**: When a function has multiple branches building `Date`s, keep the local-vs-UTC choice consistent across all of them — a partially-UTC branch is easy to miss in review since each individual line looks correct in isolation
+- **File**: `backend/src/services/assignment.service.ts`
+
+### 2026-07-12 - Stale local `dev.db` + Prisma client silently failed 76 backend tests
+
+- **Issue**: `npm test` in `backend/` showed 76/256 failing with `PrismaClientKnownRequestError: The column main.User.lifetimePoints does not exist in the current database`
+- **Root Cause**: 6 of the test files (`app.test.ts`, `points.test.ts`, `templates.test.ts`, `assignments.test.ts`, `recurring.test.ts`, `users.test.ts`) don't mock `config/prisma` and instead hit the real local SQLite file at `DATABASE_URL="file:./dev.db"`. That file predated the `lifetimePoints`/`lifetimePointsSyncedAt` columns being added to `schema.prisma`, and the generated Prisma client (`node_modules/.prisma/client`, `node_modules/@prisma/client`) was correspondingly stale too — neither had been refreshed after the schema changed
+- **Solution**: `npx prisma generate` (refreshes client types) then `npx prisma db push` (syncs `dev.db`'s actual columns) — both from `backend/`. Failures dropped from 76 to 2 (the 2 remaining are a separate, genuinely stale test assertion, not this issue)
+- **Prevention**: After any `schema.prisma` change, run both `npx prisma generate` and `npx prisma db push` locally, not just before container deploys — the local dev DB and client silently drift otherwise, and the resulting Prisma errors look like real test failures rather than an environment sync problem
+- **File**: `backend/dev.db`, `backend/prisma/schema.prisma`
+
+### 2026-07-12 - UAT Suite Silently Targets Wrong App When `--config` Flag Omitted (and the "fix" itself was cwd-dependent and broken)
+
+- **Issue**: Re-running `docs/UAT-RESULTS.md`'s documented "How to re-run" command produced 52/54 passing with 2 odd Chromium-crash/timeout failures — looked like a real regression, but the app hadn't actually been tested. A later audit (same day) found the *documented fix* for this — the exact command string in the doc — didn't actually work from the repo root either.
+- **Root Cause (original)**: With `--config` omitted entirely, Playwright falls back to whatever's named exactly `playwright.config.ts` in the current working directory. `e2e/playwright.config.ts` (used for frontend dev-server e2e work) has `baseURL: http://localhost:5173`; a leftover `vite` dev server happened to be running on that port, so the suite silently tested it instead of the Docker deployment on `:3002` — no error, just the wrong target. The 2 failures were artifacts of the wrong config (missing `--disable-gpu`; default 30s timeout too short for a 30s ntfy poll), not app bugs.
+- **Root Cause (the doc's own fix, found 2026-07-12 on a later audit)**: The corrected command written into the doc, `--config playwright.uat.config.ts` (no `e2e/` prefix), only resolves if your shell's cwd is already `e2e/` — from the repo root it fails immediately with `Error: .../playwright.uat.config.ts does not exist`. The doc never told the reader to `cd e2e` first, so the "fix" was itself unverified against the instructions' own implied cwd (repo root).
+- **Behavior is cwd-dependent, verified 2026-07-12**: `e2e/` configs moved out of the repo root in commit `fbb0bb0`. From the **repo root**, omitting `--config` now fails *loudly* (`Project(s) "chromium" not found` — no fallback config exists there anymore), not silently. From **inside `e2e/`**, omitting `--config` *does* still silently resolve to `e2e/playwright.config.ts` (`:5173`) — Playwright only auto-discovers by exact filename, never falls back to `playwright.uat.config.ts`.
+- **Solution**: Added `npm run test:e2e:uat` (`package.json`), pinned to `--config e2e/playwright.uat.config.ts --project=chromium uat-checklist.spec.ts` — verified to work from the repo root regardless of cwd assumptions. `docs/UAT-RESULTS.md`'s re-run instructions now use the script instead of a hand-typed `playwright test` invocation.
+- **Prevention**: Don't just check that a doc's command *mentions* the right flag — actually run the literal string from a fresh shell at the cwd the doc implies before trusting it. Prefer a pinned npm script over a documented flag combination for any command whose correctness depends on cwd; scripts can't be pasted with a typo'd relative path the way a doc's code block can.
+- **File**: `docs/UAT-RESULTS.md`, `package.json`, `e2e/playwright.uat.config.ts` vs `e2e/playwright.config.ts`
 
 ### 2026-07-12 - Headless Chromium Crashes on Memory-Starved Shared Host, Mimics App Regression
 
@@ -79,3 +97,28 @@ Date-ordered log of bugs and their solutions.
 - **Solution**: Replace `jest.resetModules()` + `jest.doMock()` with `jest.spyOn()` on the specific functions that need mocking. Spy-based mocking scopes correctly per-test and doesn't affect the module registry for other tests
 - **Prevention**: Never use `jest.resetModules()` when tests share module-level state. Prefer `jest.spyOn()` for isolated mocking. If `resetModules()` is unavoidable, put those tests in a separate file with `jest.isolateModules()`
 - **File**: `backend/src/__tests__/services/assignment.service.test.ts`
+
+### 2026-07-12 - Resetting the SQLite DB from host leaves it read-only for the backend container
+
+- **Issue**: After deleting `${DATA_DIR}/chore-ganizer.db` and re-seeding from the host (`cd backend && DATABASE_URL="file:..." npx prisma db seed`), the backend returned `500` on every write with `attempt to write a readonly database`
+- **Root Cause**: The container runs the server as `appuser` = **uid 1001**, but the host user is uid 1000. Seeding from the host created the db file owned by uid 1000 with mode 644, so the container (1001) could read but not write. (The container entrypoint's `prisma db push` deliberately can't seed — no `ts-node` in the `--omit=dev` runtime image — so seeding must happen from the host.)
+- **Solution**: `sudo chmod 777 ${DATA_DIR} && sudo chmod 666 ${DATA_DIR}/chore-ganizer.db` before starting the suite (world-writable lets both uid 1000 and 1001 read/write). Also had to **restart the backend** afterward — an already-open connection caches the read-only state per connection, so just fixing perms isn't enough; the node process must reopen the db.
+- **Prevention**: Any time the DB is deleted/re-seeded from the host, make the data dir world-writable (or `chown` to 1001) and restart the backend container. Don't assume file ownership carries over between host and container UIDs.
+- **File**: `docker-compose.yml`, `backend/docker-entrypoint.sh`
+
+### 2026-07-12 - Auth rate-limit counter persists across Playwright runs, then breaks logins
+
+- **Issue**: In later full-suite runs, several tests started failing at `uiLogin` with `Invalid email or password` even though credentials were correct
+- **Root Cause**: `AUTH_RATE_LIMIT_MAX` (now 500/15min) is enforced by `express-rate-limit` with an **in-memory** store inside the running backend. The counter is NOT reset between Playwright runs, and every `uiLogin` is a real login POST sharing one bucket keyed by the frontend container IP. Cumulative logins across repeated runs (plus DB pollution) exhaust the budget, and the limiter's 429 gets surfaced as a generic auth failure on the login page.
+- **Solution**: Restart the backend (clears the in-memory counter) and reset the DB before a fresh run; keep `AUTH_RATE_LIMIT_MAX` high (500). Watch for "Invalid email or password" clusters in later tests as the tell-tale sign, not a credential bug.
+- **Prevention**: Treat the rate limiter as session-scoped to the backend process. Before trusting a "clean" re-run, restart the backend. Consider a Redis/explicit-per-run reset if the suite is run repeatedly in CI.
+- **File**: `backend/src/middleware/rateLimiter.ts`
+
+### 2026-07-12 - NTFY_BASE_URL renamed but not passed into the backend container
+
+- **Issue**: Section 7 (notifications) tests couldn't deliver — `isNtfyConfigured` was `false` in the running backend even though `.env` had the URL
+- **Root Cause**: The env var was renamed from `NTFY_DEFAULT_SERVER_URL` to `NTFY_BASE_URL`, but `docker-compose.yml` backend `environment` still only passed the old name (or nothing), so the container never received it. `isNtfyConfigured` is evaluated at module import, so merely editing `.env` does nothing until the image is rebuilt/restarted.
+- **Solution**: Added `NTFY_BASE_URL=${NTFY_BASE_URL:-}` and `NTFY_DEFAULT_TOPIC=${NTFY_DEFAULT_TOPIC:-}` to the backend `environment` block in `docker-compose.yml`, then `docker compose up --build backend`. Verified with `docker compose exec backend printenv | grep NTFY_BASE_URL`.
+- **Prevention**: When renaming an env var the backend reads, grep `docker-compose.yml` (and any other deployment manifest) for the old name and update the passthrough. After any `.env` change that affects a module-level constant, rebuild the backend — don't assume a restart picks it up.
+- **File**: `docker-compose.yml`, `backend/src/config/notifications.ts`
+

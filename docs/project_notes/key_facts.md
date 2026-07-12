@@ -45,6 +45,8 @@ Store secrets in `.env` (excluded via `.gitignore`) or a password manager.
 - Frontend: `3002` (host, maps to nginx port 80 in the container)
 - Backend: `3010`
 
+**Data directory ownership (gotcha):** The SQLite file lives at `${DATA_DIR}/chore-ganizer.db` (default `/opt/app-data/chore-ganizer/chore-ganizer.db`) as a host bind mount. The backend server runs as container `appuser` = **uid 1001**, but the host user is uid 1000. For the container to write, the data dir/db must be world-writable (`chmod 777` dir / `666` db) or owned by 1001 — otherwise the backend throws `attempt to write a readonly database`. The container entrypoint runs `prisma db push` but **cannot** seed (no `ts-node` in the `--omit=dev` runtime image); seed from the host (`cd backend && DATABASE_URL="file:${DATA_DIR}/chore-ganizer.db" npx prisma db seed`). After deleting/re-seeding the DB, restart the backend (open connections cache read-only state per connection).
+
 ### Environment Variables
 
 Full reference: [docs/OPERATIONS.md#environment-variables](../OPERATIONS.md#environment-variables). Highlights:
@@ -87,8 +89,9 @@ There is no `OVERDUE_PENALTY_*`, `SLOW_REQUEST_THRESHOLD_MS`, `COMPRESSION_ENABL
 - API calls mocked per-test via `vi.mock()`
 
 **E2E:**
-- Playwright tests in `e2e/`, run via `npm run test:e2e` from the repo root
+- Playwright tests in `e2e/`, run via `npm run test:e2e` from the repo root — this targets the frontend **dev server** (`e2e/playwright.config.ts`, `baseURL :5173`)
 - `e2e/auth.setup.ts` logs in once per seeded user and saves `storageState`; specs replay it via `login()` in `e2e/helpers/auth.ts` rather than re-driving the login form (works around the auth rate limiter)
+- **UAT against the Docker deployment (`:3002`) is a separate config**: `npm run test:e2e:uat` (added 2026-07-12), pinned to `--config e2e/playwright.uat.config.ts`. Never hand-type the `playwright test --config ...` invocation — a relative config path only resolves if your shell's cwd happens to already be `e2e/`; from the repo root it errors `does not exist`. See `docs/project_notes/bugs.md`'s 2026-07-12 UAT entry.
 
 ### Default Credentials (Dev Only)
 
@@ -109,7 +112,7 @@ There is no `OVERDUE_PENALTY_*`, `SLOW_REQUEST_THRESHOLD_MS`, `COMPRESSION_ENABL
   - `streakCount`/`streakComputedAt` — lazy weekly streak cache on User (re-syncs weekly)
   - `lifetimePoints`/`lifetimePointsSyncedAt` — lazy self-healing cache of `PointLog` total (backfill on first read, then incremented at positive write sites, never re-synced)
   - `UserBadge` table + `BADGE_CATALOG` in `gamification.service.ts` (8 badges total, never revoked)
-- **Push Notifications** (v3.1.0, optional): `User.ntfyTopic` + `dueNotifiedAt`/`completedNotifiedAt` timestamps; POST to ntfy.sh API; graceful noop if `NTFY_BASE_URL` unset
+- **Push Notifications** (v3.1.0, optional): `User.ntfyTopic` + `dueNotifiedAt`/`completedNotifiedAt` timestamps; POST to ntfy.sh API; graceful noop if `NTFY_BASE_URL` unset. Test instance: ntfy server `https://ntfy.thitar.ovh`, Dad's topic `chore-dad-1a54lu` (set via `PUT /api/users/me/ntfy-topic`). `notifyChoreAssigned` fires on assignment create; `notifyDueSoon` fires on assignments `getAll` (parent loads `/assignments`)
 
 ### Frontend-Backend Parameter Mapping
 

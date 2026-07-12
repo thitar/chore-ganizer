@@ -12,6 +12,33 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-07-12 — Pre-live pass on CONCERNS.md: fixed the UTC/local date bug, clarified the lifetimePoints "bug" wasn't one, reset rate limits
+
+- **Status**: Completed — code fix + docs correction done; one manual `.env` edit left for the user
+- **Description**: User asked whether `.planning/codebase/CONCERNS.md` had anything to fix before going live. Triaged the 5 medium items down to what actually mattered for real usage:
+  - **Fixed** §4.1 — `assignment.service.ts`'s date-range fallback (used whenever `getAll()` is called with no `from`/`to`, i.e. every default dashboard/assignments load) mixed `now.getFullYear()` (local) with `now.getUTCMonth()` (UTC). Changed to `now.getUTCFullYear()` for consistency with the rest of the function. Real bug: could show the wrong month's chores near a UTC month boundary depending on server timezone.
+  - **Reassessed, not fixed** §1.1 — `uncomplete()` not decrementing `User.lifetimePoints`. Traced through `getLifetimePoints()`'s recompute query (`gamification.service.ts`) and found it sums only `amount>0` PointLog entries — meaning `lifetimePoints` is *defined* as monotonic "total ever earned," and the incremental cache already agrees with a full recompute in all cases. Confirmed with the user this is the desired product behavior (undoing a mis-clicked completion shouldn't cost a kid their level) and left the code alone. Corrected `CONCERNS.md`'s §1.1 to stop calling this a bug — decrementing it would have *introduced* a real cache/recompute mismatch that doesn't exist today.
+  - **Flagged for manual fix** §7.1-adjacent — `.env` had `AUTH_RATE_LIMIT_MAX=500`/`RATE_LIMIT_MAX=1000`, leftover from raising them for e2e runs (see bugs.md's 2026-07-12 entry). Live login endpoint was effectively unprotected against brute force at that setting. `.env` is outside this session's write permissions, so gave the user the exact lines to paste (`RATE_LIMIT_MAX=300`, `AUTH_RATE_LIMIT_MAX=10`, matching `docker-compose.yml`'s own defaults) with a comment on when it's fine to raise them again.
+  - **Found and fixed incidentally**: `backend/node_modules/.prisma` client was stale (missing `lifetimePoints` in its generated types) and `backend/dev.db` was missing the `lifetimePoints` column entirely — `npx prisma generate` + `npx prisma db push` resolved both. This had been silently failing 76 of 256 backend tests (real Prisma errors against the unmocked local dev DB, not the mocked test suite) before my session — confirmed pre-existing via `git stash`, not caused by the date fix.
+- **Remaining known gap (not fixed, out of scope this session)**: 2 tests (`users.test.ts`, `assignments.test.ts`) assert `/api/users` responses do NOT have an `email` property — stale since the 2026-07-10 decision to have that endpoint return email addresses. Test assertions never got updated; app behavior is correct and intentional.
+- **Notes**: User still needs to hand-edit `.env` (lines 82-83) and restart the backend for the rate-limit fix to take effect.
+- **URL**: local — `.planning/codebase/CONCERNS.md`, `backend/src/services/assignment.service.ts`, `.env` (pending)
+
+### 2026-07-12 — Audited all 11 bugs.md entries against current code; all still fixed, no regressions
+
+- **Status**: Completed — verification only, no code changes
+- **Description**: Went through every entry in `docs/project_notes/bugs.md` one by one and confirmed each documented fix is still actually in place, rather than trusting the log at face value:
+  - CSRF: all 8 `frontend/src/api/*.ts` modules go through `createApiClient()` → `applyCsrfInterceptor()`, no stray `axios.create()`; backend `csrf.ts` still uses the inline `'XSRF-TOKEN'` literal CodeQL requires
+  - `.gitignore`'s `/test/` pattern still anchored, `frontend/src/test/setup.ts` still tracked in git, all 4 date-sensitive page tests still use `useFakeTimers`
+  - `schema.prisma`: `dueNotifiedAt` appears once each in `ChoreAssignment`/`RecurringOccurrence` (not duplicated within either), `npx prisma validate` passes clean
+  - `helmet()`/`cors()`/`generalLimiter` wired in `app.ts`, `authLimiter` wired on `POST /api/auth/login`
+  - `assignment.service.test.ts` uses `jest.spyOn()` throughout, no leftover `resetModules`/`doMock`
+  - `docker-compose.yml` passes both `NTFY_BASE_URL` and `NTFY_DEFAULT_TOPIC` through to the backend container
+  - The 3 environment/ops-only entries (SQLite readonly after host reseed, auth rate-limit counter persisting across Playwright runs, headless Chromium crashing under host memory pressure) have no code-level fix to verify — confirmed they're correctly documented as infra gotchas, not code bugs
+  - **UAT `--config` flag — initially waved through on this pass, wrongly.** First check only confirmed the flag string was *present* in `docs/UAT-RESULTS.md`, not that the command actually resolves. A follow-up audit (prompted by a second reviewer's independent read of the same doc) found the literal documented command failed with `does not exist` when run from the repo root — see the amended 2026-07-12 `bugs.md` entry and the `test:e2e:uat` npm script added to fix it for good.
+- **Notes**: No other new bugs found. This closes the loop on trusting `bugs.md` as still-accurate rather than assuming past entries stay true forever — and is itself a lesson that "the flag is mentioned in the doc" isn't the same as "the documented command runs," a gap only caught by literally executing it.
+- **URL**: local — `docs/project_notes/bugs.md`
+
 ### 2026-07-12 — Re-verified the UAT 54/54 claim; caught a doc bug and a host-memory false alarm along the way
 
 - **Status**: Completed — original 54/54 result reproduced and confirmed genuine
@@ -134,7 +161,7 @@ Date-ordered log of completed work and in-progress tickets.
 
 ### 2026-07-08 — PR #146 third-pass deep code review (Hermes)
 
-- **Status**: Open (pending user review 2026-07-09)
+- **Status**: Closed — all findings resolved or explicitly waived by 2026-07-10 (see below; this entry's status field was never updated at the time)
 - **Description**: Independent third-pass review of PR #146 (M2 "The Game") by Hermes. Reviewed gamification/csrf/points/auth paths + full 44-file diff. Findings: 2 High (per-completion full stats recompute in `awardBadges`; duplicate streak/lifetime queries in read path — shared root cause: gamification state recomputed from history instead of incrementally cached), 4 Medium (CSRF cookie set on every response; `SESSION_SECRET||'dev-secret'` fallback; fragile per-instance CSRF interceptor; hardcoded LEVEL_THRESHOLDS/BADGE_CATALOG), 3 Low (role-string literals; CSRF disabled in tests = no integration coverage; CodeQL literal-cookie hack). Verified fine: `dueDate` indexed, `GamificationMoments` shows all new badges (prior WR-05 resolved), P2002 handling, streak caching, route layering, schema constraints. Full report: `.planning/reviews/PR146-REVIEW-3.md`.
 - **Decision ref**: PR146-REVIEW-3
-- **Notes**: Read-only; no code changed. User to review 2026-07-09. Recommend resolving the 2 High items before merge as they set performance precedent for the rest of the project.
+- **Notes**: Read-only; no code changed. Findings closed out across the entries above it: 2026-07-09 (SESSION_SECRET fail-fast, MyChoresPage duplicate-key, awardBadges short-circuit, apiClient CSRF consolidation, CSRF middleware test coverage, CodeQL literal-cookie doc) and 2026-07-10 (High #1/#2 fully closed via the `lifetimePoints` cache, PR #150). The CSRF-cookie-on-every-response Medium finding was verified factually wrong (code already guards on it). Role-string literals and hardcoded game config were judged YAGNI/pre-existing-pattern and intentionally left as-is.

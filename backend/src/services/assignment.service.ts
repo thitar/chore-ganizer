@@ -51,7 +51,7 @@ export async function getAll(userId: number, role: string, fromStr?: string, toS
     from = new Date(to.getUTCFullYear(), to.getUTCMonth(), 1)
   } else {
     const now = new Date()
-    from = new Date(now.getFullYear(), now.getUTCMonth(), 1)
+    from = new Date(now.getUTCFullYear(), now.getUTCMonth(), 1)
     to = new Date(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)
   }
   await generateOccurrences(from, to)

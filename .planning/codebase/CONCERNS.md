@@ -7,12 +7,11 @@
 
 ## 1. Tech Debt
 
-### 1.1 `uncomplete()` Does Not Decrement `lifetimePoints` Cache
+### 1.1 ~~`uncomplete()` Does Not Decrement `lifetimePoints` Cache~~ — Reassessed 2026-07-12: not a bug, working as designed
 - **File:** `backend/src/services/assignment.service.ts:188-221`
-- **Severity:** Medium -- data correctness
-- **Detail:** The `complete()` function increments `User.lifetimePoints` inside a transaction (line 168-172). The `uncomplete()` function creates a `REVERSED` PointLog entry (line 203-208) but does **not** decrement `lifetimePoints` on the User. The cache will drift from reality every time a chore is uncompleted. The same pattern holds for `points.adjustPoints()` with negative amounts (line 67-70 only increments when `amount > 0`, never decrements for negative adjustments).
-- **Impact:** Level calculations based on `lifetimePoints` (via `computeLevel()`) will be wrong after uncompletions or negative adjustments. Badge evaluation (which uses `getLifetimePoints` -> aggregate from PointLog) is correct, so badges won't be lost, but the cached `lifetimePoints` on `User` will overcount.
-- **Note:** This was documented as a known trade-off in ADR-006 ("negative entries excluded, matching existing `amount>0` filter semantics"), but the cache overcounting is still a real correctness issue for level display.
+- **Severity:** None — confirmed self-consistent
+- **Detail:** `complete()` increments `User.lifetimePoints`; `uncomplete()` creates a `REVERSED` PointLog entry but doesn't decrement it. This was originally flagged as cache drift. On closer inspection: `getLifetimePoints()`'s backfill/recompute query (`gamification.service.ts`) sums PointLog entries with `amount: { gt: 0 }` only — i.e. `lifetimePoints` is *defined* as "total points ever earned," not net balance. Since `uncomplete()`'s reversal is a negative entry and never deletes the original positive `EARNED` entry, a fresh recompute would never subtract it either — the incremental cache and a full recompute always agree. There is no drift.
+- **Decision (2026-07-12, user-confirmed):** Keep this monotonic "total ever earned" semantic intentionally — undoing a mis-clicked completion or a negative points adjustment should not take away a kid's level progress. Matches ADR-006's stated trade-off exactly. **Do not decrement `lifetimePoints` on `uncomplete()` or negative `adjustPoints()` calls** — doing so would require also removing the `amount>0` filter from the recompute query, or the two would start disagreeing (a real bug that doesn't exist today).
 
 ### 1.2 No Zod Validation on 4 of 7 Route Modules
 - **Files:** `backend/src/routes/auth.routes.ts`, `users.routes.ts`, `recurring.routes.ts`, `occurrences.routes.ts`
