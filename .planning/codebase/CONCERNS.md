@@ -1,149 +1,231 @@
+# CONCERNS.md -- Technical Debt and Issues
+
+> Generated: 2026-07-12
+> Codebase snapshot: v3.2.0 (backend/frontend)
+
 ---
-title: Technical Concerns
-last_mapped_commit: HEAD
-date: 2026-07-12
+
+## 1. Tech Debt
+
+### 1.1 `uncomplete()` Does Not Decrement `lifetimePoints` Cache
+- **File:** `backend/src/services/assignment.service.ts:188-221`
+- **Severity:** Medium -- data correctness
+- **Detail:** The `complete()` function increments `User.lifetimePoints` inside a transaction (line 168-172). The `uncomplete()` function creates a `REVERSED` PointLog entry (line 203-208) but does **not** decrement `lifetimePoints` on the User. The cache will drift from reality every time a chore is uncompleted. The same pattern holds for `points.adjustPoints()` with negative amounts (line 67-70 only increments when `amount > 0`, never decrements for negative adjustments).
+- **Impact:** Level calculations based on `lifetimePoints` (via `computeLevel()`) will be wrong after uncompletions or negative adjustments. Badge evaluation (which uses `getLifetimePoints` -> aggregate from PointLog) is correct, so badges won't be lost, but the cached `lifetimePoints` on `User` will overcount.
+- **Note:** This was documented as a known trade-off in ADR-006 ("negative entries excluded, matching existing `amount>0` filter semantics"), but the cache overcounting is still a real correctness issue for level display.
+
+### 1.2 No Zod Validation on 4 of 7 Route Modules
+- **Files:** `backend/src/routes/auth.routes.ts`, `users.routes.ts`, `recurring.routes.ts`, `occurrences.routes.ts`
+- **Severity:** Low -- validated at service layer instead
+- **Detail:** Only `assignments.routes.ts`, `points.routes.ts`, and `templates.routes.ts` run Zod `validate(schema)` middleware. The other 4 route modules read `req.body` directly. Validation happens in the service layer (e.g., `users.service.ts` has inline regex checks), so malformed input is caught, but error messages and status codes are inconsistent -- service-layer `AppError` vs Zod `400 VALIDATION_ERROR` envelope.
+- **Impact:** Cosmetic inconsistency. No security gap since validation does happen.
+
+### 1.3 Duplicate `isRecordNotFoundError()` Helper
+- **Files:** `backend/src/services/assignment.service.ts:288-295` and `backend/src/services/template.service.ts:60-66`
+- **Severity:** Low -- code smell
+- **Detail:** Identical private helper function copy-pasted in two service files.
+- **Fix:** Extract to a shared util (e.g., `utils/prisma.ts`).
+
+### 1.4 `currentMonthDates()` Duplicated Across Pages
+- **Files:** `frontend/src/pages/AssignmentsPage.tsx:19-25` and `frontend/src/pages/MyChoresPage.tsx:17-23`
+- **Severity:** Low -- code smell
+- **Detail:** Identical function copy-pasted in two page components.
+- **Fix:** Extract to `utils/dateFormat.ts` or similar.
+
+### 1.5 Hardcoded Gamification Config
+- **File:** `backend/src/services/gamification.service.ts:5, 139-148`
+- **Severity:** Low -- acceptable for homelab
+- **Detail:** `LEVEL_THRESHOLDS` and `BADGE_CATALOG` are hardcoded constants. Not configurable via env or DB. Fine for a family app; documented as intentional YAGNI.
+
+### 1.6 Role/Status/Type/Frequency Are Plain Strings, Not Enums
+- **Files:** `backend/prisma/schema.prisma` (all models), route handlers
+- **Severity:** Low -- acceptable for SQLite
+- **Detail:** `role`, `status`, `type`, `frequency` columns are `String` with no DB-level constraint. Prisma schema accepts any string. Validation happens at the service/route layer. SQLite does not support native enums, so this is the pragmatic choice.
+- **Risk:** A malformed string could sneak in via a direct DB edit. Low risk for a homelab app.
+
 ---
 
-# Technical Concerns
+## 2. Security Issues
 
-## Critical
+### 2.1 Sessions Lost on Backend Restart (In-Memory Store)
+- **Severity:** Medium -- real friction for family
+- **Detail:** `express-session` uses its default `MemoryStore`. When the backend container restarts (Docker update, host reboot, crash), all active sessions are destroyed. Every family member must re-login.
+- **Impact:** Annoying but not a data loss risk. For a single-container homelab, a file-based session store (e.g., `session-file-store`) would persist across restarts without adding infra complexity.
+- **Mitigation:** Session `rolling: true` keeps sessions alive during use; `maxAge` is 7 days.
 
-### No CI Pipeline for Tests or Builds
-- `.github/workflows/security.yml` runs security scanning only (CodeQL, npm audit, Gitleaks, Semgrep, Trivy)
-- No build, test, or lint jobs run on PRs or pushes
-- Regressions can ship to main undetected
-- No Docker image publishing pipeline — images built/tagged locally
+### 2.2 No `process.on('unhandledRejection')` Handler
+- **Severity:** Low -- swallowed by Node.js default
+- **Detail:** `backend/src/server.ts` handles `SIGTERM`/`SIGINT` for graceful shutdown but does not register a handler for `unhandledRejection` or `uncaughtException`. In Node 15+, unhandled rejections terminate the process by default, which is actually the safer behavior. However, a handler that logs the error before exit would aid debugging.
+- **Note:** The `void` fire-and-forget pattern on notifications/badges (6 call sites) means unhandled rejections from those async calls won't crash the server, but they also won't be logged anywhere except if the notification service's own `catch` block catches them (which it does for `sendNtfy`, and `awardBadges` wraps in try/catch with `console.warn`).
 
-## High
+### 2.3 Seed Password `password123` Used for All Users
+- **File:** `backend/prisma/seed.ts:7`
+- **Severity:** Low -- expected for dev seed
+- **Detail:** All 4 seeded users share the same password. This is fine for development/UAT but should be changed for any real deployment. No guard prevents deploying the seed DB to production.
 
-### `lifetimePoints` Cache Drift Risk
-- **File:** `backend/src/services/gamification.service.ts`
-- Cache is correct ONLY if every positive `PointLog` write site also increments `lifetimePoints` in the same transaction
-- Currently 3 write sites: `assignment.service.complete`, `recurring.service.completeOccurrence`, `points.service.adjustPoints`
-- If a new code path writes a positive `PointLog` without incrementing the cache, it silently drifts
-- No reconciliation job or periodic re-sync exists
+### 2.4 No Rate Limiting on Password Change Endpoint
+- **File:** `backend/src/routes/users.routes.ts:37-45`
+- **Severity:** Low -- homelab scale
+- **Detail:** `PUT /api/users/me/password` has no rate limiting (unlike login which has `authLimiter`). An attacker with a valid session could brute-force the current password. Mitigated by the session requirement and the general rate limiter (300/15min).
 
-### Incomplete Zod Validation
-- Only `assignments.routes.ts`, `points.routes.ts`, `templates.routes.ts` use `validate(schema)`
-- `auth.routes.ts`, `users.routes.ts`, `recurring.routes.ts`, `occurrences.routes.ts` read `req.body` directly
-- No input validation on user creation, password change, color change, ntfy topic change, or recurring chore creation
+### 2.5 CORS Origin Defaults to `localhost:3002`
+- **File:** `backend/src/app.ts:23`
+- **Severity:** Low -- production override exists
+- **Detail:** `CORS_ORIGIN` defaults to `http://localhost:3002`. In production, this should be overridden via env var. The `docker-compose.yml` does pass `CORS_ORIGIN` from `.env`, so this is just a dev convenience default.
 
-## Medium
+---
 
-### In-Memory Session Store
-- **File:** `backend/src/app.ts` — `express-session` with default `MemoryStore`
-- All sessions destroyed on backend restart
-- Documented but forces re-login on every deploy
-- `express-session` docs explicitly warn against MemoryStore in production
+## 3. Performance Concerns
 
-### `parseInt` Without NaN Check on Route Params
-- **Files:** `users.routes.ts`, `assignments.routes.ts`, `templates.routes.ts`, `recurring.routes.ts`, `occurrences.routes.ts`, `points.routes.ts`
-- Non-numeric ID (e.g., `/api/assignments/abc`) → `NaN` → cryptic 500 from Prisma
-- Only `users.routes.ts:69` has an explicit `isNaN` check
+### 3.1 `authenticate()` Middleware Queries DB on Every Request
+- **File:** `backend/src/middleware/auth.ts:14-17`
+- **Severity:** Low -- negligible at household scale
+- **Detail:** Every authenticated API call hits `prisma.user.findUnique({ where: { id: req.session.userId } })` to verify the user still exists. For a family app with a few users, this is an indexed primary-key lookup on SQLite -- effectively free. Would matter at scale.
 
-### `notifyDueSoon` Side Effect Hidden Inside `getAll`
-- **File:** `backend/src/services/assignment.service.ts:122`
-- Every `GET /api/assignments` triggers a notification sweep
-- Viewing calendar or dashboard can send push notifications
-- Side effect hidden inside a "get all" query
+### 3.2 `generateOccurrences()` Runs on Every `GET /api/assignments`
+- **File:** `backend/src/services/recurring.service.ts:77-106`, called from `assignment.service.ts:57`
+- **Severity:** Low -- acceptable
+- **Detail:** Every assignment list request triggers `generateOccurrences()` which scans all recurring chores and checks for missing occurrences. At household scale (a handful of recurring chores, monthly range), this is fast. The idempotent upsert pattern (find existing, create missing) is correct. If recurring chores grow to dozens with daily frequency, this could become noticeable.
 
-### No Structured Logging
-- All logging uses `console.log`/`console.warn`/`console.error`
-- `LOG_LEVEL` env var passed to container but never read by application code
-- No log levels, no structured/JSON logging, no log rotation
+### 3.3 `collectStats()` Fetches All Completed Chores for Badge Evaluation
+- **File:** `backend/src/services/gamification.service.ts:150-177`
+- **Severity:** Low -- short-circuits when all badges earned
+- **Detail:** `evaluateBadges()` calls `collectStats()` which fetches all completed assignments AND all completed occurrences (full history) to compute stats. Once all 8 badges are earned, line 201 short-circuits (`if (owned.size >= BADGE_CATALOG.length) return []`). Until then, every chore completion triggers this full scan. At household scale, this is fast.
 
-### No Lint or Format Tooling
-- No ESLint, Prettier, or any code quality tooling configured
-- No `npm run lint` or `npm run format` scripts
-- Code style enforced only by convention
+### 3.4 Frontend Fetches All Assignments for Current Month on Every Page Load
+- **File:** `frontend/src/api/assignments.api.ts:29-32`, `frontend/src/hooks/useAssignments.tsx:13-14`
+- **Severity:** Low -- acceptable
+- **Detail:** The `useAssignments` hook calls `getAll()` with no date params, which defaults to the current month. CalendarPage has its own `useCalendarMonth` hook that passes year/month. The dashboard also uses `useAssignments`. Multiple components independently fetch the same data, relying on React Query deduplication (same queryKey).
 
-### Rate Limiter Counter Persists Across Test Runs
+---
+
+## 4. Fragile Areas
+
+### 4.1 Mixed Local/UTC Date Methods in `assignment.service.getAll()`
+- **File:** `backend/src/services/assignment.service.ts:53-55`
+- **Severity:** Medium -- timezone bug
+- **Detail:** Line 54: `from = new Date(now.getFullYear(), now.getUTCMonth(), 1)` mixes `getFullYear()` (local time) with `getUTCMonth()` (UTC). If the server runs in a timezone where local date differs from UTC date (e.g., after midnight UTC but before midnight local), the default date range will be wrong -- potentially missing chores or including wrong ones. The other branches (lines 44-51) consistently use UTC methods. This only affects the "no date params" fallback.
+- **Impact:** The default month range displayed on the assignments page could be off by one month in edge cases.
+
+### 4.2 Fire-and-Forget `void` Pattern on Async Operations
+- **Files:** `assignment.service.ts:35,122,183`, `notification.service.ts:45,63`, `recurring.service.ts:158`
+- **Severity:** Low -- errors are caught internally
+- **Detail:** Six call sites use `void asyncFunction()` to fire-and-forget. If the async function throws, the rejection is unhandled. However, each of these paths has internal try/catch:
+  - `awardBadges()` wraps everything in try/catch with `console.warn`
+  - `sendNtfy()` catches fetch errors and returns `false`
+  - `notifyChoreAssigned()` calls `void sendNtfy()` which catches internally
+  - `notifyDueSoon()` is awaited (not fire-and-forget)
+- **Net risk:** Low. The only gap is if `notifyChoreAssigned` itself throws before reaching `sendNtfy` (e.g., from accessing properties on a null object), but the function is simple enough that this is unlikely.
+
+### 4.3 `assignment.service.notifyDueSoon()` Marking Optimistic Before Network Call
+- **File:** `backend/src/services/assignment.service.ts:268-279`
+- **Severity:** Low -- documented trade-off
+- **Detail:** The function updates `dueNotifiedAt` BEFORE sending the ntfy push (optimistic write to prevent duplicate notifications). If the ntfy call fails, the notification is silently lost -- the user won't get a due-today push. This is documented as intentional (preventing double-notification is worse than missing one).
+
+### 4.4 Prisma Client Singleton Without `$disconnect` on Shutdown
+- **Files:** `backend/src/config/prisma.ts`, `backend/src/server.ts`
+- **Severity:** Low -- Docker handles cleanup
+- **Detail:** The Prisma client is a module-level singleton that's never `$disconnect()`ed on shutdown. `server.ts` calls `server.close()` on SIGTERM/SIGINT but doesn't await Prisma cleanup. Docker sends SIGTERM, the process exits, and the OS cleans up the file handle. No real data risk with SQLite.
+
+---
+
+## 5. Missing Infrastructure
+
+### 5.1 No Persistent Session Store
+- **Detail:** See Section 2.1. A `session-file-store` or similar would persist sessions across container restarts. Not critical for a family app -- re-login is a minor inconvenience.
+
+### 5.2 No CI/CD Pipeline for Building/Pushing Docker Images
+- **Detail:** `.github/workflows/security.yml` only runs CodeQL/audit/gitleaks/semgrep/trivy. No workflow builds or pushes Docker images to `ghcr.io`. Version bumps are a local manual step. This is documented in AGENTS.md and OPERATIONS.md.
+
+### 5.3 No ESLint or Prettier Configuration
+- **Detail:** Neither `backend/` nor `frontend/` has lint or format scripts. No CI gating on code style. Acceptable for a solo-developer homelab.
+
+### 5.4 No Integration Test Suite
+- **Detail:** No `jest.integration.config.js`, no test database, no `test:integration` npm scripts. All backend tests mock Prisma. A real integration test suite would catch issues like the CSRF interceptor bug (which was only found via manual testing).
+
+### 5.5 No Database Backup Automation
+- **Detail:** OPERATIONS.md documents manual backup procedures (`cp` the SQLite file), but no cron job or automated backup exists. Risk of data loss on host disk failure.
+
+### 5.6 No Migration History (Schema-Push Only)
+- **Detail:** The project uses `prisma db push` instead of `prisma migrate`. This means no migration history -- schema changes are applied destructively. If a column needs to be renamed or data migrated, there's no migration file to reference. Acceptable for SQLite at this scale.
+
+---
+
+## 6. Dependency Risks
+
+### 6.1 `express@^4.18.2` -- End of Life
+- **Detail:** Express 4.x is in maintenance mode. Express 5.x has been released. No immediate security risk, but new features and security patches target v5.
+- **Impact:** Low for a homelab app. The upgrade path is non-trivial (breaking changes in error handling, path matching).
+
+### 6.2 `react@^18.2.0` -- Not Yet on React 19
+- **Detail:** React 19 is available but the project uses React 18. No security concern; React 19 adoption is still early.
+
+### 6.3 `ts-jest@^29.3.0` with `jest@^30.0.0`
+- **Detail:** `ts-jest` v29 is pinned but `jest` is at v30. These should be compatible (ts-jest 29 works with jest 30 per their docs), but the version gap is worth noting. A future `ts-jest` major bump may be needed.
+
+### 6.4 No `npm audit` as a CI Gate
+- **Detail:** The security workflow runs `npm audit` but there's no build/test job. If audit finds a critical CVE, there's no automated gate to prevent merging.
+
+---
+
+## 7. Operational Risks
+
+### 7.1 Rate Limiter Counter Persists Across E2E Runs
 - **File:** `backend/src/middleware/rateLimiter.ts`
-- In-memory store not reset between Playwright runs
-- Cumulative `uiLogin` POSTs exhaust the bucket → spurious "Invalid email or password"
-- Must restart backend before a fresh run
+- **Severity:** Medium -- documented in bugs.md
+- **Detail:** `express-rate-limit` uses in-memory store. The auth rate limiter (default 10/15min) is shared across all logins from the same IP. A Playwright suite with many logins exhausts the counter. This was root-caused and documented in bugs.md (2026-07-12). Mitigation: restart backend before e2e runs, or use `AUTH_RATE_LIMIT_MAX=500`.
 
-### SQLite File Ownership Mismatch
-- Container `appuser` = uid 1001, host user = uid 1000
-- Re-seeding from host creates file owned by 1000 with mode 644
-- Container can't write → "attempt to write a readonly database"
-- Workaround: `chmod 777`/`666` (fragile)
+### 7.2 SQLite DB File Ownership Mismatch Between Host and Container
+- **Severity:** Medium -- documented in bugs.md
+- **Detail:** The container runs as `appuser` (uid 1001), but the host user is uid 1000. Re-seeding the DB from the host creates files owned by uid 1000, which the container can't write to. Documented in bugs.md (2026-07-12). Mitigation: `chmod 777` the data dir after reseeding.
 
-### N+1 Pattern in `generateOccurrences`
-- **File:** `backend/src/services/recurring.service.ts:77-106`
-- For each recurring chore: separate `findMany` + potential `createMany`
-- Acceptable at household scale but doesn't scale
+### 7.3 Notification Failures Are Silent
+- **File:** `backend/src/services/notification.service.ts:33-35`
+- **Severity:** Low -- acceptable
+- **Detail:** ntfy push failures are logged to `console.warn` and swallowed. No retry mechanism, no dead-letter queue, no user-visible indicator that a notification failed. For a family app, this is fine -- the chore data itself is always correct; the push is supplementary.
 
-### `ts-jest` 29.x vs `jest` 30.x Version Mismatch
-- **File:** `backend/package.json`
-- `ts-jest` 29.x may not fully support Jest 30.x
-- Could cause subtle test runner issues
+### 7.4 Backend Graceful Shutdown Doesn't Wait for In-Flight Requests
+- **File:** `backend/src/server.ts:17-25`
+- **Severity:** Low
+- **Detail:** `server.close()` stops accepting new connections but the SIGTERM handler doesn't explicitly wait for in-flight requests to complete or for Prisma to disconnect. In practice, Docker's SIGTERM grace period (default 10s) is sufficient for a family app.
 
-### Alpine 3.18 End-of-Life
-- **File:** `backend/Dockerfile` — `node:20-alpine3.18`
-- Alpine 3.18 reached EOL May 2025
-- Should upgrade for security patches
+---
 
-## Low
+## 8. Code Smells
 
-### Duplicated Code
+### 8.1 `ProfilePage.tsx` Is 447 Lines With Multiple `useState` Maps
+- **File:** `frontend/src/pages/ProfilePage.tsx`
+- **Severity:** Low -- readable but large
+- **Detail:** The component manages password change, color change, own topic edit, and per-family-member topic editing (using `familyEditMap`, `familyValueMap`, `familyErrorMap`, `familyUpdatingMap` state maps). Functional but would benefit from extracting the family topic section into a child component.
 
-| Pattern | Files |
-|---------|-------|
-| `isRecordNotFoundError()` | `assignment.service.ts:288`, `template.service.ts:60` |
-| `currentMonthDates()` | `AssignmentsPage.tsx:19`, `MyChoresPage.tsx:17` |
-| Success timer `useEffect` | 6 page components (Assignments, MyChores, Recurring, Users, Points, Profile) |
-| Error page with reload button | 6 page components (Calendar, Assignments, Recurring, Users, Points, MyChores) |
+### 8.2 Frontend Error Handling Swallows Error Details
+- **Files:** All `frontend/src/pages/*.tsx` -- every `catch {}` block
+- **Severity:** Low -- acceptable
+- **Detail:** Every page component catches errors and replaces them with generic messages like "Failed to save assignment. Please try again." The actual error (status code, server message) is discarded. This is fine for a family app where users don't need to debug HTTP errors, but it makes troubleshooting harder during development.
 
-### `window.location.reload()` Instead of `refetch()`
-- Multiple pages use `window.location.reload()` as retry mechanism
-- Should use React Query's `refetch()` instead
+### 8.3 `assignment.service.ts` Is the Largest Service (295 Lines)
+- **File:** `backend/src/services/assignment.service.ts`
+- **Severity:** Low -- manageable
+- **Detail:** Contains `create`, `getAll`, `update`, `complete`, `uncomplete`, `delete_`, `notifyDueSoon`, and `isRecordNotFoundError`. Could be split into assignment CRUD + notification sweep, but at 295 lines it's still readable.
 
-### Magic Numbers
-- `LEVEL_THRESHOLDS = [0, 50, 120, 220, 360, 550, 800, 1120, 1520, 2000]` — undocumented game balance
-- `MAX_STREAK_WEEKS = 52` — undocumented
-- `3000` ms ntfy timeout — undocumented
-- `15 * 60 * 1000` rate limit window — not configurable
+### 8.4 No Consistent Error Envelope for Service-Layer vs Route-Layer Validation
+- **Severity:** Low
+- **Detail:** Routes with Zod schemas return `{ success: false, error: { code: 'VALIDATION_ERROR', message: 'Validation failed', details: [...] } }`. Routes without Zod schemas rely on service-layer `AppError` which returns `{ success: false, error: { message: '...', code: undefined } }`. The `details` array and `code` field are inconsistent.
 
-### Fire-and-Forget `void` Calls Without Error Boundaries
-- `notifyChoreAssigned` (assignment.service.ts:35) — no error handling
-- `notifyDueSoon` (assignment.service.ts:122) — no error handling
-- `awardBadges` (assignment.service.ts:183, recurring.service.ts:158) — errors caught internally
-- `sendNtfy` (notification.service.ts:45, 63) — returns false on failure, but callers ignore
+---
 
-### `assignment.service.ts` Is the Largest Service (295 lines)
-- `getAll` method (lines 40-124) is 85 lines combining date range, occurrence generation, dual queries, mapping, sorting, AND notification side effect
+## Summary
 
-### ProfilePage Is the Largest Component (447 lines)
-- 8+ `useState` hooks with duplicated success-timer `useEffect` patterns
+| Category | Critical | Medium | Low |
+|----------|----------|--------|-----|
+| Tech Debt | 0 | 1 | 5 |
+| Security | 0 | 1 | 4 |
+| Performance | 0 | 0 | 4 |
+| Fragile Areas | 0 | 1 | 3 |
+| Missing Infra | 0 | 0 | 6 |
+| Dependencies | 0 | 0 | 4 |
+| Operational | 0 | 2 | 2 |
+| Code Smells | 0 | 0 | 4 |
+| **Total** | **0** | **5** | **32** |
 
-### Password Hashing Cost Factor Hardcoded
-- `bcrypt.hash(data.password, 10)` in `users.service.ts`
-- Should be configurable via env var
-
-### No Password Complexity Requirements Beyond Length
-- Only checks `password.length < 6`
-- No uppercase/lowercase/number/special requirements
-
-### `userCount` Exposed in Unauthenticated Health Endpoint
-- `GET /api/health` returns `{ db: { connected: true, users: N } }`
-- Minor information leakage for a family app
-
-## Dependency Risks
-
-| Risk | Details |
-|------|---------|
-| `express-session` + MemoryStore | Explicitly warned against for production |
-| `ts-jest` 29.x + Jest 30.x | Major version mismatch |
-| SQLite as production DB | Single-writer, no network access, limited concurrency |
-| Alpine 3.18 EOL | Should upgrade for security patches |
-| `zod` 4.x | Newer, less battle-tested than widely-used 3.x |
-
-## Operational Risks
-
-| Risk | Details |
-|------|---------|
-| Session loss on restart | Every deploy forces all users to re-login |
-| No graceful shutdown | No explicit DB connection drain or in-flight request handling |
-| No database backup automation | No cron job, no backup verification |
-| `LOG_LEVEL` unused | Env var passed but application code ignores it |
+**Overall assessment:** The codebase is in good shape for a v3.2.0 homelab app. No critical issues. The medium-severity items (lifetimePoints cache drift on uncomplete, mixed local/UTC dates, in-memory sessions, e2e rate limiter persistence, SQLite ownership) are all documented in the project memory system and have known mitigations. The code is well-structured, consistently formatted, and has solid test coverage (256 backend, 106 frontend, 71 e2e). The project memory system (bugs.md, decisions.md, issues.md) is actively maintained and accurate.
