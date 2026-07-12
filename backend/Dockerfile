@@ -1,7 +1,7 @@
 # Multi-stage build for backend-v2 (Node.js + Prisma + Express)
 
 # ---- Stage 1: dependencies ----
-FROM node:20-alpine AS deps
+FROM node:20-alpine3.18 AS deps
 WORKDIR /app
 
 # Install build deps
@@ -9,7 +9,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 
 # ---- Stage 2: build ----
-FROM node:20-alpine AS build
+FROM node:20-alpine3.18 AS build
 WORKDIR /app
 
 # Install all deps (including dev) for TypeScript build
@@ -24,7 +24,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # ---- Stage 3: runtime ----
-FROM node:20-alpine AS runtime
+FROM node:20-alpine3.18 AS runtime
 WORKDIR /app
 
 # Install runtime deps only

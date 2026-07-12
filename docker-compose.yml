@@ -47,6 +47,11 @@ services:
     environment:
       # Core configuration
       - NODE_ENV=${NODE_ENV:-production}
+      # Rate-limit ceilings — raised for a full Playwright UAT run (the
+      # default 300/15min is exceeded by ~500 requests across the suite).
+      # See backend/src/middleware/rateLimiter.ts.
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-300}
+      - AUTH_RATE_LIMIT_MAX=${AUTH_RATE_LIMIT_MAX:-10}
       - PORT=3010
       - APP_VERSION=${APP_VERSION}
       # Data directory (host path mounted into container)
@@ -61,6 +66,8 @@ services:
       - SECURE_COOKIES=${SECURE_COOKIES:-false}
       - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - NTFY_BASE_URL=${NTFY_BASE_URL:-}
+      - NTFY_DEFAULT_TOPIC=${NTFY_DEFAULT_TOPIC:-}
     volumes:
       - ${DATA_DIR:-/opt/app-data/chore-ganizer}:${DATA_DIR:-/opt/app-data/chore-ganizer}
     networks:
