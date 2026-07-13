@@ -22,6 +22,7 @@ jest.mock('../../config/prisma', () => ({
     },
     user: {
       update: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
     },
     $transaction: jest.fn(),
   },

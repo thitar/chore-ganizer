@@ -29,6 +29,9 @@ jest.mock('../../config/prisma', () => ({
       createMany: jest.fn(),
       updateMany: jest.fn(),
     },
+    user: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     $transaction: jest.fn(),
   },
 }))

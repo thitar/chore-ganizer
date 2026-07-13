@@ -94,6 +94,70 @@ Date-ordered Architectural Decision Records (ADRs).
 - ✅ Easy to mock in tests (one module to spy on, not two)
 - ❌ Adds one re-export line per config value used externally
 
+### ADR-009: POST /api/auth/login Returns 400 (Not 401) for an Empty/Malformed Body (2026-07-13)
+
+**Context:**
+- Adding `validate(loginSchema)` to `auth.routes.ts` (closing the "no Zod validation on 4 of 7 route modules" gap, see ADR/CONCERNS history) changed behavior for one specific edge case: a request body missing `email`/`password`, or with either as an empty string.
+- Previously, that body reached `authService.login()` directly, which did a Prisma lookup for a nonexistent user and threw a 401 `AppError('Invalid credentials')`.
+- Now Zod rejects the malformed shape before the handler runs, returning `400 VALIDATION_ERROR` instead.
+- A code review flagged this as a real, observable API contract change and asked whether it should be preserved.
+
+**Decision:**
+- Keep the new 400 behavior. A missing/empty `email` or `password` is a malformed request, not a wrong credential — 400 is the more semantically correct status code, and this is the same trade-off already made for every other route that gained Zod validation in this pass (`users`, `recurring`).
+- Do not special-case `auth.routes.ts` to preserve the old 401-for-empty-body behavior — that would mean either skipping validation for empty values (defeating the point of adding it) or adding bespoke logic solely to keep a status code stable.
+
+**Alternatives Considered:**
+- Have `loginSchema` never reject anything, delegating all checks (including presence) to `authService.login()` → Rejected: reduces the new validation to a no-op for the most common malformed-request case.
+- Catch the Zod rejection for this route only and re-throw as a 401 → Rejected: extra special-case code to preserve a status code nothing currently depends on.
+
+**Consequences:**
+- ✅ Consistent 400/`VALIDATION_ERROR` envelope for malformed request bodies across all routes with Zod validation, including auth.
+- ✅ No bespoke logic needed in `auth.routes.ts`.
+- ❌ Any external caller (frontend error-branching, monitoring/alerting keyed on 401 vs 400 for `/login`) that distinguishes these two codes for an empty-body request would see a change. Checked: no current test, e2e spec, or frontend code branches on this specific case.
+- If this ever needs revisiting, the frontend's `auth.api.ts` `AuthError` handling (see `AGENTS.md`'s "401 responses" note) is the first place to check for status-code-specific branching.
+
+### ADR-008: In-Memory Session Store — Accepted Trade-off, Not a Bug (2026-07-13)
+
+**Context:**
+- `backend/src/app.ts` uses `express-session`'s default in-memory `MemoryStore`, not Redis or a DB-backed store.
+- Consequence: every backend restart (deploy, crash-restart, `docker compose up -d --force-recreate`) invalidates every logged-in session — the whole family gets logged out simultaneously.
+- Flagged repeatedly across reviews (PR146-REVIEW-3, `CONCERNS.md`) as a "medium" item, never actually fixed.
+
+**Decision:**
+- Keep the in-memory store. This is a single-family homelab app on one backend instance — there is no horizontal scaling, and a restart-triggered re-login for 4-8 family members is a minor inconvenience, not an incident.
+- Do not add Redis (or any external session store) purely to solve this — it would add an operational dependency (another container, another failure mode to monitor) to remove an inconvenience that costs each user one login form.
+
+**Alternatives Considered:**
+- Redis-backed session store → Rejected: real infra cost (extra container, backup/restore surface) for a cosmetic-scale problem at this app's size.
+- SQLite-backed session store (reuse existing DB) → Deferred, not rejected: cheaper than Redis since no new service is needed, but not worth doing without a concrete trigger (e.g. restarts becoming frequent enough that re-logins are a real nuisance).
+
+**Consequences:**
+- ✅ Zero added infrastructure or failure modes.
+- ✅ Matches the app's actual deployment shape (one backend instance, one family).
+- ❌ A restart (deploy, crash, manual recreate) logs everyone out; already documented as expected behavior, not a defect.
+- If the app ever moves to multi-instance/horizontal scaling, this decision must be revisited first — in-memory sessions do not work across multiple backend processes.
+
+### ADR-007: `PARTIALLY_COMPLETE` Status — Documented, Deferred to Future Development (2026-07-13)
+
+**Context:**
+- `schema.prisma`, `ARCHITECTURE.md`, and `key_facts.md` all list `PARTIALLY_COMPLETE` as a valid `ChoreAssignment`/`RecurringOccurrence` status alongside `PENDING`/`COMPLETED`.
+- No current code path (service, route, or frontend) ever writes `PARTIALLY_COMPLETE` — it exists in the documented value set but has no producer.
+- Unclear from history whether this was speculative schema design ahead of a feature, or a partially-implemented feature that never shipped.
+
+**Decision:**
+- Leave `PARTIALLY_COMPLETE` in the schema and docs as a reserved, not-yet-implemented status — do not remove it, and do not implement it opportunistically as a side effect of unrelated work.
+- Treat "what counts as partial completion for a chore" (sub-tasks? parent approval step? partial point award?) as a real product decision that needs its own design pass, not something to guess at while fixing something else.
+- Any future work that touches assignment/occurrence completion should assume `PARTIALLY_COMPLETE` is planned-but-inert, not dead code to delete.
+
+**Alternatives Considered:**
+- Remove the unused status now → Rejected: no evidence it's unwanted, just unfinished; removing it would just mean re-adding it later with the same open design questions.
+- Implement a minimal version now → Rejected: no defined product behavior exists for what "partial" means here; guessing risks building the wrong thing.
+
+**Consequences:**
+- ✅ No wasted implementation effort building an undesigned feature.
+- ✅ Docs no longer read as an inconsistency/bug — they reflect a known, intentional gap.
+- ❌ The status remains inert until someone actually designs and implements it.
+
 ### ADR-006: Lazy Self-Healing Cache Pattern for lifetimePoints (2026-07-10)
 
 **Context:**

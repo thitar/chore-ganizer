@@ -2,10 +2,12 @@ import { Router } from 'express'
 import * as recurringService from '../services/recurring.service'
 import { authenticate } from '../middleware/auth'
 import { authorize } from '../middleware/auth'
+import { validate } from '../middleware/validator'
+import { createRecurringSchema } from '../schemas/recurring.schema'
 
 const router = Router()
 
-router.post('/', authenticate, authorize('PARENT'), async (req, res, next) => {
+router.post('/', authenticate, authorize('PARENT'), validate(createRecurringSchema), async (req, res, next) => {
   try {
     const chore = await recurringService.create({
       ...req.body,

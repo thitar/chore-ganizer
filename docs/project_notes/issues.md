@@ -12,6 +12,28 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-07-13 — Code review on the above session's diff found a real reliability bug in the new notification wiring; fixed
+
+- **Status**: Completed
+- **Description**: A multi-angle code review of the uncommitted diff from the entry below flagged that `assignment.service.ts complete()` and `recurring.service.ts completeOccurrence()` both fetched parent users (`prisma.user.findMany`) **after** their completion transaction had already committed, with no try/catch — a transient DB error there would have surfaced as a 500 to the client for a chore that had, in fact, already completed successfully (points awarded, status persisted). The same block was also duplicated verbatim across both files and blocked the HTTP response on a DB round-trip to feed an otherwise fire-and-forget notification.
+- **Fix**: Added `notifyParentsOfChoreCompletion()` to `notification.service.ts` — a single function that does the parent lookup, calls the existing `notifyChoreCompleted()`, and wraps the whole thing in try/catch (`console.warn` on failure, matching `gamification.service.ts`'s `awardBadges` convention). Both call sites now just do `void notifyParentsOfChoreCompletion(...)`, fire-and-forget like the `void awardBadges(...)` call next to it — collapsing the duplication and removing the blocking `await` in one move. Added 2 new tests in `notification.service.test.ts` covering the happy path and the "lookup throws, doesn't propagate" case.
+- **Not changed**: the review also flagged that `auth.routes.ts`'s new `validate(loginSchema)` changes the response for an empty/malformed login body from 401 to 400 — judged a correct, intentional side effect of adding real request validation (not a regression), and nothing currently depends on the old status code, so left as-is.
+- **Verification**: Backend 258/258 (was 256; +2 new), `tsc --noEmit` clean, `npm run build` clean.
+- **URL**: local — `backend/src/services/{notification,assignment,recurring}.service.ts`, `backend/src/__tests__/services/notification.service.test.ts`
+
+### 2026-07-13 — Closed 4 of 6 "surprises for new contributors" from a fresh codebase-analysis pass; documented the other 2 as intentional
+
+- **Status**: Completed
+- **Description**: A code-explorer subagent's architectural analysis flagged 6 items under "Surprises for New Contributors." Went through each with the user and closed out per their direction:
+  - **Wired `notifyChoreCompleted`** — existed since Phase 9/M2 but was never called. Added it to both completion paths (`assignment.service.complete()`, `recurring.service.completeOccurrence()`), fire-and-forget after the existing `awardBadges()` call, notifying all `PARENT`-role users with an `ntfyTopic` set. Narrowed the function's parameter type (it only ever used `id`/`template`/`dueDate`, never the `assignedTo` field the old shared `AssignmentWithIncludes` type required) so the recurring-occurrence call site didn't need to fabricate a fake `assignedTo`.
+  - **Added Zod validation** to `auth.routes.ts` (`loginSchema`), `users.routes.ts` (`createUserSchema`, `updatePasswordSchema`, `updateColorSchema`, `updateNtfyTopicSchema`), and `recurring.routes.ts` (`createRecurringSchema`) — closing `CONCERNS.md` §1.2 and the matching gap called out in `ARCHITECTURE.md`/`AGENTS.md`. `occurrences.routes.ts` correctly still has none — its one route takes no body.
+  - **Updated `ARCHITECTURE.md`/`AGENTS.md`** (symlinked as `CLAUDE.md`) to drop the now-stale "4 of 7 route modules have no Zod schema" claim, and added a one-line pointer that recurring *occurrences* are listed/completed via `assignments`/`occurrences` routes, not `/api/recurring`.
+  - **Checked the `lifetimePoints`-not-decremented claim** — already correctly resolved and documented as intentional in `CONCERNS.md` §1.1 and this file's 2026-07-12 entry; the "confirmed gap" framing only existed in the subagent's fresh (not-repo-persisted) analysis output, so there was no actual stale doc to fix.
+  - **Documented `PARTIALLY_COMPLETE`** (ADR-007) and **in-memory sessions** (ADR-008) in `decisions.md` as explicitly deferred/accepted, per the user's direction — not implemented, just no longer silently unexplained.
+- **Verification**: Adding the `notifyChoreCompleted` call surfaced a real test gap — `assignment.service.test.ts` and `recurring.service.test.ts`'s mocked `prisma` objects had no `user.findMany`, so the new call threw `TypeError` mid-test. Added `user: { findMany: jest.fn().mockResolvedValue([]) }` to both files' mocks. Full suite re-run after every step: backend 256/256, frontend 106/106, `tsc --noEmit` clean, `npm run build` clean (both packages).
+- **Notes**: This session's env-var-permission friction (from earlier 2026-07-13 entries) didn't recur — no `.env`/`.env.example` files were touched.
+- **URL**: local — `backend/src/services/{assignment,recurring,notification}.service.ts`, `backend/src/routes/{auth,users,recurring}.routes.ts`, `backend/src/schemas/{auth,users,recurring}.schema.ts` (new), `docs/ARCHITECTURE.md`, `AGENTS.md`, `docs/project_notes/decisions.md`, `.planning/codebase/CONCERNS.md`
+
 ### 2026-07-13 — Live-readiness follow-up: verified the *running* app, found one real live security gap, fixed 5 real bugs
 
 - **Status**: Completed — live rate-limit gap fixed (backend restarted), code fixes committed; one `SECURE_COOKIES` decision + a deploy step still deferred to user (written up in `LIVE-READINESS-2026-07-13.md`)

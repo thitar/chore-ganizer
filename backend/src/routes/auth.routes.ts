@@ -2,10 +2,12 @@ import { Router } from 'express'
 import * as authService from '../services/auth.service'
 import { authenticate } from '../middleware/auth'
 import { authLimiter } from '../middleware/rateLimiter'
+import { validate } from '../middleware/validator'
+import { loginSchema } from '../schemas/auth.schema'
 
 const router = Router()
 
-router.post('/login', authLimiter, async (req, res, next) => {
+router.post('/login', authLimiter, validate(loginSchema), async (req, res, next) => {
   try {
     const { email, password } = req.body
     const user = await authService.login(email, password)

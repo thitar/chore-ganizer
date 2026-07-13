@@ -1,6 +1,7 @@
 import { prisma } from '../config/prisma'
 import { AppError } from '../middleware/errorHandler'
 import { awardBadges } from './gamification.service'
+import { notifyParentsOfChoreCompletion } from './notification.service'
 
 function toUtcDate(d: Date): string {
   return d.toISOString().slice(0, 10)
@@ -156,6 +157,11 @@ export async function completeOccurrence(occurrenceId: number, userId: number) {
     })
   })
   void awardBadges(occurrence.assignedToId)
+
+  if (result?.chore) {
+    void notifyParentsOfChoreCompletion({ id: result.id, template: result.chore.template, dueDate: result.dueDate })
+  }
+
   return result
 }
 
