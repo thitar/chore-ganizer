@@ -47,7 +47,7 @@ describe('GET /api/users', () => {
     expect(user).toHaveProperty('name')
     expect(user).toHaveProperty('role')
     expect(user).toHaveProperty('color')
-    expect(user).not.toHaveProperty('email')
+    expect(user).toHaveProperty('email')
     expect(user).not.toHaveProperty('password')
   })
 })

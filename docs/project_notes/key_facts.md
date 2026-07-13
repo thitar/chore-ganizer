@@ -45,6 +45,8 @@ Store secrets in `.env` (excluded via `.gitignore`) or a password manager.
 - Frontend: `3002` (host, maps to nginx port 80 in the container)
 - Backend: `3010`
 
+**Live deployment (confirmed 2026-07-13):** The app is exposed on the public internet at `https://chore.thitar.ovh` via a Caddy reverse proxy (adds HSTS w/ `preload`), not LAN-only. This matters for anything rate-limit or cookie-security related — see `LIVE-READINESS-2026-07-13.md` at repo root.
+
 **Data directory ownership (gotcha):** The SQLite file lives at `${DATA_DIR}/chore-ganizer.db` (default `/opt/app-data/chore-ganizer/chore-ganizer.db`) as a host bind mount. The backend server runs as container `appuser` = **uid 1001**, but the host user is uid 1000. For the container to write, the data dir/db must be world-writable (`chmod 777` dir / `666` db) or owned by 1001 — otherwise the backend throws `attempt to write a readonly database`. The container entrypoint runs `prisma db push` but **cannot** seed (no `ts-node` in the `--omit=dev` runtime image); seed from the host (`cd backend && DATABASE_URL="file:${DATA_DIR}/chore-ganizer.db" npx prisma db seed`). After deleting/re-seeding the DB, restart the backend (open connections cache read-only state per connection).
 
 ### Environment Variables

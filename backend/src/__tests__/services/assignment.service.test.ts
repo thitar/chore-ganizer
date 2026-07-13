@@ -40,6 +40,7 @@ let assignmentService: typeof import('../../services/assignment.service')
 
 beforeEach(() => {
   jest.clearAllMocks()
+  jest.spyOn(global, 'fetch').mockResolvedValue(new Response())
   delete require.cache[require.resolve('../../services/assignment.service')]
   delete require.cache[require.resolve('../../config/prisma')]
   prisma = require('../../config/prisma').prisma

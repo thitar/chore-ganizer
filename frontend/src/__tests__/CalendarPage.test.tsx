@@ -25,6 +25,12 @@ vi.mock('../hooks/useUsers', () => ({
   useUsers: vi.fn(),
 }))
 
+vi.mock('../hooks/usePoints', () => ({
+  useMyPoints: vi.fn(),
+  useLeaderboard: vi.fn(),
+  useGamification: vi.fn().mockReturnValue({ data: undefined }),
+}))
+
 import { useCalendarMonth } from '../hooks/useCalendar'
 import { useUsers } from '../hooks/useUsers'
 

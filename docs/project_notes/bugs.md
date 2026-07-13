@@ -12,6 +12,41 @@ Date-ordered log of bugs and their solutions.
 
 ---
 
+### 2026-07-13 - Two frontend test suites and one backend suite let real network calls escape into unit tests
+
+- **Issue**: `backend/src/__tests__/services/assignment.service.test.ts` produced a `Cannot log after tests are done` warning; `frontend`'s vitest run logged bare `AggregateError` output between test files with no attributable failing test
+- **Root Cause (backend)**: The file mocked `isNtfyConfigured: true` but never mocked `global.fetch`. One test's mock data included a real `ntfyTopic`, so `create()`'s fire-and-forget `notifyChoreAssigned` actually called `fetch('https://ntfy.example.com/...')`, which failed after the test had already finished and torn down
+- **Root Cause (frontend)**: 5 page test files (`AssignmentsPage`, `MyChoresPage`, `CalendarPage`, `RecurringChoresPage`, `UsersPage`) mocked every hook their page component uses directly, but not `usePoints`/`useGamification`. Every page renders `AppShell`, which unconditionally mounts `GamificationMoments`, which calls `useGamification()` — an unmocked real axios call fired on every render of these 5 suites
+- **Solution**: Added a file-level `jest.spyOn(global, 'fetch').mockResolvedValue(new Response())` to the backend file's `beforeEach`; added the missing `vi.mock('../hooks/usePoints', ...)` (returning `{ data: undefined }` for `useGamification`, which `GamificationMoments` already early-returns on) to all 5 frontend files
+- **Prevention**: When a test mocks "the feature flag that turns a side effect on" (`isNtfyConfigured`, or any hook a shared layout component calls), also mock or verify every network-capable call site that flag gates — a component-under-test's *ancestors* (shared layout, `AppShell`) can fire calls the test never intended to exercise. Grep hooks used by `AppShell`'s children before writing a new page test rather than assuming "I mocked everything the page imports directly"
+- **File**: `backend/src/__tests__/services/assignment.service.test.ts`, `frontend/src/__tests__/{AssignmentsPage,MyChoresPage,CalendarPage,RecurringChoresPage,UsersPage}.test.tsx`
+
+### 2026-07-13 - Two stale `users.test.ts`/`assignments.test.ts` assertions were still failing every `npm test` run
+
+- **Issue**: `npm test` in `backend/` reliably failed 2/256 tests: `expect(u).not.toHaveProperty('email')`
+- **Root Cause**: A 2026-07-10 decision made `GET /api/users` intentionally return `email`, but these two test assertions (written before that decision) were never updated — a gap noted but explicitly left unfixed in a 2026-07-12 session ("out of scope this session")
+- **Solution**: Changed both assertions to `expect(u).toHaveProperty('email')`, matching the intentional, correct behavior
+- **Prevention**: A previously-logged "known gap, not fixed" item is still a real failing test in the meantime — don't let "documented as known" substitute for "actually fixed" once someone's back in the file
+- **File**: `backend/src/__tests__/users.test.ts`, `backend/src/__tests__/assignments.test.ts`
+
+### 2026-07-13 - Broken favicon reference (leftover Vite template asset)
+
+- **Issue**: `frontend/index.html` referenced `/vite.svg`, which was never checked into the repo (no `frontend/public/` directory existed at all) — nginx logged a 404 on every single page load in production (`chore.thitar.ovh`), and browsers showed no tab icon
+- **Root Cause**: Default Vite scaffold reference never replaced when the app got its own branding
+- **Solution**: Added `frontend/public/favicon.svg` (simple checkmark mark in the app's accent purple `#8B5CF6`), updated the `<link rel="icon">` href
+- **File**: `frontend/index.html`, `frontend/public/favicon.svg`
+
+### 2026-07-13 - Backend container was running stale rate-limit values; `.env` was already correct
+
+- **Issue**: `docker compose exec backend printenv` showed `RATE_LIMIT_MAX=1000`/`AUTH_RATE_LIMIT_MAX=500` live, while `.env` itself already had the safe values (`AUTH_RATE_LIMIT_MAX=10`) — the running container was just never restarted after `.env` was corrected
+- **Root Cause**: Env vars are read once at process start; editing `.env` has zero effect on an already-running container until it's recreated. A prior session's manual `.env` fix silently didn't take effect for this reason
+- **Context that raised the stakes while diagnosing**: `curl -I https://chore.thitar.ovh` confirms this app is reverse-proxied through Caddy and reachable on the **public internet**, not LAN-only as the original `CONCERNS.md` audit assumed. At `500`/15min, the login endpoint was effectively unprotected against brute-forcing from anywhere
+- **Solution**: `docker compose up -d --force-recreate backend`. Verified post-restart: `RATE_LIMIT_MAX=300`, `AUTH_RATE_LIMIT_MAX=10`, health check green, DB intact (8 users, no data loss)
+- **Prevention**: After any `.env` edit that a live container needs to pick up, the fix isn't complete until you *also* confirm via `docker compose exec <service> printenv` that the running process reflects it — a `.env` file matching your intent is necessary but not sufficient
+- **File**: `.env`, `docker-compose.yml`
+
+---
+
 ### 2026-07-12 - Mixed local/UTC `Date` methods in `getAll()`'s default month range
 
 - **Issue**: `GET /api/assignments` with no `from`/`to` params (the dashboard/assignments-page default) could compute the wrong month boundary near a UTC month rollover

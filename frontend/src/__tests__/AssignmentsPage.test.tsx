@@ -19,6 +19,11 @@ vi.mock('../hooks/useAuth', () => ({
 vi.mock('../hooks/useAssignments', () => ({ useAssignments: vi.fn() }))
 vi.mock('../hooks/useTemplates', () => ({ useTemplates: vi.fn() }))
 vi.mock('../hooks/useUsers', () => ({ useUsers: vi.fn() }))
+vi.mock('../hooks/usePoints', () => ({
+  useMyPoints: vi.fn(),
+  useLeaderboard: vi.fn(),
+  useGamification: vi.fn().mockReturnValue({ data: undefined }),
+}))
 
 import { useAssignments } from '../hooks/useAssignments'
 import { useTemplates } from '../hooks/useTemplates'
