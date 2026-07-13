@@ -12,6 +12,19 @@ Date-ordered log of bugs and their solutions.
 
 ---
 
+### 2026-07-13 - Full env-var audit: VITE_API_URL was dead code, LOG_LEVEL/NTFY_DEFAULT_TOPIC unread, backend/.env's PORT mismatched the frontend proxy target
+
+- **Issue**: User asked to verify every entry in `frontend/.env`/`backend/.env` is actually used by the app, after noticing backend has a separate `.env`/`.env.example` from the root pair. Full grep of `process.env.*`/`import.meta.env`/`window.APP_CONFIG` usage against every documented var turned up several real gaps
+- **Findings**:
+  - `VITE_API_URL`/`VITE_DEBUG`/`VITE_APP_VERSION` were completely disconnected dead code: the frontend Docker entrypoint generated a `window.APP_CONFIG` object into `/config.js`, and nginx even served it, but no React code anywhere read it — every `frontend/src/api/*.ts` module called `createApiClient()` with a hardcoded relative path instead. Setting `VITE_API_URL` had zero effect on the running app
+  - `LOG_LEVEL` and `NTFY_DEFAULT_TOPIC` were passed into the backend container via `docker-compose.yml` (and documented in the root `.env.example`) but never read anywhere in `backend/src` — confirmed via full grep of `process.env.*` call sites
+  - `backend/.env` (the real local-dev file, not the example) had `PORT=3000`, but `frontend/vite.config.ts`'s dev-server proxy hardcodes `target: 'http://localhost:3010'` — running the backend locally via `npm run dev` with that value meant every `/api/*` call from the Vite dev frontend silently failed (proxied to nothing on 3010)
+  - `backend/.env`'s `SESSION_SECRET=""` had a comment claiming "a random secret will be generated at runtime" — false; `app.ts` falls back to the literal string `'dev-secret'`, not a random one
+- **Solution**: Wired `VITE_API_URL` up for real instead of deleting it (user's choice — the mechanism might matter for a future cross-origin setup): `frontend/index.html` now loads `/config.js` before the app bundle, `frontend/public/config.js` provides an empty-string local-dev default (Docker's entrypoint overwrites the same path at container start with real values), and `apiClient.ts`'s `createApiClient()` now prepends `window.APP_CONFIG?.apiUrl` to every relative path. Removed `LOG_LEVEL`/`NTFY_DEFAULT_TOPIC` from `docker-compose.yml` (confirmed dead, safe to drop). Created a missing `frontend/.env.example` (frontend previously had a real `.env` but no template for it)
+- **Not fixed — outside this agent's write permissions (any path matching `.env`/`.env.example` is Read-denied by the user's permission settings, which blocks Edit/Write too since those tools require a prior Read)**: `backend/.env`'s `PORT` and stale `SESSION_SECRET` comment, `LOG_LEVEL` line; `backend/.env.example`'s missing `CORS_ORIGIN` documentation; root `.env`/`.env.example`'s `LOG_LEVEL`/`NTFY_DEFAULT_TOPIC` lines. Exact fix text given to the user directly instead
+- **Prevention**: When an env var is "documented" (in a `.env.example` or `docker-compose.yml`), that's a claim it's read somewhere — verify with a grep of the actual `process.env.*`/`import.meta.env`/`window.APP_CONFIG` call sites before trusting the docs, especially for a runtime-config mechanism (entrypoint script + nginx template) that's several layers removed from the application code that would need to consume it
+- **File**: `docker-compose.yml`, `frontend/index.html`, `frontend/public/config.js`, `frontend/src/lib/apiClient.ts`, `frontend/.env.example` (new), `docs/OPERATIONS.md`
+
 ### 2026-07-13 - Two frontend test suites and one backend suite let real network calls escape into unit tests
 
 - **Issue**: `backend/src/__tests__/services/assignment.service.test.ts` produced a `Cannot log after tests are done` warning; `frontend`'s vitest run logged bare `AggregateError` output between test files with no attributable failing test

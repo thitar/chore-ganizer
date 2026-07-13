@@ -65,9 +65,7 @@ services:
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}
       - SECURE_COOKIES=${SECURE_COOKIES:-false}
       - SESSION_MAX_AGE=${SESSION_MAX_AGE:-604800000}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
       - NTFY_BASE_URL=${NTFY_BASE_URL:-}
-      - NTFY_DEFAULT_TOPIC=${NTFY_DEFAULT_TOPIC:-}
     volumes:
       - ${DATA_DIR:-/opt/app-data/chore-ganizer}:${DATA_DIR:-/opt/app-data/chore-ganizer}
     networks:
