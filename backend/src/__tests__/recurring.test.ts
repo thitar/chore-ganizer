@@ -149,7 +149,8 @@ describe('POST /api/occurrences/:id/complete', () => {
 
     const listRes = await request(app).get('/api/assignments').set('Cookie', aliceCookies)
     const myOcc = listRes.body.data.find(
-      (a: { type: string; status: string }) => a.type === 'RECURRING' && a.status === 'PENDING'
+      (a: { type: string; status: string; choreTemplateId: number }) =>
+        a.type === 'RECURRING' && a.status === 'PENDING' && a.choreTemplateId === testTemplateId
     )
     if (!myOcc) return
 
