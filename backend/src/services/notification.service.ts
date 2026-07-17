@@ -1,3 +1,4 @@
+import { prisma } from '../config/prisma'
 import { isNtfyConfigured, getNtfyConfig } from '../config/notifications'
 import { assignedBody, dueSoonBody, completedBody } from './notification.formatters'
 
@@ -53,7 +54,7 @@ export async function notifyChoreDueSoon(assignment: AssignmentWithIncludes): Pr
 }
 
 export function notifyChoreCompleted(
-  assignment: AssignmentWithIncludes,
+  assignment: { id: number; template: { title: string; points: number }; dueDate: Date },
   parents: { ntfyTopic: string | null }[]
 ): void {
   for (const parent of parents) {
@@ -61,5 +62,23 @@ export function notifyChoreCompleted(
     if (!topic) continue
     const { title, body, priority, tags, click } = completedBody(assignment)
     void sendNtfy(topic, title, body, { priority, tags, click })
+  }
+}
+
+export async function notifyParentsOfChoreCompletion(assignment: {
+  id: number
+  template: { title: string; points: number }
+  dueDate: Date
+}): Promise<void> {
+  try {
+    const parents = await prisma.user.findMany({
+      where: { role: 'PARENT' },
+      select: { ntfyTopic: true },
+    })
+    notifyChoreCompleted(assignment, parents)
+  } catch (err) {
+    console.warn(
+      `[ntfy] failed to look up parents for completion notification: ${err instanceof Error ? err.message : String(err)}`
+    )
   }
 }

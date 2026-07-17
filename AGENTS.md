@@ -49,7 +49,7 @@ Two independent npm packages, `backend/` and `frontend/`, each producing its own
 The v1-rewrite intentionally does **not** generate OpenAPI/Swagger docs. A solo developer who wrote the API doesn't need docs to remember it. The `backend/src/routes/*.ts` and `backend/src/schemas/*.ts` files (Zod schemas) are the authoritative contract.
 
 If a future contributor wants API docs:
-- The Zod schemas in `backend/src/schemas/*.ts` are the source of truth for request bodies **where they exist** — only `assignments.routes.ts`, `points.routes.ts`, and `templates.routes.ts` actually run `validate(schema)`. `auth.routes.ts`, `users.routes.ts`, `recurring.routes.ts`, and `occurrences.routes.ts` read `req.body` directly with no Zod schema; for those, the route handler itself is the only contract.
+- The Zod schemas in `backend/src/schemas/*.ts` are the source of truth for request bodies. All routes that accept a request body run `validate(schema)` (`assignment`, `points`, `template`, `auth`, `users`, `recurring`). `occurrences.routes.ts` has no schema because its one route takes no body, only a URL param — the route handler is the only contract there.
 - The TypeScript return types in service methods document the response shapes
 - Run the dev server and curl endpoints; the Express middleware returns JSON `{success, data, error}` envelopes with descriptive error messages
 

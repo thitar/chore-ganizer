@@ -1,7 +1,7 @@
 import { prisma } from '../config/prisma'
 import { AppError } from '../middleware/errorHandler'
 import { generateOccurrences } from './recurring.service'
-import { notifyChoreAssigned, isNtfyConfigured, sendNtfy } from './notification.service'
+import { notifyChoreAssigned, notifyParentsOfChoreCompletion, isNtfyConfigured, sendNtfy } from './notification.service'
 import { dueSoonBody } from './notification.formatters'
 import { awardBadges } from './gamification.service'
 
@@ -181,6 +181,10 @@ export async function complete(assignmentId: number, userId: number) {
   })
 
   void awardBadges(assignment.assignedToId)
+
+  if (updated) {
+    void notifyParentsOfChoreCompletion(updated)
+  }
 
   return updated
 }

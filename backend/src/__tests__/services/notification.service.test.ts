@@ -1,9 +1,25 @@
-import { sendNtfy, notifyChoreAssigned, notifyChoreDueSoon, notifyChoreCompleted } from '../../services/notification.service'
+import {
+  sendNtfy,
+  notifyChoreAssigned,
+  notifyChoreDueSoon,
+  notifyChoreCompleted,
+  notifyParentsOfChoreCompletion,
+} from '../../services/notification.service'
 
 jest.mock('../../config/notifications', () => ({
   isNtfyConfigured: true,
   getNtfyConfig: jest.fn(() => ({ baseUrl: 'https://ntfy.example.com' })),
 }))
+
+jest.mock('../../config/prisma', () => ({
+  prisma: {
+    user: {
+      findMany: jest.fn(),
+    },
+  },
+}))
+
+const { prisma } = require('../../config/prisma')
 
 const mockAssignment = {
   id: 42,
@@ -170,6 +186,33 @@ describe('notification.service', () => {
       const parents = [{ ntfyTopic: null }, { ntfyTopic: null }]
       notifyChoreCompleted(mockAssignment, parents)
       expect(global.fetch).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('notifyParentsOfChoreCompletion', () => {
+    beforeEach(() => {
+      prisma.user.findMany.mockReset()
+    })
+
+    it('looks up PARENT users and notifies them', async () => {
+      prisma.user.findMany.mockResolvedValue([{ ntfyTopic: 'parent1' }, { ntfyTopic: 'parent2' }])
+      await notifyParentsOfChoreCompletion(mockAssignment)
+      expect(prisma.user.findMany).toHaveBeenCalledWith({
+        where: { role: 'PARENT' },
+        select: { ntfyTopic: true },
+      })
+      expect(global.fetch).toHaveBeenCalledTimes(2)
+    })
+
+    it('does not throw when the parent lookup fails, and logs a warning instead', async () => {
+      prisma.user.findMany.mockRejectedValue(new Error('DB connection lost'))
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
+      await expect(notifyParentsOfChoreCompletion(mockAssignment)).resolves.not.toThrow()
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('DB connection lost')
+      )
+      expect(global.fetch).not.toHaveBeenCalled()
+      consoleWarnSpy.mockRestore()
     })
   })
 })

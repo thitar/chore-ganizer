@@ -13,11 +13,11 @@
 - **Detail:** `complete()` increments `User.lifetimePoints`; `uncomplete()` creates a `REVERSED` PointLog entry but doesn't decrement it. This was originally flagged as cache drift. On closer inspection: `getLifetimePoints()`'s backfill/recompute query (`gamification.service.ts`) sums PointLog entries with `amount: { gt: 0 }` only — i.e. `lifetimePoints` is *defined* as "total points ever earned," not net balance. Since `uncomplete()`'s reversal is a negative entry and never deletes the original positive `EARNED` entry, a fresh recompute would never subtract it either — the incremental cache and a full recompute always agree. There is no drift.
 - **Decision (2026-07-12, user-confirmed):** Keep this monotonic "total ever earned" semantic intentionally — undoing a mis-clicked completion or a negative points adjustment should not take away a kid's level progress. Matches ADR-006's stated trade-off exactly. **Do not decrement `lifetimePoints` on `uncomplete()` or negative `adjustPoints()` calls** — doing so would require also removing the `amount>0` filter from the recompute query, or the two would start disagreeing (a real bug that doesn't exist today).
 
-### 1.2 No Zod Validation on 4 of 7 Route Modules
-- **Files:** `backend/src/routes/auth.routes.ts`, `users.routes.ts`, `recurring.routes.ts`, `occurrences.routes.ts`
-- **Severity:** Low -- validated at service layer instead
-- **Detail:** Only `assignments.routes.ts`, `points.routes.ts`, and `templates.routes.ts` run Zod `validate(schema)` middleware. The other 4 route modules read `req.body` directly. Validation happens in the service layer (e.g., `users.service.ts` has inline regex checks), so malformed input is caught, but error messages and status codes are inconsistent -- service-layer `AppError` vs Zod `400 VALIDATION_ERROR` envelope.
-- **Impact:** Cosmetic inconsistency. No security gap since validation does happen.
+### 1.2 ~~No Zod Validation on 4 of 7 Route Modules~~ — Resolved 2026-07-13
+- **Files:** `backend/src/routes/auth.routes.ts`, `users.routes.ts`, `recurring.routes.ts`
+- **Severity:** Was Low -- service-layer validation already caught malformed input
+- **Detail:** `auth`, `users`, and `recurring` routes now run Zod `validate(schema)` (`backend/src/schemas/auth.schema.ts`, `users.schema.ts`, `recurring.schema.ts`), matching `assignments`/`points`/`templates`. `occurrences.routes.ts` still has no schema, correctly -- its one route (`POST /:id/complete`) takes no request body, only a URL param, so there is nothing to validate. Service-layer checks (e.g. `users.service.ts`'s inline regex) are unchanged and still run after Zod's shape check.
+- **Impact:** Error envelope is now consistent (`400 VALIDATION_ERROR` on malformed shape) across all body-bearing routes.
 
 ### 1.3 Duplicate `isRecordNotFoundError()` Helper
 - **Files:** `backend/src/services/assignment.service.ts:288-295` and `backend/src/services/template.service.ts:60-66`
