@@ -21,9 +21,9 @@ Frontend serves on `${FRONTEND_PORT:-3002}`, backend on `${PORT:-3010}`.
 
 ### What happens on container start
 
-- **Backend** (`backend/docker-entrypoint.sh`): runs as root → adjusts `appuser` UID/GID if `PUID`/`PGID` differ from the image default (`1001`) → creates and chowns `DATA_DIR` → generates the Prisma client → `prisma db push --accept-data-loss` (auto-applies schema, dropping any column/table a schema change removed) → seeds the DB if `prisma.user.count()` is `0` → drops to `appuser` via `su-exec` → starts `node dist/server.js`.
+- **Backend** (`backend/docker-entrypoint.sh`): runs as root → adjusts `appuser` UID/GID if `PUID`/`PGID` differ from the image default (`1001`) → creates and chowns `DATA_DIR` → generates the Prisma client → `prisma db push --accept-data-loss` (auto-applies schema, dropping any column/table a schema change removed) → if `prisma.user.count()` is `0`, runs `bootstrap-parent.js` which creates exactly one PARENT from `BOOTSTRAP_PARENT_*` env vars (fails fast if vars are missing); if users exist, skips bootstrap entirely → drops to `appuser` via `su-exec` → starts `node dist/server.js`.
 - **Frontend** (`frontend/docker-entrypoint.sh`): writes `/usr/share/nginx/html/config.js` (`window.APP_CONFIG = { apiUrl, debug, appVersion }` from `VITE_API_URL`/`VITE_DEBUG`/`VITE_APP_VERSION`), substitutes `BACKEND_PORT` into the nginx config via `envsubst`, then starts nginx.
-- Schema changes and seeding are automatic — no manual migration step on first run or after a schema change. `DATA_DIR` must exist on the host before starting (Docker creates it as root if missing).
+- Schema changes and bootstrap are automatic — no manual migration step on first run or after a schema change. Demo fixtures remain available only through explicit `npx prisma db seed` in development. `DATA_DIR` must exist on the host before starting (Docker creates it as root if missing).
 
 ## Environment Variables
 
@@ -32,6 +32,10 @@ Single `.env` file at the project root for Docker Compose — copy the root `.en
 | Variable | Required? | Default | Purpose |
 |---|---|---|---|
 | `SESSION_SECRET` | **Required** | none | Session cookie signing secret. `app.ts` **fails fast at startup** if `NODE_ENV=production` and this is unset — refuses to run on the insecure dev fallback (`'dev-secret'`). Generate with `openssl rand -base64 32`. |
+| `BOOTSTRAP_PARENT_NAME` | **Required** (first start only) | none | Name for the first PARENT user. Only used when `prisma.user.count()` is 0. |
+| `BOOTSTRAP_PARENT_EMAIL` | **Required** (first start only) | none | Email for the first PARENT user. |
+| `BOOTSTRAP_PARENT_PASSWORD` | **Required** (first start only) | none | Temporary password for the first PARENT. Bcrypt-hashed at creation. Remove after first login. |
+| `BOOTSTRAP_PARENT_COLOR` | Optional | `#4F46E5` | Hex color for the first PARENT user. |
 | `APP_VERSION` | **Required** (for Docker tagging) | none | Passed through to `VITE_APP_VERSION` for the frontend build/runtime config. **Not currently read by any backend application code** — no runtime version display or version-in-response feature exists yet. Keep `backend/package.json` and `frontend/package.json` versions identical regardless. |
 | `DATABASE_URL` | Optional | `file:${DATA_DIR}/chore-ganizer.db` | SQLite connection string, read directly by Prisma (`schema.prisma`'s `datasource db`). |
 | `DATA_DIR` | Optional | `/opt/app-data/chore-ganizer` | Host path bind-mounted into the backend container for the SQLite file. Must exist on the host (Docker creates it as root if missing). |
@@ -50,7 +54,9 @@ Single `.env` file at the project root for Docker Compose — copy the root `.en
 | `VITE_API_URL` | Optional | empty (relative URLs, nginx proxies `/api/*`) | Set only if the frontend needs to reach a backend on a different origin. |
 | `VITE_DEBUG` | Optional | `false` | Written into the frontend's runtime `window.APP_CONFIG.debug` by `frontend/docker-entrypoint.sh`. |
 | `CORS_ORIGIN` | Optional | `http://localhost:3002` | Consumed by the CORS middleware in `app.ts` (fixed 2026-07-10 — was passed through but ignored since the v1-rewrite). Set it to your actual frontend origin if it differs from the default. |
-| `LOG_LEVEL` | Passed through, **not consumed** | `info` | No logging library reads this in the current backend (console logging only). |
+| `BACKUP_DIR` | Optional | `/opt/app-data/chore-ganizer-backups` | Host path for SQLite backup files. |
+| `BACKUP_SCHEDULE` | Optional | `0 3 * * *` | Cron schedule for backups (crond format). |
+| `BACKUP_RETENTION_DAYS` | Optional | `14` | Days to retain backup files. |
 
 ## Version Bumps
 
@@ -75,33 +81,34 @@ There is currently no `/api/health/live`, `/api/health/ready`, or `/api/metrics`
 
 ## Data & Backups
 
-The SQLite database lives at `${DATA_DIR}/chore-ganizer.db` (default `/opt/app-data/chore-ganizer/chore-ganizer.db`), bind-mounted from the host per `docker-compose.yml`. No WAL mode or other journal-mode override is configured — it runs on SQLite's default rollback-journal mode.
+The SQLite database lives at `${DATA_DIR}/chore-ganizer.db` (default `/opt/app-data/chore-ganizer/chore-ganizer.db`), bind-mounted from the host per `docker-compose.yml`.
 
-**There is no automated backup mechanism in the current codebase** — no cron job, no backup script, nothing scheduled. (An older pre-rewrite backend had `backup-scripts/`; it was removed as dead code during the v1-rewrite and never replaced.) If you need backups, you must do them manually:
+### Automated Backups
+
+A `backup` Compose service runs daily, creating online SQLite backups via `.backup` (safe against concurrent writes) and retaining the most recent 14 days. Configure `BACKUP_DIR`, `BACKUP_SCHEDULE`, and `BACKUP_RETENTION_DAYS` in your `.env`.
 
 ```bash
-# Manual backup (safe to do live — SQLite's default rollback-journal mode
-# handles concurrent readers; for a guaranteed-consistent snapshot under
-# write load, stop the backend container first)
-cp /opt/app-data/chore-ganizer/chore-ganizer.db /opt/app-data/chore-ganizer/chore-ganizer-$(date +%Y%m%d).db
+# View backup logs
+docker compose logs backup
 
-# Or, for a live database, prefer sqlite3's own backup command over a raw file copy:
-sqlite3 /opt/app-data/chore-ganizer/chore-ganizer.db ".backup /opt/app-data/chore-ganizer/chore-ganizer-$(date +%Y%m%d).db"
+# Trigger an immediate backup
+docker compose exec backup /usr/local/bin/backup.sh
+
+# List available backups
+ls -lh "${BACKUP_DIR}"
 ```
 
-**Restore:** stop the backend, replace the `.db` file with a backup copy, restart:
+### Restore from Backup
 
 ```bash
 docker compose stop backend
-cp /opt/app-data/chore-ganizer/chore-ganizer-20260101.db /opt/app-data/chore-ganizer/chore-ganizer.db
+cp "${BACKUP_DIR}/chore-ganizer-YYYYMMDDTHHMMSSZ.db" "${DATA_DIR}/chore-ganizer.db"
 docker compose start backend
 ```
 
-This is a documented gap, not an oversight to paper over — scheduled backups are worth adding as a follow-up (e.g. a host-level cron calling the manual command above), but nothing implements it today.
-
 ## Logs
 
-Both containers log to stdout only — `docker compose logs -f backend` / `docker compose logs -f frontend`. There is no separate log file, log rotation config, or structured/JSON logging in the current backend (plain `console.log`/`console.warn`). `LOG_LEVEL` is passed through by `docker-compose.yml` but nothing in the backend reads it.
+Both containers log to stdout only — `docker compose logs -f backend` / `docker compose logs -f frontend`. There is no separate log file, log rotation config, or structured/JSON logging in the current backend (plain `console.log`/`console.warn`).
 
 ## Common Troubleshooting
 
@@ -127,6 +134,24 @@ Check `AUTH_RATE_LIMIT_MAX` (default 10/15min) and `RATE_LIMIT_MAX` (default 300
 
 Set `NTFY_BASE_URL` (e.g. `https://ntfy.sh` or a self-hosted server) to enable push notifications. Each user optionally gets a unique `ntfyTopic` (set via their profile), which acts as their private notification channel — leaving it blank disables push for that user without affecting others. There's no other notification channel (no email/SMTP, no in-app notification center) in the current backend.
 
+## Secure Cookie Rollout
+
+Production is HTTPS behind Caddy. `SECURE_COOKIES` must be enabled manually after verifying the proxy chain.
+
+### Prerequisites
+
+- Caddy terminates HTTPS and forwards `X-Forwarded-Proto: https` (default behavior).
+- Frontend Nginx preserves Caddy's `X-Forwarded-Proto` header (fixed in this release).
+
+### Rollout Steps
+
+1. Validate and reload the host Caddyfile; confirm it serves HTTPS.
+2. Deploy with `./docker-compose.sh up --build -d`.
+3. Confirm Nginx forwards the header: `docker compose exec frontend nginx -T | grep X-Forwarded-Proto` (should show `$http_x_forwarded_proto`).
+4. Set `SECURE_COOKIES=true` in the host `.env` and recreate backend/frontend.
+5. In a **private browser window**, verify: persistent login, one mutating request (CSRF), chore completion, notification delivery (if configured), and `/api/health`.
+6. If login does not persist, revert `SECURE_COOKIES=false`, recreate services, and investigate forwarded headers.
+
 ## Upgrading Between Versions
 
 ```bash
@@ -134,4 +159,4 @@ docker compose pull
 docker compose up -d
 ```
 
-`docker compose pull` only does something useful if you're pulling pre-built images from a registry you've published to yourself — see [Version Bumps](#version-bumps) above; there is no upstream registry to pull from out of the box. `prisma db push --accept-data-loss` runs automatically in the backend entrypoint on every container start — schema changes apply without a manual migration step. (`--accept-data-loss` is safe here because this is a solo/family deployment where schema changes are reviewed by the same person deploying them, not an unattended production migration path — be aware it will silently drop columns/tables that a schema change removes.) The database is seeded automatically only if it's empty (checked via `prisma.user.count()`).
+`docker compose pull` only does something useful if you're pulling pre-built images from a registry you've published to yourself — see [Version Bumps](#version-bumps) above; there is no upstream registry to pull from out of the box. `prisma db push --accept-data-loss` runs automatically in the backend entrypoint on every container start — schema changes apply without a manual migration step. (`--accept-data-loss` is safe here because this is a solo/family deployment where schema changes are reviewed by the same person deploying them, not an unattended production migration path — be aware it will silently drop columns/tables that a schema change removes.) The first parent user is bootstrapped automatically only if the database is empty (checked via `prisma.user.count()`).
