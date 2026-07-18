@@ -37,7 +37,7 @@ Single `.env` file at the project root for Docker Compose — copy the root `.en
 | `BOOTSTRAP_PARENT_PASSWORD` | **Required** (first start only) | none | Temporary password for the first PARENT. Bcrypt-hashed at creation. Remove after first login. |
 | `BOOTSTRAP_PARENT_COLOR` | Optional | `#4F46E5` | Hex color for the first PARENT user. |
 | `APP_VERSION` | **Required** (for Docker tagging) | none | Passed through to `VITE_APP_VERSION` for the frontend build/runtime config. **Not currently read by any backend application code** — no runtime version display or version-in-response feature exists yet. Keep `backend/package.json` and `frontend/package.json` versions identical regardless. |
-| `DATABASE_URL` | Optional | `file:${DATA_DIR}/chore-ganizer.db` | SQLite connection string, read directly by Prisma (`schema.prisma`'s `datasource db`). |
+| `DATABASE_URL` | Optional | `file:${DATA_DIR}/chore-ganizer.db` | SQLite connection string, read directly by Prisma (`schema.prisma`'s `datasource db`). In Docker Compose, it must be a `file:` path to a database file under `DATA_DIR`; arbitrary host directories are not mounted. |
 | `DATA_DIR` | Optional | `/opt/app-data/chore-ganizer` | Host path bind-mounted into the backend container for the SQLite file. Must exist on the host (Docker creates it as root if missing). |
 | `PORT` | Optional | `3010` | Backend listen port (`server.ts`). |
 | `HOST` | Optional | `0.0.0.0` | Backend bind address (`server.ts`). Not surfaced in `docker-compose.yml`'s environment block — only relevant if running the backend outside Docker. |
@@ -55,8 +55,7 @@ Single `.env` file at the project root for Docker Compose — copy the root `.en
 | `VITE_DEBUG` | Optional | `false` | Written into the frontend's runtime `window.APP_CONFIG.debug` by `frontend/docker-entrypoint.sh`. |
 | `CORS_ORIGIN` | Optional | `http://localhost:3002` | Consumed by the CORS middleware in `app.ts` (fixed 2026-07-10 — was passed through but ignored since the v1-rewrite). Set it to your actual frontend origin if it differs from the default. |
 | `BACKUP_DIR` | Optional | `/opt/app-data/chore-ganizer-backups` | Host path for SQLite backup files. |
-| `BACKUP_SOURCE_DIR` | Optional | `${DATA_DIR}` | Host directory containing the SQLite database. The backup container mounts it read-only at `/data`. Set it to the directory used by a custom `DATABASE_URL`. |
-| `BACKUP_DATABASE_FILE` | Optional | `chore-ganizer.db` | SQLite filename within `BACKUP_SOURCE_DIR`. Set it to the filename used by a custom `DATABASE_URL`; this is not a host path. |
+| `BACKUP_DATABASE_FILE` | Optional | `chore-ganizer.db` | SQLite filename within `DATA_DIR`, mounted read-only at `/data` by the backup container. Set it to the filename used by a custom Compose `DATABASE_URL`; this is not a host path. |
 | `BACKUP_SCHEDULE` | Optional | `0 3 * * *` | Cron schedule for backups (crond format). |
 | `BACKUP_RETENTION_DAYS` | Optional | `14` | Days to retain backup files. |
 
@@ -65,7 +64,7 @@ Single `.env` file at the project root for Docker Compose — copy the root `.en
 `backend/package.json` and `frontend/package.json` must always carry identical version numbers — this is the single source of truth. After bumping both:
 
 1. Update `.env`'s `APP_VERSION` to match (or just run `./docker-compose.sh up --build -d`, which syncs it automatically)
-2. Rebuild and (if publishing) push images yourself — **there is no CI/CD workflow that builds, tags, or pushes Docker images** to `ghcr.io/thitar/chore-ganizer-{backend,frontend}` despite the image naming convention implying a registry pipeline. `.github/workflows/security.yml` is the only workflow in the repo, and it only runs CodeQL, `npm audit`, Gitleaks, Semgrep, and a Trivy filesystem scan against source — it never builds an image or touches `ghcr.io`. If you want published images, that pipeline needs to be built; today, `APP_VERSION` only flows into local image tags via `docker-compose.sh`/`docker compose build`.
+2. Rebuild and (if publishing) push images yourself — **there is no CI/CD workflow that builds, tags, or pushes Docker images** to `ghcr.io/thitar/chore-ganizer-{backend,frontend}` despite the image naming convention implying a registry pipeline. `.github/workflows/security.yml` runs CodeQL, `npm audit`, Gitleaks, Semgrep, and a Trivy filesystem scan; `.github/workflows/quality.yml` runs pull-request backend/frontend test and build validation plus Docker image builds. Neither workflow publishes images or deploys. If you want published images, that pipeline needs to be built; today, `APP_VERSION` only flows into local image tags via `docker-compose.sh`/`docker compose build`.
 
 Note the root `package.json` (used only for Playwright e2e tooling) has its own independent, currently out-of-sync version field — it is not part of this contract and doesn't need to match.
 
@@ -83,11 +82,11 @@ There is currently no `/api/health/live`, `/api/health/ready`, or `/api/metrics`
 
 ## Data & Backups
 
-The SQLite database lives at `${DATA_DIR}/chore-ganizer.db` (default `/opt/app-data/chore-ganizer/chore-ganizer.db`), bind-mounted from the host per `docker-compose.yml`.
+The SQLite database lives at the `file:` path configured by `DATABASE_URL`, which in Docker Compose must be under `${DATA_DIR}`. By default it is `${DATA_DIR}/chore-ganizer.db` (`/opt/app-data/chore-ganizer/chore-ganizer.db`), bind-mounted from the host per `docker-compose.yml`.
 
 ### Automated Backups
 
-A `backup` Compose service runs daily, creating online SQLite backups via `.backup` (safe against concurrent writes) and retaining the most recent 14 days. The database source is mounted read-only and the backup destination is a separate writable mount. Configure `BACKUP_DIR`, `BACKUP_SCHEDULE`, and `BACKUP_RETENTION_DAYS` in your `.env`. If `DATABASE_URL` uses a different directory or filename, set `BACKUP_SOURCE_DIR` and `BACKUP_DATABASE_FILE` to the matching directory and filename.
+A `backup` Compose service runs daily, creating online SQLite backups via `.backup` (safe against concurrent writes) and retaining the most recent 14 days. It mounts `DATA_DIR` read-only as its database source and the backup destination as a separate writable mount. Configure `BACKUP_DIR`, `BACKUP_SCHEDULE`, and `BACKUP_RETENTION_DAYS` in your `.env`. If Compose `DATABASE_URL` uses a different filename under `DATA_DIR`, set `BACKUP_DATABASE_FILE` to the same filename.
 
 ```bash
 # View backup logs
@@ -104,7 +103,7 @@ ls -lh "${BACKUP_DIR}"
 
 ```bash
 docker compose stop backend
-cp "${BACKUP_DIR}/chore-ganizer-YYYYMMDDTHHMMSSZ.db" "${DATA_DIR}/chore-ganizer.db"
+cp "${BACKUP_DIR}/chore-ganizer-YYYYMMDDTHHMMSSZ.db" "${DATA_DIR}/${BACKUP_DATABASE_FILE:-chore-ganizer.db}"
 docker compose start backend
 ```
 

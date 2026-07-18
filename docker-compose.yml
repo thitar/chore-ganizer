@@ -96,7 +96,7 @@ services:
       - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 3 * * *}
       - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-14}
     volumes:
-      - ${BACKUP_SOURCE_DIR:-${DATA_DIR:-/opt/app-data/chore-ganizer}}:/data:ro
+      - ${DATA_DIR:-/opt/app-data/chore-ganizer}:/data:ro
       - ${BACKUP_DIR:-/opt/app-data/chore-ganizer-backups}:/backups
     depends_on:
       backend:
