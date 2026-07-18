@@ -11,6 +11,7 @@ RUN npm ci
 # Copy source and build
 COPY tsconfig.json tsconfig.node.json vite.config.ts tailwind.config.js postcss.config.js ./
 COPY index.html ./
+COPY public ./public
 COPY src ./src
 RUN npm run build
 
