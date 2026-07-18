@@ -11,9 +11,19 @@ test "$BACKUP_RETENTION_DAYS" -gt 0 || { echo "[backup] BACKUP_RETENTION_DAYS mu
 mkdir -p "$BACKUP_DIR"
 timestamp=$(date -u +%Y%m%dT%H%M%SZ)
 target="$BACKUP_DIR/chore-ganizer-$timestamp.db"
+suffix=1
 
-sqlite3 "$DATABASE_FILE" ".backup '$target'"
-sqlite3 "$target" 'pragma integrity_check;' | grep -qx ok
+# Reserve the target before SQLite writes it so immediate or concurrent runs
+# cannot overwrite an existing backup. set -C is supported by BusyBox ash.
+while ! (set -C; : > "$target") 2>/dev/null; do
+  target="$BACKUP_DIR/chore-ganizer-$timestamp-$suffix.db"
+  suffix=$((suffix + 1))
+done
+
+if ! sqlite3 "$DATABASE_FILE" ".backup '$target'" || ! sqlite3 "$target" 'pragma integrity_check;' | grep -qx ok; then
+  rm -f "$target"
+  exit 1
+fi
 expire_after=$((BACKUP_RETENTION_DAYS - 1))
 expired_count=$(find "$BACKUP_DIR" -type f -name 'chore-ganizer-*.db' -mtime +"$expire_after" | wc -l)
 find "$BACKUP_DIR" -type f -name 'chore-ganizer-*.db' -mtime +"$expire_after" -delete

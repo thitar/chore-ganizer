@@ -55,6 +55,8 @@ Single `.env` file at the project root for Docker Compose — copy the root `.en
 | `VITE_DEBUG` | Optional | `false` | Written into the frontend's runtime `window.APP_CONFIG.debug` by `frontend/docker-entrypoint.sh`. |
 | `CORS_ORIGIN` | Optional | `http://localhost:3002` | Consumed by the CORS middleware in `app.ts` (fixed 2026-07-10 — was passed through but ignored since the v1-rewrite). Set it to your actual frontend origin if it differs from the default. |
 | `BACKUP_DIR` | Optional | `/opt/app-data/chore-ganizer-backups` | Host path for SQLite backup files. |
+| `BACKUP_SOURCE_DIR` | Optional | `${DATA_DIR}` | Host directory containing the SQLite database. The backup container mounts it read-only at `/data`. Set it to the directory used by a custom `DATABASE_URL`. |
+| `BACKUP_DATABASE_FILE` | Optional | `chore-ganizer.db` | SQLite filename within `BACKUP_SOURCE_DIR`. Set it to the filename used by a custom `DATABASE_URL`; this is not a host path. |
 | `BACKUP_SCHEDULE` | Optional | `0 3 * * *` | Cron schedule for backups (crond format). |
 | `BACKUP_RETENTION_DAYS` | Optional | `14` | Days to retain backup files. |
 
@@ -85,7 +87,7 @@ The SQLite database lives at `${DATA_DIR}/chore-ganizer.db` (default `/opt/app-d
 
 ### Automated Backups
 
-A `backup` Compose service runs daily, creating online SQLite backups via `.backup` (safe against concurrent writes) and retaining the most recent 14 days. Configure `BACKUP_DIR`, `BACKUP_SCHEDULE`, and `BACKUP_RETENTION_DAYS` in your `.env`.
+A `backup` Compose service runs daily, creating online SQLite backups via `.backup` (safe against concurrent writes) and retaining the most recent 14 days. The database source is mounted read-only and the backup destination is a separate writable mount. Configure `BACKUP_DIR`, `BACKUP_SCHEDULE`, and `BACKUP_RETENTION_DAYS` in your `.env`. If `DATABASE_URL` uses a different directory or filename, set `BACKUP_SOURCE_DIR` and `BACKUP_DATABASE_FILE` to the matching directory and filename.
 
 ```bash
 # View backup logs
