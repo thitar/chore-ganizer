@@ -104,7 +104,7 @@ There is no email/SMTP notification channel, no in-app notification center, and 
 
 ## CI/CD
 
-`.github/workflows/security.yml` is the **only** GitHub Actions workflow in the repo: CodeQL (JS/TS), `npm audit` (backend + frontend), Gitleaks secret scanning, Semgrep SAST, and a Trivy filesystem vulnerability scan — all against source, on push/PR to `main` and a weekly cron. **There is no workflow that builds, tags, or pushes Docker images** to `ghcr.io/thitar/chore-ganizer-{backend,frontend}`, despite the image naming convention (see `docs/OPERATIONS.md#version-bumps`) implying a registry pipeline exists. Building and publishing images is currently a manual, local step.
+`.github/workflows/security.yml` provides security scanning: CodeQL (JS/TS), `npm audit` (backend + frontend), Gitleaks secret scanning, Semgrep SAST, and Trivy filesystem vulnerability scans. `.github/workflows/quality.yml` provides PR validation through backend and frontend unit tests, typechecks, builds, and Docker builds. Neither workflow publishes Docker images to `ghcr.io/thitar/chore-ganizer-{backend,frontend}` or deploys; building, publishing, and deploying remain manual steps.
 
 ## Key Architectural Decisions
 
