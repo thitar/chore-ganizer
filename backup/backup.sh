@@ -15,5 +15,7 @@ target="$BACKUP_DIR/chore-ganizer-$timestamp.db"
 sqlite3 "$DATABASE_FILE" ".backup '$target'"
 sqlite3 "$target" 'pragma integrity_check;' | grep -qx ok
 expire_after=$((BACKUP_RETENTION_DAYS - 1))
+expired_count=$(find "$BACKUP_DIR" -type f -name 'chore-ganizer-*.db' -mtime +"$expire_after" | wc -l)
 find "$BACKUP_DIR" -type f -name 'chore-ganizer-*.db' -mtime +"$expire_after" -delete
+test "$expired_count" -gt 0 && echo "[backup] Pruned $expired_count expired backup(s)"
 echo "[backup] Created and verified $target"
