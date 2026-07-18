@@ -29,6 +29,8 @@ Frontend serves on `${FRONTEND_PORT:-3002}`, backend on `${PORT:-3010}`.
 
 Single `.env` file at the project root for Docker Compose — copy the root `.env.example` (it documents every variable the app actually reads; there is no separate frontend `.env.example`). `backend/.env.example` is a different, smaller file for running the backend alone without Docker (`cd backend && npm run dev`, which loads `backend/.env` via `dotenv/config` relative to its own CWD) — don't confuse the two or use one to seed the other.
 
+For a new production database, uncomment and replace all three required `BOOTSTRAP_PARENT_*` placeholders with real, unique values before starting the stack. The backend refuses to start while the database has no users and any required bootstrap value is absent or invalid; it never creates a default parent account. After the first parent signs in, remove the bootstrap values because they are ignored once a user exists.
+
 | Variable | Required? | Default | Purpose |
 |---|---|---|---|
 | `SESSION_SECRET` | **Required** | none | Session cookie signing secret. `app.ts` **fails fast at startup** if `NODE_ENV=production` and this is unset — refuses to run on the insecure dev fallback (`'dev-secret'`). Generate with `openssl rand -base64 32`. |
