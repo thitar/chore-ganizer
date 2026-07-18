@@ -1,0 +1,64 @@
+name: Quality
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npx prisma db push
+        env:
+          DATABASE_URL: file:./dev.db
+      - run: npm run prisma:seed
+        env:
+          DATABASE_URL: file:./dev.db
+      - run: npm test
+        env:
+          DATABASE_URL: file:./dev.db
+      - run: npx tsc --noEmit
+      - run: npm run build
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: sh ./test-nginx-proxy.sh
+      - run: npm test
+      - run: npx tsc --noEmit
+      - run: npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: sudo apt-get update && sudo apt-get install -y sqlite3
+      - working-directory: backup
+        run: sh ./test-backup.sh
+      - run: docker build --tag chore-ganizer-backend:ci ./backend
+      - run: docker build --tag chore-ganizer-frontend:ci ./frontend
+      - run: docker build --tag chore-ganizer-backup:ci ./backup

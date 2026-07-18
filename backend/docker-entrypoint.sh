@@ -28,14 +28,15 @@ echo "[entrypoint] Applying database schema"
 cd /app
 su-exec appuser npx prisma db push --skip-generate --accept-data-loss 2>&1 | tail -5
 
-# Seed database if empty (idempotent — checks if users exist)
-echo "[entrypoint] Checking if database needs seeding"
+# Initialize a real household only when no user exists. Demo fixtures remain
+# available through the explicit `prisma db seed` development command.
+echo "[entrypoint] Checking whether first-parent bootstrap is needed"
 USER_COUNT=$(su-exec appuser node -e "const {PrismaClient} = require('@prisma/client'); const p = new PrismaClient(); p.user.count().then(c => { console.log(c); p.\$disconnect(); })")
 if [ "$USER_COUNT" = "0" ]; then
-    echo "[entrypoint] Seeding database"
-    su-exec appuser npx prisma db seed
+    echo "[entrypoint] Initializing first parent"
+    su-exec appuser node dist/scripts/bootstrap-parent.js
 else
-    echo "[entrypoint] Database already has $USER_COUNT users, skipping seed"
+    echo "[entrypoint] Database already has $USER_COUNT users, skipping bootstrap"
 fi
 
 echo "[entrypoint] Starting backend on port ${PORT:-3010}"

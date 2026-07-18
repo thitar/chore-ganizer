@@ -49,6 +49,10 @@ const sameSitePolicy = (validSameSite.includes(rawSameSite) ? rawSameSite : 'str
 const isProduction = process.env.NODE_ENV === 'production'
 const isSecureCookie = isProduction && process.env.SECURE_COOKIES !== 'false'
 
+if (sameSitePolicy === 'none' && !isSecureCookie) {
+  throw new Error('SAMESITE_POLICY=none requires SECURE_COOKIES=true because SameSite=None cookies must be Secure')
+}
+
 app.use(session({
   secret: sessionSecret,
   resave: false,
