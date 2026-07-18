@@ -21,8 +21,8 @@ EOF
 chmod +x "$tmp/bin/date"
 
 # Two back-to-back backups must not collide, and each must be readable.
-PATH="$tmp/bin:$PATH" DATABASE_FILE="$tmp/source.db" BACKUP_DIR="$tmp/backups" BACKUP_RETENTION_DAYS=14 ./backup.sh
-PATH="$tmp/bin:$PATH" DATABASE_FILE="$tmp/source.db" BACKUP_DIR="$tmp/backups" BACKUP_RETENTION_DAYS=14 ./backup.sh
+PATH="$tmp/bin:$PATH" DATABASE_FILE="$tmp/source.db" BACKUP_DIR="$tmp/backups" BACKUP_RETENTION_DAYS=14 sh ./backup.sh
+PATH="$tmp/bin:$PATH" DATABASE_FILE="$tmp/source.db" BACKUP_DIR="$tmp/backups" BACKUP_RETENTION_DAYS=14 sh ./backup.sh
 
 # The expired backup is pruned while both immediate backups are retained.
 test ! -e "$expired_backup"
