@@ -2,41 +2,47 @@
 
 A family chore tracker: parents create and assign chores, kids complete them and earn points, with recurring chores and a points/gamification layer (streaks, levels, badges). Built for self-hosted/homelab deployment by a single family, not multi-tenant SaaS.
 
-## Quick Start
+## Quick Start (Local Development)
 
-Requires Docker and Docker Compose.
+Requires Node.js 18+, Docker, and Docker Compose.
+
+**Frontend + Backend via Docker:**
 
 ```bash
 git clone https://github.com/thitar/chore-ganizer.git
 cd chore-ganizer
-
-# Create .env with at minimum:
-#   SESSION_SECRET=<openssl rand -base64 32>
-#   APP_VERSION=<matches backend/package.json and frontend/package.json>
-
+cp .env.example .env
 docker compose up -d
 ```
 
-Frontend: `http://localhost:3002`. See [docs/OPERATIONS.md](./docs/OPERATIONS.md) for the full environment variable reference, health checks, backups, and troubleshooting.
+Frontend: `http://localhost:3002` | Backend: `http://localhost:3010`
 
-## Local Development
+Login with dev credentials:
 
-Requires Node.js 18+.
+- **Email:** `dad@home.local` or `alice@home.local`
+- **Password:** `password123`
+
+**Backend only (npm):**
 
 ```bash
-cd backend && npm install && npm run dev    # http://localhost:3010
-cd frontend && npm install && npm run dev   # http://localhost:5173, proxies /api/* to the backend
+cd backend
+npm install
+npm run dev    # http://localhost:3010
 ```
 
-## Default Credentials
+**Frontend only (npm):**
 
-Auto-seeded on first start (only if the database is empty):
+```bash
+cd frontend
+npm install
+npm run dev    # http://localhost:5173, proxies /api/* to the backend
+```
 
-- **Parents:** `dad@home.local`, `mom@home.local`
-- **Children:** `alice@home.local`, `bob@home.local`
-- **Password (all accounts):** `password123`
+See [docs/OPERATIONS.md](./docs/OPERATIONS.md) for environment variables, health checks, and troubleshooting.
 
-These are first-run defaults for a private/self-hosted deployment — change them (`backend/prisma/seed.ts`) before exposing the app beyond your own network.
+## Production Deployment
+
+For a production setup (without dev credentials), see [docs/PRODUCTION-INSTALLATION.md](./docs/PRODUCTION-INSTALLATION.md). You'll set your own bootstrap parent account and configure backups, secure cookies, and CORS origins.
 
 ## Architecture
 
