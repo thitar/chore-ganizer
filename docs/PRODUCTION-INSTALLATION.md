@@ -42,11 +42,11 @@ There are no pre-built images to pull — see [OPERATIONS.md#version-bumps](./OP
    - `BOOTSTRAP_PARENT_EMAIL` — your email address (e.g., `you@example.com`)
    - `BOOTSTRAP_PARENT_PASSWORD` — a strong temporary password (save this, you'll use it to log in)
    - `BOOTSTRAP_PARENT_COLOR` — a hex color (e.g., `#4F46E5`)
+   - `SECURE_COOKIES=true` — required in production to enforce HTTPS-only cookies (see [OPERATIONS.md#secure-cookies](./OPERATIONS.md#secure-cookies))
+   - `NODE_ENV=production`
 
    Recommended settings (adjust as needed):
    - `CORS_ORIGIN` — set to your actual frontend URL (e.g., `https://chores.yourdomain.com`)
-   - `NODE_ENV=production`
-   - `SECURE_COOKIES=true` (if using HTTPS)
    - `PUID` and `PGID` — set to your user/group IDs (`id -u` and `id -g`) to avoid permission issues
 
    See [OPERATIONS.md#environment-variables](./OPERATIONS.md#environment-variables) for the complete list and defaults.
