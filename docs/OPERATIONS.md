@@ -48,7 +48,7 @@ For a new production database, uncomment and replace all three required `BOOTSTR
 | `PUID` / `PGID` | Optional | `1001` | Host UID/GID the backend entrypoint chowns `DATA_DIR` to, for bind-mount file ownership. |
 | `NODE_ENV` | Optional | `production` | Also gates the `SESSION_SECRET` fail-fast check and secure-cookie defaults. |
 | `SESSION_MAX_AGE` | Optional | `604800000` (7 days, ms) | Session cookie max age. Invalid/non-positive values silently fall back to the default (`app.ts`). |
-| `SAMESITE_POLICY` | Optional | `strict` | `strict` \| `lax` \| `none`. Any other value silently falls back to `strict`. |
+| `SAMESITE_POLICY` | Optional | `strict` | Controls the session cookie only; the CSRF cookie remains `Strict`. Values: `strict` \| `lax` \| `none`. Any other value silently falls back to `strict`. `none` requires `SECURE_COOKIES=true`; the invalid combination fails startup. |
 | `SECURE_COOKIES` | Optional | `false` (`true` when `NODE_ENV=production` unless explicitly set to `false`) | Marks session/CSRF cookies `Secure` — requires HTTPS. |
 | `RATE_LIMIT_MAX` | Optional | `300` | Max requests per 15-minute window for the general API rate limiter (`backend/src/middleware/rateLimiter.ts`), mounted on all of `/api`. |
 | `AUTH_RATE_LIMIT_MAX` | Optional | `10` | Max requests per 15-minute window for the stricter auth rate limiter (`POST /api/auth/login`). Raise this for e2e/load-testing runs that legitimately log in many times in one window — see `AGENTS.md`'s Testing Patterns. |
@@ -145,6 +145,7 @@ Production is HTTPS behind Caddy. `SECURE_COOKIES` must be enabled manually afte
 
 - Caddy terminates HTTPS and forwards `X-Forwarded-Proto: https` (default behavior).
 - Frontend Nginx preserves Caddy's `X-Forwarded-Proto` header (fixed in this release).
+- Do not expose port 3002 directly to untrusted clients; public traffic must reach the app through Caddy. Nginx relies on Caddy-supplied `X-Forwarded-Proto`.
 
 ### Rollout Steps
 
