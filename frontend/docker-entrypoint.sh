@@ -13,6 +13,9 @@ window.APP_CONFIG = {
 };
 EOF
 
+# Ensure nginx (running as non-root) can read the file
+chmod 644 /usr/share/nginx/html/config.js
+
 echo "[entrypoint] Generated config.js:"
 cat /usr/share/nginx/html/config.js
 
