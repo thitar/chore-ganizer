@@ -142,8 +142,8 @@ export function UsersPage() {
                   <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input" required minLength={6} />
                 </div>
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-normal text-zinc-300 mb-1">Confirm password</label>
-                  <input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="input" required minLength={6} />
+                  <label htmlFor="confirm-password" className="block text-sm font-normal text-zinc-300 mb-1">Confirm password</label>
+                  <input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="input" required minLength={6} />
                 </div>
                 <div>
                   <label htmlFor="role" className="block text-sm font-normal text-zinc-300 mb-1">Role</label>
