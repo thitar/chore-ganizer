@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { LogIn } from 'lucide-react'
 import { Button } from '../components/ui/Button'
@@ -54,6 +54,9 @@ export function LoginPage() {
             {isSubmitting ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
+        <p className="mt-4 text-center text-sm text-zinc-400">
+          <Link to="/forgot-password" className="text-accent hover:underline">Forgot password?</Link>
+        </p>
       </div>
     </div>
   )

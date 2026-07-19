@@ -42,3 +42,13 @@ export async function getCurrentUser(): Promise<User> {
     throw err
   }
 }
+
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  const response = await api.post('/forgot-password', { email })
+  return response.data.data
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  const response = await api.post('/reset-password', { token, newPassword })
+  return response.data.data
+}
