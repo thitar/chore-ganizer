@@ -111,6 +111,7 @@ describe('UsersPage', () => {
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'New User' } })
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@home.local' } })
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: 'password123' } })
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'password123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create' }))
 
     await waitFor(() => {
