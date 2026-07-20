@@ -10,6 +10,12 @@ This file provides guidance to agents when working with code in this repository.
 - Health checks: [docs/OPERATIONS.md#health-checks--monitoring](./docs/OPERATIONS.md#health-checks--monitoring)
 - Stack, backend/frontend structure, auth flow, data model, key decisions: [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
 
+### Version Bumps — Required With Every PR
+
+**Every PR that changes app behavior must bump `APP_VERSION`.** If unsure what version to bump to, ask the user.
+
+See [docs/VERSION_MAP.md](./docs/VERSION_MAP.md) for the full file map and process.
+
 Local dev: `cd backend && npm install && npm run dev` (port 3010), `cd frontend && npm install && npm run dev` (port 5173, proxies `/api/*` to the backend). Requires Node.js 18+.
 
 ## Testing Patterns
