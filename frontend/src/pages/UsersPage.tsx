@@ -25,6 +25,7 @@ export function UsersPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [role, setRole] = useState<'PARENT' | 'CHILD'>('CHILD')
   const [color, setColor] = useState('#3B82F6')
   const [formError, setFormError] = useState<string | null>(null)
@@ -40,6 +41,7 @@ export function UsersPage() {
     setName('')
     setEmail('')
     setPassword('')
+    setConfirmPassword('')
     setRole('CHILD')
     setColor('#3B82F6')
     setFormError(null)
@@ -53,6 +55,10 @@ export function UsersPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFormError(null)
+    if (password !== confirmPassword) {
+      setFormError('Passwords do not match.')
+      return
+    }
     try {
       await createUser({ name, email, password, role, color })
       cancelForm()
@@ -134,6 +140,10 @@ export function UsersPage() {
                 <div>
                   <label htmlFor="password" className="block text-sm font-normal text-zinc-300 mb-1">Password (min 6 chars)</label>
                   <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input" required minLength={6} />
+                </div>
+                <div>
+                  <label htmlFor="confirm-password" className="block text-sm font-normal text-zinc-300 mb-1">Confirm password</label>
+                  <input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="input" required minLength={6} />
                 </div>
                 <div>
                   <label htmlFor="role" className="block text-sm font-normal text-zinc-300 mb-1">Role</label>

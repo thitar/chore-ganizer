@@ -111,6 +111,7 @@ describe('UsersPage', () => {
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'New User' } })
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@home.local' } })
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: 'password123' } })
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'password123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create' }))
 
     await waitFor(() => {
@@ -119,6 +120,19 @@ describe('UsersPage', () => {
         email: 'new@home.local',
       }))
     })
+  })
+
+  it('shows error when passwords do not match', async () => {
+    renderPage()
+    fireEvent.click(screen.getByText('Create User'))
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'New User' } })
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@home.local' } })
+    fireEvent.change(screen.getByLabelText(/Password/), { target: { value: 'password123' } })
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'different123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+    expect(screen.getByText('Passwords do not match.')).toBeInTheDocument()
+    expect(mockCreate).not.toHaveBeenCalled()
   })
 
   it('shows delete confirmation when delete icon clicked', () => {
