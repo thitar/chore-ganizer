@@ -7,6 +7,7 @@ import routes from './routes/index'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler'
 import { csrfProtection } from './middleware/csrf'
 import { generalLimiter } from './middleware/rateLimiter'
+import { isSmtpConfigured } from './config/smtp'
 
 const app = express()
 
@@ -51,6 +52,19 @@ const isSecureCookie = isProduction && process.env.SECURE_COOKIES !== 'false'
 
 if (sameSitePolicy === 'none' && !isSecureCookie) {
   throw new Error('SAMESITE_POLICY=none requires SECURE_COOKIES=true because SameSite=None cookies must be Secure')
+}
+
+if (!isSmtpConfigured) {
+  console.log('[smtp] SMTP not configured — password recovery emails disabled (set SMTP_HOST, SMTP_USER, SMTP_PASS to enable)')
+}
+
+const frontendUrl = process.env.FRONTEND_URL ?? ''
+if (isSmtpConfigured && !frontendUrl) {
+  console.warn('[config] SMTP is configured but FRONTEND_URL is not set — password reset links in emails will be broken')
+} else if (isSmtpConfigured && frontendUrl) {
+  console.log(`[smtp] Password recovery enabled — reset links will point to ${frontendUrl}`)
+} else if (!frontendUrl) {
+  console.warn('[config] FRONTEND_URL not set — password reset links will be broken if SMTP is enabled')
 }
 
 app.use(session({

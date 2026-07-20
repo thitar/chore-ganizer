@@ -5,6 +5,42 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.2] - 2026-07-20
+
+### Added
+- Startup warning when SMTP is not configured (logs once at server start)
+- Startup warning when FRONTEND_URL is missing or misconfigured relative to SMTP
+- Request-level logs for password recovery: warns when SMTP or FRONTEND_URL missing, confirms when email is sent
+- Version bump instructions in `AGENTS.md` with file map — required with every PR
+
+### Changed
+- Updated upgrade instructions in `OPERATIONS.md` to distinguish source builds from registry pulls
+- Added env var diff command to `OPERATIONS.md` for checking new/removed variables after upgrades
+
+## [3.2.1] - 2026-07-20
+
+> Retroactive documentation of PRs #147–#158. This version was never deployed separately — the repo jumped from 3.2.0 directly to 3.2.2.
+
+### Added
+- Email-based password recovery flow (forgot/reset password via SMTP/Gmail) — PR #158
+- Confirm password field on user creation form to prevent typo-locked accounts — PR #157
+- `lifetimePoints` cache on `User` model with lazy self-healing backfill, matching the existing streak cache pattern — PR #150
+- Production deployment config: scheduled SQLite backups, proxy header preservation, first-parent bootstrap replacing demo seeding — PR #154
+- Comprehensive docs rewrite: `ARCHITECTURE.md`, `OPERATIONS.md`, updated `README.md`, `AGENTS.md`, `CHANGELOG.md` — PR #149
+- E2E test suite refreshed for M1/M2 (from 6/53 passing to 71/71), shared auth setup to avoid rate-limit exhaustion — PR #151
+- Manual UAT checklist (`docs/UAT-CHECKLIST.md`) — PR #151
+
+### Fixed
+- config.js permissions: nginx user couldn't read it (403 Forbidden) — added `chmod 644` after entrypoint writes it — PR #156
+- Frontend Docker build missing `public/` directory (favicon 404s) — PR #155
+- `notifyChoreCompleted` wired into both completion paths (assignment + recurring) so parents get push notifications on chore completion — PR #152
+- Zod validation added to `auth`, `users`, and `recurring` route modules (was the only gap in validation coverage) — PR #152
+- `helmet`, `cors`, and `express-rate-limit` accidentally omitted during v1-rewrite — now wired up with security headers, CORS credentials, and rate limiting (300/15min general, 10/15min login) — PR #149
+- PR #146 follow-up items and self-review findings across three independent review passes — PR #147
+
+### Changed
+- Repository cleanup: removed `backend-v1-archive/`, `frontend-v1-archive/`, dead scaffolds, and pre-GSD debris — PR #148
+
 ## [3.2.0] - 2026-07-09
 
 "Teen Appeal Redesign" — shipped as two milestones, M1 (frontend) then M2 (backend), via PRs #142 and #146.
