@@ -74,6 +74,8 @@ For a new production database, uncomment and replace all three required `BOOTSTR
 1. Update `.env`'s `APP_VERSION` to match (or just run `./docker-compose.sh up --build -d`, which syncs it automatically)
 2. Rebuild and (if publishing) push images yourself — **there is no CI/CD workflow that builds, tags, or pushes Docker images** to `ghcr.io/thitar/chore-ganizer-{backend,frontend}` despite the image naming convention implying a registry pipeline. `.github/workflows/security.yml` runs CodeQL, `npm audit`, Gitleaks, Semgrep, and a Trivy filesystem scan; `.github/workflows/quality.yml` runs pull-request backend/frontend test and build validation plus Docker image builds. Neither workflow publishes images or deploys. If you want published images, that pipeline needs to be built; today, `APP_VERSION` only flows into local image tags via `docker-compose.sh`/`docker compose build`.
 
+For the full file map and lockfile regeneration steps, see [docs/VERSION_MAP.md](./VERSION_MAP.md).
+
 Note the root `package.json` (used only for Playwright e2e tooling) has its own independent, currently out-of-sync version field — it is not part of this contract and doesn't need to match.
 
 ## Health Checks & Monitoring
@@ -166,9 +168,46 @@ Production is HTTPS behind Caddy. `SECURE_COOKIES` must be enabled manually afte
 
 ## Upgrading Between Versions
 
+### From source (manual build — the default workflow)
+
+There is no upstream registry to pull from — images are built locally from `./backend/Dockerfile` and `./frontend/Dockerfile`. After pulling the latest code:
+
+```bash
+# Pull latest code
+git pull origin main
+
+# Rebuild images and recreate containers (APP_VERSION auto-synced from package.json)
+./docker-compose.sh up --build -d
+```
+
+This rebuilds both images from source, tags them with the current `APP_VERSION`, and recreates the containers. If the version in `package.json` hasn't changed, you can skip the helper script:
+
+```bash
+git pull origin main
+docker compose up --build -d
+```
+
+### From a pre-built registry image
+
+If you've published images to your own registry (e.g. `ghcr.io/thitar/chore-ganizer-{backend,frontend}`), you can pull and deploy:
+
 ```bash
 docker compose pull
 docker compose up -d
 ```
 
-`docker compose pull` only does something useful if you're pulling pre-built images from a registry you've published to yourself — see [Version Bumps](#version-bumps) above; there is no upstream registry to pull from out of the box. `prisma db push --accept-data-loss` runs automatically in the backend entrypoint on every container start — schema changes apply without a manual migration step. (`--accept-data-loss` is safe here because this is a solo/family deployment where schema changes are reviewed by the same person deploying them, not an unattended production migration path — be aware it will silently drop columns/tables that a schema change removes.) The first parent user is bootstrapped automatically only if the database is empty (checked via `prisma.user.count()`).
+This only works if the images exist in a registry you've pushed to — see [Version Bumps](#version-bumps) above. There is no upstream registry to pull from out of the box.
+
+### Check for new or removed env vars after upgrading
+
+After pulling new code, compare your `.env` against the updated `.env.example` to spot new variables you may need to set. Diff only the variable names (not values, which are environment-specific):
+
+```bash
+diff <(grep -oP '^[A-Z_]+=' .env.example | sort) <(grep -oP '^[A-Z_]+=' .env | sort)
+```
+
+Lines starting with `<` are in `.env.example` but missing from your `.env` (new variables you likely need to add). Lines starting with `>` are in your `.env` but no longer in `.env.example` (removed variables, safe to delete). Add any new required variables before restarting — the backend refuses to start if required vars like `SESSION_SECRET` or `BOOTSTRAP_PARENT_*` are unset.
+
+### What happens automatically on restart
+
+`prisma db push --accept-data-loss` runs automatically in the backend entrypoint on every container start — schema changes apply without a manual migration step. (`--accept-data-loss` is safe here because this is a solo/family deployment where schema changes are reviewed by the same person deploying them, not an unattended production migration path — be aware it will silently drop columns/tables that a schema change removes.) The first parent user is bootstrapped automatically only if the database is empty (checked via `prisma.user.count()`).
