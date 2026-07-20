@@ -7,7 +7,6 @@ import routes from './routes/index'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler'
 import { csrfProtection } from './middleware/csrf'
 import { generalLimiter } from './middleware/rateLimiter'
-import { isSmtpConfigured } from './config/smtp'
 
 const app = express()
 
@@ -52,10 +51,6 @@ const isSecureCookie = isProduction && process.env.SECURE_COOKIES !== 'false'
 
 if (sameSitePolicy === 'none' && !isSecureCookie) {
   throw new Error('SAMESITE_POLICY=none requires SECURE_COOKIES=true because SameSite=None cookies must be Secure')
-}
-
-if (!isSmtpConfigured) {
-  console.log('[smtp] SMTP not configured — password recovery emails disabled (set SMTP_HOST, SMTP_USER, SMTP_PASS to enable)')
 }
 
 app.use(session({

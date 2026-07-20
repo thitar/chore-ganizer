@@ -52,11 +52,6 @@ export async function forgotPassword(email: string): Promise<{ message: string }
   const user = await prisma.user.findUnique({ where: { email } })
 
   if (!user || !isSmtpConfigured || !frontendUrl) {
-    if (!isSmtpConfigured) {
-      console.warn('[auth] Password reset requested but SMTP is not configured — email not sent')
-    } else if (!frontendUrl) {
-      console.warn('[auth] Password reset requested but FRONTEND_URL is not set — cannot generate reset link')
-    }
     // Dummy hash to prevent timing side-channel (user enumeration)
     await bcrypt.hash('dummy', 10)
     return { message: 'If an account exists with that email, you will receive a password reset link.' }
@@ -91,9 +86,6 @@ export async function forgotPassword(email: string): Promise<{ message: string }
       subject: 'Chore-Ganizer Password Reset',
       text: `You requested a password reset. Click the link to reset your password: ${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email.`,
       html: `<p>You requested a password reset.</p><p><a href="${resetUrl}">Click here to reset your password</a></p><p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>`,
-    })
-    .then(() => {
-      console.log(`[auth] Password reset email sent to ${user.email}`)
     })
     .catch(err => {
       console.error('[auth] Failed to send password reset email:', err)
