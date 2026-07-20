@@ -76,17 +76,20 @@ export async function forgotPassword(email: string): Promise<{ message: string }
     auth: { user: smtp.user, pass: smtp.pass },
   })
 
-  try {
-    await transporter.sendMail({
+  // Fire-and-forget: don't await the SMTP round-trip before responding, or
+  // its network latency becomes a timing side-channel that leaks whether the
+  // account exists (defeats the anti-enumeration goal of this message).
+  transporter
+    .sendMail({
       from: smtp.from,
       to: user.email,
       subject: 'Chore-Ganizer Password Reset',
       text: `You requested a password reset. Click the link to reset your password: ${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email.`,
       html: `<p>You requested a password reset.</p><p><a href="${resetUrl}">Click here to reset your password</a></p><p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>`,
     })
-  } catch (err) {
-    console.error('[auth] Failed to send password reset email:', err)
-  }
+    .catch(err => {
+      console.error('[auth] Failed to send password reset email:', err)
+    })
 
   return { message: 'If an account exists with that email, you will receive a password reset link.' }
 }
