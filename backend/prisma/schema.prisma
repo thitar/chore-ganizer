@@ -19,6 +19,8 @@ model User {
   streakComputedAt       DateTime?
   lifetimePoints         Int       @default(0)
   lifetimePointsSyncedAt DateTime?
+  resetToken             String?   @unique
+  resetTokenExpiry       DateTime?
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 

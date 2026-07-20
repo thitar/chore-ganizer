@@ -100,7 +100,7 @@ Push notifications go through [ntfy.sh](https://ntfy.sh) (or a self-hosted ntfy 
 
 Triggered from: chore assigned, chore due soon (lazy sweep piggybacked on the existing assignment-listing query, no cron job), and badge earned.
 
-There is no email/SMTP notification channel, no in-app notification center, and no per-event notification toggles in the current backend — ntfy push is the only channel.
+There is no in-app notification center and no per-event notification toggles in the current backend — ntfy push is the only push channel. SMTP is available for password recovery emails (optional, disabled when `SMTP_*` env vars are unset).
 
 ## CI/CD
 

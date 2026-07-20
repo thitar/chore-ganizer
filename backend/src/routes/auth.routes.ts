@@ -1,11 +1,16 @@
 import { Router } from 'express'
 import * as authService from '../services/auth.service'
 import { authenticate } from '../middleware/auth'
-import { authLimiter } from '../middleware/rateLimiter'
+import { authLimiter, recoveryLimiter } from '../middleware/rateLimiter'
 import { validate } from '../middleware/validator'
-import { loginSchema } from '../schemas/auth.schema'
+import { loginSchema, forgotPasswordSchema, resetPasswordSchema } from '../schemas/auth.schema'
+import { isSmtpConfigured } from '../config/smtp'
 
 const router = Router()
+
+router.get('/status', (_req, res) => {
+  res.json({ success: true, data: { passwordResetEnabled: isSmtpConfigured }, error: null })
+})
 
 router.post('/login', authLimiter, validate(loginSchema), async (req, res, next) => {
   try {
@@ -36,6 +41,26 @@ router.get('/me', authenticate, async (req, res, next) => {
   try {
     const user = await authService.getCurrentUser(req.session.userId!)
     res.json({ success: true, data: user, error: null })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/forgot-password', recoveryLimiter, validate(forgotPasswordSchema), async (req, res, next) => {
+  try {
+    const { email } = req.body
+    const result = await authService.forgotPassword(email)
+    res.json({ success: true, data: result, error: null })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/reset-password', recoveryLimiter, validate(resetPasswordSchema), async (req, res, next) => {
+  try {
+    const { token, newPassword } = req.body
+    const result = await authService.resetPassword(token, newPassword)
+    res.json({ success: true, data: result, error: null })
   } catch (err) {
     next(err)
   }

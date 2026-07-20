@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../hooks/useAuth'
+import { getAuthStatus } from '../api/auth.api'
 import { LogIn } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 
@@ -11,6 +13,11 @@ export function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+  const { data: authStatus } = useQuery({
+    queryKey: ['auth', 'status'],
+    queryFn: getAuthStatus,
+    staleTime: Infinity,
+  })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -54,6 +61,11 @@ export function LoginPage() {
             {isSubmitting ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
+        {authStatus?.passwordResetEnabled && (
+          <p className="mt-4 text-center text-sm text-zinc-400">
+            <Link to="/forgot-password" className="text-accent hover:underline">Forgot password?</Link>
+          </p>
+        )}
       </div>
     </div>
   )
