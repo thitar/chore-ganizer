@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import * as authService from '../services/auth.service'
 import { authenticate } from '../middleware/auth'
-import { authLimiter } from '../middleware/rateLimiter'
+import { authLimiter, recoveryLimiter } from '../middleware/rateLimiter'
 import { validate } from '../middleware/validator'
 import { loginSchema, forgotPasswordSchema, resetPasswordSchema } from '../schemas/auth.schema'
 import { isSmtpConfigured } from '../config/smtp'
@@ -46,7 +46,7 @@ router.get('/me', authenticate, async (req, res, next) => {
   }
 })
 
-router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), async (req, res, next) => {
+router.post('/forgot-password', recoveryLimiter, validate(forgotPasswordSchema), async (req, res, next) => {
   try {
     const { email } = req.body
     const result = await authService.forgotPassword(email)
@@ -56,7 +56,7 @@ router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), asy
   }
 })
 
-router.post('/reset-password', authLimiter, validate(resetPasswordSchema), async (req, res, next) => {
+router.post('/reset-password', recoveryLimiter, validate(resetPasswordSchema), async (req, res, next) => {
   try {
     const { token, newPassword } = req.body
     const result = await authService.resetPassword(token, newPassword)

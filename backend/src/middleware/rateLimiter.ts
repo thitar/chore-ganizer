@@ -35,3 +35,19 @@ export const authLimiter = rateLimit({
     error: { message: 'Too many login attempts, please try again later' },
   },
 })
+
+// Separate limiter for password recovery endpoints (forgot/reset password).
+// Kept distinct from authLimiter so a kid spamming "Send reset link" on the
+// shared household IP doesn't lock the parent out of logging in.
+export const recoveryLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipInTest,
+  message: {
+    success: false,
+    data: null,
+    error: { message: 'Too many password reset attempts, please try again later' },
+  },
+})
