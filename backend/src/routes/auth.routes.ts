@@ -4,8 +4,13 @@ import { authenticate } from '../middleware/auth'
 import { authLimiter } from '../middleware/rateLimiter'
 import { validate } from '../middleware/validator'
 import { loginSchema, forgotPasswordSchema, resetPasswordSchema } from '../schemas/auth.schema'
+import { isSmtpConfigured } from '../config/smtp'
 
 const router = Router()
+
+router.get('/status', (_req, res) => {
+  res.json({ success: true, data: { passwordResetEnabled: isSmtpConfigured }, error: null })
+})
 
 router.post('/login', authLimiter, validate(loginSchema), async (req, res, next) => {
   try {

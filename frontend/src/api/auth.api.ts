@@ -52,3 +52,8 @@ export async function resetPassword(token: string, newPassword: string): Promise
   const response = await api.post('/reset-password', { token, newPassword })
   return response.data.data
 }
+
+export async function getAuthStatus(): Promise<{ passwordResetEnabled: boolean }> {
+  const response = await api.get('/status')
+  return response.data.data
+}

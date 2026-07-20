@@ -52,6 +52,8 @@ export async function forgotPassword(email: string): Promise<{ message: string }
   const user = await prisma.user.findUnique({ where: { email } })
 
   if (!user || !isSmtpConfigured || !frontendUrl) {
+    // Dummy hash to prevent timing side-channel (user enumeration)
+    await bcrypt.hash('dummy', 10)
     return { message: 'If an account exists with that email, you will receive a password reset link.' }
   }
 

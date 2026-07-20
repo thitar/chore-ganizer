@@ -53,6 +53,12 @@ For a new production database, uncomment and replace all three required `BOOTSTR
 | `RATE_LIMIT_MAX` | Optional | `300` | Max requests per 15-minute window for the general API rate limiter (`backend/src/middleware/rateLimiter.ts`), mounted on all of `/api`. |
 | `AUTH_RATE_LIMIT_MAX` | Optional | `10` | Max requests per 15-minute window for the stricter auth rate limiter (`POST /api/auth/login`). Raise this for e2e/load-testing runs that legitimately log in many times in one window — see `AGENTS.md`'s Testing Patterns. |
 | `NTFY_BASE_URL` | Optional | unset (notifications disabled) | Base URL of an ntfy server (e.g. `https://ntfy.sh`). Unset = notifications silently no-op, logged once at startup. |
+| `SMTP_HOST` | Optional | empty (password recovery disabled) | SMTP server hostname for password reset emails (e.g. `smtp.gmail.com`). All five SMTP vars must be set to enable password recovery. |
+| `SMTP_PORT` | Optional | `465` | SMTP server port. Use `465` for SSL or `587` for STARTTLS. |
+| `SMTP_USER` | Optional | empty | SMTP username (e.g. full Gmail address). |
+| `SMTP_PASS` | Optional | empty | SMTP password or App Password (for Gmail: generate at https://myaccount.google.com/apppasswords with 2FA enabled). |
+| `SMTP_FROM` | Optional | same as `SMTP_USER` | Sender email address for password reset emails. |
+| `FRONTEND_URL` | Optional | empty | Public frontend URL used in password reset email links (e.g. `https://chore.thitar.ovh`). Required when SMTP is configured. |
 | `VITE_API_URL` | Optional | empty (relative URLs, nginx proxies `/api/*`) | Set only if the frontend needs to reach a backend on a different origin. |
 | `VITE_DEBUG` | Optional | `false` | Written into the frontend's runtime `window.APP_CONFIG.debug` by `frontend/docker-entrypoint.sh`. |
 | `CORS_ORIGIN` | Optional | `http://localhost:3002` | Consumed by the CORS middleware in `app.ts` (fixed 2026-07-10 — was passed through but ignored since the v1-rewrite). Set it to your actual frontend origin if it differs from the default. |
@@ -135,7 +141,9 @@ Check `AUTH_RATE_LIMIT_MAX` (default 10/15min) and `RATE_LIMIT_MAX` (default 300
 
 ## Notification Setup
 
-Set `NTFY_BASE_URL` (e.g. `https://ntfy.sh` or a self-hosted server) to enable push notifications. Each user optionally gets a unique `ntfyTopic` (set via their profile), which acts as their private notification channel — leaving it blank disables push for that user without affecting others. There's no other notification channel (no email/SMTP, no in-app notification center) in the current backend.
+Set `NTFY_BASE_URL` (e.g. `https://ntfy.sh` or a self-hosted server) to enable push notifications. Each user optionally gets a unique `ntfyTopic` (set via their profile), which acts as their private notification channel — leaving it blank disables push for that user without affecting others.
+
+For password recovery, configure SMTP via `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`. When all five are set, a "Forgot password?" link appears on the login page and users can reset their password via email. When unset, password recovery is disabled and the link is hidden. See the Environment Variables table above for details.
 
 ## Secure Cookie Rollout
 
