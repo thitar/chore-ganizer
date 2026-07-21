@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Startup warning when FRONTEND_URL is missing or misconfigured relative to SMTP
 
+## [3.2.3] - 2026-07-21
+
+### Fixed
+- Stale UI on mobile devices that don't hard-refresh — added explicit `Cache-Control: no-cache` for `index.html` (SPA entry point) so browsers always revalidate after deploy
+
 ## [3.2.2] - 2026-07-20
 
 ### Added
