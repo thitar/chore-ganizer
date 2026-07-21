@@ -23,10 +23,11 @@ server {
 
     # React Router SPA: serve index.html for all non-asset paths
     location / {
+        add_header Cache-Control "no-cache";
         try_files $uri $uri/ /index.html;
     }
 
-    # Static asset caching
+    # Static asset caching (content-hashed filenames — safe to cache long-term)
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
