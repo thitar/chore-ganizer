@@ -1,8 +1,8 @@
 import { Router } from 'express'
-import { prisma } from '../config/prisma'
 import { authenticate, authorize } from '../middleware/auth'
 import { AppError } from '../middleware/errorHandler'
 import * as usersService from '../services/users.service'
+import { sendTestNotification } from '../services/notification.service'
 import { validate } from '../middleware/validator'
 import {
   createUserSchema,
@@ -80,6 +80,28 @@ router.put('/:id/ntfy-topic', authenticate, authorize('PARENT'), validate(update
     const { ntfyTopic } = req.body
     const user = await usersService.updateNtfyTopic(targetUserId, ntfyTopic)
     res.json({ success: true, data: user, error: null })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/me/test-notification', authenticate, async (req, res, next) => {
+  try {
+    const sent = await sendTestNotification(req.session.userId!)
+    res.json({ success: true, data: { sent }, error: null })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/:id/test-notification', authenticate, authorize('PARENT'), async (req, res, next) => {
+  try {
+    const targetUserId = parseInt(req.params.id)
+    if (isNaN(targetUserId)) {
+      throw new AppError('Invalid user ID', 400)
+    }
+    const sent = await sendTestNotification(targetUserId)
+    res.json({ success: true, data: { sent }, error: null })
   } catch (err) {
     next(err)
   }

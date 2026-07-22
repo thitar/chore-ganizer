@@ -5,6 +5,14 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.5] - 2026-07-22
+
+### Added
+- "Send test notification" button on the Profile page (own topic and, for parents, each family member's topic) to verify ntfy delivery without waiting for a real chore event
+
+### Fixed
+- `NTFY_BASE_URL` missing a `http://`/`https://` scheme (e.g. `ntfy.thitar.ovh` instead of `https://ntfy.thitar.ovh`) now fails loudly with a startup error and disables notifications cleanly, instead of silently failing every send with an unhelpful "Failed to parse URL" warning per notification
+
 ## [3.2.4] - 2026-07-21
 
 ### Added
