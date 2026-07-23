@@ -12,8 +12,8 @@ The only way to assign a chore today is to navigate to the Assignments page and 
 1. Extract the existing inline assignment form on `AssignmentsPage.tsx` into a standalone, reusable `AssignChoreForm` component, used by both `AssignmentsPage` and the new dashboard entry point — no duplicated template/child/date fields or submit logic.
 2. Add a generic `Modal` UI primitive (none exists in `frontend/src/components/ui/` today), built on the native `<dialog>` element.
 3. Add a parent-only, full-width "Assign Chore" button to `DashboardPage.tsx`, directly below the greeting, that opens `AssignChoreForm` inside the new `Modal`.
-4. Preserve `AssignmentsPage`'s current inline-expand visual behavior and all of its existing test assertions — this is a refactor of that page's form, not a UX change to it.
-5. Fix a pre-existing bug surfaced while extracting the form: the edit form's template selector is currently editable but `PUT /api/assignments/:id` never applies template changes (see Components → `AssignChoreForm`), so make it read-only in edit mode.
+4. Preserve `AssignmentsPage`'s current inline-expand visual behavior and all of its existing test assertions — this is a refactor of that page's form, not a UX change to it, with one deliberate exception (item 5).
+5. Fix a pre-existing bug surfaced while extracting the form: the edit form's template selector is currently editable but `PUT /api/assignments/:id` never applies template changes (see Components → `AssignChoreForm`), so make it read-only in edit mode. This is the one intentional UX change in this project — chosen over silently preserving the misleading editable-but-ignored field.
 6. Bump `APP_VERSION` in both `package.json` files and `.env`/`.env.example`, per `AGENTS.md`'s "Version Bumps — Required With Every PR".
 
 ## Non-Goals
@@ -29,12 +29,12 @@ The only way to assign a chore today is to navigate to the Assignments page and 
 
 A small, generic modal primitive, not assignment-specific — available for future modal needs too.
 
-- Props: `open: boolean`, `onClose: () => void`, `title?: string`, `children: React.ReactNode`.
+- Props: `open: boolean`, `onClose: () => void`, `title: string` (required, not optional — it's also the modal's accessible name, so there's no valid case where it's absent), `children: React.ReactNode`.
 - Wraps a `<dialog>` element. A `ref` + `useEffect` calls `dialogRef.current.showModal()` when `open` becomes `true` — guarded by `if (!dialog.open)` — and `dialogRef.current.close()` when it becomes `false`, guarded by `if (dialog.open)`. The guards prevent `InvalidStateError` from a redundant call (e.g. React effects re-running) on a dialog that's already in the requested state.
 - Native ESC handling closes the dialog; the component listens for the dialog's `close` event and calls `onClose` so parent state stays in sync.
 - Backdrop-click-to-close: a click handler on the `<dialog>` element itself checks whether the click target is the dialog (not its content) and calls `onClose` if so — native `<dialog>` doesn't provide this for free.
 - Styles the `::backdrop` pseudo-element to match the existing dark theme (semi-transparent scrim consistent with other overlay-style UI in the app).
-- Accessible markup: the `title` prop renders as a heading with a generated `id`, wired to the `<dialog>` via `aria-labelledby`, so screen readers announce the modal's purpose.
+- Accessible markup: `title` always renders as a heading with a generated `id`, unconditionally wired to the `<dialog>` via `aria-labelledby`, so every instance of `Modal` has an accessible name — no optional/missing-title case to handle.
 
 ### `frontend/src/components/AssignChoreForm.tsx` (new, extracted)
 
@@ -67,14 +67,27 @@ For `user?.role === 'PARENT'` only:
 
 - The greeting row becomes its own line (`Hey {name} 👋`), followed by a full-width `Assign Chore` button on its own row directly beneath it — full-width and directly below so it's unmissable on mobile without scrolling or relying on a cramped inline row.
 - Clicking the button sets `showAssignModal = true`.
-- `<Modal open={showAssignModal} onClose={() => setShowAssignModal(false)} title="Assign Chore"><AssignChoreForm onSuccess={msg => { setShowAssignModal(false); setSuccessMessage(msg) }} onCancel={() => setShowAssignModal(false)} /></Modal>` — no `assignment` prop passed, so this is always create mode.
+- `AssignChoreForm` is only mounted while `showAssignModal` is `true` (`{showAssignModal && <AssignChoreForm .../>}` inside `<Modal>`), not rendered-but-hidden — since `AssignChoreForm` fetches templates/users via its own hooks on mount, mounting it unconditionally would trigger those fetches as soon as `DashboardPage` loads, for every parent, whether or not they ever open the modal:
+
+  ```tsx
+  <Modal open={showAssignModal} onClose={() => setShowAssignModal(false)} title="Assign Chore">
+    {showAssignModal && (
+      <AssignChoreForm
+        onSuccess={msg => { setShowAssignModal(false); setSuccessMessage(msg) }}
+        onCancel={() => setShowAssignModal(false)}
+      />
+    )}
+  </Modal>
+  ```
+
+  No `assignment` prop passed, so this is always create mode.
 - A `Toast` (same component/pattern already used on `AssignmentsPage`) displays `successMessage` after the modal closes.
 
 ## Data Flow
 
 `AssignChoreForm` owns the `createAssignment`/`updateAssignment` mutations directly via its internal `useAssignments()` call — neither `AssignmentsPage` nor `DashboardPage` passes mutation functions down. Both pages only supply `onSuccess`/`onCancel` callbacks and react to them (close modal/inline form, show toast).
 
-Templates and the user list load through the existing React Query hooks (`useTemplates`, `useUsers`), which `DashboardPage` doesn't currently call. Opening the modal for the first time triggers one fetch of each; React Query caches the result for subsequent opens in the same session.
+Templates and the user list load through the existing React Query hooks (`useTemplates`, `useUsers`), which `DashboardPage` doesn't currently call. Because `AssignChoreForm` is only mounted once `showAssignModal` is `true` (see `DashboardPage.tsx` above — not merely visually hidden inside an always-mounted `<Modal>`), these fetches don't happen until the parent actually opens the modal. First open triggers one fetch of each; React Query caches the result for subsequent opens in the same session.
 
 ## Error Handling
 
@@ -84,7 +97,7 @@ Unchanged from today's behavior — validation and network errors are caught ins
 
 - New `AssignChoreForm.test.tsx`: covers create mode, edit mode with pre-filled values and a disabled/read-only template field, submit success (asserting the payload sent to `createAssignment`/`updateAssignment` — confirming `templateId` is never sent on update), the validation/submit-error path, and cancel. These are net-new cases — `AssignmentsPage.test.tsx` currently has no submit/error/cancel coverage for the form at all, so nothing is being "moved," only extracted-and-then-extended.
 - `AssignmentsPage.test.tsx`: unchanged. Its existing assertions (open/prefill/delete-confirmation/loading/empty/error states, targeting rendered labels and text) continue to pass against the extracted component as-is.
-- New `Modal.test.tsx`: since jsdom 23.2.0's `HTMLDialogElement` implementation is a stub (no real `showModal()`/`close()`/`open`-attribute behavior — verified in `node_modules/jsdom/lib/jsdom/living/nodes/HTMLDialogElement-impl.js`), tests stub `HTMLDialogElement.prototype.showModal`/`close` (e.g. via `vi.spyOn` toggling the `open` attribute manually) rather than relying on jsdom's native behavior. Covers: `showModal`/`close` called in response to the `open` prop (with guards preventing a duplicate call when already in that state), and `onClose` firing when the dialog's `close` event is dispatched (simulating both backdrop-click and ESC, since jsdom won't generate either natively).
+- New `Modal.test.tsx`: since jsdom 23.2.0's `HTMLDialogElement` implementation is a stub (no real `showModal()`/`close()`/`open`-attribute behavior — verified in `node_modules/jsdom/lib/jsdom/living/nodes/HTMLDialogElement-impl.js`), tests stub `HTMLDialogElement.prototype.showModal`/`close` (e.g. via `vi.spyOn` toggling the `open` attribute manually) rather than relying on jsdom's native behavior. Covers, as separate cases: (1) `showModal`/`close` called in response to the `open` prop, with guards preventing a duplicate call when already in that state; (2) `onClose` firing when the dialog's `close` event is dispatched — this exercises native ESC/programmatic closure, which fires that event, but not the component's own backdrop-click handler; (3) a distinct test that fires a click directly on the `<dialog>` element (not its content wrapper) and asserts `onClose` is called — this is what actually exercises the component's backdrop-click-detection logic (spec's Components section), since the dialog's native `close` event is not what backdrop clicks produce.
 - `DashboardPage.test.tsx`: new cases — the Assign Chore button renders when `user.role === 'PARENT'` and does not render for `'CHILD'`; clicking it opens the modal; a successful submission closes the modal and shows the success toast.
 
 ## Version Bump
