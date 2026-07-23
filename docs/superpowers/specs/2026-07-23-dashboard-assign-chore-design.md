@@ -13,6 +13,8 @@ The only way to assign a chore today is to navigate to the Assignments page and 
 2. Add a generic `Modal` UI primitive (none exists in `frontend/src/components/ui/` today), built on the native `<dialog>` element.
 3. Add a parent-only, full-width "Assign Chore" button to `DashboardPage.tsx`, directly below the greeting, that opens `AssignChoreForm` inside the new `Modal`.
 4. Preserve `AssignmentsPage`'s current inline-expand visual behavior and all of its existing test assertions — this is a refactor of that page's form, not a UX change to it.
+5. Fix a pre-existing bug surfaced while extracting the form: the edit form's template selector is currently editable but `PUT /api/assignments/:id` never applies template changes (see Components → `AssignChoreForm`), so make it read-only in edit mode.
+6. Bump `APP_VERSION` in both `package.json` files and `.env`/`.env.example`, per `AGENTS.md`'s "Version Bumps — Required With Every PR".
 
 ## Non-Goals
 
@@ -28,18 +30,20 @@ The only way to assign a chore today is to navigate to the Assignments page and 
 A small, generic modal primitive, not assignment-specific — available for future modal needs too.
 
 - Props: `open: boolean`, `onClose: () => void`, `title?: string`, `children: React.ReactNode`.
-- Wraps a `<dialog>` element. A `ref` + `useEffect` calls `.showModal()` when `open` becomes `true` and `.close()` when it becomes `false`.
+- Wraps a `<dialog>` element. A `ref` + `useEffect` calls `dialogRef.current.showModal()` when `open` becomes `true` — guarded by `if (!dialog.open)` — and `dialogRef.current.close()` when it becomes `false`, guarded by `if (dialog.open)`. The guards prevent `InvalidStateError` from a redundant call (e.g. React effects re-running) on a dialog that's already in the requested state.
 - Native ESC handling closes the dialog; the component listens for the dialog's `close` event and calls `onClose` so parent state stays in sync.
 - Backdrop-click-to-close: a click handler on the `<dialog>` element itself checks whether the click target is the dialog (not its content) and calls `onClose` if so — native `<dialog>` doesn't provide this for free.
 - Styles the `::backdrop` pseudo-element to match the existing dark theme (semi-transparent scrim consistent with other overlay-style UI in the app).
+- Accessible markup: the `title` prop renders as a heading with a generated `id`, wired to the `<dialog>` via `aria-labelledby`, so screen readers announce the modal's purpose.
 
 ### `frontend/src/components/AssignChoreForm.tsx` (new, extracted)
 
 Moves the form currently inline in `AssignmentsPage.tsx` (template select, "Assign To" select limited to `role === 'CHILD'` users, due-date input, submit/cancel buttons, inline `formError` alert) into its own component.
 
-- Props: `mode: 'create' | 'edit'`, `assignment?: Assignment` (prefills fields when editing), `onSuccess: (message: string) => void`, `onCancel: () => void`.
+- Props: `assignment?: Assignment` (undefined = create mode; present = edit mode, and prefills fields), `onSuccess: (message: string) => void`, `onCancel: () => void`. Mode is derived from whether `assignment` is passed, not a separate `mode` prop — this makes "edit mode with no assignment" unrepresentable instead of a state callers could construct incorrectly.
 - Self-contained: calls `useAssignments()`, `useTemplates()`, `useUsers()` internally — callers don't prop-drill mutation functions or data.
-- Preserves existing field labels/markup exactly (`Template`, `Assign To`, `Due Date`, `Assign Chore`/`Save Assignment`/`Discard changes` button text) so `AssignmentsPage.test.tsx`'s existing `getByLabelText`/`getByText` assertions keep passing unchanged.
+- In edit mode, the template select is disabled (shown read-only, pre-filled with the assignment's current template) rather than editable, since `PUT /api/assignments/:id` (`assignments.api.ts:47-56`) never sends `templateId` — the API has no way to change a chore's template on an existing assignment. Making the field read-only in the UI matches actual capability instead of implying a change is possible when it silently isn't.
+- Preserves existing field labels exactly (`Template`, `Assign To`, `Due Date`) and the submit button's existing text (`'Save Assignment'` / `'Saving...'` while pending, in both create and edit mode — this was already the case before extraction, not something new) so `AssignmentsPage.test.tsx`'s existing `getByLabelText`/`getByText` assertions keep passing unchanged. (`'Assign Chore'` is the page-level trigger button text on `AssignmentsPage`/`DashboardPage`, not part of this form.)
 - On successful create/update, calls `onSuccess(message)` with the same copy used today (`'Assignment created!'` / `'Assignment updated!'`). On failure, sets its own inline `formError` and stays open — same recovery behavior as today.
 - Calls `onCancel()` when the Discard/Cancel button is clicked.
 
@@ -49,7 +53,6 @@ Replaces its inline form JSX and local form state (`selectedTemplateId`, `select
 
 ```tsx
 <AssignChoreForm
-  mode={editingAssignment ? 'edit' : 'create'}
   assignment={editingAssignment ?? undefined}
   onSuccess={msg => { setSuccessMessage(msg); cancelForm() }}
   onCancel={cancelForm}
@@ -64,7 +67,7 @@ For `user?.role === 'PARENT'` only:
 
 - The greeting row becomes its own line (`Hey {name} 👋`), followed by a full-width `Assign Chore` button on its own row directly beneath it — full-width and directly below so it's unmissable on mobile without scrolling or relying on a cramped inline row.
 - Clicking the button sets `showAssignModal = true`.
-- `<Modal open={showAssignModal} onClose={() => setShowAssignModal(false)} title="Assign Chore"><AssignChoreForm mode="create" onSuccess={msg => { setShowAssignModal(false); setSuccessMessage(msg) }} onCancel={() => setShowAssignModal(false)} /></Modal>`.
+- `<Modal open={showAssignModal} onClose={() => setShowAssignModal(false)} title="Assign Chore"><AssignChoreForm onSuccess={msg => { setShowAssignModal(false); setSuccessMessage(msg) }} onCancel={() => setShowAssignModal(false)} /></Modal>` — no `assignment` prop passed, so this is always create mode.
 - A `Toast` (same component/pattern already used on `AssignmentsPage`) displays `successMessage` after the modal closes.
 
 ## Data Flow
@@ -79,7 +82,11 @@ Unchanged from today's behavior — validation and network errors are caught ins
 
 ## Testing
 
-- New `AssignChoreForm.test.tsx`: covers create mode, edit mode with pre-filled values, and the validation/submit-error path — migrated out of the relevant existing cases in `AssignmentsPage.test.tsx`, using the same `vi.mock` pattern for `useAssignments`/`useTemplates`/`useUsers`.
-- `AssignmentsPage.test.tsx`: no changes expected. Its assertions target rendered labels/text (`getByLabelText('Template')`, `'Assign To'`, `getByText('Assign Chore')`, edit-prefill value check), which the extracted component continues to satisfy.
-- New `Modal.test.tsx`: opens/closes in response to the `open` prop, calls `onClose` on backdrop click and on ESC (via the dialog's native `close` event).
+- New `AssignChoreForm.test.tsx`: covers create mode, edit mode with pre-filled values and a disabled/read-only template field, submit success (asserting the payload sent to `createAssignment`/`updateAssignment` — confirming `templateId` is never sent on update), the validation/submit-error path, and cancel. These are net-new cases — `AssignmentsPage.test.tsx` currently has no submit/error/cancel coverage for the form at all, so nothing is being "moved," only extracted-and-then-extended.
+- `AssignmentsPage.test.tsx`: unchanged. Its existing assertions (open/prefill/delete-confirmation/loading/empty/error states, targeting rendered labels and text) continue to pass against the extracted component as-is.
+- New `Modal.test.tsx`: since jsdom 23.2.0's `HTMLDialogElement` implementation is a stub (no real `showModal()`/`close()`/`open`-attribute behavior — verified in `node_modules/jsdom/lib/jsdom/living/nodes/HTMLDialogElement-impl.js`), tests stub `HTMLDialogElement.prototype.showModal`/`close` (e.g. via `vi.spyOn` toggling the `open` attribute manually) rather than relying on jsdom's native behavior. Covers: `showModal`/`close` called in response to the `open` prop (with guards preventing a duplicate call when already in that state), and `onClose` firing when the dialog's `close` event is dispatched (simulating both backdrop-click and ESC, since jsdom won't generate either natively).
 - `DashboardPage.test.tsx`: new cases — the Assign Chore button renders when `user.role === 'PARENT'` and does not render for `'CHILD'`; clicking it opens the modal; a successful submission closes the modal and shows the success toast.
+
+## Version Bump
+
+Per `AGENTS.md`'s "Version Bumps — Required With Every PR": bump `version` in both `backend/package.json` and `frontend/package.json` (currently `3.2.5`), and sync `APP_VERSION` in `.env`/`.env.example` to match, per `docs/OPERATIONS.md#version-bumps`. Exact new version number to be confirmed at implementation time (patch bump unless the plan grows in scope).
