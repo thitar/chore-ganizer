@@ -12,13 +12,23 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-07-22 — Diagnosed prod ntfy silence to a malformed `NTFY_BASE_URL`; added test-notification button
+
+- **Status**: Completed
+- **Description**: User reported nobody in production was receiving push notifications despite Playwright/dev testing working and the app being "set up correctly." Backend logs (`docker compose logs backend | grep '\[ntfy\]'`) showed `[ntfy] send failed for topic <topic>: Failed to parse URL from ntfy.thitar.ovh/<topic>` on every send — `NTFY_BASE_URL` was set to `ntfy.thitar.ovh` (no `http://`/`https://` scheme), which `fetch()` can't resolve to an absolute URL. `isNtfyConfigured` only checked the var was non-empty, so it reported "configured" while every send silently failed.
+- **Fix**: `config/notifications.ts` now validates the scheme; a scheme-less value logs a loud `console.error` at startup and disables notifications cleanly instead of failing per-send with a buried warning. User needs to fix prod's `.env` to `NTFY_BASE_URL=https://ntfy.thitar.ovh` and restart the backend container.
+- **Also added**: "Send test notification" button on the Profile page (own ntfy topic, plus each family member's topic for parents) — new `POST /api/users/me/test-notification` and `/api/users/:id/test-notification` routes calling `sendTestNotification()` in `notification.service.ts`, so delivery can be verified without waiting for a real chore event.
+- **Verification**: Backend 269/269 passing, `tsc --noEmit` clean on both packages. Version bumped 3.2.4 → 3.2.5 (`CHANGELOG.md`, both `package.json`, `.env.example`) per `AGENTS.md`'s version-bump requirement — patch bump, consistent with 3.2.2's precedent of patch-bumping small additions rather than reserving minor for new features.
+- **URL**: local — `backend/src/config/notifications.ts`, `backend/src/services/notification.service.ts`, `backend/src/routes/users.routes.ts`, `frontend/src/api/users.api.ts`, `frontend/src/pages/ProfilePage.tsx`
+- **Follow-up review (PR #169)**: caught that `sendNtfy()` never checked `response.ok` — a non-2xx reply from the ntfy server (auth failure, unknown topic, 5xx) resolves `fetch()` successfully, so it was reported as delivered. This directly undercut the new test button's purpose (it could say "sent!" when the server rejected it). Fixed by checking `response.ok` and treating non-2xx as failure; added test coverage for that path and for `sendTestNotification()`, which had none. Backend now 276/276.
+
 ### 2026-07-13 — Code review on the above session's diff found a real reliability bug in the new notification wiring; fixed
 
 - **Status**: Completed
 - **Description**: A multi-angle code review of the uncommitted diff from the entry below flagged that `assignment.service.ts complete()` and `recurring.service.ts completeOccurrence()` both fetched parent users (`prisma.user.findMany`) **after** their completion transaction had already committed, with no try/catch — a transient DB error there would have surfaced as a 500 to the client for a chore that had, in fact, already completed successfully (points awarded, status persisted). The same block was also duplicated verbatim across both files and blocked the HTTP response on a DB round-trip to feed an otherwise fire-and-forget notification.
 - **Fix**: Added `notifyParentsOfChoreCompletion()` to `notification.service.ts` — a single function that does the parent lookup, calls the existing `notifyChoreCompleted()`, and wraps the whole thing in try/catch (`console.warn` on failure, matching `gamification.service.ts`'s `awardBadges` convention). Both call sites now just do `void notifyParentsOfChoreCompletion(...)`, fire-and-forget like the `void awardBadges(...)` call next to it — collapsing the duplication and removing the blocking `await` in one move. Added 2 new tests in `notification.service.test.ts` covering the happy path and the "lookup throws, doesn't propagate" case.
 - **Not changed**: the review also flagged that `auth.routes.ts`'s new `validate(loginSchema)` changes the response for an empty/malformed login body from 401 to 400 — judged a correct, intentional side effect of adding real request validation (not a regression), and nothing currently depends on the old status code, so left as-is.
-- **Verification**: Backend 258/258 (was 256; +2 new), `tsc --noEmit` clean, `npm run build` clean.
+- **Verification**: Backend 269/269 (was 258; +11 new since last logged), `tsc --noEmit` clean, `npm run build` clean.
 - **URL**: local — `backend/src/services/{notification,assignment,recurring}.service.ts`, `backend/src/__tests__/services/notification.service.test.ts`
 
 ### 2026-07-13 — Closed 4 of 6 "surprises for new contributors" from a fresh codebase-analysis pass; documented the other 2 as intentional

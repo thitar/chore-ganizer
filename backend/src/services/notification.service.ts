@@ -1,4 +1,5 @@
 import { prisma } from '../config/prisma'
+import { AppError } from '../middleware/errorHandler'
 import { isNtfyConfigured, getNtfyConfig } from '../config/notifications'
 import { assignedBody, dueSoonBody, completedBody } from './notification.formatters'
 
@@ -29,7 +30,11 @@ export async function sendNtfy(
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 3000)
   try {
-    await fetch(url, { method: 'POST', body, headers, signal: controller.signal })
+    const response = await fetch(url, { method: 'POST', body, headers, signal: controller.signal })
+    if (!response.ok) {
+      console.warn(`[ntfy] send failed for topic ${topic}: server responded ${response.status} ${response.statusText}`)
+      return false
+    }
     return true
   } catch (err) {
     console.warn(`[ntfy] send failed for topic ${topic}: ${err instanceof Error ? err.message : String(err)}`)
@@ -63,6 +68,20 @@ export function notifyChoreCompleted(
     const { title, body, priority, tags, click } = completedBody(assignment)
     void sendNtfy(topic, title, body, { priority, tags, click })
   }
+}
+
+export async function sendTestNotification(userId: number): Promise<boolean> {
+  if (!isNtfyConfigured) {
+    throw new AppError('Notifications are not configured on this server (NTFY_BASE_URL not set)', 400)
+  }
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { ntfyTopic: true } })
+  if (!user?.ntfyTopic) {
+    throw new AppError('No ntfy topic is set for this user', 400)
+  }
+  return sendNtfy(user.ntfyTopic, 'Test notification', 'If you can see this, notifications are working.', {
+    priority: 3,
+    tags: ['white_check_mark'],
+  })
 }
 
 export async function notifyParentsOfChoreCompletion(assignment: {

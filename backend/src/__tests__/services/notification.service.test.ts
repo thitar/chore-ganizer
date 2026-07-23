@@ -1,5 +1,6 @@
 import {
   sendNtfy,
+  sendTestNotification,
   notifyChoreAssigned,
   notifyChoreDueSoon,
   notifyChoreCompleted,
@@ -15,6 +16,7 @@ jest.mock('../../config/prisma', () => ({
   prisma: {
     user: {
       findMany: jest.fn(),
+      findUnique: jest.fn(),
     },
   },
 }))
@@ -133,6 +135,20 @@ describe('notification.service', () => {
       expect(consoleWarnSpy).toHaveBeenCalledWith('[ntfy] send failed for topic topic: Network error')
       consoleWarnSpy.mockRestore()
     })
+
+    it('returns false when the server responds with a non-2xx status', async () => {
+      jest.spyOn(global, 'fetch').mockResolvedValue(new Response(null, { status: 401, statusText: 'Unauthorized' }))
+      const result = await sendNtfy('topic', 'Title', 'body')
+      expect(result).toBe(false)
+    })
+
+    it('logs a warning when the server responds with a non-2xx status', async () => {
+      jest.spyOn(global, 'fetch').mockResolvedValue(new Response(null, { status: 401, statusText: 'Unauthorized' }))
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
+      await sendNtfy('topic', 'Title', 'body')
+      expect(consoleWarnSpy).toHaveBeenCalledWith('[ntfy] send failed for topic topic: server responded 401 Unauthorized')
+      consoleWarnSpy.mockRestore()
+    })
   })
 
   describe('notifyChoreAssigned', () => {
@@ -186,6 +202,55 @@ describe('notification.service', () => {
       const parents = [{ ntfyTopic: null }, { ntfyTopic: null }]
       notifyChoreCompleted(mockAssignment, parents)
       expect(global.fetch).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('sendTestNotification', () => {
+    beforeEach(() => {
+      prisma.user.findUnique.mockReset()
+    })
+
+    it('sends a test notification to the configured topic and returns the delivery result', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ntfyTopic: 'my-topic' })
+      const result = await sendTestNotification(1)
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { id: 1 }, select: { ntfyTopic: true } })
+      expect(global.fetch).toHaveBeenCalledWith('https://ntfy.example.com/my-topic', expect.anything())
+      expect(result).toBe(true)
+    })
+
+    it('throws when the user has no ntfy topic set', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ntfyTopic: null })
+      await expect(sendTestNotification(1)).rejects.toThrow('No ntfy topic is set for this user')
+      expect(global.fetch).not.toHaveBeenCalled()
+    })
+
+    it('throws when the user does not exist', async () => {
+      prisma.user.findUnique.mockResolvedValue(null)
+      await expect(sendTestNotification(999)).rejects.toThrow('No ntfy topic is set for this user')
+      expect(global.fetch).not.toHaveBeenCalled()
+    })
+
+    it('propagates the false result when ntfy rejects the send', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ntfyTopic: 'my-topic' })
+      jest.spyOn(global, 'fetch').mockResolvedValue(new Response(null, { status: 401, statusText: 'Unauthorized' }))
+      const result = await sendTestNotification(1)
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('sendTestNotification - unconfigured', () => {
+    beforeEach(() => {
+      jest.resetModules()
+      jest.mock('../../config/notifications', () => ({
+        isNtfyConfigured: false,
+        getNtfyConfig: jest.fn(() => ({ baseUrl: '' })),
+      }))
+    })
+
+    it('throws before looking up the user when ntfy is not configured', async () => {
+      const { sendTestNotification: sendTestNotificationDisabled } = require('../../services/notification.service')
+      await expect(sendTestNotificationDisabled(1)).rejects.toThrow('Notifications are not configured on this server')
+      expect(prisma.user.findUnique).not.toHaveBeenCalled()
     })
   })
 

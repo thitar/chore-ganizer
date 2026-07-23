@@ -60,3 +60,13 @@ export async function updateUserNtfyTopic(userId: number, ntfyTopic: string | nu
   const response = await api.put(`/${userId}/ntfy-topic`, { ntfyTopic: payload })
   return response.data.data
 }
+
+export async function testNotification(): Promise<{ sent: boolean }> {
+  const response = await api.post('/me/test-notification')
+  return response.data.data
+}
+
+export async function testUserNotification(userId: number): Promise<{ sent: boolean }> {
+  const response = await api.post(`/${userId}/test-notification`)
+  return response.data.data
+}

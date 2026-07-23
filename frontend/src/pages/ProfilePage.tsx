@@ -43,12 +43,14 @@ export function ProfilePage() {
   const [topicError, setTopicError] = useState<string | null>(null)
   const [topicSuccess, setTopicSuccess] = useState<string | null>(null)
   const [isUpdatingTopic, setIsUpdatingTopic] = useState(false)
+  const [isTestingTopic, setIsTestingTopic] = useState(false)
 
   // Family topic edit state: userId -> edit mode
   const [familyEditMap, setFamilyEditMap] = useState<Record<number, boolean>>({})
   const [familyValueMap, setFamilyValueMap] = useState<Record<number, string>>({})
   const [familyErrorMap, setFamilyErrorMap] = useState<Record<number, string | null>>({})
   const [familyUpdatingMap, setFamilyUpdatingMap] = useState<Record<number, boolean>>({})
+  const [familyTestingMap, setFamilyTestingMap] = useState<Record<number, boolean>>({})
 
   useEffect(() => {
     if (user?.color) setColor(user.color)
@@ -145,6 +147,32 @@ export function ProfilePage() {
       }
     } finally {
       setIsUpdatingTopic(false)
+    }
+  }
+
+  async function handleTestNotification() {
+    setTopicError(null)
+    setIsTestingTopic(true)
+    try {
+      const { sent } = await usersApi.testNotification()
+      setTopicSuccess(sent ? 'Test notification sent!' : 'Could not deliver notification — check server logs.')
+    } catch (err: any) {
+      setTopicError(err?.response?.data?.error?.message ?? 'Failed to send test notification.')
+    } finally {
+      setIsTestingTopic(false)
+    }
+  }
+
+  async function handleFamilyTestNotification(userId: number) {
+    setFamilyErrorMap((prev) => ({ ...prev, [userId]: null }))
+    setFamilyTestingMap((prev) => ({ ...prev, [userId]: true }))
+    try {
+      const { sent } = await usersApi.testUserNotification(userId)
+      setTopicSuccess(sent ? 'Test notification sent!' : 'Could not deliver notification — check server logs.')
+    } catch (err: any) {
+      setFamilyErrorMap((prev) => ({ ...prev, [userId]: err?.response?.data?.error?.message ?? 'Failed to send test notification.' }))
+    } finally {
+      setFamilyTestingMap((prev) => ({ ...prev, [userId]: false }))
     }
   }
 
@@ -256,13 +284,25 @@ export function ProfilePage() {
                 <div className="mb-2 text-sm text-zinc-300">
                   <span className="font-mono">{ownTopic}</span>
                 </div>
-                <Button
-                  variant="secondary"
-                  type="button"
-                  onClick={() => { setTopicValue(ownTopic); setTopicEdit(true); setTopicError(null); }}
-                >
-                  Change
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    onClick={() => { setTopicValue(ownTopic); setTopicEdit(true); setTopicError(null); }}
+                  >
+                    Change
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    onClick={handleTestNotification}
+                    disabled={isTestingTopic}
+                    loading={isTestingTopic}
+                  >
+                    {isTestingTopic ? 'Sending...' : 'Send test notification'}
+                  </Button>
+                </div>
+                {topicError && <div className="alert-error mt-2">{topicError}</div>}
               </div>
             ) : (
               /* Empty state - show input directly */
@@ -369,21 +409,37 @@ export function ProfilePage() {
 
                     {!isEditing ? (
                       /* View mode */
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-sm text-zinc-400">
-                          {member.ntfyTopic ?? 'Not set'}
-                        </span>
-                        <Button
-                          variant="secondary"
-                          type="button"
-                          onClick={() => {
-                            setFamilyEditMap((prev) => ({ ...prev, [member.id]: true }))
-                            setFamilyValueMap((prev) => ({ ...prev, [member.id]: member.ntfyTopic ?? '' }))
-                            setFamilyErrorMap((prev) => ({ ...prev, [member.id]: null }))
-                          }}
-                        >
-                          Edit
-                        </Button>
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-sm text-zinc-400">
+                            {member.ntfyTopic ?? 'Not set'}
+                          </span>
+                          <div className="flex gap-2">
+                            {member.ntfyTopic && (
+                              <Button
+                                variant="secondary"
+                                type="button"
+                                onClick={() => handleFamilyTestNotification(member.id)}
+                                disabled={familyTestingMap[member.id] ?? false}
+                                loading={familyTestingMap[member.id] ?? false}
+                              >
+                                {familyTestingMap[member.id] ? 'Sending...' : 'Send test'}
+                              </Button>
+                            )}
+                            <Button
+                              variant="secondary"
+                              type="button"
+                              onClick={() => {
+                                setFamilyEditMap((prev) => ({ ...prev, [member.id]: true }))
+                                setFamilyValueMap((prev) => ({ ...prev, [member.id]: member.ntfyTopic ?? '' }))
+                                setFamilyErrorMap((prev) => ({ ...prev, [member.id]: null }))
+                              }}
+                            >
+                              Edit
+                            </Button>
+                          </div>
+                        </div>
+                        {editError && <div className="alert-error mt-2">{editError}</div>}
                       </div>
                     ) : (
                       /* Edit mode */
