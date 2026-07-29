@@ -121,7 +121,8 @@ None — v3.0.0 (rewrite) switchover complete (commit 38feb91), legacy archived 
 | feature   | Per-user ntfyBaseUrl override               | Out of scope (env var is enough) | v3.1       |
 | feature   | Per-event notification toggles              | Out of scope (not in NOTIFY-01..08) | v3.1       |
 | feature   | In-app notification center                  | Out of scope (ntfy push only) | v3.1       |
-| feature   | Email / Slack / Discord fallback channels   | Out of scope (ntfy is the only channel) | v3.1       |
+| feature   | Email / Slack / Discord fallback channels for chore events | Out of scope (ntfy is the only channel); SMTP now exists (v3.2.1, PR #158) but only for auth password recovery, not chore-event notifications | v3.1       |
+| feature   | Unassigned "chore pool" (children voluntarily claim unassigned dated chores for bonus points) | Proposed, not yet scoped — needs `assignedToId` to become nullable on `ChoreAssignment`/`RecurringChore`/`RecurringOccurrence` plus a claim flow | 2026-07-23 |
 
 ## Phase 4 Artifacts (v1-rewrite reference)
 

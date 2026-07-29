@@ -14,9 +14,16 @@ What's deliberately deferred, not what's aspirational. Sourced from `.planning/S
 | Per-user `ntfyBaseUrl` override | Out of scope — a single `NTFY_BASE_URL` env var is enough for a family deployment |
 | Per-event notification toggles | Out of scope — all-or-nothing per user via `ntfyTopic` |
 | In-app notification center | Out of scope — ntfy push is the only channel |
-| Email / Slack / Discord notification channels | Out of scope — ntfy is the only channel |
-| Scheduled/automated database backups | Documented gap in OPERATIONS.md, not implemented — manual `sqlite3 .backup` only |
+| Email/Slack/Discord notification channels for chore events | Out of scope — ntfy is the only channel for chore assigned/completed/due-soon events. Note: SMTP email exists as of v3.2.1 (PR #158), but only for auth password recovery, not chore-event notifications — the two are separate concerns. |
 | CI/CD image publishing to a registry | No workflow builds/pushes to `ghcr.io` despite the naming convention; images are built and tagged locally only |
+
+## Proposed, not yet scoped
+
+Ideas raised in conversation but not yet designed or committed to a milestone — distinct from the deferred items above, which were considered and explicitly postponed.
+
+| Item | Notes |
+|------|--------------------|
+| Unassigned "chore pool" | Chores created with a due date but no assignee; any child can voluntarily claim and complete one for its points, instead of it being assigned as an obligation. Requires a schema change: `assignedToId` is currently a required `Int` on `ChoreAssignment`/`RecurringChore`/`RecurringOccurrence` (`backend/prisma/schema.prisma`), so it would need to become nullable plus a "claim" endpoint/flow. Raised 2026-07-23. |
 
 ## Explicitly removed, not "future"
 
