@@ -60,24 +60,26 @@ export function PongCanvas({ onGameOver, runId = 0 }: PongCanvasProps) {
     const context = canvas?.getContext('2d')
     if (!canvas || !context) return
 
-    let game = createPongGame()
     let animationFrame = 0
     let lastTimestamp: number | null = null
     let active = true
+    let gameOverReported = false
 
-    gameRef.current = game
-    drawGame(context, game)
+    gameRef.current = createPongGame()
+    drawGame(context, gameRef.current)
 
     const frame = (timestamp: number) => {
       if (!active) return
       const deltaSeconds = lastTimestamp === null ? 0 : (timestamp - lastTimestamp) / 1000
       lastTimestamp = timestamp
-      game = advancePongGame(game, deltaSeconds)
-      gameRef.current = game
-      drawGame(context, game)
+      gameRef.current = advancePongGame(gameRef.current, deltaSeconds)
+      drawGame(context, gameRef.current)
 
-      if (game.status === 'game-over') {
-        onGameOverRef.current(game.score)
+      if (gameRef.current.status === 'game-over') {
+        if (!gameOverReported) {
+          gameOverReported = true
+          onGameOverRef.current(gameRef.current.score)
+        }
         return
       }
 
