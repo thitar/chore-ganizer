@@ -61,6 +61,29 @@ export async function recordPongScore(userId: number, role: string, score: numbe
     return { personalBest: existing.score, isNewBest: false }
   }
 
-  const personalBest = await prisma.gameHighScore.create({ data: { userId, game: PONG_GAME, score } })
-  return { personalBest: personalBest.score, isNewBest: true }
+  try {
+    const personalBest = await prisma.gameHighScore.create({ data: { userId, game: PONG_GAME, score } })
+    return { personalBest: personalBest.score, isNewBest: true }
+  } catch (error) {
+    if (typeof error !== 'object' || error === null || !('code' in error) || error.code !== 'P2002') {
+      throw error
+    }
+
+    const retriedUpdate = await prisma.gameHighScore.updateMany({
+      where: { userId, game: PONG_GAME, score: { lt: score } },
+      data: { score },
+    })
+    if (retriedUpdate.count > 0) {
+      return { personalBest: score, isNewBest: true }
+    }
+
+    const persistedScore = await prisma.gameHighScore.findUnique({
+      where: { userId_game: { userId, game: PONG_GAME } },
+    })
+    if (persistedScore) {
+      return { personalBest: persistedScore.score, isNewBest: false }
+    }
+
+    throw error
+  }
 }

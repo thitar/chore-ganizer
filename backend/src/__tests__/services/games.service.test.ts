@@ -11,7 +11,7 @@ const { AppError } = require('../../middleware/errorHandler')
 let gamesService: typeof import('../../services/games.service')
 
 beforeEach(() => {
-  jest.clearAllMocks()
+  jest.resetAllMocks()
   delete require.cache[require.resolve('../../services/games.service')]
   gamesService = require('../../services/games.service')
 })
@@ -119,6 +119,23 @@ describe('recordPongScore', () => {
       data: { score: 70 },
     })
     expect(prisma.gameHighScore.create).not.toHaveBeenCalled()
+  })
+
+  it('retries a colliding first-score create and returns the persisted higher score', async () => {
+    prisma.userBadge.findUnique.mockResolvedValue({ id: 1 })
+    prisma.gameHighScore.updateMany.mockResolvedValue({ count: 0 })
+    prisma.gameHighScore.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({ score: 80 })
+    prisma.gameHighScore.create.mockRejectedValue({ code: 'P2002' })
+
+    await expect(gamesService.recordPongScore(2, 'CHILD', 70)).resolves.toEqual({
+      personalBest: 80,
+      isNewBest: false,
+    })
+    expect(prisma.gameHighScore.updateMany).toHaveBeenCalledTimes(2)
+    expect(prisma.gameHighScore.updateMany).toHaveBeenLastCalledWith({
+      where: { userId: 2, game: 'PONG', score: { lt: 70 } },
+      data: { score: 70 },
+    })
   })
 
   it('allows a parent to save a private score without checking badges', async () => {
