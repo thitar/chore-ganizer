@@ -1,7 +1,7 @@
 jest.mock('../../config/prisma', () => ({
   prisma: {
     userBadge: { findUnique: jest.fn() },
-    gameHighScore: { findUnique: jest.fn(), upsert: jest.fn(), findMany: jest.fn() },
+    gameHighScore: { findUnique: jest.fn(), updateMany: jest.fn(), create: jest.fn(), findMany: jest.fn() },
   },
 }))
 
@@ -76,6 +76,7 @@ describe('recordPongScore', () => {
 
   it('preserves an equal or lower personal best without writing', async () => {
     prisma.userBadge.findUnique.mockResolvedValue({ id: 1 })
+    prisma.gameHighScore.updateMany.mockResolvedValue({ count: 0 })
     prisma.gameHighScore.findUnique.mockResolvedValue({ score: 50 })
 
     await expect(gamesService.recordPongScore(2, 'CHILD', 50)).resolves.toEqual({
@@ -86,26 +87,44 @@ describe('recordPongScore', () => {
       personalBest: 50,
       isNewBest: false,
     })
-    expect(prisma.gameHighScore.upsert).not.toHaveBeenCalled()
+    expect(prisma.gameHighScore.create).not.toHaveBeenCalled()
   })
 
-  it('upserts a higher or first score as a new personal best', async () => {
+  it('updates a higher score or creates a first score as a new personal best', async () => {
     prisma.userBadge.findUnique.mockResolvedValue({ id: 1 })
-    prisma.gameHighScore.findUnique.mockResolvedValueOnce({ score: 50 }).mockResolvedValueOnce(null)
-    prisma.gameHighScore.upsert.mockResolvedValueOnce({ score: 70 }).mockResolvedValueOnce({ score: 10 })
+    prisma.gameHighScore.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 })
+    prisma.gameHighScore.findUnique.mockResolvedValueOnce(null)
+    prisma.gameHighScore.create.mockResolvedValueOnce({ score: 10 })
 
     await expect(gamesService.recordPongScore(2, 'CHILD', 70)).resolves.toEqual({ personalBest: 70, isNewBest: true })
     await expect(gamesService.recordPongScore(2, 'CHILD', 10)).resolves.toEqual({ personalBest: 10, isNewBest: true })
-    expect(prisma.gameHighScore.upsert).toHaveBeenNthCalledWith(1, {
-      where: { userId_game: { userId: 2, game: 'PONG' } },
-      create: { userId: 2, game: 'PONG', score: 70 },
-      update: { score: 70 },
+    expect(prisma.gameHighScore.updateMany).toHaveBeenNthCalledWith(1, {
+      where: { userId: 2, game: 'PONG', score: { lt: 70 } },
+      data: { score: 70 },
     })
+    expect(prisma.gameHighScore.create).toHaveBeenCalledWith({ data: { userId: 2, game: 'PONG', score: 10 } })
+  })
+
+  it('uses a conditional update so a lower concurrent score cannot replace a higher score', async () => {
+    prisma.userBadge.findUnique.mockResolvedValue({ id: 1 })
+    prisma.gameHighScore.updateMany.mockResolvedValue({ count: 0 })
+    prisma.gameHighScore.findUnique.mockResolvedValue({ score: 80 })
+
+    await expect(gamesService.recordPongScore(2, 'CHILD', 70)).resolves.toEqual({
+      personalBest: 80,
+      isNewBest: false,
+    })
+    expect(prisma.gameHighScore.updateMany).toHaveBeenCalledWith({
+      where: { userId: 2, game: 'PONG', score: { lt: 70 } },
+      data: { score: 70 },
+    })
+    expect(prisma.gameHighScore.create).not.toHaveBeenCalled()
   })
 
   it('allows a parent to save a private score without checking badges', async () => {
+    prisma.gameHighScore.updateMany.mockResolvedValue({ count: 0 })
     prisma.gameHighScore.findUnique.mockResolvedValue(null)
-    prisma.gameHighScore.upsert.mockResolvedValue({ score: 25 })
+    prisma.gameHighScore.create.mockResolvedValue({ score: 25 })
 
     await expect(gamesService.recordPongScore(1, 'PARENT', 25)).resolves.toEqual({
       personalBest: 25,

@@ -46,17 +46,21 @@ export async function recordPongScore(userId: number, role: string, score: numbe
     throw new AppError('Pong is locked until you earn the 10 Chores badge', 403)
   }
 
+  const updated = await prisma.gameHighScore.updateMany({
+    where: { userId, game: PONG_GAME, score: { lt: score } },
+    data: { score },
+  })
+  if (updated.count > 0) {
+    return { personalBest: score, isNewBest: true }
+  }
+
   const existing = await prisma.gameHighScore.findUnique({
     where: { userId_game: { userId, game: PONG_GAME } },
   })
-  if (existing && score <= existing.score) {
+  if (existing) {
     return { personalBest: existing.score, isNewBest: false }
   }
 
-  const personalBest = await prisma.gameHighScore.upsert({
-    where: { userId_game: { userId, game: PONG_GAME } },
-    create: { userId, game: PONG_GAME, score },
-    update: { score },
-  })
+  const personalBest = await prisma.gameHighScore.create({ data: { userId, game: PONG_GAME, score } })
   return { personalBest: personalBest.score, isNewBest: true }
 }
