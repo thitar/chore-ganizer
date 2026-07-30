@@ -31,6 +31,7 @@ model User {
   createdRecurringChores  RecurringChore[]      @relation("CreatedRecurring")
   completedOccurrences    RecurringOccurrence[]
   badges                  UserBadge[]
+  gameHighScores          GameHighScore[]
 }
 
 model ChoreTemplate {
@@ -133,4 +134,17 @@ model UserBadge {
 
   @@unique([userId, badgeId])
   @@index([userId])
+}
+
+model GameHighScore {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  game      String
+  score     Int
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, game])
+  @@index([game, score])
 }
