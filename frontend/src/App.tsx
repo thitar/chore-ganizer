@@ -11,6 +11,7 @@ import { PointsPage } from './pages/PointsPage'
 import { CalendarPage } from './pages/CalendarPage'
 import { UsersPage } from './pages/UsersPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { GamesPage } from './pages/GamesPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
@@ -63,6 +64,11 @@ function App() {
         <Route path="/profile" element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/games" element={
+          <ProtectedRoute>
+            <GamesPage />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
