@@ -107,6 +107,18 @@ describe('games.routes', () => {
     expect(gamesService.recordPongScore).toHaveBeenCalledWith(7, 'CHILD', 0)
   })
 
+  it('records a positive score with 201', async () => {
+    const result = { personalBest: 7, isNewBest: true }
+    gamesService.recordPongScore.mockResolvedValue(result)
+    const agent = await authenticatedAgent()
+
+    const res = await agent.post('/api/games/pong/scores').send({ score: 7 })
+
+    expect(res.status).toBe(201)
+    expect(res.body).toEqual({ success: true, data: result, error: null })
+    expect(gamesService.recordPongScore).toHaveBeenCalledWith(7, 'CHILD', 7)
+  })
+
   it('forwards service 403 errors', async () => {
     gamesService.recordPongScore.mockRejectedValue(new AppError('Pong is locked', 403))
     const agent = await authenticatedAgent()
