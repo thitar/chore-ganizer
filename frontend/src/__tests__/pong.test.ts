@@ -36,6 +36,9 @@ describe('Pong game engine', () => {
       PONG_WIDTH - PADDLE_WIDTH,
     )
     expect(game.playerPaddle.x).toBe((PONG_WIDTH - PADDLE_WIDTH) / 2)
+
+    const nonFinite = movePaddle(game, Number.NaN)
+    expect(nonFinite.playerPaddle.x).toBe(game.playerPaddle.x)
   })
 
   it('bounces the ball off the side wall', () => {
@@ -78,20 +81,42 @@ describe('Pong game engine', () => {
     expect(upward.ball.vy).toBe(-100)
   })
 
-  it('awards a point and re-serves from center after the ball exits the top', () => {
+  it('bounces downward off the opponent paddle while moving upward', () => {
     const game = createPongGame()
     const next = advancePongGame(
       {
         ...game,
-        ball: { ...game.ball, y: 1, vx: 0, vy: -100 },
+        ball: {
+          ...game.ball,
+          x: game.opponentPaddle.x + PADDLE_WIDTH / 2 - BALL_SIZE / 2,
+          y: game.opponentPaddle.y + game.opponentPaddle.height - 1,
+          vx: 0,
+          vy: -100,
+        },
+      },
+      0.05,
+    )
+
+    expect(next.score).toBe(0)
+    expect(next.ball.vy).toBeGreaterThan(0)
+    expect(next.ball.y).toBe(game.opponentPaddle.y + game.opponentPaddle.height)
+  })
+
+  it('awards a point and re-serves from center after the ball exits the top', () => {
+    const game = createPongGame()
+    const ballSize = 20
+    const next = advancePongGame(
+      {
+        ...game,
+        ball: { ...game.ball, size: ballSize, y: 1, vx: 0, vy: -100 },
       },
       0.05,
     )
 
     expect(next.score).toBe(1)
     expect(next.status).toBe('playing')
-    expect(next.ball.x).toBe((PONG_WIDTH - BALL_SIZE) / 2)
-    expect(next.ball.y).toBe((PONG_HEIGHT - BALL_SIZE) / 2)
+    expect(next.ball.x).toBe((PONG_WIDTH - ballSize) / 2)
+    expect(next.ball.y).toBe((PONG_HEIGHT - ballSize) / 2)
     expect(next.ball.vy).toBeGreaterThan(0)
   })
 

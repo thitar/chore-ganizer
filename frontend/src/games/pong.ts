@@ -62,6 +62,13 @@ export function createPongGame(): PongGame {
 }
 
 export function movePaddle(game: PongGame, pointerX: number): PongGame {
+  if (!Number.isFinite(pointerX)) {
+    return {
+      ...game,
+      playerPaddle: { ...game.playerPaddle },
+    }
+  }
+
   const x = Math.max(0, Math.min(PONG_WIDTH - PADDLE_WIDTH, pointerX - PADDLE_WIDTH / 2))
 
   return {
@@ -142,6 +149,28 @@ export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame 
     }
   }
 
+  const movingUpward = game.ball.vy < 0
+  const hitOpponentPaddle =
+    movingUpward &&
+    overlapsPaddle(
+      { ...game.ball, x: nextX, y: nextY, vx },
+      opponentPaddle,
+    )
+
+  if (hitOpponentPaddle) {
+    return {
+      ...game,
+      opponentPaddle,
+      ball: {
+        ...game.ball,
+        x: nextX,
+        y: opponentPaddle.y + opponentPaddle.height,
+        vx,
+        vy: Math.abs(game.ball.vy),
+      },
+    }
+  }
+
   if (nextY <= 0 && game.ball.vy < 0) {
     return {
       ...game,
@@ -149,8 +178,8 @@ export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame 
       score: game.score + 1,
       ball: {
         ...game.ball,
-        x: (PONG_WIDTH - BALL_SIZE) / 2,
-        y: (PONG_HEIGHT - BALL_SIZE) / 2,
+        x: (PONG_WIDTH - game.ball.size) / 2,
+        y: (PONG_HEIGHT - game.ball.size) / 2,
         vx: BALL_SPEED_X,
         vy: BALL_SPEED_Y,
       },
