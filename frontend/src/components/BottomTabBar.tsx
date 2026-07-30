@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { CalendarDays, Home, ListChecks, Settings, Star, User } from 'lucide-react'
+import { CalendarDays, Gamepad2, Home, ListChecks, Settings, Star, User } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useDismissableMenu } from '../hooks/useDismissableMenu'
+import { useGames } from '../hooks/useGames'
 import { MANAGE_LINKS } from './TopNav'
 
 const TABS = [
@@ -10,11 +11,13 @@ const TABS = [
   { to: '/my-chores', label: 'Chores', icon: ListChecks },
   { to: '/points', label: 'Points', icon: Star },
   { to: '/calendar', label: 'Calendar', icon: CalendarDays },
+  { to: '/games', label: 'Games', icon: Gamepad2, requiresPong: true },
   { to: '/profile', label: 'Profile', icon: User },
 ]
 
 export function BottomTabBar() {
   const { user } = useAuth()
+  const { data: games } = useGames()
   const location = useLocation()
   const [sheetOpen, setSheetOpen] = useState(false)
   const isParent = user?.role === 'PARENT'
@@ -47,7 +50,7 @@ export function BottomTabBar() {
       )}
       <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-[51] border-t border-edge bg-bg/90 backdrop-blur md:hidden">
         <div className="grid auto-cols-fr grid-flow-col">
-          {TABS.map(t => {
+          {TABS.filter(t => !t.requiresPong || games?.pong.unlocked === true).map(t => {
             const active = location.pathname === t.to
             const Icon = t.icon
             return (

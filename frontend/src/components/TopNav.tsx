@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { ChevronDown, LogOut } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useDismissableMenu } from '../hooks/useDismissableMenu'
+import { useGames } from '../hooks/useGames'
 import { Avatar } from './ui/Avatar'
 
 const MAIN_LINKS = [
@@ -21,6 +22,7 @@ export const MANAGE_LINKS = [
 
 export function TopNav() {
   const { user, logout } = useAuth()
+  const { data: games } = useGames()
   const location = useLocation()
   const [manageOpen, setManageOpen] = useState(false)
   const isParent = user?.role === 'PARENT'
@@ -55,6 +57,14 @@ export function TopNav() {
               {l.label}
             </Link>
           ))}
+          {games?.pong.unlocked === true && (
+            <Link
+              to="/games"
+              className={`inline-flex min-h-[44px] items-center rounded-xl px-3 text-sm font-medium transition-colors ${linkClass('/games')}`}
+            >
+              Games
+            </Link>
+          )}
           {isParent && (
             <div className="relative" ref={menuRef}>
               <button
