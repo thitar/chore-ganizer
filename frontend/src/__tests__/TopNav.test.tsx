@@ -36,10 +36,11 @@ function renderNav(
 
 describe('TopNav', () => {
   it('shows Manage dropdown for parents with admin links', async () => {
-    renderNav(parent, <TopNav />)
+    renderNav(parent, <TopNav />, { data: { pong: { unlocked: true } } })
     await userEvent.click(screen.getByRole('button', { name: /manage/i }))
     expect(screen.getByRole('link', { name: /templates/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /users/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Games' })).toHaveLength(1)
   })
 
   it('hides Manage for children', () => {
@@ -95,5 +96,10 @@ describe('BottomTabBar', () => {
     )
 
     expect(screen.queryByRole('link', { name: 'Games' })).not.toBeInTheDocument()
+  })
+
+  it('renders the Games tab for an eligible parent', () => {
+    renderNav(parent, <BottomTabBar />, { data: { pong: { unlocked: true } } })
+    expect(screen.getByRole('link', { name: 'Games' })).toHaveAttribute('href', '/games')
   })
 })
