@@ -6,7 +6,6 @@ jest.mock('../../config/prisma', () => ({
 }))
 
 const { prisma } = require('../../config/prisma')
-const { AppError } = require('../../middleware/errorHandler')
 
 let gamesService: typeof import('../../services/games.service')
 
@@ -73,7 +72,7 @@ describe('recordPongScore', () => {
     await expect(gamesService.recordPongScore(2, 'CHILD', 10)).rejects.toMatchObject({
       message: 'Pong is locked until you earn the 10 Chores badge',
       statusCode: 403,
-    } satisfies Partial<AppError>)
+    })
     expect(prisma.gameHighScore.findUnique).not.toHaveBeenCalled()
   })
 

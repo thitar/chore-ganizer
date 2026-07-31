@@ -1,8 +1,8 @@
 import request from 'supertest'
 import express from 'express'
-import session from 'express-session'
 import gamesRouter from '../games.routes'
 import { errorHandler, AppError } from '../../middleware/errorHandler'
+import { csrfProtection } from '../../middleware/csrf'
 
 jest.mock('../../config/prisma', () => ({
   prisma: {
@@ -21,17 +21,14 @@ const gamesService = require('../../services/games.service')
 function createTestApp() {
   const app = express()
   app.use(express.json())
-  app.use(session({
-    secret: 'test-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { httpOnly: true, secure: false, sameSite: 'lax' },
-  }))
-  app.post('/test/login', (req, res) => {
-    req.session.userId = 7
-    req.session.role = 'CHILD'
-    res.sendStatus(204)
+  app.use((req, _res, next) => {
+    req.session = {} as typeof req.session
+    if (req.header('x-test-session') === 'authenticated') {
+      req.session = { userId: 7, role: 'CHILD' } as typeof req.session
+    }
+    next()
   })
+  app.use('/api', csrfProtection)
   app.use('/api/games', gamesRouter)
   app.use(errorHandler)
   return app
@@ -46,10 +43,9 @@ describe('games.routes', () => {
     prisma.user.findUnique.mockResolvedValue({ id: 7 })
   })
 
-  async function authenticatedAgent() {
-    const agent = request.agent(app)
-    await agent.post('/test/login')
-    return agent
+  function authenticatedRequest(method: 'get' | 'post', path: string) {
+    const req = method === 'get' ? request(app).get(path) : request(app).post(path)
+    return req.set('x-test-session', 'authenticated')
   }
 
   it('returns 401 when not authenticated', async () => {
@@ -66,9 +62,7 @@ describe('games.routes', () => {
   it('delegates GET /me with the session user and role', async () => {
     const games = { pong: { unlocked: true, personalBest: 12, leaderboard: [] } }
     gamesService.getGames.mockResolvedValue(games)
-    const agent = await authenticatedAgent()
-
-    const res = await agent.get('/api/games/me')
+    const res = await authenticatedRequest('get', '/api/games/me')
 
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ success: true, data: games, error: null })
@@ -76,9 +70,7 @@ describe('games.routes', () => {
   })
 
   it('rejects a negative score', async () => {
-    const agent = await authenticatedAgent()
-
-    const res = await agent.post('/api/games/pong/scores').send({ score: -1 })
+    const res = await authenticatedRequest('post', '/api/games/pong/scores').send({ score: -1 })
 
     expect(res.status).toBe(400)
     expect(res.body.success).toBe(false)
@@ -86,9 +78,7 @@ describe('games.routes', () => {
   })
 
   it('rejects a fractional score', async () => {
-    const agent = await authenticatedAgent()
-
-    const res = await agent.post('/api/games/pong/scores').send({ score: 1.5 })
+    const res = await authenticatedRequest('post', '/api/games/pong/scores').send({ score: 1.5 })
 
     expect(res.status).toBe(400)
     expect(res.body.success).toBe(false)
@@ -98,9 +88,7 @@ describe('games.routes', () => {
   it('records a zero score with 201', async () => {
     const result = { personalBest: 0, isNewBest: true }
     gamesService.recordPongScore.mockResolvedValue(result)
-    const agent = await authenticatedAgent()
-
-    const res = await agent.post('/api/games/pong/scores').send({ score: 0 })
+    const res = await authenticatedRequest('post', '/api/games/pong/scores').send({ score: 0 })
 
     expect(res.status).toBe(201)
     expect(res.body).toEqual({ success: true, data: result, error: null })
@@ -110,9 +98,7 @@ describe('games.routes', () => {
   it('records a positive score with 201', async () => {
     const result = { personalBest: 7, isNewBest: true }
     gamesService.recordPongScore.mockResolvedValue(result)
-    const agent = await authenticatedAgent()
-
-    const res = await agent.post('/api/games/pong/scores').send({ score: 7 })
+    const res = await authenticatedRequest('post', '/api/games/pong/scores').send({ score: 7 })
 
     expect(res.status).toBe(201)
     expect(res.body).toEqual({ success: true, data: result, error: null })
@@ -121,9 +107,7 @@ describe('games.routes', () => {
 
   it('forwards service 403 errors', async () => {
     gamesService.recordPongScore.mockRejectedValue(new AppError('Pong is locked', 403))
-    const agent = await authenticatedAgent()
-
-    const res = await agent.post('/api/games/pong/scores').send({ score: 10 })
+    const res = await authenticatedRequest('post', '/api/games/pong/scores').send({ score: 10 })
 
     expect(res.status).toBe(403)
     expect(res.body).toEqual({
