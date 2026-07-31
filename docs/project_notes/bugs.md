@@ -12,6 +12,22 @@ Date-ordered log of bugs and their solutions.
 
 ---
 
+### 2026-07-31 - Pong opponent could never be beaten
+
+- **Issue**: Pong rallies always ended with a score of zero, even when the player paddle tracked the ball perfectly.
+- **Root Cause**: The opponent moved at 240 px/s while the ball's horizontal speed was fixed at 180 px/s, and the opponent continuously targeted the ball with a paddle wider than the ball.
+- **Solution**: Reduced the opponent speed to 120 px/s and added a deterministic long-rally regression test proving a tracking player can score.
+- **Prevention**: Test game-balance invariants with the pure engine, not only isolated collision cases.
+- **File**: `frontend/src/games/pong.ts`, `frontend/src/__tests__/pong.test.ts`
+
+### 2026-07-22 - Invalid `NTFY_BASE_URL` silently disabled production notifications
+
+- **Issue**: Push notifications failed in production because `NTFY_BASE_URL` was set without an `http://` or `https://` scheme; non-2xx ntfy responses could also be reported as successful delivery.
+- **Root Cause**: Configuration only checked that the URL was non-empty, and `fetch()` resolves HTTP error responses rather than rejecting them.
+- **Solution**: Validate the URL scheme at startup, disable notifications with a clear error when invalid, check `response.ok`, and add profile-page test-notification controls plus coverage.
+- **Prevention**: Treat external service URLs as validated configuration and treat non-2xx responses as delivery failures.
+- **File**: `backend/src/config/notifications.ts`, `backend/src/services/notification.service.ts`, `frontend/src/pages/ProfilePage.tsx`
+
 ### 2026-07-13 - Full env-var audit: VITE_API_URL was dead code, LOG_LEVEL/NTFY_DEFAULT_TOPIC unread, backend/.env's PORT mismatched the frontend proxy target
 
 - **Issue**: User asked to verify every entry in `frontend/.env`/`backend/.env` is actually used by the app, after noticing backend has a separate `.env`/`.env.example` from the root pair. Full grep of `process.env.*`/`import.meta.env`/`window.APP_CONFIG` usage against every documented var turned up several real gaps
@@ -169,4 +185,3 @@ Date-ordered log of bugs and their solutions.
 - **Solution**: Added `NTFY_BASE_URL=${NTFY_BASE_URL:-}` and `NTFY_DEFAULT_TOPIC=${NTFY_DEFAULT_TOPIC:-}` to the backend `environment` block in `docker-compose.yml`, then `docker compose up --build backend`. Verified with `docker compose exec backend printenv | grep NTFY_BASE_URL`.
 - **Prevention**: When renaming an env var the backend reads, grep `docker-compose.yml` (and any other deployment manifest) for the old name and update the passthrough. After any `.env` change that affects a module-level constant, rebuild the backend — don't assume a restart picks it up.
 - **File**: `docker-compose.yml`, `backend/src/config/notifications.ts`
-

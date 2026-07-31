@@ -197,12 +197,14 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
       ref={dialogRef}
       aria-labelledby={titleId}
       onClick={handleBackdropClick}
-      className="m-auto w-full max-w-md rounded-2xl border border-edge bg-surface p-6 text-zinc-100 backdrop:bg-black/60"
+      className="m-auto w-full max-w-md bg-transparent backdrop:bg-black/60"
     >
-      <h2 id={titleId} className="mb-4 font-display text-lg font-bold text-zinc-100">
-        {title}
-      </h2>
-      {children}
+      <div className="rounded-2xl border border-edge bg-surface p-6 text-zinc-100">
+        <h2 id={titleId} className="mb-4 font-display text-lg font-bold text-zinc-100">
+          {title}
+        </h2>
+        {children}
+      </div>
     </dialog>
   )
 }

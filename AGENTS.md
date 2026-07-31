@@ -95,3 +95,11 @@ This project maintains institutional knowledge in `docs/project_notes/` for cons
 **When user requests memory updates:**
 - Update the appropriate memory file (bugs, decisions, key_facts, or issues)
 - Follow the established format and style (bullet lists, dates, concise entries)
+
+### Style Guidelines for Memory Files
+
+- Prefer bullet lists over tables for simplicity and ease of editing
+- Keep entries concise (1-3 lines for descriptions)
+- Always include dates for temporal context
+- Include URLs for tickets, documentation, and monitoring dashboards
+- Manual cleanup of old entries is expected, not automated
