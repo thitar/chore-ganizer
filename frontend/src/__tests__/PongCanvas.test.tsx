@@ -1,4 +1,4 @@
-import { fireEvent, render } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { vi } from 'vitest'
 import { PADDLE_HEIGHT, PADDLE_WIDTH, PONG_HEIGHT, createPongGame, type PongGame } from '../games/pong'
 import { PongCanvas } from '../games/PongCanvas'
@@ -78,7 +78,7 @@ describe('PongCanvas', () => {
   })
 
   it('persists pointer paddle movement into the next rendered frame', () => {
-    const { container } = render(<PongCanvas onGameOver={vi.fn()} />)
+    const { container } = render(<PongCanvas onGameOver={vi.fn()} onRestart={vi.fn()} runId={0} />)
     const canvas = container.querySelector('canvas')!
 
     const pointerMove = new Event('pointermove', { bubbles: true })
@@ -95,7 +95,7 @@ describe('PongCanvas', () => {
   })
 
   it('cancels the active animation frame on unmount', () => {
-    const { unmount } = render(<PongCanvas onGameOver={vi.fn()} />)
+    const { unmount } = render(<PongCanvas onGameOver={vi.fn()} onRestart={vi.fn()} runId={0} />)
 
     unmount()
 
@@ -105,7 +105,7 @@ describe('PongCanvas', () => {
   it('stops animation and reports game-over only once', () => {
     const onGameOver = vi.fn()
     pongTestState.nextGame = { ...createPongGame(), score: 7, status: 'game-over' }
-    const { unmount } = render(<PongCanvas onGameOver={onGameOver} />)
+    const { unmount } = render(<PongCanvas onGameOver={onGameOver} onRestart={vi.fn()} runId={0} />)
 
     runNextFrame()
     runNextFrame(32)
@@ -114,5 +114,14 @@ describe('PongCanvas', () => {
     expect(onGameOver).toHaveBeenCalledWith(7)
     expect(requestAnimationFrame).toHaveBeenCalledTimes(1)
     unmount()
+  })
+
+  it('exposes restart during an active run', () => {
+    const onRestart = vi.fn()
+    render(<PongCanvas onGameOver={vi.fn()} onRestart={onRestart} runId={0} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restart Pong' }))
+
+    expect(onRestart).toHaveBeenCalledOnce()
   })
 })

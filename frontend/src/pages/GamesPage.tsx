@@ -1,13 +1,33 @@
 import { useRef, useState } from 'react'
 import { AppShell } from '../components/AppShell'
-import { Leaderboard } from '../components/Leaderboard'
+import { Avatar } from '../components/ui/Avatar'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Skeleton } from '../components/ui/Skeleton'
 import { PongCanvas } from '../games/PongCanvas'
 import { useGames, useSubmitPongScore } from '../hooks/useGames'
-import type { PongScoreResult } from '../api/games.api'
+import type { PongLeaderboardEntry, PongScoreResult } from '../api/games.api'
+
+function PongLeaderboard({ entries }: { entries: PongLeaderboardEntry[] }) {
+  return (
+    <Card className="divide-y divide-edge p-0">
+      <div className="flex items-center gap-3 px-4 py-2 text-xs uppercase tracking-wider text-zinc-500">
+        <span className="w-6 text-center">Rank</span>
+        <span className="flex-1">Player</span>
+        <span>Score</span>
+      </div>
+      {entries.map((entry, i) => (
+        <div key={entry.user.id} className="flex items-center gap-3 px-4 py-3">
+          <span className="w-6 text-center text-sm text-zinc-500">{i + 1}</span>
+          <Avatar name={entry.user.name} color={entry.user.color} size="sm" />
+          <span className="flex-1 font-medium text-zinc-200">{entry.user.name}</span>
+          <span className="font-display font-bold text-zinc-100">{entry.score}</span>
+        </div>
+      ))}
+    </Card>
+  )
+}
 
 export function GamesPage() {
   const { data, isLoading, error } = useGames()
@@ -86,13 +106,6 @@ export function GamesPage() {
     setRunId(current => current + 1)
   }
 
-  const childLeaderboard = data.pong.leaderboard
-    ? data.pong.leaderboard.map(entry => ({
-      user: { ...entry.user, role: 'CHILD' },
-      balance: entry.score,
-    }))
-    : null
-
   return (
     <AppShell>
       <div className="mx-auto max-w-4xl">
@@ -116,16 +129,16 @@ export function GamesPage() {
               <span>Survive as long as you can.</span>
             </div>
             <p className="text-sm text-zinc-500">
-              Personal best:{' '}
+              Best score:{' '}
               <span className="font-semibold text-zinc-200">{data.pong.personalBest ?? 'No score yet'}</span>
             </p>
 
             {launched && (
               <div className="space-y-4">
-                <PongCanvas onGameOver={handleGameOver} runId={runId} />
+                <PongCanvas onGameOver={handleGameOver} onRestart={launchGame} runId={runId} />
                 {finalScore !== null && (
                   <div className="rounded-xl border border-edge bg-surface-raised p-4">
-                    <p className="font-display text-lg font-bold text-zinc-100">Final score: {finalScore}</p>
+                    <p className="font-display text-lg font-bold text-zinc-100">Pong score: {finalScore}</p>
                     {submitMutation.isPending && <p className="mt-1 text-sm text-zinc-400">Submitting score...</p>}
                     {submissionFailed && (
                       <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -135,7 +148,7 @@ export function GamesPage() {
                     )}
                     {scoreResult && (
                       <p className="mt-1 text-sm text-emerald-400">
-                        {scoreResult.isNewBest ? 'New personal best!' : `Personal best: ${scoreResult.personalBest}`}
+                        {scoreResult.isNewBest ? 'New best score!' : `Best score: ${scoreResult.personalBest}`}
                       </p>
                     )}
                     <Button className="mt-4" variant="secondary" onClick={launchGame}>Restart</Button>
@@ -146,11 +159,11 @@ export function GamesPage() {
           </div>
         </Card>
 
-        {childLeaderboard !== null && (
+        {data.pong.leaderboard !== null && (
           <section>
             <h3 className="mb-3 font-display text-base font-bold text-zinc-100">Pong leaderboard</h3>
-            {childLeaderboard.length > 0 ? (
-              <Leaderboard entries={childLeaderboard} />
+            {data.pong.leaderboard.length > 0 ? (
+              <PongLeaderboard entries={data.pong.leaderboard} />
             ) : (
               <Card><p className="text-sm text-zinc-500">No scores yet.</p></Card>
             )}

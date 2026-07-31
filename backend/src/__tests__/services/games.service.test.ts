@@ -56,7 +56,10 @@ describe('getGames', () => {
       },
     })
     expect(prisma.gameHighScore.findMany).toHaveBeenCalledWith({
-      where: { game: 'PONG', user: { role: 'CHILD' } },
+      where: {
+        game: 'PONG',
+        user: { role: 'CHILD', badges: { some: { badgeId: 'ten-chores' } } },
+      },
       include: { user: { select: { id: true, name: true, color: true } } },
       orderBy: { score: 'desc' },
     })

@@ -7,10 +7,12 @@ import {
   createPongGame,
   movePaddle,
 } from './pong'
+import { Button } from '../components/ui/Button'
 
 interface PongCanvasProps {
   onGameOver: (score: number) => void
-  runId?: number
+  onRestart: () => void
+  runId: number
 }
 
 function drawGame(context: CanvasRenderingContext2D, game: PongGame) {
@@ -49,7 +51,7 @@ function drawGame(context: CanvasRenderingContext2D, game: PongGame) {
   context.fillText(String(game.score), PONG_WIDTH / 2, PONG_HEIGHT / 2 - 18)
 }
 
-export function PongCanvas({ onGameOver, runId = 0 }: PongCanvasProps) {
+export function PongCanvas({ onGameOver, onRestart, runId }: PongCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const gameRef = useRef<PongGame>(createPongGame())
   const onGameOverRef = useRef(onGameOver)
@@ -108,14 +110,17 @@ export function PongCanvas({ onGameOver, runId = 0 }: PongCanvasProps) {
   }
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={PONG_WIDTH}
-      height={PONG_HEIGHT}
-      aria-label="Pong game"
-      className="aspect-[8/5] w-full touch-none rounded-2xl border border-edge bg-[#11111a]"
-      onPointerDown={handlePointerDown}
-      onPointerMove={movePlayer}
-    />
+    <div className="space-y-3">
+      <canvas
+        ref={canvasRef}
+        width={PONG_WIDTH}
+        height={PONG_HEIGHT}
+        aria-label="Pong game"
+        className="aspect-[8/5] w-full touch-none rounded-2xl border border-edge bg-[#11111a]"
+        onPointerDown={handlePointerDown}
+        onPointerMove={movePlayer}
+      />
+      <Button variant="secondary" onClick={onRestart}>Restart Pong</Button>
+    </div>
   )
 }

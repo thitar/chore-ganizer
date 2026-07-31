@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
@@ -6,6 +6,8 @@ import { GamesPage } from '../pages/GamesPage'
 
 const pongCanvasMock = vi.hoisted(() => ({
   onGameOver: undefined as ((score: number) => void) | undefined,
+  onRestart: undefined as (() => void) | undefined,
+  runId: undefined as number | undefined,
 }))
 
 vi.mock('../hooks/useAuth', () => ({
@@ -22,9 +24,15 @@ vi.mock('../hooks/usePoints', () => ({
 }))
 
 vi.mock('../games/PongCanvas', () => ({
-  PongCanvas: (props: { onGameOver: (score: number) => void }) => {
+  PongCanvas: (props: { onGameOver: (score: number) => void; onRestart: () => void; runId: number }) => {
     pongCanvasMock.onGameOver = props.onGameOver
-    return <div data-testid="pong-canvas" />
+    pongCanvasMock.onRestart = props.onRestart
+    pongCanvasMock.runId = props.runId
+    return (
+      <div data-testid="pong-canvas">
+        <button onClick={props.onRestart}>Restart Pong</button>
+      </div>
+    )
   },
 }))
 
@@ -72,6 +80,8 @@ describe('GamesPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     pongCanvasMock.onGameOver = undefined
+    pongCanvasMock.onRestart = undefined
+    pongCanvasMock.runId = undefined
     mockAuth()
     mockGames(false, null)
     mockSubmit()
@@ -101,25 +111,25 @@ describe('GamesPage', () => {
     mockGames(true, null, 8)
     renderPage()
 
-    expect(screen.getByText(/Personal best:/)).toHaveTextContent('Personal best: 8')
+    expect(screen.getByText(/Best score:/)).toHaveTextContent('Best score: 8')
     expect(screen.queryByText('Pong leaderboard')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Launch Pong' }))
     expect(screen.getByTestId('pong-canvas')).toBeInTheDocument()
   })
 
-  it('submits the final score and reports a new personal best', async () => {
+  it('submits the final score and reports a new best score', async () => {
     const user = userEvent.setup()
     const mutateAsync = mockSubmit(vi.fn().mockResolvedValue({ personalBest: 21, isNewBest: true }))
     mockGames(true, null, 12)
     renderPage()
 
     await user.click(screen.getByRole('button', { name: 'Launch Pong' }))
-    pongCanvasMock.onGameOver?.(21)
+    act(() => pongCanvasMock.onGameOver?.(21))
 
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith(21))
-    expect(screen.getByText('Final score: 21')).toBeInTheDocument()
-    expect(screen.getByText('New personal best!')).toBeInTheDocument()
+    expect(screen.getByText('Pong score: 21')).toBeInTheDocument()
+    expect(screen.getByText('New best score!')).toBeInTheDocument()
   })
 
   it('keeps a failed score and retries submission without replaying', async () => {
@@ -132,15 +142,38 @@ describe('GamesPage', () => {
     renderPage()
 
     await user.click(screen.getByRole('button', { name: 'Launch Pong' }))
-    pongCanvasMock.onGameOver?.(16)
+    act(() => pongCanvasMock.onGameOver?.(16))
 
     await waitFor(() => expect(screen.getByText('Unable to submit score.')).toBeInTheDocument())
-    expect(screen.getByText('Final score: 16')).toBeInTheDocument()
+    expect(screen.getByText('Pong score: 16')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Retry score' }))
 
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(2))
-    expect(screen.getByText('Personal best: 16')).toBeInTheDocument()
-    expect(screen.getByText('Final score: 16')).toBeInTheDocument()
+    expect(screen.getByText('Best score: 16', { exact: true })).toBeInTheDocument()
+    expect(screen.getByText('Pong score: 16')).toBeInTheDocument()
+  })
+
+  it('restarts an active Pong run and clears its final submission state', async () => {
+    const user = userEvent.setup()
+    mockGames(true, null)
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: 'Launch Pong' }))
+    expect(pongCanvasMock.runId).toBe(1)
+
+    await user.click(screen.getByRole('button', { name: 'Restart Pong' }))
+
+    expect(pongCanvasMock.runId).toBe(2)
+    expect(screen.queryByText(/Pong score:/)).not.toBeInTheDocument()
+  })
+
+  it('uses Pong score labels instead of points labels', () => {
+    mockGames(true, [{ user: { id: 2, name: 'Alice', color: '#10B981' }, score: 14 }], 14)
+    renderPage()
+
+    expect(screen.getByText(/Best score:/)).toHaveTextContent('Best score: 14')
+    expect(screen.getByText('Score')).toBeInTheDocument()
+    expect(screen.queryByText('pts')).not.toBeInTheDocument()
   })
 })

@@ -27,7 +27,10 @@ export async function getGames(userId: number, role: string) {
   }
 
   const scores = await prisma.gameHighScore.findMany({
-    where: { game: PONG_GAME, user: { role: 'CHILD' } },
+    where: {
+      game: PONG_GAME,
+      user: { role: 'CHILD', badges: { some: { badgeId: 'ten-chores' } } },
+    },
     include: { user: { select: { id: true, name: true, color: true } } },
     orderBy: { score: 'desc' },
   })
