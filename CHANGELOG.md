@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Child-only Pong leaderboard and personal-best score tracking
 - Pointer-controlled Pong play with no pause control; scores do not affect points, levels, or badges
 
+## [3.3.1] - 2026-07-31
+
+### Fixed
+- Reduced Pong's opponent paddle speed so a player who tracks the ball can win rallies and record nonzero scores
+
 ## [3.2.5] - 2026-07-22
 
 ### Added

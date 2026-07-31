@@ -1,5 +1,6 @@
 import {
   BALL_SIZE,
+  MAX_DELTA_SECONDS,
   PADDLE_HEIGHT,
   PADDLE_WIDTH,
   PONG_HEIGHT,
@@ -133,6 +134,17 @@ describe('Pong game engine', () => {
 
     expect(next.status).toBe('game-over')
     expect(next.score).toBe(3)
+  })
+
+  it('allows a player tracking the ball to eventually score', () => {
+    let game = createPongGame()
+
+    for (let frame = 0; frame < 20_000 && game.status === 'playing'; frame += 1) {
+      game = movePaddle(game, game.ball.x + game.ball.size / 2)
+      game = advancePongGame(game, MAX_DELTA_SECONDS)
+    }
+
+    expect(game.score).toBeGreaterThan(0)
   })
 
   it('clamps the simulation delta to 0.05 seconds', () => {

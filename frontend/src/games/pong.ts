@@ -9,7 +9,7 @@ const PLAYER_PADDLE_BOTTOM_GAP = 24
 const OPPONENT_PADDLE_TOP_GAP = 24
 const BALL_SPEED_X = 180
 const BALL_SPEED_Y = 260
-const OPPONENT_SPEED = 240
+const OPPONENT_SPEED = 120
 
 export type PongStatus = 'playing' | 'game-over'
 
