@@ -31,6 +31,7 @@ export function useAssignments() {
       queryClient.invalidateQueries({ queryKey: ['assignments'] })
       queryClient.invalidateQueries({ queryKey: ['points'] })
       queryClient.invalidateQueries({ queryKey: ['points', 'gamification'] })
+      queryClient.invalidateQueries({ queryKey: ['games'] })
     },
   })
 
@@ -40,6 +41,7 @@ export function useAssignments() {
       queryClient.invalidateQueries({ queryKey: ['assignments'] })
       queryClient.invalidateQueries({ queryKey: ['points'] })
       queryClient.invalidateQueries({ queryKey: ['points', 'gamification'] })
+      queryClient.invalidateQueries({ queryKey: ['games'] })
     },
   })
 

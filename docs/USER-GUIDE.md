@@ -1,6 +1,6 @@
 # User Guide
 
-How to use Chore-Ganizer. Reflects the actual pages in `frontend/src/pages/` as of v3.2.0 — see [ARCHITECTURE.md](./ARCHITECTURE.md) for how these map to the backend.
+How to use Chore-Ganizer. Reflects the actual pages in `frontend/src/pages/` as of v3.3.0 — see [ARCHITECTURE.md](./ARCHITECTURE.md) for how these map to the backend.
 
 ## Logging in
 
@@ -34,6 +34,13 @@ Shows chore assignments across the family in a monthly view. Each family member 
 - **Leaderboard** ranks all family members by points, visible to everyone (not parent-only).
 
 There is no pocket-money/currency conversion, no rewards catalog, and no point-redemption flow — points are for the leaderboard/levels/badges only.
+
+## Games
+
+- **Pong** unlocks for children after they earn the **10 Chores** badge. Parents always have private access.
+- The **Games** navigation item appears only when Pong is available. Use the pointer to move the paddle; games have no pause control.
+- Children see a Pong leaderboard containing child scores only. Everyone sees their own best score; only the best score is retained.
+- Pong scores have no impact on points, levels, badges, or chore completion.
 
 ## Push Notifications (ntfy)
 

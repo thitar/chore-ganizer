@@ -12,6 +12,20 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-07-31 — Cleared CodeQL findings from PR #174 test harness
+
+- **Status**: Completed
+- **Description**: Updated the games route tests to use an explicit in-memory test session, mount the production CSRF middleware, and remove the login-shaped session helper; removed an unused service-test import. This clears the four CodeQL findings reported on the Pong PR without changing application behavior.
+- **Verification**: Backend 292/292 tests passed, TypeScript build passed, and `git diff --check` passed.
+- **URL**: https://github.com/thitar/chore-ganizer/pull/174
+
+### 2026-07-31 — Fixed impossible Pong scoring from PR #174 review
+
+- **Status**: Completed
+- **Description**: Reduced the opponent paddle speed from 240 to 120 px/s and added a deterministic tracking-player rally test so nonzero Pong scores are achievable.
+- **Verification**: Focused Pong suite passes; full frontend tests and build pending.
+- **URL**: local — `frontend/src/games/pong.ts`, `frontend/src/__tests__/pong.test.ts`
+
 ### 2026-07-22 — Diagnosed prod ntfy silence to a malformed `NTFY_BASE_URL`; added test-notification button
 
 - **Status**: Completed
