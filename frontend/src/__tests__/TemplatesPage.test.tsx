@@ -3,6 +3,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { TemplatesPage } from '../pages/TemplatesPage'
 
+vi.mock('../api/games.api', () => ({
+  getGames: vi.fn().mockResolvedValue({
+    pong: { unlocked: false, personalBest: null, leaderboard: null },
+  }),
+}))
+
 vi.mock('../hooks/useAuth', () => ({
   useAuth: vi.fn().mockReturnValue({
     user: { id: 1, name: 'Dad', role: 'PARENT', email: 'dad@home.local', color: '#4F46E5' },
