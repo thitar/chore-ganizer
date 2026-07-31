@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { TemplatesPage } from '../pages/TemplatesPage'
 
@@ -53,10 +54,18 @@ function mockTemplatesState(overrides: Record<string, unknown> = {}) {
 }
 
 function renderPage() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+    },
+  })
+
   return render(
-    <MemoryRouter>
-      <TemplatesPage />
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <TemplatesPage />
+      </MemoryRouter>
+    </QueryClientProvider>
   )
 }
 

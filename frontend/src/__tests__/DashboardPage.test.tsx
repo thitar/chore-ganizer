@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 import { DashboardPage } from '../pages/DashboardPage'
@@ -75,10 +76,18 @@ function mockPointsState(overrides: Record<string, unknown> = {}) {
 }
 
 function renderPage() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+    },
+  })
+
   return render(
-    <MemoryRouter>
-      <DashboardPage />
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    </QueryClientProvider>
   )
 }
 

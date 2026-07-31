@@ -5,7 +5,7 @@ export function useGames() {
   return useQuery({
     queryKey: ['games'],
     queryFn: gamesApi.getGames,
-    staleTime: 0,
+    staleTime: 5 * 60 * 1000,
   })
 }
 

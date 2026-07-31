@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Child-only Pong leaderboard and personal-best score tracking
 - Pointer-controlled Pong play with no pause control; scores do not affect points, levels, or badges
 
+## [3.3.2] - 2026-07-31
+
+### Fixed
+- Cache Games eligibility for five minutes to avoid refetching on a second mount within the stale window
+
 ## [3.3.1] - 2026-07-31
 
 ### Fixed

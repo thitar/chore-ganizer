@@ -19,7 +19,7 @@ function createWrapper(queryClient: QueryClient) {
 }
 
 describe('useGames', () => {
-  it('refetches eligibility when mounted again despite the app default stale time', async () => {
+  it('does not refetch when mounted again within the stale window', async () => {
     vi.mocked(getGames).mockResolvedValue({
       pong: { unlocked: false, personalBest: null, leaderboard: null },
     })
@@ -34,6 +34,6 @@ describe('useGames', () => {
 
     renderHook(() => useGames(), { wrapper })
 
-    await waitFor(() => expect(getGames).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(getGames).toHaveBeenCalledTimes(1))
   })
 })
