@@ -4,12 +4,6 @@ import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 import { DashboardPage } from '../pages/DashboardPage'
 
-vi.mock('../api/games.api', () => ({
-  getGames: vi.fn().mockResolvedValue({
-    pong: { unlocked: false, personalBest: null, leaderboard: null },
-  }),
-}))
-
 // jsdom has no matchMedia — simulate reduced motion so CountUp values render instantly.
 function mockMatchMedia(reduced: boolean) {
   vi.stubGlobal(
