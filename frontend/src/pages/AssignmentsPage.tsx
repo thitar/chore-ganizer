@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useAssignments } from '../hooks/useAssignments'
-import { useTemplates } from '../hooks/useTemplates'
 import { useUsers } from '../hooks/useUsers'
 import { AppShell } from '../components/AppShell'
 import { PageHeader } from '../components/ui/PageHeader'
@@ -10,6 +9,7 @@ import { Toast } from '../components/ui/Toast'
 import { FilterBar } from '../components/FilterBar'
 import { StatusBadge } from '../components/StatusBadge'
 import { ConfirmDelete } from '../components/ConfirmDelete'
+import { AssignChoreForm } from '../components/AssignChoreForm'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import type { Assignment } from '../api/assignments.api'
 import { Skeleton } from '../components/ui/Skeleton'
@@ -25,18 +25,7 @@ function currentMonthDates(): { from: string; to: string } {
 }
 
 export function AssignmentsPage() {
-  const {
-    assignments,
-    isLoading,
-    error,
-    createAssignment,
-    isCreating,
-    updateAssignment,
-    isUpdating,
-    deleteAssignment,
-    isDeleting,
-  } = useAssignments()
-  const { templates } = useTemplates()
+  const { assignments, isLoading, error, deleteAssignment, isDeleting } = useAssignments()
   const { users } = useUsers()
 
   const initialDates = currentMonthDates()
@@ -49,9 +38,6 @@ export function AssignmentsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null)
   const [deletingAssignmentKey, setDeletingAssignmentKey] = useState<string | null>(null)
-  const [selectedTemplateId, setSelectedTemplateId] = useState('')
-  const [selectedUserId, setSelectedUserId] = useState('')
-  const [dueDate, setDueDate] = useState('')
 
   useEffect(() => {
     if (successMessage) {
@@ -68,54 +54,19 @@ export function AssignmentsPage() {
     setDateTo(to)
   }
 
-  function resetForm() {
-    setSelectedTemplateId('')
-    setSelectedUserId('')
-    setDueDate('')
-    setFormError(null)
-  }
-
   function cancelForm() {
     setShowForm(false)
     setEditingAssignment(null)
-    resetForm()
   }
 
   function openCreate() {
     setShowForm(true)
     setEditingAssignment(null)
-    resetForm()
   }
 
   function openEdit(assignment: Assignment) {
     setShowForm(true)
     setEditingAssignment(assignment)
-    setSelectedTemplateId(String(assignment.choreTemplateId))
-    setSelectedUserId(String(assignment.assignedToId))
-    setDueDate(assignment.dueDate)
-    setFormError(null)
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setFormError(null)
-    try {
-      const data = {
-        templateId: parseInt(selectedTemplateId, 10),
-        userId: parseInt(selectedUserId, 10),
-        dueDate,
-      }
-      if (editingAssignment) {
-        await updateAssignment(editingAssignment.id, { userId: data.userId, dueDate: data.dueDate })
-        setSuccessMessage('Assignment updated!')
-      } else {
-        await createAssignment(data)
-        setSuccessMessage('Assignment created!')
-      }
-      cancelForm()
-    } catch {
-      setFormError('Failed to save assignment. Please try again.')
-    }
   }
 
   async function handleDelete(id: number) {
@@ -127,8 +78,6 @@ export function AssignmentsPage() {
       setFormError('Failed to delete assignment. It may be completed — uncomplete it first.')
     }
   }
-
-  const children = useMemo(() => users.filter(u => u.role === 'CHILD'), [users])
 
   const filtered = useMemo(() => {
     return assignments.filter(a => {
@@ -186,44 +135,14 @@ export function AssignmentsPage() {
           )}
 
           {showForm && (
-            <form onSubmit={handleSubmit} className="p-6 mb-4 rounded-2xl border border-edge bg-surface">
+            <div className="p-6 mb-4 rounded-2xl border border-edge bg-surface">
               {formError && <div className="alert-error mb-4">{formError}</div>}
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="template" className="block text-sm font-normal text-zinc-300 mb-1">Template</label>
-                  <select id="template" value={selectedTemplateId} onChange={e => setSelectedTemplateId(e.target.value)}
-                    className="input" required>
-                    <option value="">Select a template...</option>
-                    {templates.map(t => (
-                      <option key={t.id} value={t.id}>{t.title} ({t.points} pts)</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="assignTo" className="block text-sm font-normal text-zinc-300 mb-1">Assign To</label>
-                  <select id="assignTo" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)}
-                    className="input" required>
-                    <option value="">Select a family member...</option>
-                    {children.map(u => (
-                      <option key={u.id} value={u.id}>{u.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="dueDate" className="block text-sm font-normal text-zinc-300 mb-1">Due Date</label>
-                  <input id="dueDate" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
-                    className="input" required />
-                </div>
-              </div>
-              <div className="flex gap-2 mt-4">
-                <Button type="submit" loading={isCreating || isUpdating}>
-                  {isCreating || isUpdating ? 'Saving...' : 'Save Assignment'}
-                </Button>
-                <Button type="button" variant="secondary" onClick={cancelForm} disabled={isCreating || isUpdating}>
-                  Discard changes
-                </Button>
-              </div>
-            </form>
+              <AssignChoreForm
+                assignment={editingAssignment ?? undefined}
+                onSuccess={msg => { setSuccessMessage(msg); cancelForm() }}
+                onCancel={cancelForm}
+              />
+            </div>
           )}
 
           <FilterBar
