@@ -5,6 +5,15 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.3] - 2026-08-01
+
+### Added
+- "Assign Chore" quick action on the parent dashboard — a full-width button below the greeting opens a modal to assign a chore without navigating to the Assignments page
+- Reusable `Modal` UI primitive built on the native `<dialog>` element
+
+### Fixed
+- The assignment edit form's template selector is now read-only, since `PUT /api/assignments/:id` never applied template changes made there
+
 ## [3.3.2] - 2026-08-01
 
 ### Changed
