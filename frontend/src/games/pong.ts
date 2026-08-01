@@ -7,9 +7,15 @@ export const MAX_DELTA_SECONDS = 0.05
 
 const PLAYER_PADDLE_BOTTOM_GAP = 24
 const OPPONENT_PADDLE_TOP_GAP = 24
-const BALL_SPEED_X = 180
-const BALL_SPEED_Y = 260
-const OPPONENT_SPEED = 120
+const BASE_BALL_SPEED = Math.sqrt(180 ** 2 + 260 ** 2)
+const MAX_ANGLE_RATIO = 0.75
+const RALLY_SPEEDUP = 1.04
+const MAX_BALL_SPEED = BASE_BALL_SPEED * 1.6
+const OPPONENT_SPEED = 175
+const OPPONENT_AIM_RANGE = 0.5
+
+let opponentAimOffset = 0
+let lastBallDirection: 1 | -1 | 0 = 0
 
 export type PongStatus = 'playing' | 'game-over'
 
@@ -25,6 +31,7 @@ export interface PongBall {
   y: number
   vx: number
   vy: number
+  speed: number
   size: number
 }
 
@@ -52,8 +59,9 @@ export function createPongGame(): PongGame {
     ball: {
       x: (PONG_WIDTH - BALL_SIZE) / 2,
       y: (PONG_HEIGHT - BALL_SIZE) / 2,
-      vx: BALL_SPEED_X,
-      vy: BALL_SPEED_Y,
+      vx: 0,
+      vy: BASE_BALL_SPEED,
+      speed: BASE_BALL_SPEED,
       size: BALL_SIZE,
     },
     score: 0,
@@ -81,7 +89,13 @@ export function movePaddle(game: PongGame, pointerX: number): PongGame {
 }
 
 function moveOpponent(paddle: PongPaddle, ball: PongBall, deltaSeconds: number): PongPaddle {
-  const targetX = ball.x + ball.size / 2 - paddle.width / 2
+  const direction: 1 | -1 = ball.vy < 0 ? -1 : 1
+  if (direction !== lastBallDirection) {
+    lastBallDirection = direction
+    opponentAimOffset = (Math.random() * 2 - 1) * OPPONENT_AIM_RANGE * (paddle.width / 2)
+  }
+
+  const targetX = ball.x + ball.size / 2 - paddle.width / 2 + opponentAimOffset
   const maximumTravel = OPPONENT_SPEED * deltaSeconds
   const distance = targetX - paddle.x
   const movement = Math.max(-maximumTravel, Math.min(maximumTravel, distance))
@@ -97,6 +111,22 @@ function overlapsPaddle(ball: PongBall, paddle: PongPaddle): boolean {
     ball.y < paddle.y + paddle.height &&
     ball.y + ball.size > paddle.y
   )
+}
+
+function bounceOffPaddle(
+  ball: PongBall,
+  paddle: PongPaddle,
+  direction: 1 | -1,
+): { vx: number; vy: number } {
+  const paddleCenter = paddle.x + paddle.width / 2
+  const ballCenter = ball.x + ball.size / 2
+  const offset = Math.max(
+    -1,
+    Math.min(1, (ballCenter - paddleCenter) / (paddle.width / 2)),
+  )
+  const vx = offset * MAX_ANGLE_RATIO * ball.speed
+  const vy = direction * Math.sqrt(Math.max(0, ball.speed ** 2 - vx ** 2))
+  return { vx, vy }
 }
 
 export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame {
@@ -136,6 +166,12 @@ export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame 
     )
 
   if (crossedPlayerPaddle) {
+    const speed = Math.min(game.ball.speed * RALLY_SPEEDUP, MAX_BALL_SPEED)
+    const { vx: bouncedVx, vy: bouncedVy } = bounceOffPaddle(
+      { ...game.ball, x: nextX, speed },
+      game.playerPaddle,
+      -1,
+    )
     return {
       ...game,
       opponentPaddle,
@@ -143,8 +179,9 @@ export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame 
         ...game.ball,
         x: nextX,
         y: game.playerPaddle.y - game.ball.size,
-        vx,
-        vy: -Math.abs(game.ball.vy),
+        vx: bouncedVx,
+        vy: bouncedVy,
+        speed,
       },
     }
   }
@@ -158,6 +195,12 @@ export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame 
     )
 
   if (hitOpponentPaddle) {
+    const speed = Math.min(game.ball.speed * RALLY_SPEEDUP, MAX_BALL_SPEED)
+    const { vx: bouncedVx, vy: bouncedVy } = bounceOffPaddle(
+      { ...game.ball, x: nextX, speed },
+      opponentPaddle,
+      1,
+    )
     return {
       ...game,
       opponentPaddle,
@@ -165,8 +208,9 @@ export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame 
         ...game.ball,
         x: nextX,
         y: opponentPaddle.y + opponentPaddle.height,
-        vx,
-        vy: Math.abs(game.ball.vy),
+        vx: bouncedVx,
+        vy: bouncedVy,
+        speed,
       },
     }
   }
@@ -180,8 +224,9 @@ export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame 
         ...game.ball,
         x: (PONG_WIDTH - game.ball.size) / 2,
         y: (PONG_HEIGHT - game.ball.size) / 2,
-        vx: BALL_SPEED_X,
-        vy: BALL_SPEED_Y,
+        vx: 0,
+        vy: BASE_BALL_SPEED,
+        speed: BASE_BALL_SPEED,
       },
     }
   }
