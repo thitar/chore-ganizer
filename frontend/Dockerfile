@@ -16,7 +16,7 @@ COPY src ./src
 RUN npm run build
 
 # ---- Stage 2: runtime (nginx) ----
-FROM nginx:1.25-alpine AS runtime
+FROM nginx:1.31-alpine AS runtime
 
 # Install envsubst for runtime config injection
 RUN apk add --no-cache bash
