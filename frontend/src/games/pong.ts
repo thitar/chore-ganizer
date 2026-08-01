@@ -7,15 +7,13 @@ export const MAX_DELTA_SECONDS = 0.05
 
 const PLAYER_PADDLE_BOTTOM_GAP = 24
 const OPPONENT_PADDLE_TOP_GAP = 24
+// Preserves the pre-angling serve speed, which was a fixed vx=180, vy=260 vector.
 const BASE_BALL_SPEED = Math.sqrt(180 ** 2 + 260 ** 2)
 const MAX_ANGLE_RATIO = 0.75
 const RALLY_SPEEDUP = 1.04
 const MAX_BALL_SPEED = BASE_BALL_SPEED * 1.6
 const OPPONENT_SPEED = 175
 const OPPONENT_AIM_RANGE = 0.5
-
-let opponentAimOffset = 0
-let lastBallDirection: 1 | -1 | 0 = 0
 
 export type PongStatus = 'playing' | 'game-over'
 
@@ -41,6 +39,8 @@ export interface PongGame {
   ball: PongBall
   score: number
   status: PongStatus
+  opponentAimOffset: number
+  opponentAimDirection: 1 | -1 | 0
 }
 
 function centeredPaddle(y: number): PongPaddle {
@@ -66,6 +66,8 @@ export function createPongGame(): PongGame {
     },
     score: 0,
     status: 'playing',
+    opponentAimOffset: 0,
+    opponentAimDirection: 0,
   }
 }
 
@@ -88,20 +90,28 @@ export function movePaddle(game: PongGame, pointerX: number): PongGame {
   }
 }
 
-function moveOpponent(paddle: PongPaddle, ball: PongBall, deltaSeconds: number): PongPaddle {
+function moveOpponent(
+  paddle: PongPaddle,
+  ball: PongBall,
+  deltaSeconds: number,
+  aimOffset: number,
+  aimDirection: 1 | -1 | 0,
+): { paddle: PongPaddle; aimOffset: number; aimDirection: 1 | -1 | 0 } {
   const direction: 1 | -1 = ball.vy < 0 ? -1 : 1
-  if (direction !== lastBallDirection) {
-    lastBallDirection = direction
-    opponentAimOffset = (Math.random() * 2 - 1) * OPPONENT_AIM_RANGE * (paddle.width / 2)
+  let nextAimOffset = aimOffset
+  let nextAimDirection: 1 | -1 | 0 = aimDirection
+  if (direction !== aimDirection) {
+    nextAimDirection = direction
+    nextAimOffset = (Math.random() * 2 - 1) * OPPONENT_AIM_RANGE * (paddle.width / 2)
   }
 
-  const targetX = ball.x + ball.size / 2 - paddle.width / 2 + opponentAimOffset
+  const targetX = ball.x + ball.size / 2 - paddle.width / 2 + nextAimOffset
   const maximumTravel = OPPONENT_SPEED * deltaSeconds
   const distance = targetX - paddle.x
   const movement = Math.max(-maximumTravel, Math.min(maximumTravel, distance))
   const x = Math.max(0, Math.min(PONG_WIDTH - paddle.width, paddle.x + movement))
 
-  return { ...paddle, x }
+  return { paddle: { ...paddle, x }, aimOffset: nextAimOffset, aimDirection: nextAimDirection }
 }
 
 function overlapsPaddle(ball: PongBall, paddle: PongPaddle): boolean {
@@ -129,6 +139,18 @@ function bounceOffPaddle(
   return { vx, vy }
 }
 
+function ballAfterPaddleBounce(
+  ball: PongBall,
+  paddle: PongPaddle,
+  direction: 1 | -1,
+  nextX: number,
+  y: number,
+): PongBall {
+  const speed = Math.min(ball.speed * RALLY_SPEEDUP, MAX_BALL_SPEED)
+  const { vx, vy } = bounceOffPaddle({ ...ball, x: nextX, speed }, paddle, direction)
+  return { ...ball, x: nextX, y, vx, vy, speed }
+}
+
 export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame {
   if (game.status === 'game-over') {
     return {
@@ -142,7 +164,17 @@ export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame 
   const seconds = Number.isFinite(deltaSeconds)
     ? Math.max(0, Math.min(MAX_DELTA_SECONDS, deltaSeconds))
     : 0
-  const opponentPaddle = moveOpponent(game.opponentPaddle, game.ball, seconds)
+  const {
+    paddle: opponentPaddle,
+    aimOffset: opponentAimOffset,
+    aimDirection: opponentAimDirection,
+  } = moveOpponent(
+    game.opponentPaddle,
+    game.ball,
+    seconds,
+    game.opponentAimOffset,
+    game.opponentAimDirection,
+  )
   let nextX = game.ball.x + game.ball.vx * seconds
   const nextY = game.ball.y + game.ball.vy * seconds
   let vx = game.ball.vx
@@ -166,23 +198,18 @@ export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame 
     )
 
   if (crossedPlayerPaddle) {
-    const speed = Math.min(game.ball.speed * RALLY_SPEEDUP, MAX_BALL_SPEED)
-    const { vx: bouncedVx, vy: bouncedVy } = bounceOffPaddle(
-      { ...game.ball, x: nextX, speed },
-      game.playerPaddle,
-      -1,
-    )
     return {
       ...game,
       opponentPaddle,
-      ball: {
-        ...game.ball,
-        x: nextX,
-        y: game.playerPaddle.y - game.ball.size,
-        vx: bouncedVx,
-        vy: bouncedVy,
-        speed,
-      },
+      opponentAimOffset,
+      opponentAimDirection,
+      ball: ballAfterPaddleBounce(
+        game.ball,
+        game.playerPaddle,
+        -1,
+        nextX,
+        game.playerPaddle.y - game.ball.size,
+      ),
     }
   }
 
@@ -195,23 +222,18 @@ export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame 
     )
 
   if (hitOpponentPaddle) {
-    const speed = Math.min(game.ball.speed * RALLY_SPEEDUP, MAX_BALL_SPEED)
-    const { vx: bouncedVx, vy: bouncedVy } = bounceOffPaddle(
-      { ...game.ball, x: nextX, speed },
-      opponentPaddle,
-      1,
-    )
     return {
       ...game,
       opponentPaddle,
-      ball: {
-        ...game.ball,
-        x: nextX,
-        y: opponentPaddle.y + opponentPaddle.height,
-        vx: bouncedVx,
-        vy: bouncedVy,
-        speed,
-      },
+      opponentAimOffset,
+      opponentAimDirection,
+      ball: ballAfterPaddleBounce(
+        game.ball,
+        opponentPaddle,
+        1,
+        nextX,
+        opponentPaddle.y + opponentPaddle.height,
+      ),
     }
   }
 
@@ -219,6 +241,8 @@ export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame 
     return {
       ...game,
       opponentPaddle,
+      opponentAimOffset,
+      opponentAimDirection,
       score: game.score + 1,
       ball: {
         ...game.ball,
@@ -235,6 +259,8 @@ export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame 
     return {
       ...game,
       opponentPaddle,
+      opponentAimOffset,
+      opponentAimDirection,
       ball: { ...game.ball, x: nextX, y: nextY, vx },
       status: 'game-over',
     }
@@ -243,6 +269,8 @@ export function advancePongGame(game: PongGame, deltaSeconds: number): PongGame 
   return {
     ...game,
     opponentPaddle,
+    opponentAimOffset,
+    opponentAimDirection,
     ball: { ...game.ball, x: nextX, y: nextY, vx },
   }
 }
