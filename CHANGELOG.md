@@ -5,6 +5,12 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.2] - 2026-08-01
+
+### Changed
+- Pong is harder to beat: opponent paddle speed increased, rally ball speed now ramps up on every return (capped, resets on score), and paddle hits now angle the ball based on where they land instead of always bouncing straight
+- Pong opponent now aims its returns with slight variation instead of always centering the ball, so it isn't always a flat wall
+
 ## [3.3.0] - 2026-07-30
 
 ### Added
