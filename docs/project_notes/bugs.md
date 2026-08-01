@@ -12,6 +12,14 @@ Date-ordered log of bugs and their solutions.
 
 ---
 
+### 2026-08-01 - Fresh worktrees/clones: `backend`'s `npm test` hangs instead of failing, because 6 files are real integration tests with no DB bootstrap
+
+- **Issue**: Setting up a fresh git worktree for the dashboard-assign-chore plan (frontend-only change, backend untouched), the worktree skill's baseline `npm test` check hung past its 120s timeout in `backend/`. On the pre-existing `main` checkout (which has a real `.env` and a seeded `backend/prisma/dev.db`, both gitignored — `git status` confirmed `dev.db` untracked), the identical `npx jest` run passes cleanly in ~10s
+- **Root Cause**: `AGENTS.md`'s Testing Patterns section states "No integration test suite currently exists" and describes every backend unit test as mocking Prisma inline. That's inaccurate: `src/__tests__/{assignments,recurring,templates,points,users}.test.ts` and `src/routes/__tests__/auth.routes.test.ts` import the real `app` and real `prisma` client, log in via `supertest` against seeded users (`dad@home.local`, `alice@home.local`, etc.), and query the live DB in `beforeAll`. With no `DATABASE_URL` (no `.env`) and no `prisma db push`/seed run, those Prisma calls fail — but the failure leaves an unbounded connection retry/handle open, so `jest` never exits on its own; it needs `--forceExit` to even report the (expected) 6 failing suites
+- **Not fixed — out of scope for the PR that surfaced it** (a frontend-only dashboard change with an explicit backend non-goal): either (a) correct `AGENTS.md`'s Testing Patterns section to acknowledge these 6 files as real integration tests and document the bootstrap (`DATABASE_URL` + `prisma db push` + `prisma db seed`) a fresh worktree/clone/CI runner needs before `npm test` in `backend/` will pass, or (b) refactor those 6 files to mock Prisma like the rest of the suite, matching what the docs already claim is the convention. Either fix belongs in its own PR since it touches test infrastructure, not this feature
+- **Prevention**: When bootstrapping a fresh worktree for backend work, don't trust `npm test` to fail fast if something's unconfigured — run it once with `--forceExit` (or `--detectOpenHandles`) first to see whether it's actually hanging on missing DB state before assuming a long-running command is just slow
+- **File**: `backend/src/__tests__/{assignments,recurring,templates,points,users}.test.ts`, `backend/src/routes/__tests__/auth.routes.test.ts`, `AGENTS.md`
+
 ### 2026-07-13 - Full env-var audit: VITE_API_URL was dead code, LOG_LEVEL/NTFY_DEFAULT_TOPIC unread, backend/.env's PORT mismatched the frontend proxy target
 
 - **Issue**: User asked to verify every entry in `frontend/.env`/`backend/.env` is actually used by the app, after noticing backend has a separate `.env`/`.env.example` from the root pair. Full grep of `process.env.*`/`import.meta.env`/`window.APP_CONFIG` usage against every documented var turned up several real gaps
