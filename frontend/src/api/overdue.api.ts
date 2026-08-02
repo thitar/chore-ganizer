@@ -31,12 +31,12 @@ export async function cancelOverdue(
   id: number,
   type: 'REGULAR' | 'RECURRING',
   penalty: number
-): Promise<OverdueChore & { penaltyPoints: number | null }> {
+): Promise<{ status: 'CANCELLED'; penaltyPoints: number | null }> {
   const response = await api.post('/cancel', { id, type, penalty })
   return response.data.data
 }
 
-export async function rescheduleOverdue(id: number, dueDate: string): Promise<OverdueChore> {
+export async function rescheduleOverdue(id: number, dueDate: string): Promise<{ id: number; dueDate: string; status: string }> {
   const response = await api.post('/reschedule', { id, dueDate })
   return response.data.data
 }
