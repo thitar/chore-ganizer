@@ -57,7 +57,7 @@ export function OverduePage() {
     if (!cancelTarget) return
     setFormError(null)
     try {
-      const value = Math.max(0, Math.floor(Number(penalty) || 0))
+      const value = Math.min(100000, Math.max(0, Math.floor(Number(penalty) || 0)))
       await cancelChore(cancelTarget.id, cancelTarget.type, value)
       setCancelTarget(null)
       setSuccessMessage(value > 0 ? `Chore canceled, ${value} pts penalty applied.` : 'Chore canceled.')
@@ -184,7 +184,7 @@ export function OverduePage() {
               required
             />
             <div className="mt-4 flex gap-2">
-              <Button onClick={handleReschedule} loading={isRescheduling}>
+              <Button onClick={handleReschedule} loading={isRescheduling} disabled={newDueDate === ''}>
                 Save Date
               </Button>
               <Button variant="secondary" onClick={() => setRescheduleTarget(null)} disabled={isRescheduling}>
