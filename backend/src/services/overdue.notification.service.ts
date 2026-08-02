@@ -82,11 +82,10 @@ export async function notifyOverdue(now = new Date()): Promise<void> {
   const parents = await prisma.user.findMany({ where: { role: 'PARENT' }, select: { ntfyTopic: true } })
 
   for (const item of overdueItems) {
-    const { title, body, priority, tags, click } = overdueBody({
-      id: item.id,
-      template: item.template,
-      dueDate: item.dueDate,
-    })
+    const { title, body, priority, tags, click } = overdueBody(
+      { id: item.id, template: item.template, dueDate: item.dueDate },
+      now
+    )
 
     if (item.type === 'REGULAR') {
       await prisma.choreAssignment.updateMany({

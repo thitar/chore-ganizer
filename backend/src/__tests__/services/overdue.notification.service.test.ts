@@ -106,6 +106,16 @@ describe('notifyOverdue', () => {
     fetchSpy.mockRestore()
   })
 
+  it('does not send at midnight local time (guards the hour-24 rendering bug)', async () => {
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(new Response())
+
+    await notifyOverdue(new Date('2026-08-03T22:00:00Z'))
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(prisma.choreAssignment.findMany).not.toHaveBeenCalled()
+    fetchSpy.mockRestore()
+  })
+
   it('does nothing when ntfy is disabled', async () => {
     // The sweep reads isNtfyConfigured live through notification.service's
     // re-export (a getter), so toggle the value on the config module and

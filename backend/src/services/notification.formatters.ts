@@ -44,9 +44,9 @@ export function completedBody(a: AssignmentInfo) {
   }
 }
 
-export function overdueBody(a: AssignmentInfo) {
+export function overdueBody(a: AssignmentInfo, now = new Date()) {
   const due = new Date(a.dueDate.toISOString().slice(0, 10))
-  const today = new Date(new Date().toISOString().slice(0, 10))
+  const today = new Date(now.toISOString().slice(0, 10))
   const days = Math.round((today.getTime() - due.getTime()) / 86400000)
   const label = days <= 1 ? 'overdue' : `overdue ${days} days`
   return {
