@@ -770,11 +770,12 @@ describe('notifyOverdue', () => {
   })
 
   it('does nothing when ntfy is disabled', async () => {
-    // isNtfyConfigured is captured at module require time, so toggle the
-    // exported value on the notification service and re-require the sweep.
-    const notificationService = require('../../services/notification.service')
-    const original = notificationService.isNtfyConfigured
-    notificationService.isNtfyConfigured = false
+    // The sweep reads isNtfyConfigured live through notification.service's
+    // re-export (a getter in ts-jest output), so toggle the value on the
+    // mocked config module and re-require the sweep.
+    const config = require('../../config/notifications')
+    const original = config.isNtfyConfigured
+    config.isNtfyConfigured = false
     delete require.cache[require.resolve('../../services/overdue.notification.service')]
     notifyOverdue = require('../../services/overdue.notification.service').notifyOverdue
     try {
@@ -782,7 +783,7 @@ describe('notifyOverdue', () => {
       expect(prisma.choreAssignment.findMany).not.toHaveBeenCalled()
       expect(prisma.recurringOccurrence.findMany).not.toHaveBeenCalled()
     } finally {
-      notificationService.isNtfyConfigured = original
+      config.isNtfyConfigured = original
       delete require.cache[require.resolve('../../services/overdue.notification.service')]
       notifyOverdue = require('../../services/overdue.notification.service').notifyOverdue
     }
