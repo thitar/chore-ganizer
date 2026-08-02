@@ -38,8 +38,8 @@ export async function create(data: {
 }
 
 export async function getAll(userId: number, role: string, fromStr?: string, toStr?: string) {
-  let from: Date
-  let to: Date
+  let from: Date | undefined
+  let to: Date | undefined
   if (fromStr && toStr) {
     from = new Date(fromStr)
     to = new Date(toStr)
@@ -49,17 +49,12 @@ export async function getAll(userId: number, role: string, fromStr?: string, toS
   } else if (toStr) {
     to = new Date(toStr)
     from = new Date(to.getUTCFullYear(), to.getUTCMonth(), 1)
-  } else {
-    const now = new Date()
-    from = new Date(now.getUTCFullYear(), now.getUTCMonth(), 1)
-    to = new Date(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)
   }
-  await generateOccurrences(from, to)
+  if (from && to) await generateOccurrences(from, to)
 
   const roleFilter = role === 'PARENT' ? {} : { assignedToId: userId }
-  const dateFilter = { dueDate: { gte: from, lte: to } }
-  const where = { AND: [roleFilter, dateFilter] }
-  const occWhere = { AND: [roleFilter, { dueDate: { gte: from, lte: to } }] }
+  const dateFilter = from && to ? { dueDate: { gte: from, lte: to } } : {}
+  const where = { ...roleFilter, ...dateFilter }
 
   const [assignments, occurrences] = await Promise.all([
     prisma.choreAssignment.findMany({
@@ -71,7 +66,7 @@ export async function getAll(userId: number, role: string, fromStr?: string, toS
       orderBy: { dueDate: 'asc' },
     }),
     prisma.recurringOccurrence.findMany({
-      where: occWhere,
+      where,
       include: {
         chore: {
           include: {

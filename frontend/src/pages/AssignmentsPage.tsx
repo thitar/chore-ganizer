@@ -16,23 +16,14 @@ import { Skeleton } from '../components/ui/Skeleton'
 import { formatDateStatus } from '../utils/dateFormat'
 import { assignmentKey } from '../utils/assignmentKey'
 
-function currentMonthDates(): { from: string; to: string } {
-  const now = new Date()
-  const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-  const to = lastDay.toISOString().split('T')[0]
-  return { from, to }
-}
-
 export function AssignmentsPage() {
   const { assignments, isLoading, error, deleteAssignment, isDeleting } = useAssignments()
   const { users } = useUsers()
 
-  const initialDates = currentMonthDates()
   const [statusFilter, setStatusFilter] = useState('all')
   const [userFilter, setUserFilter] = useState('all')
-  const [dateFrom, setDateFrom] = useState(initialDates.from)
-  const [dateTo, setDateTo] = useState(initialDates.to)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -49,9 +40,8 @@ export function AssignmentsPage() {
   function clearFilters() {
     setStatusFilter('all')
     setUserFilter('all')
-    const { from, to } = currentMonthDates()
-    setDateFrom(from)
-    setDateTo(to)
+    setDateFrom('')
+    setDateTo('')
   }
 
   function cancelForm() {

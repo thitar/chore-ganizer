@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { CalendarPage } from '../pages/CalendarPage'
@@ -126,6 +126,67 @@ describe('CalendarPage', () => {
     renderPage()
     expect(screen.getByText('Wash Dishes')).toBeInTheDocument()
     expect(screen.getByText('Take Out Trash')).toBeInTheDocument()
+  })
+
+  it('opens a selected-date dialog with every chore for that date', () => {
+    mockCalendarState({
+      data: [
+        ...defaultAssignments,
+        { ...defaultAssignments[1], id: 3, dueDate: '2026-06-15', status: 'COMPLETED', template: { ...defaultAssignments[1].template, title: 'Fold Laundry' } },
+      ],
+    })
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'View chores for June 15, 2026' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Chores for June 15, 2026' })
+    expect(dialog).toBeInTheDocument()
+    expect(within(dialog).getByText('Wash Dishes')).toBeInTheDocument()
+    expect(within(dialog).getByText('Fold Laundry')).toBeInTheDocument()
+    expect(within(dialog).getByText('Alice')).toBeInTheDocument()
+    expect(within(dialog).getByText('Pending')).toBeInTheDocument()
+    expect(within(dialog).getByText('Completed')).toBeInTheDocument()
+    expect(within(dialog).getByText('10 pts')).toBeInTheDocument()
+  })
+
+  it('closes the selected-date dialog', () => {
+    renderPage()
+    const trigger = screen.getByRole('button', { name: 'View chores for June 15, 2026' })
+    fireEvent.click(trigger)
+    fireEvent.click(screen.getByRole('button', { name: 'Close chores for June 15, 2026' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
+  })
+
+  it('closes the selected-date dialog when Escape is pressed', () => {
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'View chores for June 15, 2026' }))
+    expect(screen.getByRole('dialog')).toHaveFocus()
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('keeps Tab and Shift+Tab focus within the selected-date dialog', () => {
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'View chores for June 15, 2026' }))
+
+    const dialog = screen.getByRole('dialog')
+    const closeButton = within(dialog).getByRole('button', { name: 'Close chores for June 15, 2026' })
+
+    fireEvent.keyDown(dialog, { key: 'Tab' })
+    expect(closeButton).toHaveFocus()
+
+    fireEvent.keyDown(closeButton, { key: 'Tab' })
+    expect(closeButton).toHaveFocus()
+
+    fireEvent.keyDown(closeButton, { key: 'Tab', shiftKey: true })
+    expect(closeButton).toHaveFocus()
+  })
+
+  it('shows an empty-state message for a selected date with no chores', () => {
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'View chores for June 16, 2026' }))
+    expect(screen.getByText('No chores scheduled for this day.')).toBeInTheDocument()
   })
 
   it('renders user legend with color swatches', () => {

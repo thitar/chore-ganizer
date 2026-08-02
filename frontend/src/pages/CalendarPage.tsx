@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCalendarMonth } from '../hooks/useCalendar'
 import { useUsers } from '../hooks/useUsers'
 import { AppShell } from '../components/AppShell'
@@ -14,8 +14,10 @@ interface CalendarDayAssignment {
   id: number
   type: 'REGULAR' | 'RECURRING'
   title: string
+  assignee: string
   color: string
   status: string
+  points: number
 }
 
 interface DayCell {
@@ -58,10 +60,19 @@ function colorWithAlpha(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
+function formatLongDate(date: Date) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric',
+  }).format(date)
+}
+
 export function CalendarPage() {
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
+  const [selectedDay, setSelectedDay] = useState<DayCell | null>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
 
   const { data: assignments, isLoading, error } = useCalendarMonth(year, month)
   const { users } = useUsers()
@@ -75,14 +86,30 @@ export function CalendarPage() {
         id: a.id,
         type: a.type,
         title: a.template.title,
+        assignee: a.assignedTo.name,
         color: a.assignedTo.color,
         status: a.status,
+        points: a.template.points,
       })
     })
     return map
   }, [assignments])
 
   const days = useMemo(() => buildCalendarDays(year, month, assignmentsByDate), [year, month, assignmentsByDate])
+
+  useEffect(() => {
+    if (selectedDay) dialogRef.current?.focus()
+  }, [selectedDay])
+
+  function openDay(day: DayCell, trigger: HTMLButtonElement) {
+    triggerRef.current = trigger
+    setSelectedDay(day)
+  }
+
+  function closeSelectedDay() {
+    setSelectedDay(null)
+    triggerRef.current?.focus()
+  }
 
   function prevMonth() {
     if (month === 0) {
@@ -160,9 +187,12 @@ export function CalendarPage() {
         </div>
         <div className="grid grid-cols-7 grid-rows-6">
           {days.map((day, i) => (
-            <div
+            <button
+              type="button"
               key={i}
-              className={`min-h-[90px] border-r border-b border-edge p-1 ${
+              onClick={(event) => openDay(day, event.currentTarget)}
+              aria-label={`View chores for ${formatLongDate(day.date)}`}
+              className={`min-h-[90px] border-r border-b border-edge p-1 text-left ${
                 day.inMonth ? 'bg-surface' : 'bg-surface opacity-40'
               } ${day.isToday ? 'ring-2 ring-accent ring-inset' : ''}`}
             >
@@ -189,10 +219,75 @@ export function CalendarPage() {
                   <div className="text-xs text-zinc-400">+{day.assignments.length - 3} more</div>
                 )}
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
+
+      {selectedDay && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Chores for ${formatLongDate(selectedDay.date)}`}
+            ref={dialogRef}
+            tabIndex={-1}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') closeSelectedDay()
+              if (event.key !== 'Tab') return
+
+              const focusableElements = dialogRef.current?.querySelectorAll<HTMLElement>(
+                'button:not(:disabled), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+              )
+              if (!focusableElements?.length) {
+                event.preventDefault()
+                dialogRef.current?.focus()
+                return
+              }
+
+              const first = focusableElements[0]
+              const last = focusableElements[focusableElements.length - 1]
+              const activeElement = document.activeElement
+              if (event.shiftKey && (activeElement === dialogRef.current || activeElement === first)) {
+                event.preventDefault()
+                last.focus()
+              } else if (!event.shiftKey && (activeElement === dialogRef.current || activeElement === last)) {
+                event.preventDefault()
+                first.focus()
+              }
+            }}
+            className="w-full max-w-md rounded-lg border border-edge bg-surface-raised p-5 shadow-xl"
+          >
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h3 className="font-display text-xl font-bold text-zinc-100">Chores for {formatLongDate(selectedDay.date)}</h3>
+              <button
+                type="button"
+                onClick={closeSelectedDay}
+                aria-label={`Close chores for ${formatLongDate(selectedDay.date)}`}
+                className="text-sm text-zinc-400 hover:text-zinc-100"
+              >
+                Close
+              </button>
+            </div>
+            {selectedDay.assignments.length === 0 ? (
+              <p className="text-zinc-400">No chores scheduled for this day.</p>
+            ) : (
+              <div className="space-y-3">
+                {selectedDay.assignments.map((assignment) => (
+                  <div key={assignmentKey(assignment)} className="rounded-lg bg-white/5 p-3">
+                    <div className="font-bold text-zinc-100">{assignment.title}</div>
+                    <div className="text-sm text-zinc-400">{assignment.assignee}</div>
+                    <div className={assignment.status === 'COMPLETED' ? 'text-emerald-400' : 'text-amber-400'}>
+                      {assignment.status === 'COMPLETED' ? 'Completed' : 'Pending'}
+                    </div>
+                    <div className="text-sm text-zinc-400">{assignment.points} pts</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {totalInMonth === 0 && (
         <div className="mt-4 text-center text-zinc-400">

@@ -227,7 +227,10 @@ describe('assignmentService.getAll', () => {
     const result = await assignmentService.getAll(1, 'PARENT')
 
     expect(prisma.choreAssignment.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { AND: [{}, expect.objectContaining({ dueDate: expect.any(Object) })] } })
+      expect.objectContaining({ where: {} })
+    )
+    expect(prisma.recurringOccurrence.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: {} })
     )
     expect(result[0]).toMatchObject({ id: 1, type: 'REGULAR' })
     expect(result[0].dueDate).toBe('2026-06-15')
@@ -256,12 +259,27 @@ describe('assignmentService.getAll', () => {
     const result = await assignmentService.getAll(3, 'CHILD')
 
     expect(prisma.choreAssignment.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { AND: [expect.objectContaining({ assignedToId: 3 }), expect.objectContaining({ dueDate: expect.any(Object) })] } })
+      expect.objectContaining({ where: { assignedToId: 3 } })
+    )
+    expect(prisma.recurringOccurrence.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { assignedToId: 3 } })
     )
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe(3)
     expect(result[0].type).toBe('REGULAR')
     expect(result[0].dueNotifiedAt).toBeNull()
+  })
+
+  it('uses the requested date range when supplied', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([])
+
+    await assignmentService.getAll(1, 'PARENT', '2026-06-01', '2026-06-30')
+
+    expect(prisma.choreAssignment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { dueDate: { gte: new Date('2026-06-01'), lte: new Date('2026-06-30') } },
+      })
+    )
   })
 })
 
