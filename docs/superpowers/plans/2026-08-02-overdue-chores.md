@@ -499,12 +499,12 @@ async function cancelOccurrence(id: number, penalty: number) {
 }
 
 export async function reschedule(data: { id: number; dueDate: string }) {
-  const row = await prisma.choreAssignment.findUnique({ where: { id } })
+  const row = await prisma.choreAssignment.findUnique({ where: { id: data.id } })
   if (!row) throw new AppError('Assignment not found', 404)
   if (row.status !== 'PENDING') throw new AppError('Only pending chores can be rescheduled', 409)
 
   return prisma.choreAssignment.update({
-    where: { id },
+    where: { id: data.id },
     data: {
       dueDate: new Date(data.dueDate),
       dueNotifiedAt: null,
