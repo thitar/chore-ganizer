@@ -1,4 +1,4 @@
-import { assignedBody, dueSoonBody, completedBody, badgeEarnedBody } from '../../services/notification.formatters'
+import { assignedBody, dueSoonBody, completedBody, badgeEarnedBody, overdueBody } from '../../services/notification.formatters'
 
 describe('notification.formatters', () => {
   const mockAssignment = {
@@ -90,6 +90,24 @@ describe('notification.formatters', () => {
       expect(r.body).toBe('\u{1F389} Badge earned: First Chore \u2014 Complete your first chore')
       expect(r.priority).toBe(3)
       expect(r.click).toBe('/profile')
+    })
+  })
+
+  describe('overdueBody', () => {
+    it('returns overdue priority 5, warning/exclamation tags, and click URL', () => {
+      const today = new Date(new Date().toISOString().slice(0, 10))
+      const result = overdueBody({ ...mockAssignment, dueDate: today })
+      expect(result.title).toBe('Chore-Ganizer')
+      expect(result.body).toBe('Wash Dishes — overdue')
+      expect(result.priority).toBe(5)
+      expect(result.tags).toEqual(['warning', 'exclamation'])
+      expect(result.click).toBe('/chores/42')
+    })
+
+    it('pluralizes days when overdue by more than one day', () => {
+      const due = new Date(Date.now() - 5 * 86400000)
+      const result = overdueBody({ ...mockAssignment, dueDate: due })
+      expect(result.body).toContain('overdue 5 days')
     })
   })
 })
