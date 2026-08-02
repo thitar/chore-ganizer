@@ -109,6 +109,13 @@ describe('AssignmentsPage', () => {
     expect(screen.getAllByText('Alice').length).toBeGreaterThanOrEqual(1)
   })
 
+  it('renders a past assignment returned by the history query', () => {
+    mockAssignmentsState({ assignments: [{ ...defaultAssignment, dueDate: '2026-05-01' }] })
+    renderPage()
+    expect(screen.getByText('Wash Dishes')).toBeInTheDocument()
+    expect(screen.getByText('May 1, 2026')).toBeInTheDocument()
+  })
+
   it('opens create form when Assign Chore clicked', () => {
     renderPage()
     fireEvent.click(screen.getByText('Assign Chore'))
