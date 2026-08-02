@@ -232,6 +232,7 @@ describe('assignmentService.getAll', () => {
     expect(prisma.recurringOccurrence.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: {} })
     )
+    expect(prisma.recurringChore.findMany).toHaveBeenCalledWith()
     expect(result[0]).toMatchObject({ id: 1, type: 'REGULAR' })
     expect(result[0].dueDate).toBe('2026-06-15')
     expect(result[0].dueNotifiedAt).toBeNull()

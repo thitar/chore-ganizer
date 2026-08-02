@@ -50,7 +50,15 @@ export async function getAll(userId: number, role: string, fromStr?: string, toS
     to = new Date(toStr)
     from = new Date(to.getUTCFullYear(), to.getUTCMonth(), 1)
   }
-  if (from && to) await generateOccurrences(from, to)
+  if (from && to) {
+    await generateOccurrences(from, to)
+  } else {
+    const now = new Date()
+    await generateOccurrences(
+      new Date(now.getUTCFullYear(), now.getUTCMonth(), 1),
+      new Date(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)
+    )
+  }
 
   const roleFilter = role === 'PARENT' ? {} : { assignedToId: userId }
   const dateFilter = from && to ? { dueDate: { gte: from, lte: to } } : {}
