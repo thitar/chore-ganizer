@@ -8,7 +8,7 @@ export interface Assignment {
   choreTemplateId: number
   assignedToId: number
   dueDate: string
-  status: 'PENDING' | 'COMPLETED'
+  status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'PARTIALLY_COMPLETE'
   completedAt: string | null
   pointsAwarded: number | null
   notes: string | null
