@@ -275,6 +275,21 @@ describe('recurringService.completeOccurrence', () => {
     await expect(recurringService.completeOccurrence(1, 3)).rejects.toMatchObject({ statusCode: 409 })
   })
 
+  it('throws 409 when occurrence is CANCELLED', async () => {
+    prisma.recurringOccurrence.findUnique.mockResolvedValue({
+      id: 7,
+      assignedToId: 3,
+      status: 'CANCELLED',
+      chore: { template: { id: 1, title: 'Make Bed', points: 5 } },
+    })
+
+    await expect(recurringService.completeOccurrence(7, 3)).rejects.toThrow(AppError)
+    await expect(recurringService.completeOccurrence(7, 3)).rejects.toMatchObject({
+      statusCode: 409,
+      message: 'Occurrence is cancelled and cannot be completed',
+    })
+  })
+
   it('throws 404 when occurrence does not exist', async () => {
     prisma.recurringOccurrence.findUnique.mockResolvedValue(null)
 

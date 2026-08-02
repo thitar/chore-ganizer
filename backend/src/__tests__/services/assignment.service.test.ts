@@ -348,6 +348,13 @@ describe('assignmentService.complete', () => {
       .rejects.toMatchObject({ statusCode: 409, message: 'Assignment is already completed' })
   })
 
+  it('throws AppError 409 when assignment is CANCELLED', async () => {
+    prisma.choreAssignment.findUnique.mockResolvedValue({ ...mockAssignment, status: 'CANCELLED' })
+
+    await expect(assignmentService.complete(1, 2))
+      .rejects.toMatchObject({ statusCode: 409, message: 'Assignment is cancelled and cannot be completed' })
+  })
+
   it('throws AppError 404 when assignment not found', async () => {
     prisma.choreAssignment.findUnique.mockResolvedValue(null)
 
