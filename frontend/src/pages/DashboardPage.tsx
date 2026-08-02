@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { ClipboardList } from 'lucide-react'
+import { useMemo, useState, useEffect } from 'react'
+import { ClipboardList, Plus } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { formatDueDate } from '../utils/dateFormat'
 import { assignmentKey } from '../utils/assignmentKey'
@@ -8,12 +8,16 @@ import { useMyPoints, useLeaderboard, useGamification } from '../hooks/usePoints
 import { AppShell } from '../components/AppShell'
 import { StatusBadge } from '../components/StatusBadge'
 import { Leaderboard } from '../components/Leaderboard'
+import { AssignChoreForm } from '../components/AssignChoreForm'
 import { Card } from '../components/ui/Card'
 import { StatCard } from '../components/ui/StatCard'
 import { CountUp } from '../components/ui/CountUp'
 import { ProgressRing } from '../components/ui/ProgressRing'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Skeleton } from '../components/ui/Skeleton'
+import { Button } from '../components/ui/Button'
+import { Modal } from '../components/ui/Modal'
+import { Toast } from '../components/ui/Toast'
 
 export function DashboardPage() {
   const { user } = useAuth()
@@ -21,6 +25,16 @@ export function DashboardPage() {
   const { data: myPoints } = useMyPoints()
   const { data: leaderboard, isLoading: isLeaderboardLoading } = useLeaderboard()
   const { data: gamification } = useGamification()
+
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(null), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [successMessage])
 
   const mine = useMemo(
     () => assignments.filter(a => a.assignedToId === user?.id),
@@ -62,8 +76,13 @@ export function DashboardPage() {
 
   return (
     <AppShell>
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6">
         <h2 className="font-display text-2xl font-bold text-zinc-100">Hey {user?.name} 👋</h2>
+        {user?.role === 'PARENT' && (
+          <Button onClick={() => setShowAssignModal(true)} className="mt-3 w-full justify-center">
+            <Plus className="h-4 w-4" /> Assign Chore
+          </Button>
+        )}
       </div>
 
       <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -142,6 +161,19 @@ export function DashboardPage() {
           )}
         </section>
       </div>
+
+      {user?.role === 'PARENT' && (
+        <Modal open={showAssignModal} onClose={() => setShowAssignModal(false)} title="Assign Chore">
+          {showAssignModal && (
+            <AssignChoreForm
+              onSuccess={msg => { setShowAssignModal(false); setSuccessMessage(msg) }}
+              onCancel={() => setShowAssignModal(false)}
+            />
+          )}
+        </Modal>
+      )}
+
+      {successMessage && <Toast kind="success">{successMessage}</Toast>}
     </AppShell>
   )
 }

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 import { DashboardPage } from '../pages/DashboardPage'
@@ -31,9 +31,19 @@ vi.mock('../hooks/usePoints', () => ({
   useGamification: vi.fn(),
 }))
 
+vi.mock('../hooks/useTemplates', () => ({
+  useTemplates: vi.fn(),
+}))
+
+vi.mock('../hooks/useUsers', () => ({
+  useUsers: vi.fn(),
+}))
+
 import { useAuth } from '../hooks/useAuth'
 import { useAssignments } from '../hooks/useAssignments'
 import { useMyPoints, useLeaderboard, useGamification } from '../hooks/usePoints'
+import { useTemplates } from '../hooks/useTemplates'
+import { useUsers } from '../hooks/useUsers'
 
 const mockUser = { id: 1, name: 'Alice', role: 'CHILD', email: 'alice@home.local', color: '#10B981' }
 
@@ -52,6 +62,10 @@ function mockAssignmentsState(overrides: Record<string, unknown> = {}) {
     assignments: [],
     isLoading: false,
     error: null,
+    createAssignment: vi.fn(),
+    isCreating: false,
+    updateAssignment: vi.fn(),
+    isUpdating: false,
     ...overrides,
   })
 }
@@ -74,6 +88,14 @@ function mockPointsState(overrides: Record<string, unknown> = {}) {
   })
 }
 
+function mockTemplatesState(overrides: Record<string, unknown> = {}) {
+  ;(useTemplates as ReturnType<typeof vi.fn>).mockReturnValue({ templates: [], ...overrides })
+}
+
+function mockUsersState(overrides: Record<string, unknown> = {}) {
+  ;(useUsers as ReturnType<typeof vi.fn>).mockReturnValue({ users: [], ...overrides })
+}
+
 function renderPage() {
   return render(
     <MemoryRouter>
@@ -88,6 +110,8 @@ describe('DashboardPage', () => {
     mockAuth()
     mockAssignmentsState()
     mockPointsState()
+    mockTemplatesState()
+    mockUsersState()
   })
 
   it('greets the user by name', () => {
@@ -232,8 +256,6 @@ describe('DashboardPage', () => {
             choreTemplateId: 4,
             assignedToId: mockUser.id,
             dueDate: new Date('2026-06-14T09:00:00').toISOString(), // prior Sun, out of week
-            // PENDING (not COMPLETED) so a Monday-vs-Sunday week-start regression
-            // changes the done/total counts instead of passing coincidentally
             status: 'PENDING',
             completedAt: null,
             pointsAwarded: null,
@@ -353,6 +375,52 @@ describe('DashboardPage', () => {
 
       expect(screen.getByRole('img', { name: '2 of 2' })).toBeInTheDocument()
       expect(screen.getByText(/week complete/i)).toBeInTheDocument()
+    })
+  })
+
+  describe('Assign Chore quick action', () => {
+    beforeEach(() => {
+      mockTemplatesState({
+        templates: [
+          { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen', description: null, createdById: 1, createdAt: '', updatedAt: '' },
+        ],
+      })
+      mockUsersState({ users: [{ id: 2, name: 'Bob', role: 'CHILD', color: '#F59E0B' }] })
+    })
+
+    it('shows the Assign Chore button for a PARENT', () => {
+      mockAuth({ ...mockUser, role: 'PARENT' })
+      renderPage()
+      expect(screen.getByRole('button', { name: 'Assign Chore' })).toBeInTheDocument()
+    })
+
+    it('does not show the Assign Chore button for a CHILD', () => {
+      mockAuth({ ...mockUser, role: 'CHILD' })
+      renderPage()
+      expect(screen.queryByRole('button', { name: 'Assign Chore' })).not.toBeInTheDocument()
+    })
+
+    it('opens the modal with the assign form when Assign Chore is clicked', () => {
+      mockAuth({ ...mockUser, role: 'PARENT' })
+      renderPage()
+      fireEvent.click(screen.getByRole('button', { name: 'Assign Chore' }))
+      expect(screen.getByLabelText('Template')).toBeInTheDocument()
+    })
+
+    it('closes the modal and shows a success toast after a successful submission', async () => {
+      mockAuth({ ...mockUser, role: 'PARENT' })
+      const mockCreate = vi.fn().mockResolvedValue({})
+      mockAssignmentsState({ createAssignment: mockCreate })
+      renderPage()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Assign Chore' }))
+      fireEvent.change(screen.getByLabelText('Template'), { target: { value: '1' } })
+      fireEvent.change(screen.getByLabelText('Assign To'), { target: { value: '2' } })
+      fireEvent.change(screen.getByLabelText('Due Date'), { target: { value: '2026-07-01' } })
+      fireEvent.click(screen.getByText('Save Assignment'))
+
+      expect(await screen.findByText('Assignment created!')).toBeInTheDocument()
+      expect(screen.queryByLabelText('Template')).not.toBeInTheDocument()
     })
   })
 })
