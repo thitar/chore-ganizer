@@ -1,9 +1,9 @@
 import { prisma } from '../config/prisma'
 import { AppError } from '../middleware/errorHandler'
-import { isNtfyConfigured, getNtfyConfig } from '../config/notifications'
+import { isNtfyConfigured, getNtfyConfig, getOverdueConfig } from '../config/notifications'
 import { assignedBody, dueSoonBody, completedBody } from './notification.formatters'
 
-export { isNtfyConfigured }
+export { isNtfyConfigured, getOverdueConfig }
 
 type AssignmentWithIncludes = {
   id: number
