@@ -18,6 +18,7 @@ export function useOverdue() {
       overdueApi.cancelOverdue(id, type, penalty),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['overdue'] })
+      queryClient.invalidateQueries({ queryKey: ['assignments'] })
       if ((data.penaltyPoints ?? 0) > 0) {
         queryClient.invalidateQueries({ queryKey: ['points'] })
         queryClient.invalidateQueries({ queryKey: ['points', 'gamification'] })
