@@ -1065,12 +1065,14 @@ Append to `backend/src/__tests__/services/recurring.service.test.ts` a test in t
 
 ```ts
   it('throws AppError 409 when occurrence is CANCELLED', async () => {
-    prisma.recurringOccurrence.findUnique.mockResolvedValue({ id: 7, status: 'CANCELLED' })
+    prisma.recurringOccurrence.findUnique.mockResolvedValue({ id: 7, assignedToId: 3, status: 'CANCELLED' })
 
     await expect(recurringService.completeOccurrence(7, 3))
       .rejects.toMatchObject({ statusCode: 409, message: 'Occurrence is cancelled and cannot be completed' })
   })
 ```
+
+(`assignedToId` is required in the mock because `completeOccurrence` checks ownership — 403 — before the status guard.)
 
 If `backend/src/__tests__/services/recurring.service.test.ts` does not exist yet, create it by copying the mocked-prisma pattern from `assignment.service.test.ts` (mock `recurringOccurrence.findUnique` / `$transaction`) and add only the above test plus a minimal `beforeEach` that wires `$transaction` and clears mocks.
 
