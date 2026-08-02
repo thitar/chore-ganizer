@@ -22,14 +22,14 @@ beforeEach(() => {
 describe('overdueService.listOverdue', () => {
   it('queries both tables for PENDING before today and returns combined sorted shape', async () => {
     const assignment = {
-      id: 1, choreTemplateId: 1, assignedToId: 3, dueDate: new Date('2026-07-01T00:00:00Z'),
+      id: 1, choreTemplateId: 1, assignedToId: 3, dueDate: new Date('2026-07-05T00:00:00Z'),
       status: 'PENDING', dueNotifiedAt: null, overdueNotifiedAt: null, cancelledAt: null,
       completedAt: null, pointsAwarded: null, notes: null, createdAt: new Date('2026-06-01'),
       template: { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen' },
       assignedTo: { id: 3, name: 'Alice', color: '#10B981', ntfyTopic: null },
     }
     const occurrence = {
-      id: 10, recurringChoreId: 5, assignedToId: 3, dueDate: new Date('2026-07-02T00:00:00Z'),
+      id: 10, recurringChoreId: 5, assignedToId: 3, dueDate: new Date('2026-07-01T00:00:00Z'),
       status: 'PENDING', dueNotifiedAt: null, overdueNotifiedAt: null, cancelledAt: null,
       completedAt: null, pointsAwarded: null, createdAt: new Date('2026-06-01'),
       chore: {
@@ -50,10 +50,11 @@ describe('overdueService.listOverdue', () => {
       expect.objectContaining({ where: { status: 'PENDING', dueDate: { lt: expect.any(Date) } } })
     )
     expect(result).toHaveLength(2)
-    expect(result[0]).toMatchObject({ id: 1, type: 'REGULAR' })
-    expect(result[1]).toMatchObject({ id: 10, type: 'RECURRING' })
+    expect(result.map((r) => r.dueDate)).toEqual(['2026-07-01', '2026-07-05'])
+    expect(result[0]).toMatchObject({ id: 10, type: 'RECURRING' })
+    expect(result[1]).toMatchObject({ id: 1, type: 'REGULAR' })
     expect(result[0].dueDate).toBe('2026-07-01')
-    expect(result[1].dueDate).toBe('2026-07-02')
+    expect(result[1].dueDate).toBe('2026-07-05')
   })
 })
 
@@ -132,6 +133,13 @@ describe('overdueService.cancel', () => {
   it('throws 409 when RECURRING row is COMPLETED', async () => {
     prisma.recurringOccurrence.findUnique.mockResolvedValue({ id: 7, status: 'COMPLETED' })
     await expect(overdueService.cancel({ id: 7, type: 'RECURRING' })).rejects.toMatchObject({ statusCode: 409 })
+  })
+
+  it('throws 400 when penalty is negative', async () => {
+    await expect(overdueService.cancel({ id: 1, type: 'REGULAR', penalty: -1 })).rejects.toMatchObject({ statusCode: 400 })
+    expect(prisma.choreAssignment.update).not.toHaveBeenCalled()
+    expect(prisma.recurringOccurrence.update).not.toHaveBeenCalled()
+    expect(prisma.pointLog.create).not.toHaveBeenCalled()
   })
 })
 

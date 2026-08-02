@@ -78,6 +78,9 @@ type CancelInput = { id: number; type: 'REGULAR' | 'RECURRING'; penalty?: number
 
 export async function cancel(data: CancelInput) {
   const penalty = data.penalty ?? 0
+  if (!Number.isInteger(penalty) || penalty < 0) {
+    throw new AppError('Penalty must be a non-negative integer', 400)
+  }
   if (data.type === 'REGULAR') return cancelAssignment(data.id, penalty)
   return cancelOccurrence(data.id, penalty)
 }
