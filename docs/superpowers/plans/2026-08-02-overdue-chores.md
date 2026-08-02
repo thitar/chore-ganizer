@@ -727,7 +727,7 @@ describe('notifyOverdue', () => {
       'https://ntfy.example.com/alice-topic',
       expect.objectContaining({
         method: 'POST',
-        body: 'Wash Dishes — overdue 1 day',
+        body: 'Wash Dishes — overdue',
         headers: expect.objectContaining({ Title: 'Chore-Ganizer', Priority: '5', Tags: 'warning,exclamation', Click: '/chores/1' }),
       })
     )
