@@ -5,6 +5,12 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.9] - 2026-08-03
+
+### Changed
+- Bumped `typescript` (devDependency) from 5.9.3 to 7.0.2 in frontend
+- Added `vite/client` to `tsconfig.json`'s `types`, required for TS 7's stricter side-effect-import resolution (CSS/font imports in `main.tsx`)
+
 ## [3.3.8] - 2026-08-03
 
 ### Changed
