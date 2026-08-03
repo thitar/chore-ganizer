@@ -14,6 +14,7 @@ const MAIN_LINKS = [
 ]
 
 export const MANAGE_LINKS = [
+  { to: '/overdue', label: 'Overdue' },
   { to: '/templates', label: 'Templates' },
   { to: '/recurring-chores', label: 'Recurring' },
   { to: '/assignments', label: 'Assignments' },

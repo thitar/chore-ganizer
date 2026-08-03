@@ -10,6 +10,7 @@ import { RecurringChoresPage } from './pages/RecurringChoresPage'
 import { PointsPage } from './pages/PointsPage'
 import { CalendarPage } from './pages/CalendarPage'
 import { UsersPage } from './pages/UsersPage'
+import { OverduePage } from './pages/OverduePage'
 import { ProfilePage } from './pages/ProfilePage'
 import { GamesPage } from './pages/GamesPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
@@ -39,6 +40,11 @@ function App() {
         <Route path="/assignments" element={
           <ProtectedRoute requiredRole="PARENT">
             <AssignmentsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/overdue" element={
+          <ProtectedRoute requiredRole="PARENT">
+            <OverduePage />
           </ProtectedRoute>
         } />
         <Route path="/users" element={

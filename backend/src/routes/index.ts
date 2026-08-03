@@ -8,6 +8,7 @@ import recurringRouter from './recurring.routes'
 import occurrencesRouter from './occurrences.routes'
 import pointsRouter from './points.routes'
 import gamesRouter from './games.routes'
+import overdueRouter from './overdue.routes'
 
 const router = Router()
 
@@ -20,5 +21,6 @@ router.use('/recurring', recurringRouter)
 router.use('/occurrences', occurrencesRouter)
 router.use('/points', pointsRouter)
 router.use('/games', gamesRouter)
+router.use('/overdue', overdueRouter)
 
 export default router

@@ -118,6 +118,9 @@ export async function completeOccurrence(occurrenceId: number, userId: number) {
   if (occurrence.status === 'COMPLETED') {
     throw new AppError('Occurrence is already completed', 409)
   }
+  if (occurrence.status === 'CANCELLED') {
+    throw new AppError('Occurrence is cancelled and cannot be completed', 409)
+  }
 
   if (!occurrence.chore) {
     throw new AppError('Recurring chore not found', 404)

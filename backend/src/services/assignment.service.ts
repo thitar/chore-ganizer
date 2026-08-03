@@ -152,6 +152,7 @@ export async function complete(assignmentId: number, userId: number) {
   if (!assignment) throw new AppError('Assignment not found', 404)
   if (assignment.assignedToId !== userId) throw new AppError('You can only complete your own assignments', 403)
   if (assignment.status === 'COMPLETED') throw new AppError('Assignment is already completed', 409)
+  if (assignment.status === 'CANCELLED') throw new AppError('Assignment is cancelled and cannot be completed', 409)
 
   const pointsAwarded = assignment.template.points
 

@@ -9,7 +9,7 @@ export interface RecurringOccurrence {
   choreTemplateId: number
   assignedToId: number
   dueDate: string
-  status: 'PENDING' | 'COMPLETED'
+  status: 'PENDING' | 'COMPLETED' | 'CANCELLED'
   completedAt: string | null
   pointsAwarded: number | null
   notes: string | null

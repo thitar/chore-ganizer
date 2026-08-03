@@ -54,3 +54,9 @@ export function formatDueDate(dateStr: string): {
     isTomorrow: diffDays === 1,
   }
 }
+
+export function daysOverdue(dateStr: string): number {
+  const dueStart = startOfDay(new Date(dateStr))
+  const today = startOfDay(new Date())
+  return Math.max(0, Math.round((today.getTime() - dueStart.getTime()) / (1000 * 60 * 60 * 24)))
+}

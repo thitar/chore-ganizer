@@ -1,5 +1,5 @@
 interface StatusBadgeProps {
-  status: 'PENDING' | 'COMPLETED'
+  status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'PARTIALLY_COMPLETE'
   overdue?: boolean
 }
 
@@ -16,6 +16,14 @@ export function StatusBadge({ status, overdue }: StatusBadgeProps) {
     return (
       <span className="inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs text-amber-400">
         Pending
+      </span>
+    )
+  }
+
+  if (status === 'CANCELLED') {
+    return (
+      <span className="inline-flex items-center rounded-full border border-zinc-500/20 bg-zinc-500/10 px-3 py-1 text-xs text-zinc-400">
+        Cancelled
       </span>
     )
   }

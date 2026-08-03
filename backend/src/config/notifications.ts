@@ -16,3 +16,16 @@ if (RAW_BASE_URL.length > 0 && !HAS_VALID_SCHEME) {
 export function getNtfyConfig() {
   return { baseUrl: BASE_URL }
 }
+
+export function getOverdueConfig() {
+  const timezone = (process.env.NOTIFY_TIMEZONE ?? 'Europe/Oslo').trim() || 'Europe/Oslo'
+  const raw = (process.env.NOTIFY_OVERDUE_HOUR ?? '08:00').trim()
+  const match = /^(\d{1,2}):(\d{2})$/.exec(raw)
+  const hour = match ? Number(match[1]) : 8
+  const minute = match ? Number(match[2]) : 0
+  return {
+    timezone,
+    hour: hour >= 0 && hour <= 23 ? hour : 8,
+    minute: minute >= 0 && minute <= 59 ? minute : 0,
+  }
+}
