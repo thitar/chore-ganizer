@@ -5,6 +5,14 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.5] - 2026-08-02
+
+### Added
+- Overdue Chores page (parent-only) listing every overdue one-off and recurring chore.
+- Cancel an overdue chore with an optional points penalty (defaulted to the chore's point value, 0 to waive), recorded as a `PENALTY` ledger entry and a `CANCELLED` status with the cancellation preserved in history.
+- Reschedule a one-off overdue chore's due date (recurring occurrences are not reschedulable).
+- Overdue push notifications to the assigned child and all parents, delivered by a 5-minute in-process sweep at/after 08:00 in `NOTIFY_TIMEZONE` (default Europe/Oslo) on the day after the due date, deduped per chore.
+
 ## [3.3.4] - 2026-08-02
 
 ### Fixed
