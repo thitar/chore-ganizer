@@ -189,7 +189,6 @@ jest.mock('../../config/prisma', () => ({
 }))
 
 const { prisma } = require('../../config/prisma')
-const { AppError } = require('../../middleware/errorHandler')
 
 let overdueService: typeof import('../../services/overdue.service')
 
