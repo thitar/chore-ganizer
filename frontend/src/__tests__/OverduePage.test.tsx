@@ -82,14 +82,16 @@ describe('OverduePage', () => {
     mockOverdueState({ error: new Error('Network error') })
     renderPage()
     expect(screen.getByText('Something went wrong')).toBeInTheDocument()
+    expect(screen.getByText('Try again')).toBeInTheDocument()
   })
 
-  it('renders overdue chores with title, assignee, and overdue days', () => {
+  it('renders overdue chores with title, assignee, overdue days, and points', () => {
     mockOverdueState({ overdue: [overdueChore] })
     renderPage()
     expect(screen.getByText('Wash Dishes')).toBeInTheDocument()
     expect(screen.getAllByText('Alice').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Overdue 1 days')).toBeInTheDocument()
+    expect(screen.getByText('10 pts')).toBeInTheDocument()
   })
 
   it('opens the cancel modal with penalty defaulted to the chore points', () => {
