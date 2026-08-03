@@ -13,7 +13,7 @@ export function localDateStr(date: Date, timezone: string): string {
   return `${get('year')}-${get('month')}-${get('day')}`
 }
 
-function localTime(date: Date, timezone: string): { hour: number; minute: number } {
+export function localTime(date: Date, timezone: string): { hour: number; minute: number } {
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: timezone,
     hour: '2-digit',

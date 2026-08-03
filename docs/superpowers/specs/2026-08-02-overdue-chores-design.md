@@ -52,8 +52,8 @@ Schema push is handled by the existing `prisma db push --accept-data-loss` in th
 New `backend/src/services/overdue.service.ts` and `backend/src/routes/overdue.routes.ts`, mounted at `/api/overdue` in `backend/src/routes/index.ts`. All routes require `authenticate` + `authorize('PARENT')`. Request bodies validated via a new `backend/src/schemas/overdue.schema.ts` (Zod).
 
 **`GET /api/overdue`** — `listOverdue()`
-- Queries both tables for `status: 'PENDING'` AND `dueDate < startOfTodayUtc`, ordering by `dueDate asc`.
-- The list's "overdue" boundary is the **UTC** start of today, matching how the rest of the app stores/compares dates (the app is entirely UTC-based; see Section 3 for why the *notification* timing instead uses `NOTIFY_TIMEZONE`). Around midnight UTC vs CET, a chore may flip to overdue in the list an hour or two before its 8am notification — this is expected, not a bug.
+- Queries both tables for `status: 'PENDING'` AND `dueDate < startOfTodayInTz(NOTIFY_TIMEZONE)`, ordering by `dueDate asc`.
+- The list's "overdue" boundary is the start of today in `NOTIFY_TIMEZONE` — the same timezone the notification sweep uses for its overdue decision — so the list and the morning notification always agree on what counts as overdue (see Section 3).
 - Returns the same combined shape `assignmentService.getAll` produces today: `{ id, type: 'REGULAR'|'RECURRING', choreTemplateId, assignedToId, dueDate (YYYY-MM-DD), status, completedAt, pointsAwarded, dueNotifiedAt, overdueNotifiedAt, notes, createdAt, template, assignedTo }`.
 - Does **not** call `generateOccurrences()` — the overdue list reflects what already exists (consistent with the app's lazy generation; a recurring occurrence is only overdue if it was generated and not completed).
 

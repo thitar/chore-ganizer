@@ -101,9 +101,16 @@ describe('POST /api/overdue/reschedule', () => {
     cleanupIds.push(id)
 
     const res = await request(app).post(`${BASE}/reschedule`).set('Cookie', parentCookies)
-      .send({ id, dueDate: '2026-08-20' })
+      .send({ id, type: 'REGULAR', dueDate: '2026-08-20' })
     expect(res.status).toBe(200)
     expect(res.body.data.dueDate).toContain('2026-08-20')
+  })
+
+  it('returns 400 when type is missing', async () => {
+    const res = await request(app).post(`${BASE}/reschedule`).set('Cookie', parentCookies)
+      .send({ id: 1, dueDate: '2026-08-20' })
+    expect(res.status).toBe(400)
+    expect(res.body.error.code).toBe('VALIDATION_ERROR')
   })
 
   it('returns 400 with invalid due date', async () => {

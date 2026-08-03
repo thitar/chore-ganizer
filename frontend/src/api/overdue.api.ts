@@ -37,6 +37,6 @@ export async function cancelOverdue(
 }
 
 export async function rescheduleOverdue(id: number, dueDate: string): Promise<{ id: number; dueDate: string; status: string }> {
-  const response = await api.post('/reschedule', { id, dueDate })
+  const response = await api.post('/reschedule', { id, type: 'REGULAR', dueDate })
   return response.data.data
 }

@@ -8,5 +8,6 @@ export const cancelOverdueSchema = z.object({
 
 export const rescheduleOverdueSchema = z.object({
   id: z.number().int().positive('Chore ID is required'),
+  type: z.literal('REGULAR'),
   dueDate: z.string().refine((val) => !isNaN(Date.parse(val)), 'Valid due date is required'),
 })

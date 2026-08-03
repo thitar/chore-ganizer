@@ -53,7 +53,7 @@ For a new production database, uncomment and replace all three required `BOOTSTR
 | `RATE_LIMIT_MAX` | Optional | `300` | Max requests per 15-minute window for the general API rate limiter (`backend/src/middleware/rateLimiter.ts`), mounted on all of `/api`. |
 | `AUTH_RATE_LIMIT_MAX` | Optional | `10` | Max requests per 15-minute window for the stricter auth rate limiter (`POST /api/auth/login`). Raise this for e2e/load-testing runs that legitimately log in many times in one window — see `AGENTS.md`'s Testing Patterns. |
 | `NTFY_BASE_URL` | Optional | unset (notifications disabled) | Base URL of an ntfy server (e.g. `https://ntfy.sh`). Unset = notifications silently no-op, logged once at startup. |
-| `NOTIFY_TIMEZONE` | Optional | `Europe/Oslo` | IANA timezone (CET/CEST) used to compute the 8am overdue-notification hour and "today" for overdue detection. The overdue list itself uses UTC date boundaries; only the notification timing uses this timezone. |
+| `NOTIFY_TIMEZONE` | Optional | `Europe/Oslo` | IANA timezone (CET/CEST) used to compute "today" for overdue detection and the 8am overdue-notification hour. A chore is overdue once its due date falls before today in this timezone. |
 | `NOTIFY_OVERDUE_HOUR` | Optional | `08:00` | Local 24-hour `HH:MM` at/after which the scheduled overdue sweep fires its ntfy pushes (the morning after a chore's due date). |
 | `SMTP_HOST` | Optional | empty (password recovery disabled) | SMTP server hostname for password reset emails (e.g. `smtp.gmail.com`). All five SMTP vars must be set to enable password recovery. |
 | `SMTP_PORT` | Optional | `465` | SMTP server port. Use `465` for SSL or `587` for STARTTLS. |

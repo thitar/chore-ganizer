@@ -1,5 +1,7 @@
 import { prisma } from '../config/prisma'
 import { AppError } from '../middleware/errorHandler'
+import { getOverdueConfig } from './notification.service'
+import { localTime } from './overdue.notification.service'
 
 const ASSIGN_INCLUDE = {
   template: { select: { id: true, title: true, points: true, category: true } },
@@ -15,13 +17,15 @@ const OCCURRENCE_INCLUDE = {
   assignedTo: { select: { id: true, name: true, color: true, ntfyTopic: true } },
 } as const
 
-function startOfTodayUtc(): Date {
-  const now = new Date()
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+function startOfTodayInTz(now: Date, timezone: string): Date {
+  const { hour, minute } = localTime(now, timezone)
+  return new Date(
+    now.getTime() - ((hour * 60 + minute) * 60 + now.getUTCSeconds()) * 1000 - now.getUTCMilliseconds()
+  )
 }
 
-export async function listOverdue() {
-  const before = startOfTodayUtc()
+export async function listOverdue(now = new Date()) {
+  const before = startOfTodayInTz(now, getOverdueConfig().timezone)
   const [assignments, occurrences] = await Promise.all([
     prisma.choreAssignment.findMany({
       where: { status: 'PENDING', dueDate: { lt: before } },
@@ -94,14 +98,15 @@ async function cancelAssignment(id: number, penalty: number) {
   if (row.status !== 'PENDING') throw new AppError('Only pending chores can be cancelled', 409)
 
   return prisma.$transaction(async (tx) => {
-    await tx.choreAssignment.update({
-      where: { id },
+    const { count } = await tx.choreAssignment.updateMany({
+      where: { id, status: 'PENDING' },
       data: {
         status: 'CANCELLED',
         cancelledAt: new Date(),
         penaltyPoints: penalty > 0 ? penalty : null,
       },
     })
+    if (count === 0) throw new AppError('Only pending chores can be cancelled', 409)
     if (penalty > 0) {
       await tx.pointLog.create({
         data: {
@@ -125,14 +130,15 @@ async function cancelOccurrence(id: number, penalty: number) {
   if (row.status !== 'PENDING') throw new AppError('Only pending chores can be cancelled', 409)
 
   return prisma.$transaction(async (tx) => {
-    await tx.recurringOccurrence.update({
-      where: { id },
+    const { count } = await tx.recurringOccurrence.updateMany({
+      where: { id, status: 'PENDING' },
       data: {
         status: 'CANCELLED',
         cancelledAt: new Date(),
         penaltyPoints: penalty > 0 ? penalty : null,
       },
     })
+    if (count === 0) throw new AppError('Only pending chores can be cancelled', 409)
     if (penalty > 0) {
       await tx.pointLog.create({
         data: {
@@ -147,17 +153,22 @@ async function cancelOccurrence(id: number, penalty: number) {
   })
 }
 
-export async function reschedule(data: { id: number; dueDate: string }) {
+export async function reschedule(data: { id: number; type: 'REGULAR' | 'RECURRING'; dueDate: string }) {
+  if (data.type !== 'REGULAR') throw new AppError('Only regular chores can be rescheduled', 400)
+
   const row = await prisma.choreAssignment.findUnique({ where: { id: data.id } })
   if (!row) throw new AppError('Assignment not found', 404)
   if (row.status !== 'PENDING') throw new AppError('Only pending chores can be rescheduled', 409)
 
-  return prisma.choreAssignment.update({
-    where: { id: data.id },
+  const { count } = await prisma.choreAssignment.updateMany({
+    where: { id: data.id, status: 'PENDING' },
     data: {
       dueDate: new Date(data.dueDate),
       dueNotifiedAt: null,
       overdueNotifiedAt: null,
     },
   })
+  if (count === 0) throw new AppError('Only pending chores can be rescheduled', 409)
+
+  return prisma.choreAssignment.findUnique({ where: { id: data.id } })
 }
