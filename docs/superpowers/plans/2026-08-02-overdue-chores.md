@@ -1326,6 +1326,7 @@ export function useOverdue() {
       overdueApi.cancelOverdue(id, type, penalty),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['overdue'] })
+      queryClient.invalidateQueries({ queryKey: ['assignments'] })
       if ((data.penaltyPoints ?? 0) > 0) {
         queryClient.invalidateQueries({ queryKey: ['points'] })
         queryClient.invalidateQueries({ queryKey: ['points', 'gamification'] })
@@ -2002,6 +2003,7 @@ describe('useOverdue', () => {
     })
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['overdue'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['assignments'] })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['points'] })
   })
 
@@ -2017,6 +2019,7 @@ describe('useOverdue', () => {
     })
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['overdue'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['assignments'] })
     expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['points'] })
   })
 })
