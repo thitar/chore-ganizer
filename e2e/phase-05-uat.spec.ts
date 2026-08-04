@@ -171,6 +171,11 @@ test.describe('Phase 5 UAT — Points + Calendar', () => {
     await page.click('a:has-text("Calendar")');
     await page.waitForSelector('h2');
 
+    // Wait for the assignments API response to paint pills before counting;
+    // the h2 renders before that data arrives, so counting right after it
+    // is a race (flaked 1/4 runs).
+    await page.waitForSelector('text=Make Bed, text=Take Out Trash', { timeout: 10000 });
+
     // The grid should have at least one cell with a colored pill
     // Pills show template title text (e.g., "Make Bed")
     const makeBedPills = await page.locator('text=Make Bed').count();
