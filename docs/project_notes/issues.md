@@ -12,6 +12,21 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-08-08 — Chore template descriptions shown on dashboard + calendar popup (v3.3.12)
+
+- **Status**: Completed
+- **Description**: Children couldn't see what a chore entailed — only the title rendered. Backend now includes `template.description` in the assignment response (`assignment.service.ts` selects in create/getAll/complete/uncomplete), and the frontend renders it under each title on the dashboard's Upcoming Chores list and in the calendar's day-detail dialog (only when present). Version bumped 3.3.11 → 3.3.12.
+- **Verification**: backend 331/331, frontend 182/182, both `tsc --noEmit` clean; new tests in `assignment.service.test.ts`, `DashboardPage.test.tsx`, `CalendarPage.test.tsx` written test-first.
+- **URL**: pending
+
+### 2026-08-03 — Overdue chore management shipped and merged as v3.3.5 (PR #188)
+
+- **Status**: Completed — merged to main as `223ea27`
+- **Description**: Parent-only overdue management. New `/overdue` page lists `PENDING` chores whose due date falls before today in `NOTIFY_TIMEZONE`, with Cancel (optional points penalty) and Reschedule (one-off chores only) actions. Backend: `GET/POST /api/overdue` (+ `/cancel`, `/reschedule`) behind `authenticate` + `authorize('PARENT')`; `CANCELLED` status with `cancelledAt`/`penaltyPoints`/`overdueNotifiedAt` columns; negative `PENALTY` `PointLog` (lifetimePoints cache deliberately untouched — only positive writes increment it); 5-minute in-process overdue-notification sweep (`overdue.notification.service.ts`) deduped via `overdueNotifiedAt`, pushing to the child + every parent at/after `NOTIFY_OVERDUE_HOUR` in `NOTIFY_TIMEZONE` (new env vars). Spec: `docs/superpowers/specs/2026-08-02-overdue-chores-design.md`.
+- **Review hardening (pre-merge, same PR)**: three findings fixed before merge — (1) cancel/reschedule updates guard `status: 'PENDING'` via `updateMany` + affected-count check, closing a TOCTOU race that could double-apply a penalty; (2) `reschedule` requires `type: 'REGULAR'` (Zod literal + service guard) so a `RecurringOccurrence` id can't silently reschedule an unrelated assignment; (3) `listOverdue()` uses the `NOTIFY_TIMEZONE` start-of-day boundary instead of UTC so the list and the notification sweep agree on what's overdue.
+- **Verification**: backend 330/330, frontend 180/180, both `tsc --noEmit` clean; e2e `overdue.spec.ts` added. Version bumped 3.3.4 → 3.3.5 (`CHANGELOG.md`, both `package.json`, `.env.example`) per `AGENTS.md`.
+- **URL**: https://github.com/thitar/chore-ganizer/pull/188
+
 ### 2026-07-31 — Cleared CodeQL findings from PR #174 test harness
 
 - **Status**: Completed
@@ -226,5 +241,3 @@ Date-ordered log of completed work and in-progress tickets.
 - **Description**: Independent third-pass review of PR #146 (M2 "The Game") by Hermes. Reviewed gamification/csrf/points/auth paths + full 44-file diff. Findings: 2 High (per-completion full stats recompute in `awardBadges`; duplicate streak/lifetime queries in read path — shared root cause: gamification state recomputed from history instead of incrementally cached), 4 Medium (CSRF cookie set on every response; `SESSION_SECRET||'dev-secret'` fallback; fragile per-instance CSRF interceptor; hardcoded LEVEL_THRESHOLDS/BADGE_CATALOG), 3 Low (role-string literals; CSRF disabled in tests = no integration coverage; CodeQL literal-cookie hack). Verified fine: `dueDate` indexed, `GamificationMoments` shows all new badges (prior WR-05 resolved), P2002 handling, streak caching, route layering, schema constraints. Full report: `.planning/reviews/PR146-REVIEW-3.md`.
 - **Decision ref**: PR146-REVIEW-3
 - **Notes**: Read-only; no code changed. Findings closed out across the entries above it: 2026-07-09 (SESSION_SECRET fail-fast, MyChoresPage duplicate-key, awardBadges short-circuit, apiClient CSRF consolidation, CSRF middleware test coverage, CodeQL literal-cookie doc) and 2026-07-10 (High #1/#2 fully closed via the `lifetimePoints` cache, PR #150). The CSRF-cookie-on-every-response Medium finding was verified factually wrong (code already guards on it). Role-string literals and hardcoded game config were judged YAGNI/pre-existing-pattern and intentionally left as-is.
-
-- 2026-08-02: Overdue chore management (v3.3.5) — parent-only /overdue page, CANCELLED status + penaltyPoints/cancelledAt/overdueNotifiedAt columns, PENALTY PointLog type, 5-min overdue notification sweep (NOTIFY_TIMEZONE / NOTIFY_OVERDUE_HOUR env), spec in docs/superpowers/specs/2026-08-02-overdue-chores-design.md.

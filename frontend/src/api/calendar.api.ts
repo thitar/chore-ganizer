@@ -15,6 +15,7 @@ export interface CalendarAssignment {
     title: string
     points: number
     category: string | null
+    description: string | null
   }
   assignedTo: {
     id: number

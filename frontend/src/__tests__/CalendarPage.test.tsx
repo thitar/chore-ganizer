@@ -149,6 +149,23 @@ describe('CalendarPage', () => {
     expect(within(dialog).getByText('10 pts')).toBeInTheDocument()
   })
 
+  it('shows the template description in the selected-date dialog', () => {
+    mockCalendarState({
+      data: [
+        {
+          ...defaultAssignments[0],
+          template: { ...defaultAssignments[0].template, description: 'Scrub and rinse every dish.' },
+        },
+      ],
+    })
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'View chores for June 15, 2026' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Chores for June 15, 2026' })
+    expect(within(dialog).getByText('Scrub and rinse every dish.')).toBeInTheDocument()
+  })
+
   it('closes the selected-date dialog', () => {
     renderPage()
     const trigger = screen.getByRole('button', { name: 'View chores for June 15, 2026' })

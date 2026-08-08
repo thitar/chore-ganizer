@@ -27,7 +27,7 @@ export async function create(data: {
   const enriched = await prisma.choreAssignment.findUnique({
     where: { id: created.id },
     include: {
-      template: { select: { id: true, title: true, points: true, category: true } },
+      template: { select: { id: true, title: true, points: true, category: true, description: true } },
       assignedTo: { select: { id: true, name: true, color: true, ntfyTopic: true } },
     },
   })
@@ -68,7 +68,7 @@ export async function getAll(userId: number, role: string, fromStr?: string, toS
     prisma.choreAssignment.findMany({
       where,
       include: {
-        template: { select: { id: true, title: true, points: true, category: true } },
+        template: { select: { id: true, title: true, points: true, category: true, description: true } },
         assignedTo: { select: { id: true, name: true, color: true, ntfyTopic: true } },
       },
       orderBy: { dueDate: 'asc' },
@@ -78,7 +78,7 @@ export async function getAll(userId: number, role: string, fromStr?: string, toS
       include: {
         chore: {
           include: {
-            template: { select: { id: true, title: true, points: true, category: true } },
+            template: { select: { id: true, title: true, points: true, category: true, description: true } },
           },
         },
         assignedTo: { select: { id: true, name: true, color: true, ntfyTopic: true } },
@@ -178,7 +178,7 @@ export async function complete(assignmentId: number, userId: number) {
     return tx.choreAssignment.findUnique({
       where: { id: assignmentId },
       include: {
-        template: { select: { id: true, title: true, points: true, category: true } },
+        template: { select: { id: true, title: true, points: true, category: true, description: true } },
         assignedTo: { select: { id: true, name: true, color: true, ntfyTopic: true } },
       },
     })
@@ -219,7 +219,7 @@ export async function uncomplete(assignmentId: number) {
     return tx.choreAssignment.findUnique({
       where: { id: assignmentId },
       include: {
-        template: { select: { id: true, title: true, points: true, category: true } },
+        template: { select: { id: true, title: true, points: true, category: true, description: true } },
         assignedTo: { select: { id: true, name: true, color: true, ntfyTopic: true } },
       },
     })

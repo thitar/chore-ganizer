@@ -5,6 +5,11 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.12] - 2026-08-08
+
+### Added
+- Chore template descriptions now show on the dashboard's Upcoming Chores list and in the calendar's day-detail dialog, so children can see what each chore entails
+
 ## [3.3.11] - 2026-08-04
 
 ### Changed

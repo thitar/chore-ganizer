@@ -129,6 +129,9 @@ export function DashboardPage() {
                   <Card key={assignmentKey(assignment)} className="flex items-center justify-between">
                     <div>
                       <div className="font-bold text-zinc-100">{assignment.template.title}</div>
+                      {assignment.template.description && (
+                        <div className="mt-0.5 text-sm text-zinc-500">{assignment.template.description}</div>
+                      )}
                       <div className="text-sm text-zinc-400">
                         {assignment.template.category && `${assignment.template.category} · `}
                         <span className={isOverdue ? 'font-bold text-rose-400' : ''}>

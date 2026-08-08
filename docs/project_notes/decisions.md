@@ -94,6 +94,26 @@ Date-ordered Architectural Decision Records (ADRs).
 - ✅ Easy to mock in tests (one module to spy on, not two)
 - ❌ Adds one re-export line per config value used externally
 
+### ADR-010: Overdue Detection Uses NOTIFY_TIMEZONE Everywhere (2026-08-03)
+
+**Context:**
+- v3.3.5's overdue feature originally specced the overdue **list** boundary as the UTC start-of-day, while the **notification** sweep computed "today" in `NOTIFY_TIMEZONE` (default `Europe/Oslo`) with an 8am send-hour gate. Reviewed pre-merge, this asymmetry created a multi-hour evening window where a chore was "overdue" for notification purposes but not yet showing in the parent's list.
+- The app stores `dueDate` as UTC-midnight `DateTime` values; the family's actual timezone is CET/CEST.
+
+**Decision:**
+- Use the `NOTIFY_TIMEZONE` start-of-day boundary for **both** the overdue list (`listOverdue()` computes `startOfTodayInTz`) and the notification sweep's overdue decision. The sweep's send-hour gate stays `NOTIFY_OVERDUE_HOUR` in the same timezone. A chore is overdue once its local due date in `NOTIFY_TIMEZONE` is strictly before today's local date.
+- `listOverdue(now = new Date())` threads the instant as an optional parameter so the boundary is unit-testable, mirroring `notifyOverdue(now)`.
+
+**Alternatives Considered:**
+- Keep the UTC list boundary as originally specced → Rejected: the list and push notifications disagreed on what was overdue for several hours each evening — confusing and hard to explain to users.
+- Use a server-local (non-configurable) timezone → Rejected: `NOTIFY_TIMEZONE` already exists as the operator-facing knob; reusing it avoids a second timezone setting.
+
+**Consequences:**
+- ✅ List and notifications always agree on overdue status.
+- ✅ One operator-facing timezone knob for the whole overdue feature.
+- ✅ Boundary is unit-tested (Europe/Oslo vs UTC start-of-day, `overdue.service.test.ts`).
+- ❌ The overdue boundary is no longer UTC-aligned; a chore whose UTC `dueDate` is "yesterday" can show as not-yet-overdue until the family's local date rolls past it — intended, since it matches the notification behavior.
+
 ### ADR-009: POST /api/auth/login Returns 400 (Not 401) for an Empty/Malformed Body (2026-07-13)
 
 **Context:**

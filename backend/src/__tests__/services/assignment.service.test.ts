@@ -75,7 +75,7 @@ describe('assignmentService.create', () => {
     expect(prisma.choreAssignment.findUnique).toHaveBeenCalledWith({
       where: { id: 1 },
       include: {
-        template: { select: { id: true, title: true, points: true, category: true } },
+        template: { select: { id: true, title: true, points: true, category: true, description: true } },
         assignedTo: { select: { id: true, name: true, color: true, ntfyTopic: true } },
       },
     })
@@ -279,6 +279,36 @@ describe('assignmentService.getAll', () => {
     expect(prisma.choreAssignment.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { dueDate: { gte: new Date('2026-06-01'), lte: new Date('2026-06-30') } },
+      })
+    )
+  })
+
+  it('includes the template description in regular and recurring queries', async () => {
+    prisma.choreAssignment.findMany.mockResolvedValue([])
+    prisma.recurringOccurrence.findMany.mockResolvedValue([])
+
+    await assignmentService.getAll(1, 'PARENT')
+
+    expect(prisma.choreAssignment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          template: expect.objectContaining({
+            select: expect.objectContaining({ description: true }),
+          }),
+        }),
+      })
+    )
+    expect(prisma.recurringOccurrence.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          chore: expect.objectContaining({
+            include: expect.objectContaining({
+              template: expect.objectContaining({
+                select: expect.objectContaining({ description: true }),
+              }),
+            }),
+          }),
+        }),
       })
     )
   })
