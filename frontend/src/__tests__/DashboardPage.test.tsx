@@ -184,6 +184,40 @@ describe('DashboardPage', () => {
     expect(screen.queryByText('Not Mine')).not.toBeInTheDocument()
   })
 
+  it('shows the template description for an upcoming chore', () => {
+    const now = new Date()
+    const inTwoDays = new Date(now)
+    inTwoDays.setDate(now.getDate() + 2)
+
+    mockAssignmentsState({
+      assignments: [
+        {
+          id: 1,
+          choreTemplateId: 1,
+          assignedToId: mockUser.id,
+          dueDate: inTwoDays.toISOString(),
+          status: 'PENDING',
+          completedAt: null,
+          pointsAwarded: null,
+          notes: null,
+          createdAt: now.toISOString(),
+          template: {
+            id: 1,
+            title: 'Wash Dishes',
+            points: 5,
+            category: 'Kitchen',
+            description: 'Scrub and rinse every dish.',
+          },
+          assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+        },
+      ],
+    })
+
+    renderPage()
+
+    expect(screen.getByText('Scrub and rinse every dish.')).toBeInTheDocument()
+  })
+
   it('shows the leaderboard when entries exist', () => {
     ;(useLeaderboard as ReturnType<typeof vi.fn>).mockReturnValue({
       data: [{ user: { id: 1, name: 'Alice', color: '#10B981', role: 'CHILD' }, balance: 30 }],

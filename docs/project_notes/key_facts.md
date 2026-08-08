@@ -62,11 +62,15 @@ Full reference: [docs/OPERATIONS.md#environment-variables](../OPERATIONS.md#envi
 | `RATE_LIMIT_MAX` | General rate limiter max requests/15min (default: `300`) |
 | `AUTH_RATE_LIMIT_MAX` | Auth (login) rate limiter max requests/15min (default: `10`) |
 | `NTFY_BASE_URL` | Base URL of an ntfy server; unset = push notifications silently disabled |
+| `NOTIFY_TIMEZONE` | IANA timezone (default `Europe/Oslo`) used for overdue detection ("today") and the overdue-notification hour |
+| `NOTIFY_OVERDUE_HOUR` | Local 24-hour `HH:MM` (default `08:00`) at/after which the overdue sweep fires its ntfy pushes |
 | `BACKEND_PORT` | Backend port, used by frontend's nginx proxy config (default: `3010`) |
+| `SMTP_HOST` (+ `SMTP_PORT`/`SMTP_USER`/`SMTP_PASS`/`SMTP_FROM`) | Enables password-recovery email; all five set = enabled, unset = disabled |
+| `FRONTEND_URL` | Public frontend URL used in password-reset email links (required when SMTP configured) |
 | `VITE_API_URL` | Frontend API URL override (empty = relative/proxy) |
 | `CORS_ORIGIN` | Frontend origin for CORS (default: `http://localhost:3002`) |
 
-There is no `OVERDUE_PENALTY_*`, `SLOW_REQUEST_THRESHOLD_MS`, `COMPRESSION_ENABLED`, `ERROR_WEBHOOK_*`, or `SMTP_*` in the current backend — those were pre-rewrite features that did not carry over into the v1-rewrite.
+There is no `OVERDUE_PENALTY_*`, `SLOW_REQUEST_THRESHOLD_MS`, `COMPRESSION_ENABLED`, or `ERROR_WEBHOOK_*` in the current backend — those were pre-rewrite features that did not carry over into the v1-rewrite. Overdue-penalty configuration instead lives under `NOTIFY_TIMEZONE`/`NOTIFY_OVERDUE_HOUR` (v3.3.5); SMTP password recovery is configured via the `SMTP_*`/`FRONTEND_URL` vars above.
 
 ### Health & Observability
 
@@ -84,7 +88,7 @@ There is no `OVERDUE_PENALTY_*`, `SLOW_REQUEST_THRESHOLD_MS`, `COMPRESSION_ENABL
 
 **Backend:**
 - Unit tests: `npm test` (mocked Prisma via inline `jest.mock('../../config/prisma', ...)` per test file)
-- No integration test suite exists — no `jest.integration.config.js`, no test database, no `test:unit`/`test:integration` scripts
+- **Real-DB integration suite mixed into the same `npm test` run** (no separate `test:unit`/`test:integration` split): `backend/src/__tests__/{assignments,recurring,templates,points,users}.test.ts` and `backend/src/routes/__tests__/auth.routes.test.ts` import the real `app` + `prisma` client and hit a live SQLite `dev.db` via `supertest` (seeded users `dad@home.local` etc.). Requires the bootstrap first: `DATABASE_URL="file:./dev.db" npx prisma db push` + `npm run prisma:seed` (see `AGENTS.md` → Testing Patterns)
 
 **Frontend:**
 - Tests: `npm test` (Vitest). `src/test/setup.ts` only wires up `jest-dom` + `cleanup()` — no shared `utils.tsx` mock-data-factory helper
@@ -107,14 +111,15 @@ There is no `OVERDUE_PENALTY_*`, `SLOW_REQUEST_THRESHOLD_MS`, `COMPRESSION_ENABL
 - **ChoreAssignment** — one-off instance of a template assigned to a user
 - **RecurringChore** — recurrence rule (`frequency`, `dayOfWeek`, `dayOfMonth`) assigned to one fixed user; round-robin/mixed rotation is a deferred, unimplemented feature
 - **RecurringOccurrence** — a generated instance of a `RecurringChore` for a specific due date, generated lazily on read (`generateOccurrences()` in `assignment.service.ts`), not by a scheduled/cron background job
-- **Chore statuses**: `PENDING`, `COMPLETED`, `PARTIALLY_COMPLETE`
-- **PointLog** — append-only ledger (not `PointTransaction`). `type` values: `EARNED`, `BONUS`, `ADJUSTMENT`, `RECURRING`, `REGULAR`, `REVERSED`
-- **No pocket-money/currency conversion feature** — that, plus `OverduePenalty`, existed in pre-rewrite backend and was not carried over
+- **Chore statuses**: `PENDING`, `COMPLETED`, `PARTIALLY_COMPLETE`, `CANCELLED`
+- **PointLog** — append-only ledger (not `PointTransaction`). `type` values: `EARNED`, `BONUS`, `ADJUSTMENT`, `RECURRING`, `REGULAR`, `REVERSED`, `PENALTY`
+- **No pocket-money/currency conversion feature** — existed in pre-rewrite backend and was not carried over
+- **Overdue chores** (v3.3.5): `ChoreAssignment`/`RecurringOccurrence` gain `cancelledAt`, `penaltyPoints`, `overdueNotifiedAt`; new `CANCELLED` status. Cancelling an overdue chore optionally writes a negative `PENALTY` `PointLog` (`amount: -penalty`, set on `penaltyPoints`); `lifetimePoints` cache is unaffected (only positive writes increment it). Rescheduling clears `overdueNotifiedAt` so the morning sweep can re-notify. API: `GET/POST /api/overdue` + `/cancel`, `/reschedule`, all PARENT-only.
 - **Gamification** (v3.2.0):
   - `streakCount`/`streakComputedAt` — lazy weekly streak cache on User (re-syncs weekly)
   - `lifetimePoints`/`lifetimePointsSyncedAt` — lazy self-healing cache of `PointLog` total (backfill on first read, then incremented at positive write sites, never re-synced)
   - `UserBadge` table + `BADGE_CATALOG` in `gamification.service.ts` (8 badges total, never revoked)
-- **Push Notifications** (v3.1.0, optional): `User.ntfyTopic` + `dueNotifiedAt`/`completedNotifiedAt` timestamps; POST to ntfy.sh API; graceful noop if `NTFY_BASE_URL` unset. Test instance: ntfy server `https://ntfy.thitar.ovh`, Dad's topic `chore-dad-1a54lu` (set via `PUT /api/users/me/ntfy-topic`). `notifyChoreAssigned` fires on assignment create; `notifyDueSoon` fires on assignments `getAll` (parent loads `/assignments`)
+- **Push Notifications** (v3.1.0, optional): `User.ntfyTopic` + `dueNotifiedAt`/`overdueNotifiedAt` dedup timestamps; POST to ntfy.sh API; graceful noop if `NTFY_BASE_URL` unset. Test instance: ntfy server `https://ntfy.thitar.ovh`, Dad's topic `chore-dad-1a54lu` (set via `PUT /api/users/me/ntfy-topic`). `notifyChoreAssigned` fires on assignment create; `notifyDueSoon` fires on assignments `getAll` (parent loads `/assignments`). **Overdue sweep** (v3.3.5): a 5-minute in-process `setInterval` in `server.ts` calls `notifyOverdue()`, pushing once per overdue chore (deduped via `overdueNotifiedAt`) to the assigned child + every parent at/after `NOTIFY_OVERDUE_HOUR` in `NOTIFY_TIMEZONE`.
 
 ### Frontend-Backend Parameter Mapping
 

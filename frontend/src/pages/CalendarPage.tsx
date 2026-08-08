@@ -14,6 +14,7 @@ interface CalendarDayAssignment {
   id: number
   type: 'REGULAR' | 'RECURRING'
   title: string
+  description: string | null
   assignee: string
   color: string
   status: string
@@ -86,6 +87,7 @@ export function CalendarPage() {
         id: a.id,
         type: a.type,
         title: a.template.title,
+        description: a.template.description,
         assignee: a.assignedTo.name,
         color: a.assignedTo.color,
         status: a.status,
@@ -276,6 +278,9 @@ export function CalendarPage() {
                 {selectedDay.assignments.map((assignment) => (
                   <div key={assignmentKey(assignment)} className="rounded-lg bg-white/5 p-3">
                     <div className="font-bold text-zinc-100">{assignment.title}</div>
+                    {assignment.description && (
+                      <div className="text-sm text-zinc-500">{assignment.description}</div>
+                    )}
                     <div className="text-sm text-zinc-400">{assignment.assignee}</div>
                     <div className={assignment.status === 'COMPLETED' ? 'text-emerald-400' : 'text-amber-400'}>
                       {assignment.status === 'COMPLETED' ? 'Completed' : 'Pending'}
