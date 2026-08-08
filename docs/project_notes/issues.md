@@ -17,7 +17,7 @@ Date-ordered log of completed work and in-progress tickets.
 - **Status**: Completed
 - **Description**: Children couldn't see what a chore entailed — only the title rendered. Backend now includes `template.description` in the assignment response (`assignment.service.ts` selects in create/getAll/complete/uncomplete), and the frontend renders it under each title on the dashboard's Upcoming Chores list and in the calendar's day-detail dialog (only when present). Version bumped 3.3.11 → 3.3.12.
 - **Verification**: backend 331/331, frontend 182/182, both `tsc --noEmit` clean; new tests in `assignment.service.test.ts`, `DashboardPage.test.tsx`, `CalendarPage.test.tsx` written test-first.
-- **URL**: pending
+- **URL**: https://github.com/thitar/chore-ganizer/pull/200
 
 ### 2026-08-03 — Overdue chore management shipped and merged as v3.3.5 (PR #188)
 
