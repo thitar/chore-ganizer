@@ -171,10 +171,19 @@ test.describe('Phase 5 UAT — Points + Calendar', () => {
     await page.click('a:has-text("Calendar")');
     await page.waitForSelector('h2');
 
+    // Wait for the assignments API response to paint pills before counting;
+    // the h2 renders before that data arrives, so counting right after it
+    // is a race (flaked 1/4 runs). Playwright's text= engine doesn't treat a
+    // top-level comma as OR the way CSS does, so use .or() to wait for
+    // either pill.
+    const makeBedLocator = page.locator('text=Make Bed');
+    const trashLocator = page.locator('text=Take Out Trash');
+    await makeBedLocator.or(trashLocator).first().waitFor({ timeout: 10000 });
+
     // The grid should have at least one cell with a colored pill
     // Pills show template title text (e.g., "Make Bed")
-    const makeBedPills = await page.locator('text=Make Bed').count();
-    const trashPills = await page.locator('text=Take Out Trash').count();
+    const makeBedPills = await makeBedLocator.count();
+    const trashPills = await trashLocator.count();
     expect(makeBedPills + trashPills).toBeGreaterThan(0);
     await shot(page, '13-pills-or-empty');
   });
