@@ -14,7 +14,7 @@ Chore-Ganizer is a family chore tracker: parents create and assign chores, child
 
 **Frontend:** React 18 + TypeScript, Vite, Tailwind CSS, TanStack Query (`@tanstack/react-query`) for server state, React Router v6, Vitest + React Testing Library.
 
-**Auth:** `express-session`, in-memory `MemoryStore` (see [Auth Flow](#auth-flow) below for the session-persistence caveat), `bcrypt` for password hashing, a hand-rolled double-submit-cookie CSRF middleware (`backend/src/middleware/csrf.ts`) — not a library like `csurf`.
+**Auth:** `express-session`, persistent SQLite-backed session store (`PrismaSessionStore`, see [Auth Flow](#auth-flow) below), `bcrypt` for password hashing, a hand-rolled double-submit-cookie CSRF middleware (`backend/src/middleware/csrf.ts`) — not a library like `csurf`.
 
 ## Monorepo Layout
 
@@ -55,7 +55,7 @@ Verified against `backend/src/app.ts`:
 9. 404 handler
 10. Global error handler
 
-**History note:** `helmet`, `cors`, and `express-rate-limit` were in `backend/package.json` since the v1-rewrite but were never wired into `app.ts` — confirmed via `.planning/milestones/v1-rewrite-REQUIREMENTS.md`'s "Out of Scope" table (which has explicit reasoning for every deliberate cut, e.g. CSRF, account lockout) to be an accidental gap rather than a reasoned exclusion; fixed 2026-07-10. The in-memory session store (no persistence across restarts) predates the rewrite — a Node 25 crash workaround on the old codebase — and remains a known, deliberately undeferred gap; see `docs/OPERATIONS.md` for the tradeoff.
+**History note:** `helmet`, `cors`, and `express-rate-limit` were in `backend/package.json` since the v1-rewrite but were never wired into `app.ts` — confirmed via `.planning/milestones/v1-rewrite-REQUIREMENTS.md`'s "Out of Scope" table (which has explicit reasoning for every deliberate cut, e.g. CSRF, account lockout) to be an accidental gap rather than a reasoned exclusion; fixed 2026-07-10. The session store is now a persistent Prisma-backed `Session` table in the main DB (implemented 2026-08-08); see `docs/OPERATIONS.md` for the tradeoff that preceded it.
 
 ## Frontend Structure
 
@@ -94,7 +94,7 @@ Lifetime points (for levels) are served from `User.lifetimePoints` via `getLifet
 3. All mutating requests (`POST`/`PUT`/`PATCH`/`DELETE`) must include the `x-xsrf-token` header matching the cookie value, or the request is rejected with 403
 4. `middleware/auth.ts` → `authenticate` validates the session against the DB (`prisma.user.findUnique`); `authorize(...roles)` gates parent-only routes
 
-**Session store caveat:** `express-session` is configured with no explicit store, which means it defaults to the in-memory `MemoryStore` — sessions do **not** persist across backend restarts/redeploys, and `MemoryStore` is explicitly not recommended for production by `express-session` itself (unbounded memory growth). This works fine for the single-family/low-traffic homelab use case this app targets, but is worth knowing before assuming "logged in" survives a container restart.
+**Session store:** `express-session` is backed by `PrismaSessionStore` (`backend/src/config/sessionStore.ts`), which stores sessions in a `Session` table in the same SQLite database as the rest of the app. Sessions survive backend restarts/redeploys and are included in the existing DB backups. `rolling: true` keeps active users signed in; the default `SESSION_MAX_AGE` is 30 days; expired rows are pruned hourly by the store.
 
 **CSRF cookie literal-string rule:** `csrf.ts` sets `res.cookie('XSRF-TOKEN', ...)` with the cookie name as an inline string literal rather than the `CSRF_COOKIE` constant, specifically so CodeQL's `js/missing-token-validation` check (which only resolves literal arguments, not constant-propagated ones) recognizes this as CSRF middleware. Don't "clean this up" — see `AGENTS.md` and `docs/project_notes/bugs.md` (2026-07-08).
 

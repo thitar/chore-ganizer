@@ -157,6 +157,22 @@ Date-ordered Architectural Decision Records (ADRs).
 - ❌ A restart (deploy, crash, manual recreate) logs everyone out; already documented as expected behavior, not a defect.
 - If the app ever moves to multi-instance/horizontal scaling, this decision must be revisited first — in-memory sessions do not work across multiple backend processes.
 
+### ADR-009: Persistent SQLite-Backed Session Store — Supersedes ADR-008 (2026-08-08)
+
+**Context:**
+- ADR-008 accepted the in-memory `MemoryStore` and deferred a SQLite-backed store pending a concrete trigger: "restarts becoming frequent enough that re-logins are a real nuisance."
+- That trigger was met — the family keeps re-entering credentials on multiple devices after every redeploy.
+
+**Decision:**
+- Implement the deferred option: a `Session` table in the existing SQLite database, written by a small `PrismaSessionStore` (`backend/src/config/sessionStore.ts`) wrapping the existing Prisma client. Default `SESSION_MAX_AGE` raised from 7 to 30 days.
+- Redis remains rejected (no new infrastructure for a single-instance family app). Multi-instance/horizontal scaling would still require revisiting the store choice.
+
+**Consequences:**
+- ✅ Sessions survive backend restarts/redeploys; each device logs in once and stays in for up to 30 idle days (`rolling: true`).
+- ✅ Sessions are backed up with the main DB by the existing backup sidecar — no new failure modes or containers.
+- ✅ No new dependencies; the Prisma client and SQLite were already present. The `Session` table is created automatically by the deploy-time `prisma db push`.
+- ⚠️ Every session-touching request now performs a SQLite write instead of an in-memory one; negligible at family scale.
+
 ### ADR-007: `PARTIALLY_COMPLETE` Status — Documented, Deferred to Future Development (2026-07-13)
 
 **Context:**
