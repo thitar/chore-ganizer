@@ -8,6 +8,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler'
 import { csrfProtection } from './middleware/csrf'
 import { generalLimiter } from './middleware/rateLimiter'
 import { isSmtpConfigured } from './config/smtp'
+import { PrismaSessionStore } from './config/sessionStore'
 
 const app = express()
 
@@ -69,6 +70,7 @@ if (isSmtpConfigured && !frontendUrl) {
 
 app.use(session({
   secret: sessionSecret,
+  store: new PrismaSessionStore(),
   resave: false,
   saveUninitialized: false,
   rolling: true,
