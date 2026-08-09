@@ -42,7 +42,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
 }
 const sessionSecret = process.env.SESSION_SECRET || 'dev-secret'
 const raw = Number(process.env.SESSION_MAX_AGE)
-const sessionMaxAge = (!process.env.SESSION_MAX_AGE || isNaN(raw) || raw <= 0) ? 604800000 : raw
+const sessionMaxAge = (!process.env.SESSION_MAX_AGE || isNaN(raw) || raw <= 0) ? 2592000000 : raw
 
 const rawSameSite = process.env.SAMESITE_POLICY || 'strict'
 const validSameSite = ['strict', 'lax', 'none']
