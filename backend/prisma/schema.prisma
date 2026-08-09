@@ -154,3 +154,14 @@ model GameHighScore {
   @@unique([userId, game])
   @@index([game, score])
 }
+
+model Session {
+  id        String   @id @default(cuid())
+  sid       String   @unique
+  data      String   // JSON-serialized express-session session
+  expires   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([expires])
+}
