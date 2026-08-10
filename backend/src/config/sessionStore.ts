@@ -58,6 +58,9 @@ export class PrismaSessionStore extends session.Store {
       .catch(callback)
   }
 
+  // Callback accepts an error even though @types/express-session declares
+  // Store.touch's as `() => void` — the runtime calls it as `(err) => {}` and
+  // we rely on that to surface write failures (don't "clean up" to `() => void`).
   touch(sid: string, sessionData: session.SessionData, callback?: (err?: any) => void): void {
     const expires = sessionData.cookie?.expires ?? new Date(Date.now() + DEFAULT_SESSION_EXPIRY_MS)
     prisma.session

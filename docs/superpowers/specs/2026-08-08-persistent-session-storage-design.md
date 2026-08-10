@@ -41,10 +41,10 @@ The table is created automatically on next deploy by the existing `npx prisma db
 
 New file `backend/src/config/sessionStore.ts` exporting `PrismaSessionStore`, a class extending `express-session`'s `Store`:
 
-- `get(sid, cb)` — `findUnique` by `sid`; missing or expired row → `cb(null, null)`; otherwise `cb(null, JSON.parse(data))`. Expired rows are also deleted lazily here.
-- `set(sid, session, cb)` — upsert by `sid`: `JSON.stringify(session)` into `data`, `expires` from `session.cookie.expires` (fallback to a far-future date if absent, since this app always sets `maxAge`).
+- `get(sid, cb)` — `findUnique` by `sid`; missing or expired row → `cb(null, null)`; otherwise `cb(null, JSON.parse(data))`. Expired rows are **not** deleted here — lazily deleting would race a concurrent `touch()`/`set()` renewal (a request straddling the expiry instant could destroy a just-renewed session); the hourly prune handles cleanup instead. Stored `data` that fails `JSON.parse` (corrupted row) is treated as absent and the row removed, scoped to `sid` + observed `expires` so a concurrent renewal isn't deleted.
+- `set(sid, session, cb)` — upsert by `sid`: `JSON.stringify(session)` into `data`, `expires` from `session.cookie.expires` (fallback to the 30-day `SESSION_MAX_AGE` default if absent, since this app always sets `maxAge`).
 - `destroy(sid, cb)` — `deleteMany` by `sid`.
-- `touch(sid, session, cb)` — update `expires` only (no re-serialization), used by `rolling: true` on every unmodified request.
+- `touch(sid, session, cb)` — update `expires` only (no re-serialization), used by `rolling: true` on every unmodified request. DB errors are logged and propagated to the callback so rolling renewal can't silently diverge from the DB row's expiry.
 - `all(cb)` / `clear(cb)` / `length(cb)` — implemented for completeness (used by `req.sessionStore` introspection).
 - Cleanup — an hourly `setInterval` running `deleteMany({ where: { expires: { lt: new Date() } } })`, `.unref()`'d so it never blocks process exit or Jest, wrapped in try/catch with a logged warning on failure.
 
