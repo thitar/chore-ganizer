@@ -8,6 +8,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler'
 import { csrfProtection } from './middleware/csrf'
 import { generalLimiter } from './middleware/rateLimiter'
 import { isSmtpConfigured } from './config/smtp'
+import { PrismaSessionStore } from './config/sessionStore'
 
 const app = express()
 
@@ -41,7 +42,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
 }
 const sessionSecret = process.env.SESSION_SECRET || 'dev-secret'
 const raw = Number(process.env.SESSION_MAX_AGE)
-const sessionMaxAge = (!process.env.SESSION_MAX_AGE || isNaN(raw) || raw <= 0) ? 604800000 : raw
+const sessionMaxAge = (!process.env.SESSION_MAX_AGE || isNaN(raw) || raw <= 0) ? 2592000000 : raw
 
 const rawSameSite = process.env.SAMESITE_POLICY || 'strict'
 const validSameSite = ['strict', 'lax', 'none']
@@ -69,6 +70,7 @@ if (isSmtpConfigured && !frontendUrl) {
 
 app.use(session({
   secret: sessionSecret,
+  store: new PrismaSessionStore(),
   resave: false,
   saveUninitialized: false,
   rolling: true,

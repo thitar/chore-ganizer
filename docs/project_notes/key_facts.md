@@ -14,7 +14,7 @@ Store secrets in `.env` (excluded via `.gitignore`) or a password manager.
 
 - **Name**: Chore-Ganizer
 - **Stack**: Express.js + TypeScript / React 18 + TypeScript / SQLite / Prisma
-- **Auth**: Express sessions (in-memory `MemoryStore` — no SQLite/Redis session store configured; sessions do not survive a backend restart), bcrypt, double-submit-cookie CSRF tokens
+- **Auth**: Express sessions (persistent SQLite-backed store via `PrismaSessionStore` — sessions survive backend restarts and are backed up with the main DB; default lifetime 30 days), bcrypt, double-submit-cookie CSRF tokens
 - **Roles**: `PARENT`, `CHILD`
 
 ### Local Development

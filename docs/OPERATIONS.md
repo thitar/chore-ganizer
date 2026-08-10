@@ -47,7 +47,7 @@ For a new production database, uncomment and replace all three required `BOOTSTR
 | `BACKEND_PORT` | Optional | `3010` | Used by the frontend's nginx config (`envsubst` at container start) to know where to proxy `/api/*`. |
 | `PUID` / `PGID` | Optional | `1001` | Host UID/GID the backend entrypoint chowns `DATA_DIR` to, for bind-mount file ownership. |
 | `NODE_ENV` | Optional | `production` | Also gates the `SESSION_SECRET` fail-fast check and secure-cookie defaults. |
-| `SESSION_MAX_AGE` | Optional | `604800000` (7 days, ms) | Session cookie max age. Invalid/non-positive values silently fall back to the default (`app.ts`). |
+| `SESSION_MAX_AGE` | Optional | `2592000000` (30 days, ms) | Session cookie max age. Invalid/non-positive values silently fall back to the default (`app.ts`). |
 | `SAMESITE_POLICY` | Optional | `strict` | Controls the session cookie only; the CSRF cookie remains `Strict`. Values: `strict` \| `lax` \| `none`. Any other value silently falls back to `strict`. `none` requires `SECURE_COOKIES=true`; the invalid combination fails startup. |
 | `SECURE_COOKIES` | Optional | `false` (`true` when `NODE_ENV=production` unless explicitly set to `false`) | Marks session/CSRF cookies `Secure` — requires HTTPS. |
 | `RATE_LIMIT_MAX` | Optional | `300` | Max requests per 15-minute window for the general API rate limiter (`backend/src/middleware/rateLimiter.ts`), mounted on all of `/api`. |
@@ -132,7 +132,7 @@ The backend fails fast instead of silently falling back to the insecure dev secr
 Historically caused by a frontend API module using `axios.create()` directly instead of the shared `createApiClient()` — new instances don't inherit the CSRF-token interceptor. If you add a new `frontend/src/api/*.ts` file, it must go through `createApiClient()` (see `docs/project_notes/bugs.md`, 2026-07-08).
 
 **Sessions don't survive a backend restart**
-Expected with the current setup — sessions use `express-session`'s default in-memory `MemoryStore` (no SQLite/Redis session store is configured), so a container restart logs everyone out. See `ARCHITECTURE.md`'s Auth Flow section.
+Expected if sessions are wiped mid-day — this used to happen because `express-session` ran on the in-memory `MemoryStore`, so a container restart logged everyone out. Sessions are now persisted in a `Session` table in the main DB (`PrismaSessionStore`), so only explicit logouts or a 30-day idle period end a session. If sessions still seem to drop, check that the backend actually restarted and that the `Session` table exists (`npx prisma db push`).
 
 **`prisma validate` / container fails to start after a schema merge**
 Check for accidentally duplicated field declarations in `schema.prisma` (has happened once after a merge — see `docs/project_notes/bugs.md`, 2026-07-04). Run `npx prisma validate` locally before pushing any schema change.

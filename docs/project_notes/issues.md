@@ -12,6 +12,16 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-08-09 — Implemented persistent session storage (ADR-009)
+
+- **Status**: Completed
+- **Description**: The design spec (`docs/superpowers/specs/2026-08-08-persistent-session-storage-design.md`) and implementation plan (`docs/superpowers/plans/2026-08-08-persistent-session-storage.md`) were written 2026-08-08 but never executed — the app was still running `express-session`'s default in-memory `MemoryStore`, so every backend restart/redeploy logged the whole family out. Implemented the plan on an isolated worktree (`persistent-session-storage`): added a `Session` model to `schema.prisma` and a `PrismaSessionStore` (`backend/src/config/sessionStore.ts`) so sessions persist in the main SQLite DB, wired it into `app.ts`'s session middleware, and raised the default `SESSION_MAX_AGE` from 7 to 30 days (`app.ts`, `docker-compose.yml`).
+- **Verification**: Backend 343/343 tests pass (was 331; +11 store unit tests +1 restart-survival integration test `backend/src/__tests__/auth.session.test.ts`), `npm run build` clean. Integration test proves a session written by one app instance replays through a freshly-mounted app instance over the same DB (simulated restart).
+- **Notes**: Supersedes ADR-008's deferral. Needs a live deploy (`docker compose up -d --build backend` + `.env` `SESSION_MAX_AGE` update optional) to take effect — deployment is manual per `docs/OPERATIONS.md`.
+- **URL**: local — branch `persistent-session-storage`
+
+---
+
 ### 2026-08-08 — Chore template descriptions shown on dashboard + calendar popup (v3.3.12)
 
 - **Status**: Completed
