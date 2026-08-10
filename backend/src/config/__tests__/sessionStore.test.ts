@@ -63,7 +63,7 @@ describe('PrismaSessionStore.get', () => {
     })
   })
 
-  it('returns null and deletes an expired row', async () => {
+  it('returns null for an expired row without deleting it (hourly prune handles cleanup)', async () => {
     prisma.session.findUnique.mockResolvedValue(row({ expires: new Date(Date.now() - 1000) }))
     const store = new PrismaSessionStore()
     await new Promise<void>((resolve, reject) => {
@@ -73,7 +73,38 @@ describe('PrismaSessionStore.get', () => {
         resolve()
       })
     })
-    expect(prisma.session.deleteMany).toHaveBeenCalledWith({ where: { sid: 'abc' } })
+    expect(prisma.session.deleteMany).not.toHaveBeenCalled()
+  })
+
+  it('treats a corrupted row as absent and removes it', async () => {
+    prisma.session.findUnique.mockResolvedValue(row({ data: 'not-json{{{' }))
+    const store = new PrismaSessionStore()
+    await new Promise<void>((resolve, reject) => {
+      store.get('abc', (err, sess) => {
+        if (err) return reject(err)
+        expect(sess).toBeNull()
+        resolve()
+      })
+    })
+    expect(prisma.session.deleteMany).toHaveBeenCalledWith({
+      where: { sid: 'abc', expires: expect.any(Date) },
+    })
+  })
+
+  it('propagates a lookup error to the callback', async () => {
+    const lookupErr = new Error('lookup failed')
+    prisma.session.findUnique.mockRejectedValue(lookupErr)
+    const store = new PrismaSessionStore()
+    await new Promise<void>((resolve, reject) => {
+      store.get('abc', (err) => {
+        try {
+          expect(err).toBe(lookupErr)
+          resolve()
+        } catch (e) {
+          reject(e)
+        }
+      })
+    })
   })
 })
 
@@ -95,14 +126,16 @@ describe('PrismaSessionStore.set', () => {
     })
   })
 
-  it('uses a far-future expiry when the session cookie has none', async () => {
+  it('uses the default 30-day expiry when the session cookie has none', async () => {
     const sessionData = { cookie: { originalMaxAge: null }, userId: 1 }
     const store = new PrismaSessionStore()
     await new Promise<void>((resolve, reject) => {
       store.set('abc', sessionData, (err) => (err ? reject(err) : resolve()))
     })
     const call = prisma.session.upsert.mock.calls[0][0]
-    expect(call.create.expires.getTime()).toBeGreaterThan(Date.now() + 300 * 24 * 60 * 60 * 1000)
+    const target = Date.now() + 30 * 24 * 60 * 60 * 1000
+    expect(call.create.expires.getTime()).toBeGreaterThanOrEqual(target - 1000)
+    expect(call.create.expires.getTime()).toBeLessThanOrEqual(target + 1000)
   })
 })
 
@@ -132,6 +165,26 @@ describe('PrismaSessionStore.touch', () => {
     })
     expect(prisma.session.upsert).not.toHaveBeenCalled()
   })
+
+  it('propagates a DB write error to the callback', async () => {
+    const writeErr = new Error('update failed')
+    prisma.session.updateMany.mockRejectedValue(writeErr)
+    const store = new PrismaSessionStore()
+    const sessionData = {
+      cookie: { originalMaxAge: 2592000000, expires: new Date(Date.now() + 60_000) },
+      userId: 1,
+    }
+    await new Promise<void>((resolve, reject) => {
+      store.touch('abc', sessionData, (err) => {
+        try {
+          expect(err).toBe(writeErr)
+          resolve()
+        } catch (e) {
+          reject(e)
+        }
+      })
+    })
+  })
 })
 
 describe('PrismaSessionStore.all / length / clear', () => {
@@ -145,6 +198,24 @@ describe('PrismaSessionStore.all / length / clear', () => {
         expect(Object.keys(sessions as Record<string, unknown>)).toEqual(['live'])
         resolve()
       })
+    })
+  })
+
+  it('all skips corrupted rows instead of failing the listing', async () => {
+    prisma.session.findMany.mockResolvedValue([
+      row({ sid: 'good' }),
+      row({ sid: 'bad', data: 'not-json' }),
+    ])
+    const store = new PrismaSessionStore()
+    await new Promise<void>((resolve, reject) => {
+      store.all((err, sessions) => {
+        if (err) return reject(err)
+        expect(Object.keys(sessions as Record<string, unknown>)).toEqual(['good'])
+        resolve()
+      })
+    })
+    expect(prisma.session.deleteMany).toHaveBeenCalledWith({
+      where: { sid: 'bad', expires: expect.any(Date) },
     })
   })
 
