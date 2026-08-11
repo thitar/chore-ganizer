@@ -67,9 +67,14 @@ export async function nudge({ id, type, parentId }: { id: number; type: 'REGULAR
     throw new AppError(`You already nudged this chore. Try again in ${minutes} min.`, 429)
   }
 
+  const cutoff = new Date(Date.now() - NUDGE_COOLDOWN_MS)
+  const cooldownWhere = { id, OR: [{ lastNudgedAt: null }, { lastNudgedAt: { lt: cutoff } }] }
   const updated = await (type === 'REGULAR'
-    ? prisma.choreAssignment.update({ where: { id }, data: { lastNudgedAt: new Date() } })
-    : prisma.recurringOccurrence.update({ where: { id }, data: { lastNudgedAt: new Date() } }))
+    ? prisma.choreAssignment.updateMany({ where: cooldownWhere, data: { lastNudgedAt: new Date() } })
+    : prisma.recurringOccurrence.updateMany({ where: cooldownWhere, data: { lastNudgedAt: new Date() } }))
+  if (updated.count === 0) {
+    throw new AppError('You already nudged this chore. Try again soon.', 429)
+  }
 
   const { title, body, priority, tags, click } = nudgeBody(
     { id, template: row.template, dueDate: row.dueDate },
@@ -77,5 +82,5 @@ export async function nudge({ id, type, parentId }: { id: number; type: 'REGULAR
   )
   void sendNtfy(row.assignedTo.ntfyTopic, title, body, { priority, tags, click })
 
-  return { id: updated.id, type }
+  return { id, type }
 }
