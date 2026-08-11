@@ -5,6 +5,13 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] - 2026-08-11
+
+### Added
+- Parent dashboard: status strip (overdue / due today / week done / points this week), "Needs action" list, latest-win feed.
+- Nudge: parents can push a gentle-reminder notification to a child for a pending chore (15-min cooldown).
+- `GET /api/points/weekly` parent endpoint.
+
 ## [3.4.1] - 2026-08-11
 
 ### Fixed

@@ -12,6 +12,10 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+- 2026-08-11 — Parent dashboard (Option D) + Nudge feature. Parents now see a status strip, needs-action list, leaderboard, and latest-win on `/`; new `POST /api/assignments/nudge` (15-min cooldown via `lastNudgedAt`) and `GET /api/points/weekly`. Spec: `docs/superpowers/specs/2026-08-11-parent-dashboard-nudge-design.md`.
+
+---
+
 ### 2026-08-09 — Implemented persistent session storage (ADR-009)
 
 - **Status**: Completed
