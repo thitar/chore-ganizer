@@ -26,6 +26,15 @@ router.get('/leaderboard', authenticate, async (_req, res, next) => {
   }
 })
 
+router.get('/weekly', authenticate, authorize('PARENT'), async (req, res, next) => {
+  try {
+    const result = await pointsService.getWeeklyPoints()
+    res.json({ success: true, data: result, error: null })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.get('/gamification', authenticate, async (req, res, next) => {
   try {
     const result = await gamificationService.getGamification(req.session.userId!)
