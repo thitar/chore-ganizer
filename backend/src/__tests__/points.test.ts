@@ -131,3 +131,27 @@ describe('GET /api/points/gamification', () => {
     expect(res.body.data.badges[0]).toHaveProperty('earnedAt')
   })
 })
+
+describe('GET /api/points/weekly', () => {
+  it('returns 401 without authentication', async () => {
+    const res = await request(app).get('/api/points/weekly')
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 403 for CHILD role', async () => {
+    const res = await request(app).get('/api/points/weekly').set('Cookie', childCookies)
+    expect(res.status).toBe(403)
+  })
+
+  it('returns per-child weekly points sorted descending for PARENT', async () => {
+    const res = await request(app).get('/api/points/weekly').set('Cookie', parentCookies)
+    expect(res.status).toBe(200)
+    const data = res.body.data as Array<{ user: { role: string }; points: number }>
+    expect(Array.isArray(data)).toBe(true)
+    expect(data.length).toBeGreaterThanOrEqual(2)
+    expect(data.every(e => e.user.role === 'CHILD')).toBe(true)
+    for (let i = 1; i < data.length; i++) {
+      expect(data[i - 1].points).toBeGreaterThanOrEqual(data[i].points)
+    }
+  })
+})

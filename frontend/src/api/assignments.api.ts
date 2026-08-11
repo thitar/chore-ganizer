@@ -24,6 +24,7 @@ export interface Assignment {
     id: number
     name: string
     color: string
+    ntfyTopic: string | null
   }
 }
 
@@ -68,5 +69,13 @@ export async function uncomplete(id: number): Promise<Assignment> {
 
 export async function delete_(id: number): Promise<{ deleted: true }> {
   const response = await api.delete(`/${id}`)
+  return response.data.data
+}
+
+export async function nudgeAssignment(
+  id: number,
+  type: 'REGULAR' | 'RECURRING'
+): Promise<{ id: number }> {
+  const response = await api.post('/nudge', { id, type })
   return response.data.data
 }

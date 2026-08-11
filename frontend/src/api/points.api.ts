@@ -57,6 +57,16 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
   return response.data.data
 }
 
+export interface WeeklyPointsEntry {
+  user: { id: number; name: string; color: string; role: string }
+  points: number
+}
+
+export async function getWeeklyPoints(): Promise<WeeklyPointsEntry[]> {
+  const response = await api.get('/weekly')
+  return response.data.data
+}
+
 export interface GamificationBadge {
   id: string
   name: string

@@ -3,7 +3,8 @@ import * as assignmentService from '../services/assignment.service'
 import { authenticate } from '../middleware/auth'
 import { authorize } from '../middleware/auth'
 import { validate } from '../middleware/validator'
-import { createAssignmentSchema, updateAssignmentSchema } from '../schemas/assignment.schema'
+import { createAssignmentSchema, updateAssignmentSchema, nudgeSchema } from '../schemas/assignment.schema'
+import * as nudgeService from '../services/nudge.service'
 
 const router = Router()
 
@@ -29,6 +30,16 @@ router.get('/', authenticate, async (req, res, next) => {
       to as string | undefined
     )
     res.json({ success: true, data: assignments, error: null })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/nudge', authenticate, authorize('PARENT'), validate(nudgeSchema), async (req, res, next) => {
+  try {
+    const { id, type } = req.body
+    const result = await nudgeService.nudge({ id, type, parentId: req.session.userId! })
+    res.json({ success: true, data: result, error: null })
   } catch (err) {
     next(err)
   }

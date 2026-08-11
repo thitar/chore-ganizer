@@ -57,3 +57,13 @@ export function overdueBody(a: AssignmentInfo, now = new Date()) {
     click: `/chores/${a.id}`,
   }
 }
+
+export function nudgeBody(a: AssignmentInfo, parentName: string) {
+  return {
+    title: 'Chore-Ganizer',
+    body: `Gentle reminder 👀 "${a.template.title}" is waiting · from ${parentName}`,
+    priority: 3 as const,
+    tags: ['bell', 'eyes'],
+    click: `/chores/${a.id}`,
+  }
+}

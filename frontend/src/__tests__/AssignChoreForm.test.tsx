@@ -23,7 +23,7 @@ const defaultAssignment = {
   notes: null,
   createdAt: '2026-01-01T00:00:00Z',
   template: { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen', description: null },
-  assignedTo: { id: 2, name: 'Alice', color: '#10B981' },
+  assignedTo: { id: 2, name: 'Alice', color: '#10B981', ntfyTopic: null },
 }
 
 function mockState(overrides: {

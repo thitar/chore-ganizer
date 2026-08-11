@@ -217,3 +217,47 @@ describe('getLeaderboard', () => {
     expect(result[1].balance).toBe(0)
   })
 })
+
+describe('pointsService.getWeeklyPoints', () => {
+  it('aggregates EARNED logs since Monday for each child, sorted desc', async () => {
+    prisma.user.findMany.mockResolvedValue([
+      { id: 2, name: 'Alice', color: '#F59E0B', role: 'CHILD' },
+      { id: 3, name: 'Bob', color: '#10B981', role: 'CHILD' },
+    ])
+    prisma.pointLog.groupBy.mockResolvedValue([
+      { userId: 2, _sum: { amount: 40 } },
+      { userId: 3, _sum: { amount: 15 } },
+    ])
+
+    const result = await pointsService.getWeeklyPoints()
+
+    expect(prisma.user.findMany).toHaveBeenCalledWith({
+      where: { role: 'CHILD' },
+      select: { id: true, name: true, color: true, role: true },
+    })
+    expect(prisma.pointLog.groupBy).toHaveBeenCalledWith({
+      by: ['userId'],
+      where: expect.objectContaining({ type: 'EARNED', createdAt: { gte: expect.any(Date) } }),
+      _sum: { amount: true },
+    })
+    expect(result).toEqual([
+      { user: { id: 2, name: 'Alice', color: '#F59E0B', role: 'CHILD' }, points: 40 },
+      { user: { id: 3, name: 'Bob', color: '#10B981', role: 'CHILD' }, points: 15 },
+    ])
+  })
+
+  it('includes children with no weekly points as 0 and excludes parents', async () => {
+    prisma.user.findMany.mockResolvedValue([
+      { id: 2, name: 'Alice', color: '#F59E0B', role: 'CHILD' },
+      { id: 3, name: 'Bob', color: '#10B981', role: 'CHILD' },
+    ])
+    prisma.pointLog.groupBy.mockResolvedValue([{ userId: 2, _sum: { amount: 10 } }])
+
+    const result = await pointsService.getWeeklyPoints()
+
+    expect(result).toEqual([
+      { user: { id: 2, name: 'Alice', color: '#F59E0B', role: 'CHILD' }, points: 10 },
+      { user: { id: 3, name: 'Bob', color: '#10B981', role: 'CHILD' }, points: 0 },
+    ])
+  })
+})

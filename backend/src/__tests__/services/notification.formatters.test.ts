@@ -111,3 +111,20 @@ describe('notification.formatters', () => {
     })
   })
 })
+
+describe('nudgeBody', () => {
+  it('builds a gentle-reminder push with the parent name', () => {
+    const { nudgeBody } = require('../../services/notification.formatters')
+    const out = nudgeBody(
+      { id: 9, template: { title: 'Load dishwasher', points: 20 }, dueDate: new Date('2026-08-11') },
+      'Dad'
+    )
+    expect(out).toEqual({
+      title: 'Chore-Ganizer',
+      body: 'Gentle reminder 👀 "Load dishwasher" is waiting · from Dad',
+      priority: 3,
+      tags: ['bell', 'eyes'],
+      click: '/chores/9',
+    })
+  })
+})

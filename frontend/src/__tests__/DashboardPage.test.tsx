@@ -29,7 +29,12 @@ vi.mock('../hooks/usePoints', () => ({
   useMyPoints: vi.fn(),
   useLeaderboard: vi.fn(),
   useGamification: vi.fn(),
+  useWeeklyPoints: vi.fn(),
 }))
+
+vi.mock('../hooks/useOverdue', () => ({ useOverdue: vi.fn() }))
+
+vi.mock('../hooks/useNudge', () => ({ useNudge: vi.fn() }))
 
 vi.mock('../hooks/useTemplates', () => ({
   useTemplates: vi.fn(),
@@ -41,9 +46,11 @@ vi.mock('../hooks/useUsers', () => ({
 
 import { useAuth } from '../hooks/useAuth'
 import { useAssignments } from '../hooks/useAssignments'
-import { useMyPoints, useLeaderboard, useGamification } from '../hooks/usePoints'
+import { useMyPoints, useLeaderboard, useGamification, useWeeklyPoints } from '../hooks/usePoints'
 import { useTemplates } from '../hooks/useTemplates'
 import { useUsers } from '../hooks/useUsers'
+import { useOverdue } from '../hooks/useOverdue'
+import { useNudge } from '../hooks/useNudge'
 
 const mockUser = { id: 1, name: 'Alice', role: 'CHILD', email: 'alice@home.local', color: '#10B981' }
 
@@ -112,6 +119,9 @@ describe('DashboardPage', () => {
     mockPointsState()
     mockTemplatesState()
     mockUsersState()
+    ;(useOverdue as ReturnType<typeof vi.fn>).mockReturnValue({ overdue: [], isLoading: false, error: null })
+    ;(useNudge as ReturnType<typeof vi.fn>).mockReturnValue({ mutateAsync: vi.fn(), isPending: false })
+    ;(useWeeklyPoints as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false })
   })
 
   it('greets the user by name', () => {
@@ -160,7 +170,7 @@ describe('DashboardPage', () => {
           notes: null,
           createdAt: now.toISOString(),
           template: { id: 1, title: 'Wash Dishes', points: 5, category: 'Kitchen' },
-          assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+          assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981', ntfyTopic: null },
         },
         {
           id: 2,
@@ -173,7 +183,7 @@ describe('DashboardPage', () => {
           notes: null,
           createdAt: now.toISOString(),
           template: { id: 2, title: 'Not Mine', points: 5, category: null },
-          assignedTo: { id: 999, name: 'Bob', color: '#F59E0B' },
+          assignedTo: { id: 999, name: 'Bob', color: '#F59E0B', ntfyTopic: null },
         },
       ],
     })
@@ -208,7 +218,7 @@ describe('DashboardPage', () => {
             category: 'Kitchen',
             description: 'Scrub and rinse every dish.',
           },
-          assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+          assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981', ntfyTopic: null },
         },
       ],
     })
@@ -257,7 +267,7 @@ describe('DashboardPage', () => {
             notes: null,
             createdAt: new Date('2026-06-10T09:00:00').toISOString(),
             template: { id: 1, title: 'Mon Chore', points: 5, category: 'Kitchen' },
-            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981', ntfyTopic: null },
           },
           {
             id: 2,
@@ -270,7 +280,7 @@ describe('DashboardPage', () => {
             notes: null,
             createdAt: new Date('2026-06-10T09:00:00').toISOString(),
             template: { id: 2, title: 'Wed Chore', points: 5, category: 'Kitchen' },
-            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981', ntfyTopic: null },
           },
           {
             id: 3,
@@ -283,7 +293,7 @@ describe('DashboardPage', () => {
             notes: null,
             createdAt: new Date('2026-06-10T09:00:00').toISOString(),
             template: { id: 3, title: 'Sun Chore', points: 5, category: 'Kitchen' },
-            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981', ntfyTopic: null },
           },
           {
             id: 4,
@@ -296,7 +306,7 @@ describe('DashboardPage', () => {
             notes: null,
             createdAt: new Date('2026-06-01T09:00:00').toISOString(),
             template: { id: 4, title: 'Prior Sun Chore', points: 5, category: 'Kitchen' },
-            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981', ntfyTopic: null },
           },
           {
             id: 5,
@@ -309,7 +319,7 @@ describe('DashboardPage', () => {
             notes: null,
             createdAt: new Date('2026-06-10T09:00:00').toISOString(),
             template: { id: 5, title: 'Next Mon Chore', points: 5, category: 'Kitchen' },
-            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981', ntfyTopic: null },
           },
           {
             id: 6,
@@ -322,7 +332,7 @@ describe('DashboardPage', () => {
             notes: null,
             createdAt: new Date('2026-06-10T09:00:00').toISOString(),
             template: { id: 6, title: 'Other User Chore', points: 5, category: 'Kitchen' },
-            assignedTo: { id: 999, name: 'Bob', color: '#F59E0B' },
+            assignedTo: { id: 999, name: 'Bob', color: '#F59E0B', ntfyTopic: null },
           },
         ],
       })
@@ -348,7 +358,7 @@ describe('DashboardPage', () => {
             notes: null,
             createdAt: new Date('2026-06-10T09:00:00').toISOString(),
             template: { id: 1, title: 'Today Chore', points: 5, category: 'Kitchen' },
-            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981', ntfyTopic: null },
           },
           {
             id: 2,
@@ -361,7 +371,7 @@ describe('DashboardPage', () => {
             notes: null,
             createdAt: new Date('2026-06-10T09:00:00').toISOString(),
             template: { id: 2, title: 'Tomorrow Chore', points: 5, category: 'Kitchen' },
-            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981', ntfyTopic: null },
           },
         ],
       })
@@ -387,7 +397,7 @@ describe('DashboardPage', () => {
             notes: null,
             createdAt: new Date('2026-06-10T09:00:00').toISOString(),
             template: { id: 1, title: 'Mon Chore', points: 5, category: 'Kitchen' },
-            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981', ntfyTopic: null },
           },
           {
             id: 2,
@@ -400,7 +410,7 @@ describe('DashboardPage', () => {
             notes: null,
             createdAt: new Date('2026-06-10T09:00:00').toISOString(),
             template: { id: 2, title: 'Wed Chore', points: 5, category: 'Kitchen' },
-            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981' },
+            assignedTo: { id: mockUser.id, name: 'Alice', color: '#10B981', ntfyTopic: null },
           },
         ],
       })

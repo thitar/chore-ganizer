@@ -1,5 +1,6 @@
 import { prisma } from '../config/prisma'
 import { AppError } from '../middleware/errorHandler'
+import { startOfWeekUTC } from './gamification.service'
 
 export async function getMyPoints(userId: number) {
   const user = await prisma.user.findUnique({
@@ -89,4 +90,22 @@ export async function getLeaderboard() {
   return users
     .map(user => ({ user, balance: balanceByUser.get(user.id) ?? 0 }))
     .sort((a, b) => b.balance - a.balance)
+}
+
+export async function getWeeklyPoints() {
+  const [users, sums] = await Promise.all([
+    prisma.user.findMany({
+      where: { role: 'CHILD' },
+      select: { id: true, name: true, color: true, role: true },
+    }),
+    prisma.pointLog.groupBy({
+      by: ['userId'],
+      where: { type: 'EARNED', createdAt: { gte: startOfWeekUTC(new Date()) } },
+      _sum: { amount: true },
+    }),
+  ])
+  const pointsByUser = new Map(sums.map(s => [s.userId, s._sum.amount ?? 0]))
+  return users
+    .map(user => ({ user, points: pointsByUser.get(user.id) ?? 0 }))
+    .sort((a, b) => b.points - a.points)
 }
