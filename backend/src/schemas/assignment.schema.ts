@@ -10,3 +10,8 @@ export const updateAssignmentSchema = z.object({
   assignedToId: z.number().int().positive('Assignee is required').optional(),
   dueDate: z.string().refine(val => !isNaN(Date.parse(val)), 'Valid due date is required').optional(),
 })
+
+export const nudgeSchema = z.object({
+  id: z.number().int().positive('Chore ID is required'),
+  type: z.enum(['REGULAR', 'RECURRING']),
+})

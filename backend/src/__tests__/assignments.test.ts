@@ -286,3 +286,86 @@ describe('DELETE /api/assignments/:id', () => {
     expect(res.status).toBe(403)
   })
 })
+
+describe('POST /api/assignments/nudge', () => {
+  const NUDGE_BASE = '/api/assignments/nudge'
+  const TOPIC_EMAIL = 'alice@home.local'
+  const NO_TOPIC_EMAIL = 'bob@home.local'
+  let topicUserId: number | null = null
+  let choreId: number | null = null
+
+  beforeAll(async () => {
+    const users = await request(app).get('/api/users').set('Cookie', parentCookies)
+    const alice = users.body.data.find((u: { email: string }) => u.email === TOPIC_EMAIL)
+    topicUserId = alice.id
+    await request(app)
+      .put(`/api/users/${alice.id}/ntfy-topic`)
+      .set('Cookie', parentCookies)
+      .send({ ntfyTopic: 'test-nudge-topic' })
+
+    const tpl = await request(app).post('/api/templates').set('Cookie', parentCookies)
+      .send({ title: 'Nudge Test', points: 10, category: 'testing' })
+    const created = await request(app).post('/api/assignments').set('Cookie', parentCookies)
+      .send({ choreTemplateId: tpl.body.data.id, assignedToId: alice.id, dueDate: '2099-01-01' })
+    choreId = created.body.data.id
+    createdAssignmentIds.push(choreId)
+  })
+
+  afterAll(async () => {
+    if (topicUserId !== null) {
+      await request(app)
+        .put(`/api/users/${topicUserId}/ntfy-topic`)
+        .set('Cookie', parentCookies)
+        .send({ ntfyTopic: '' })
+    }
+  })
+
+  it('returns 401 without authentication', async () => {
+    const res = await request(app).post(NUDGE_BASE).send({ id: choreId, type: 'REGULAR' })
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 403 for CHILD role', async () => {
+    const res = await request(app).post(NUDGE_BASE).set('Cookie', childCookies)
+      .send({ id: choreId, type: 'REGULAR' })
+    expect(res.status).toBe(403)
+  })
+
+  it('returns 400 when the assignee has no ntfyTopic', async () => {
+    const tpl = await request(app).post('/api/templates').set('Cookie', parentCookies)
+      .send({ title: 'Nudge No Topic', points: 10, category: 'testing' })
+    const created = await request(app).post('/api/assignments').set('Cookie', parentCookies)
+      .send({ choreTemplateId: tpl.body.data.id, assignedToId: 4, dueDate: '2099-01-01' })
+    createdAssignmentIds.push(created.body.data.id)
+
+    const res = await request(app).post(NUDGE_BASE).set('Cookie', parentCookies)
+      .send({ id: created.body.data.id, type: 'REGULAR' })
+    expect(res.status).toBe(400)
+  })
+
+  it('nudges a pending chore assigned to a child with a topic', async () => {
+    const res = await request(app).post(NUDGE_BASE).set('Cookie', parentCookies)
+      .send({ id: choreId, type: 'REGULAR' })
+    expect(res.status).toBe(200)
+    expect(res.body.data.id).toBe(choreId)
+  })
+
+  it('returns 429 when nudged again within the cooldown', async () => {
+    const res = await request(app).post(NUDGE_BASE).set('Cookie', parentCookies)
+      .send({ id: choreId, type: 'REGULAR' })
+    expect(res.status).toBe(429)
+  })
+
+  it('returns 404 for a non-existent chore', async () => {
+    const res = await request(app).post(NUDGE_BASE).set('Cookie', parentCookies)
+      .send({ id: 999999, type: 'REGULAR' })
+    expect(res.status).toBe(404)
+  })
+
+  it('returns 400 when type is missing', async () => {
+    const res = await request(app).post(NUDGE_BASE).set('Cookie', parentCookies)
+      .send({ id: choreId })
+    expect(res.status).toBe(400)
+    expect(res.body.error.code).toBe('VALIDATION_ERROR')
+  })
+})
