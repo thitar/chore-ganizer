@@ -29,7 +29,7 @@ const overdueChore = {
   id: 1, type: 'REGULAR' as const, choreTemplateId: 1, assignedToId: 3,
   dueDate: '2026-06-14', status: 'PENDING' as const,
   template: { id: 1, title: 'Wash Dishes', points: 10, category: 'kitchen' },
-  assignedTo: { id: 3, name: 'Alice', color: '#10B981' },
+  assignedTo: { id: 3, name: 'Alice', color: '#10B981', ntfyTopic: null },
 }
 
 const recurringChore = {
