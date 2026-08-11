@@ -47,7 +47,7 @@ describe('nudgeService.nudge', () => {
       { priority: 3, tags: ['bell', 'eyes'], click: '/chores/5' }
     )
     expect(prisma.choreAssignment.updateMany).toHaveBeenCalledWith({
-      where: { id: 5, OR: [{ lastNudgedAt: null }, { lastNudgedAt: { lt: expect.any(Date) } }] },
+      where: { id: 5, status: 'PENDING', OR: [{ lastNudgedAt: null }, { lastNudgedAt: { lt: expect.any(Date) } }] },
       data: { lastNudgedAt: expect.any(Date) },
     })
     expect(result).toEqual({ id: 5, type: 'REGULAR' })
@@ -71,7 +71,7 @@ describe('nudgeService.nudge', () => {
       expect.anything()
     )
     expect(prisma.recurringOccurrence.updateMany).toHaveBeenCalledWith({
-      where: { id: 9, OR: [{ lastNudgedAt: null }, { lastNudgedAt: { lt: expect.any(Date) } }] },
+      where: { id: 9, status: 'PENDING', OR: [{ lastNudgedAt: null }, { lastNudgedAt: { lt: expect.any(Date) } }] },
       data: { lastNudgedAt: expect.any(Date) },
     })
     expect(result).toEqual({ id: 9, type: 'RECURRING' })
@@ -161,5 +161,34 @@ describe('nudgeService.nudge', () => {
 
     await expect(nudgeService.nudge({ id: 5, type: 'REGULAR', parentId: 1 })).rejects.toMatchObject({ statusCode: 429 })
     expect(sendNtfy).not.toHaveBeenCalled()
+  })
+
+  it('returns 409 when the atomic gate loses to a status change mid-flight', async () => {
+    prisma.choreAssignment.findUnique
+      .mockResolvedValueOnce({
+        ...pendingAssignment,
+        lastNudgedAt: new Date(Date.now() - 16 * 60 * 1000),
+      })
+      .mockResolvedValue({ ...pendingAssignment, status: 'COMPLETED' })
+    prisma.user.findUnique.mockResolvedValue({ name: 'Dad' })
+    prisma.choreAssignment.updateMany.mockResolvedValue({ count: 0 })
+
+    await expect(nudgeService.nudge({ id: 5, type: 'REGULAR', parentId: 1 })).rejects.toMatchObject({ statusCode: 409 })
+    expect(sendNtfy).not.toHaveBeenCalled()
+  })
+
+  it('returns 502 and reverts the cooldown when the push fails to deliver', async () => {
+    prisma.choreAssignment.findUnique.mockResolvedValue(pendingAssignment)
+    prisma.user.findUnique.mockResolvedValue({ name: 'Dad' })
+    prisma.choreAssignment.updateMany.mockResolvedValue({ count: 1 })
+    sendNtfy.mockResolvedValueOnce(false)
+
+    await expect(nudgeService.nudge({ id: 5, type: 'REGULAR', parentId: 1 })).rejects.toMatchObject({ statusCode: 502 })
+
+    expect(prisma.choreAssignment.updateMany).toHaveBeenCalledTimes(2)
+    expect(prisma.choreAssignment.updateMany).toHaveBeenLastCalledWith({
+      where: { id: 5 },
+      data: { lastNudgedAt: null },
+    })
   })
 })

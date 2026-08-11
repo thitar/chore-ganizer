@@ -1,5 +1,6 @@
 import request from 'supertest'
 import { app } from '../app'
+import * as notificationService from '../services/notification.service'
 
 const BASE = '/api/assignments'
 const USERS_BASE = '/api/users'
@@ -290,11 +291,16 @@ describe('DELETE /api/assignments/:id', () => {
 describe('POST /api/assignments/nudge', () => {
   const NUDGE_BASE = '/api/assignments/nudge'
   const TOPIC_EMAIL = 'alice@home.local'
-  const NO_TOPIC_EMAIL = 'bob@home.local'
   let topicUserId: number | null = null
   let choreId: number | null = null
+  let sendSpy: ReturnType<typeof jest.spyOn>
 
   beforeAll(async () => {
+    // The test env has no NTFY_BASE_URL, so sendNtfy would return false and the
+    // endpoint would 502. Force delivery success; delivery itself is covered by
+    // the notification.service unit tests.
+    sendSpy = jest.spyOn(notificationService, 'sendNtfy').mockResolvedValue(true)
+
     const users = await request(app).get('/api/users').set('Cookie', parentCookies)
     const alice = users.body.data.find((u: { email: string }) => u.email === TOPIC_EMAIL)
     topicUserId = alice.id
@@ -312,6 +318,7 @@ describe('POST /api/assignments/nudge', () => {
   })
 
   afterAll(async () => {
+    sendSpy.mockRestore()
     if (topicUserId !== null) {
       await request(app)
         .put(`/api/users/${topicUserId}/ntfy-topic`)

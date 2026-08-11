@@ -68,11 +68,19 @@ export async function nudge({ id, type, parentId }: { id: number; type: 'REGULAR
   }
 
   const cutoff = new Date(Date.now() - NUDGE_COOLDOWN_MS)
-  const cooldownWhere = { id, OR: [{ lastNudgedAt: null }, { lastNudgedAt: { lt: cutoff } }] }
+  const gateWhere = {
+    id,
+    status: 'PENDING',
+    OR: [{ lastNudgedAt: null }, { lastNudgedAt: { lt: cutoff } }],
+  }
   const updated = await (type === 'REGULAR'
-    ? prisma.choreAssignment.updateMany({ where: cooldownWhere, data: { lastNudgedAt: new Date() } })
-    : prisma.recurringOccurrence.updateMany({ where: cooldownWhere, data: { lastNudgedAt: new Date() } }))
+    ? prisma.choreAssignment.updateMany({ where: gateWhere, data: { lastNudgedAt: new Date() } })
+    : prisma.recurringOccurrence.updateMany({ where: gateWhere, data: { lastNudgedAt: new Date() } }))
   if (updated.count === 0) {
+    const current = await loadNudgeable(id, type)
+    if (!current || current.status !== 'PENDING') {
+      throw new AppError('Only pending chores can be nudged', 409)
+    }
     throw new AppError('You already nudged this chore. Try again soon.', 429)
   }
 
@@ -80,7 +88,13 @@ export async function nudge({ id, type, parentId }: { id: number; type: 'REGULAR
     { id, template: row.template, dueDate: row.dueDate },
     parent?.name ?? 'your parent'
   )
-  void sendNtfy(row.assignedTo.ntfyTopic, title, body, { priority, tags, click })
+  const sent = await sendNtfy(row.assignedTo.ntfyTopic, title, body, { priority, tags, click })
+  if (!sent) {
+    await (type === 'REGULAR'
+      ? prisma.choreAssignment.updateMany({ where: { id }, data: { lastNudgedAt: row.lastNudgedAt } })
+      : prisma.recurringOccurrence.updateMany({ where: { id }, data: { lastNudgedAt: row.lastNudgedAt } }))
+    throw new AppError('Failed to deliver the reminder. Please try again.', 502)
+  }
 
   return { id, type }
 }
