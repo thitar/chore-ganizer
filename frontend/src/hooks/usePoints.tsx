@@ -34,6 +34,13 @@ export function useLeaderboard() {
   })
 }
 
+export function useWeeklyPoints() {
+  return useQuery({
+    queryKey: ['points', 'weekly'],
+    queryFn: pointsApi.getWeeklyPoints,
+  })
+}
+
 export function useGamification() {
   return useQuery({
     queryKey: ['points', 'gamification'],
