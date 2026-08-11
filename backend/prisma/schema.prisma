@@ -59,6 +59,7 @@ model ChoreAssignment {
   overdueNotifiedAt  DateTime?
   cancelledAt     DateTime?
   penaltyPoints   Int?
+  lastNudgedAt    DateTime?
   completedAt     DateTime?
   pointsAwarded   Int?
   notes           String?
@@ -117,6 +118,7 @@ model RecurringOccurrence {
   overdueNotifiedAt  DateTime?
   cancelledAt      DateTime?
   penaltyPoints    Int?
+  lastNudgedAt     DateTime?
   pointsAwarded    Int?
   completedAt      DateTime?
   createdAt        DateTime  @default(now())

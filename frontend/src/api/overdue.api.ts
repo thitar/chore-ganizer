@@ -19,6 +19,7 @@ export interface OverdueChore {
     id: number
     name: string
     color: string
+    ntfyTopic: string | null
   }
 }
 
