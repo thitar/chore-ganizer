@@ -132,6 +132,12 @@ describe('ParentDashboard', () => {
     const rows = screen.getAllByText('Take out trash')
     expect(rows.length).toBeGreaterThan(0)
     expect(screen.getByText('Load dishwasher')).toBeInTheDocument()
+
+    const overdueTitle = screen.getByText('Take out trash')
+    const todayTitle = screen.getByText('Load dishwasher')
+    expect(
+      overdueTitle.compareDocumentPosition(todayTitle) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
   })
 
   it('disables Nudge when the assignee has no ntfyTopic', () => {
