@@ -237,7 +237,7 @@ describe('pointsService.getWeeklyPoints', () => {
     })
     expect(prisma.pointLog.groupBy).toHaveBeenCalledWith({
       by: ['userId'],
-      where: expect.objectContaining({ type: 'EARNED' }),
+      where: expect.objectContaining({ type: 'EARNED', createdAt: { gte: expect.any(Date) } }),
       _sum: { amount: true },
     })
     expect(result).toEqual([
