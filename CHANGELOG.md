@@ -5,6 +5,11 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.1] - 2026-08-11
+
+### Fixed
+- Favicon served as 403 (no tab icon) in the frontend container: the built image shipped `favicon.svg` at mode `0640` root-owned, which the unprivileged nginx worker couldn't read. The Dockerfile runtime stage now runs `chmod -R a+rX /usr/share/nginx/html` so every static asset is world-readable regardless of the build context's umask
+
 ## [3.4.0] - 2026-08-09
 
 ### Added

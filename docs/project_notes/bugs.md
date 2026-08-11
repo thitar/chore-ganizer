@@ -12,6 +12,14 @@ Date-ordered log of bugs and their solutions.
 
 ---
 
+### 2026-08-11 - Favicon 403 in production nginx container (file shipped at mode 0640)
+
+- **Issue**: No tab icon; `curl /favicon.svg` returned HTTP 403 from the running frontend container even though `frontend/public/favicon.svg` exists, `index.html` references it correctly, and the file is present in the image at `/usr/share/nginx/html/favicon.svg`
+- **Root Cause**: The built image contained `favicon.svg` at mode `0640` root-owned, while nginx worker processes run as the unprivileged `nginx` user — so the file was unreadable by nginx and every request 403'd. Docker `COPY` preserves the build context's file mode, which can be masked down to `0640` by a restrictive umask/group-shared-repo checkout at build time (local source was `0664`, git blob mode `100644`, so the mode isn't reproducible from git — it's a build-environment artifact)
+- **Solution**: Added `RUN chmod -R a+rX /usr/share/nginx/html` to the frontend `Dockerfile` runtime stage, so every static asset is world-readable/descendable regardless of build-context umask. Verified: rebuilt image serves `/favicon.svg` with HTTP 200
+- **Prevention**: Never assume the build context's umask yields readable artifacts for the container's runtime user; normalize permissions on the html tree in the Dockerfile. Same class of bug as the `config.js` 644 fix (2026-07-13)
+- **File**: `frontend/Dockerfile`
+
 ### 2026-08-08 - Playwright `text=` selector engine does not union on a top-level comma; a "fixed" flaky test failed deterministically instead
 
 - **Issue**: PR #199 fixed a genuine race in `e2e/phase-05-uat.spec.ts` Test 13 (asserted on calendar pill text right after the `h2` heading rendered, before the assignments API call painted the pills) by adding `await page.waitForSelector('text=Make Bed, text=Take Out Trash', { timeout: 10000 })` before counting — on the assumption that a comma inside a Playwright selector string unions two conditions the way a CSS selector list (`a, button`) does. Running the fixed test against a live app showed pills clearly rendered on every calendar day in the failure screenshot, yet the test still timed out and failed on every run — not a flake, a new deterministic failure caused by the fix itself

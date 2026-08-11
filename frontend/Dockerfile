@@ -24,6 +24,11 @@ RUN apk add --no-cache bash
 # Copy built artifacts
 COPY --from=build /app/dist /usr/share/nginx/html
 
+# nginx workers run as the unprivileged "nginx" user; ensure every file is
+# world-readable regardless of the build context's umask (favicon.svg was
+# shipped at 0640 once, causing 403s — see docs/project_notes/bugs.md)
+RUN chmod -R a+rX /usr/share/nginx/html
+
 # Copy nginx config template
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY docker-entrypoint.sh /usr/local/bin/
