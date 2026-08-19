@@ -74,7 +74,7 @@ For a new production database, uncomment and replace all three required `BOOTSTR
 `backend/package.json` and `frontend/package.json` must always carry identical version numbers — this is the single source of truth. After bumping both:
 
 1. Update `.env`'s `APP_VERSION` to match (or just run `./docker-compose.sh up --build -d`, which syncs it automatically)
-2. Rebuild and (if publishing) push images yourself — **there is no CI/CD workflow that builds, tags, or pushes Docker images** to `ghcr.io/thitar/chore-ganizer-{backend,frontend}` despite the image naming convention implying a registry pipeline. `.github/workflows/security.yml` runs CodeQL, `npm audit`, Gitleaks, Semgrep, and a Trivy filesystem scan; `.github/workflows/quality.yml` runs pull-request backend/frontend test and build validation plus Docker image builds. Neither workflow publishes images or deploys. If you want published images, that pipeline needs to be built; today, `APP_VERSION` only flows into local image tags via `docker-compose.sh`/`docker compose build`.
+2. Rebuild locally with `./docker-compose.sh up --build -d`. Publishing to `ghcr.io/thitar/chore-ganizer-{backend,frontend,backup}` is now automatic: `.github/workflows/publish.yml` builds and pushes all three images (tagged `:<version>` and `:latest`) on every push to `main`. No manual push step. (Deployment remains manual — `docker compose up --build -d` to build, or `docker compose pull` once an image is published.)
 
 For the full file map and lockfile regeneration steps, see [docs/VERSION_MAP.md](./VERSION_MAP.md).
 

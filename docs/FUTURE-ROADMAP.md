@@ -15,7 +15,6 @@ What's deliberately deferred, not what's aspirational. Sourced from `.planning/S
 | Per-event notification toggles | Out of scope — all-or-nothing per user via `ntfyTopic` |
 | In-app notification center | Out of scope — ntfy push is the only channel |
 | Email/Slack/Discord notification channels for chore events | Out of scope — ntfy is the only channel for chore assigned/completed/due-soon events. Note: SMTP email exists as of v3.2.1 (PR #158), but only for auth password recovery, not chore-event notifications — the two are separate concerns. |
-| CI/CD image publishing to a registry | No workflow builds/pushes to `ghcr.io` despite the naming convention; images are built and tagged locally only |
 
 ## Proposed, not yet scoped
 

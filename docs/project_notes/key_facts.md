@@ -34,9 +34,10 @@ Store secrets in `.env` (excluded via `.gitignore`) or a password manager.
 ### Docker
 
 **Registry:** `ghcr.io/thitar/`
-**Images:**
+**Images:** CI-published on every push to `main` by `.github/workflows/publish.yml`:
 - Backend: `ghcr.io/thitar/chore-ganizer-backend:VERSION`
 - Frontend: `ghcr.io/thitar/chore-ganizer-frontend:VERSION`
+- Backup: `ghcr.io/thitar/chore-ganizer-backup:VERSION`
 
 **Compose file:** `docker-compose.yml` (single file, no separate prod/dev compose files)
 **Helper script:** `./docker-compose.sh` (syncs `APP_VERSION` from `backend/package.json` into `.env`, then forwards to `docker compose`)
