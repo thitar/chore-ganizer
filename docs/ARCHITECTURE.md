@@ -108,7 +108,7 @@ There is no in-app notification center and no per-event notification toggles in 
 
 ## CI/CD
 
-`.github/workflows/security.yml` provides security scanning: CodeQL (JS/TS), `npm audit` (backend + frontend), Gitleaks secret scanning, Semgrep SAST, and Trivy filesystem vulnerability scans. `.github/workflows/quality.yml` provides PR validation through backend and frontend unit tests, typechecks, builds, and Docker builds. Neither workflow publishes Docker images to `ghcr.io/thitar/chore-ganizer-{backend,frontend}` or deploys; building, publishing, and deploying remain manual steps.
+`.github/workflows/security.yml` provides security scanning: CodeQL (JS/TS), `npm audit` (backend + frontend), Gitleaks secret scanning, Semgrep SAST, and Trivy filesystem vulnerability scans. `.github/workflows/quality.yml` provides PR validation through backend and frontend unit tests, typechecks, builds, and Docker builds. `.github/workflows/publish.yml` publishes all three Docker images to `ghcr.io/thitar/chore-ganizer-{backend,frontend,backup}` (tagged `:<version>` and `:latest`) on every push to `main`. Deployment remains a manual step.
 
 ## Key Architectural Decisions
 
@@ -123,4 +123,4 @@ Pulled from `.planning/STATE.md`'s Accumulated Context (the permanent home for t
 - **Single `User.ntfyTopic` column** — nullable + unique; per-user topic isolation is the multi-tenant boundary, `null` means silent no-op for that user.
 - **Dark-only design system** — no light theme; the target audience (teens) doesn't need one, and one theme done well beats two done half-well.
 - **CSRF added later, deliberately** — the original rewrite decision was "SameSite cookies, no CSRF, private network eliminates the threat"; a double-submit-cookie CSRF middleware was added afterward as a CodeQL-driven security fix (see `docs/project_notes/bugs.md`, 2026-07-08 entries) and is now load-bearing — don't remove it based on the original "private network" reasoning.
-- **No Docker image publishing pipeline** — image build/tag/push to `ghcr.io` is manual today (see [CI/CD](#cicd)); the security workflow scans source, it doesn't produce or publish artifacts.
+- **Docker images auto-published to `ghcr.io`, no automated deployment** — `.github/workflows/publish.yml` builds and pushes the `backend`/`frontend`/`backup` images (tagged `:<version>` and `:latest`) on every push to `main` (see [CI/CD](#cicd)); deployment to the server is still a manual `docker compose up` step.

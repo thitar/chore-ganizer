@@ -21,4 +21,4 @@ Both services join a single bridge network, `chore-ganizer-network`. Frontend ma
 
 ## Images
 
-There is no registry publishing pipeline — images are built locally only (`docker compose build` / `./docker-compose.sh up --build -d`). See AGENTS.md's "no CI/CD Docker publishing pipeline" note and [OPERATIONS.md#version-bumps](./OPERATIONS.md#version-bumps).
+Images are built locally via `docker compose build` / `./docker-compose.sh up --build -d`, and `.github/workflows/publish.yml` also publishes all three images (`backend`/`frontend`/`backup`) to `ghcr.io/thitar/`, tagged `:<version>` and `:latest`, on every push to `main`. See [OPERATIONS.md#version-bumps](./OPERATIONS.md#version-bumps).
