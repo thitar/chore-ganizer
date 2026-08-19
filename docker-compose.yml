@@ -10,8 +10,7 @@ services:
   # Frontend service (React + Vite + nginx)
   frontend:
     # Published to ghcr.io as ghcr.io/thitar/chore-ganizer-frontend:<APP_VERSION> (and :latest)
-    # by .github/workflows/publish.yml on every push to main. Compose stays build-only;
-    # to deploy from the registry instead: docker compose pull && docker compose up -d.
+    # by .github/workflows/publish.yml on every push to main.
     build:
       context: ./frontend
       dockerfile: Dockerfile

@@ -74,7 +74,7 @@ For a new production database, uncomment and replace all three required `BOOTSTR
 `backend/package.json` and `frontend/package.json` must always carry identical version numbers — this is the single source of truth. After bumping both:
 
 1. Update `.env`'s `APP_VERSION` to match (or just run `./docker-compose.sh up --build -d`, which syncs it automatically)
-2. Rebuild locally with `./docker-compose.sh up --build -d`. Publishing to `ghcr.io/thitar/chore-ganizer-{backend,frontend,backup}` is now automatic: `.github/workflows/publish.yml` builds and pushes all three images (tagged `:<version>` and `:latest`) on every push to `main`. No manual push step. (Deployment remains manual — `docker compose up --build -d` to build, or `docker compose pull` once an image is published.)
+2. Rebuild locally with `./docker-compose.sh up --build -d`. Publishing to `ghcr.io/thitar/chore-ganizer-{backend,frontend,backup}` is now automatic: `.github/workflows/publish.yml` builds and pushes all three images (tagged `:<version>` and `:latest`) on every push to `main`. No manual push step.
 
 For the full file map and lockfile regeneration steps, see [docs/VERSION_MAP.md](./VERSION_MAP.md).
 
@@ -193,14 +193,7 @@ docker compose up --build -d
 
 ### From a pre-built registry image
 
-Images are auto-published to `ghcr.io/thitar/` (`chore-ganizer-{backend,frontend,backup}`) on merge to main; you can pull and deploy them:
-
-```bash
-docker compose pull
-docker compose up -d
-```
-
-This works because images are auto-published to `ghcr.io/thitar/` on merge to main — see [Version Bumps](#version-bumps) above.
+Images are auto-published to `ghcr.io/thitar/` (`chore-ganizer-{backend,frontend,backup}`) on every push to `main` by `.github/workflows/publish.yml`. Compose remains build-only (no `image:` entries), so `docker compose pull` is not the right tool here — to deploy from the registry instead of building locally, override the `image:` for each service in a `docker-compose.override.yml` and run `docker compose up -d`.
 
 ### Check for new or removed env vars after upgrading
 
