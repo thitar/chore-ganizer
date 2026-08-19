@@ -9,6 +9,9 @@
 services:
   # Frontend service (React + Vite + nginx)
   frontend:
+    # Published to ghcr.io as ghcr.io/thitar/chore-ganizer-frontend:<APP_VERSION> (and :latest)
+    # by .github/workflows/publish.yml on every push to main. Compose stays build-only;
+    # to deploy from the registry instead: docker compose pull && docker compose up -d.
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -37,6 +40,8 @@ services:
 
   # Backend service (Express + Prisma + SQLite)
   backend:
+    # Published to ghcr.io as ghcr.io/thitar/chore-ganizer-backend:<APP_VERSION> (and :latest)
+    # by .github/workflows/publish.yml on every push to main.
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -92,6 +97,8 @@ services:
 
   # Backup sidecar (daily SQLite backups with retention)
   backup:
+    # Published to ghcr.io as ghcr.io/thitar/chore-ganizer-backup:<APP_VERSION> (and :latest)
+    # by .github/workflows/publish.yml on every push to main.
     build:
       context: ./backup
       dockerfile: Dockerfile
