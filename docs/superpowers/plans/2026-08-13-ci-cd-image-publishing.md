@@ -4,7 +4,7 @@
 
 **Goal:** Publish the `backend`, `frontend`, and `backup` Docker images to `ghcr.io/thitar/` automatically on every push to `main`, removing the manual "push images yourself" step from the version-bump process.
 
-**Architecture:** A dedicated `.github/workflows/publish.yml` workflow triggers on push to `main` (plus `workflow_dispatch`), reads `APP_VERSION` from `backend/package.json`, guards that `frontend/package.json` matches, then builds all three images, pushes each with the `:VERSION` tag, and atomically promotes all three to `:latest` only after every build succeeds. All external actions are pinned to immutable commit SHAs (supply-chain hardening). `workflow_dispatch` is guarded to main only. Compose stays build-only; docs and project memory are updated to reflect that publishing is now automatic.
+**Architecture:** A dedicated `.github/workflows/publish.yml` workflow triggers on push to `main` (plus `workflow_dispatch`), reads `APP_VERSION` from `backend/package.json`, guards that `frontend/package.json` matches, then builds all three images, pushes each with the `:VERSION` tag, and promotes all three to `:latest` only after every build succeeds (best-effort sequential promotion with per-service error tracking). All external actions are pinned to immutable commit SHAs (supply-chain hardening). `workflow_dispatch` is guarded to main only. Compose stays build-only; docs and project memory are updated to reflect that publishing is now automatic.
 
 **Tech Stack:** GitHub Actions (`actions/checkout@v7` pinned to SHA, `docker/setup-buildx-action@v4` pinned to SHA, `docker/login-action@v4` pinned to SHA, `docker/build-push-action@v7` pinned to SHA), ghcr.io.
 
@@ -19,7 +19,7 @@
   - `docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e` (v4)
   - `docker/login-action@dbcb813823bdd20940b903addbd779551569679f` (v4)
   - `docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a` (v7)
-- `:latest` is promoted atomically after all builds succeed — never on partial failure.
+- `:latest` is promoted after all builds succeed, with per-service error tracking. Build failures prevent any promotion; promotion failures are tracked and reported. `:VERSION` tags are always the reliable source of truth.
 - Compose stays build-only (no `image:` entries); `docker compose pull` is not used.
 
 ---
@@ -102,15 +102,19 @@ jobs:
       - name: Promote all images to :latest
         if: success()
         run: |
-          docker buildx imagetools create \
-            ghcr.io/thitar/chore-ganizer-backend:${{ steps.version.outputs.version }} \
-            --tag ghcr.io/thitar/chore-ganizer-backend:latest
-          docker buildx imagetools create \
-            ghcr.io/thitar/chore-ganizer-frontend:${{ steps.version.outputs.version }} \
-            --tag ghcr.io/thitar/chore-ganizer-frontend:latest
-          docker buildx imagetools create \
-            ghcr.io/thitar/chore-ganizer-backup:${{ steps.version.outputs.version }} \
-            --tag ghcr.io/thitar/chore-ganizer-backup:latest
+          FAILED=0
+          for svc in backend frontend backup; do
+            if ! docker buildx imagetools create \
+              "ghcr.io/thitar/chore-ganizer-${svc}:${{ steps.version.outputs.version }}" \
+              --tag "ghcr.io/thitar/chore-ganizer-${svc}:latest"; then
+              echo "::error::Failed to promote chore-ganizer-${svc} to :latest"
+              FAILED=1
+            fi
+          done
+          if [ "$FAILED" -ne 0 ]; then
+            echo "::error::One or more :latest promotions failed — some services may point to a newer version than others. Pin to the explicit :${{ steps.version.outputs.version }} tag for consistent deploys."
+            exit 1
+          fi
 ```
 
 - [ ] **Step 2: Validate YAML syntax**
@@ -291,7 +295,7 @@ git commit -m "docs(memory): log CI/CD image publishing work"
 ## Self-Review
 
 **Spec coverage:**
-- New `publish.yml` (trigger, permissions, main-ref guard, SHA-pinned actions, version guard, 3 build-push steps, atomic :latest promotion) → Task 1. ✓
+- New `publish.yml` (trigger, permissions, main-ref guard, SHA-pinned actions, version guard, 3 build-push steps, best-effort :latest promotion with error tracking) → Task 1. ✓
 - `docker-compose.yml` comments, compose stays build-only → Task 2. ✓
 - OPERATIONS.md / key_facts.md / FUTURE-ROADMAP.md updates → Task 3. ✓
 - Project-memory work log → Task 4. ✓

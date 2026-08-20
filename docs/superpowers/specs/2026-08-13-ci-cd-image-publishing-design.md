@@ -1,6 +1,6 @@
 # CI/CD Image Publishing — Design
 
-Date: 2026-08-13 (updated 2026-08-19 — SHA pins, main-ref guard, atomic :latest)
+Date: 2026-08-13 (updated 2026-08-19 — SHA pins, main-ref guard, best-effort :latest promotion)
 
 ## Goal
 
@@ -32,7 +32,7 @@ Dedicated workflow file — Approach A from brainstorming.
   1. Checkout, set up Buildx, log in to ghcr.io
   2. Extract `APP_VERSION` from `backend/package.json` (node one-liner); assert `frontend/package.json` matches — fail the job if the version contract is broken.
   3. Three `docker/build-push-action` steps — `backend`, `frontend`, `backup` — each pushes only the `:VERSION` tag (not `:latest`).
-  4. A single `Promote all images to :latest` step using `docker buildx imagetools create` runs only after all three builds succeed (`if: success()`), promoting each `:VERSION` to `:latest` atomically. If any build fails, `:latest` is never updated — the registry is never left in an inconsistent cross-service state.
+  4. A `Promote all images to :latest` step runs only after all three builds succeed (`if: success()`). It promotes each service sequentially using `docker buildx imagetools create`, tracking per-service success/failure. If any build fails, `:latest` is never touched — the common failure case is handled atomically. If a promotion step itself fails mid-sequence (e.g. backend promoted but frontend fails), the job fails loudly with a message recommending pinning to the explicit `:VERSION` tag. GHCR has no cross-repo atomic operations, so `:latest` promotion across three separate repositories is inherently best-effort; `:VERSION` tags are always reliable.
 
 - On `workflow_dispatch`, the version is read from the code at the ref the workflow runs against — restricted to `main` by the guard.
 - Re-pushing an already-existing `:VERSION` tag simply overwrites it — idempotent, no uniqueness check.
@@ -52,7 +52,7 @@ A comment above each service's `build:` block documents that service's published
 
 - Version-guard failure stops the job before any push (a mismatch between the two package.json versions is a merge error, not something to publish).
 - Login/push failures fail the job loudly; since deployment is manual, a failed push means the server still runs whatever it last built locally — no partial-deploy risk.
-- `:latest` is only updated after **all three** builds and version-tagged pushes succeed, via a single `imagetools create` step. If any build fails, `:latest` is never touched — the registry is never left in an inconsistent cross-service state.
+- `:latest` is only promoted after **all three** builds and version-tagged pushes succeed (`if: success()`). If any build fails, `:latest` is never touched. If the promotion step itself fails mid-sequence, the job fails with an explicit error message recommending `:VERSION` pinning. GHCR has no cross-repo atomic operations, so `:latest` across three repos is best-effort; `:VERSION` tags are always consistent and reliable.
 
 ## Testing
 

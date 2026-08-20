@@ -61,12 +61,16 @@ jobs:
       - name: Promote all images to :latest
         if: success()
         run: |
-          docker buildx imagetools create \
-            ghcr.io/thitar/chore-ganizer-backend:${{ steps.version.outputs.version }} \
-            --tag ghcr.io/thitar/chore-ganizer-backend:latest
-          docker buildx imagetools create \
-            ghcr.io/thitar/chore-ganizer-frontend:${{ steps.version.outputs.version }} \
-            --tag ghcr.io/thitar/chore-ganizer-frontend:latest
-          docker buildx imagetools create \
-            ghcr.io/thitar/chore-ganizer-backup:${{ steps.version.outputs.version }} \
-            --tag ghcr.io/thitar/chore-ganizer-backup:latest
+          FAILED=0
+          for svc in backend frontend backup; do
+            if ! docker buildx imagetools create \
+              "ghcr.io/thitar/chore-ganizer-${svc}:${{ steps.version.outputs.version }}" \
+              --tag "ghcr.io/thitar/chore-ganizer-${svc}:latest"; then
+              echo "::error::Failed to promote chore-ganizer-${svc} to :latest"
+              FAILED=1
+            fi
+          done
+          if [ "$FAILED" -ne 0 ]; then
+            echo "::error::One or more :latest promotions failed — some services may point to a newer version than others. Pin to the explicit :${{ steps.version.outputs.version }} tag for consistent deploys."
+            exit 1
+          fi
