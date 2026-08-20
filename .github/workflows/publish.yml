@@ -42,24 +42,31 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: |
-            ghcr.io/thitar/chore-ganizer-backend:${{ steps.version.outputs.version }}
-            ghcr.io/thitar/chore-ganizer-backend:latest
+          tags: ghcr.io/thitar/chore-ganizer-backend:${{ steps.version.outputs.version }}
 
       - name: Build and push frontend
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a  # v7
         with:
           context: ./frontend
           push: true
-          tags: |
-            ghcr.io/thitar/chore-ganizer-frontend:${{ steps.version.outputs.version }}
-            ghcr.io/thitar/chore-ganizer-frontend:latest
+          tags: ghcr.io/thitar/chore-ganizer-frontend:${{ steps.version.outputs.version }}
 
       - name: Build and push backup
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a  # v7
         with:
           context: ./backup
           push: true
-          tags: |
-            ghcr.io/thitar/chore-ganizer-backup:${{ steps.version.outputs.version }}
-            ghcr.io/thitar/chore-ganizer-backup:latest
+          tags: ghcr.io/thitar/chore-ganizer-backup:${{ steps.version.outputs.version }}
+
+      - name: Promote all images to :latest
+        if: success()
+        run: |
+          docker buildx imagetools create \
+            ghcr.io/thitar/chore-ganizer-backend:${{ steps.version.outputs.version }} \
+            --tag ghcr.io/thitar/chore-ganizer-backend:latest
+          docker buildx imagetools create \
+            ghcr.io/thitar/chore-ganizer-frontend:${{ steps.version.outputs.version }} \
+            --tag ghcr.io/thitar/chore-ganizer-frontend:latest
+          docker buildx imagetools create \
+            ghcr.io/thitar/chore-ganizer-backup:${{ steps.version.outputs.version }} \
+            --tag ghcr.io/thitar/chore-ganizer-backup:latest

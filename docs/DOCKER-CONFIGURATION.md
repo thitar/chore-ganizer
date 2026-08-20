@@ -6,7 +6,7 @@ Where things actually live. For runtime behavior (env vars, entrypoint steps, he
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.yml` (repo root) | The only compose file — two services, `frontend` and `backend`. No separate dev/prod compose variants. |
+| `docker-compose.yml` (repo root) | The only compose file — three services, `frontend`, `backend`, and `backup`. No separate dev/prod compose variants. |
 | `docker-compose.sh` (repo root) | Wrapper that syncs `APP_VERSION` from `backend/package.json` into `.env`, then forwards to `docker compose`. See [OPERATIONS.md#starting-the-app](./OPERATIONS.md#starting-the-app). |
 | `backend/Dockerfile` | Multi-stage build: compiles TypeScript, generates the Prisma client, runs as non-root `appuser`. No `Dockerfile.dev` exists — local dev runs `npm run dev` directly, not in a container. |
 | `backend/docker-entrypoint.sh` | Adjusts `appuser` UID/GID to `PUID`/`PGID`, `prisma db push`, seeds if empty, drops privileges, starts the server. Details in [OPERATIONS.md](./OPERATIONS.md#what-happens-on-container-start). |

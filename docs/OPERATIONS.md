@@ -15,7 +15,7 @@ export APP_VERSION=$(grep '"version"' backend/package.json | head -1 | sed 's/.*
 docker compose up --build -d
 ```
 
-`./docker-compose.sh` is a thin wrapper: it extracts `APP_VERSION` from `backend/package.json`, syncs it into `.env` if present and out of date, then forwards all arguments to `docker compose`. Use it whenever the version has just been bumped; otherwise plain `docker compose up -d` is fine if `.env` already has the right `APP_VERSION`. Both images are built locally from `./backend/Dockerfile` and `./frontend/Dockerfile` and are also auto-published to `ghcr.io/thitar/` on merge to main (see [Version Bumps](#version-bumps) below).
+`./docker-compose.sh` is a thin wrapper: it extracts `APP_VERSION` from `backend/package.json`, syncs it into `.env` if present and out of date, then forwards all arguments to `docker compose`. Use it whenever the version has just been bumped; otherwise plain `docker compose up -d` is fine if `.env` already has the right `APP_VERSION`. All three images (`backend`, `frontend`, `backup`) are built locally from their respective Dockerfiles and are also auto-published to `ghcr.io/thitar/` on push to main (see [Version Bumps](#version-bumps) below).
 
 Frontend serves on `${FRONTEND_PORT:-3002}`, backend on `${PORT:-3010}`.
 
@@ -174,7 +174,7 @@ Production is HTTPS behind Caddy. `SECURE_COOKIES` must be enabled manually afte
 
 ### From source (manual build — the default workflow)
 
-Images are built locally from `./backend/Dockerfile` and `./frontend/Dockerfile`. After pulling the latest code:
+Images are built locally from `./backend/Dockerfile`, `./frontend/Dockerfile`, and `./backup/Dockerfile`. After pulling the latest code:
 
 ```bash
 # Pull latest code
@@ -184,7 +184,7 @@ git pull origin main
 ./docker-compose.sh up --build -d
 ```
 
-This rebuilds both images from source, tags them with the current `APP_VERSION`, and recreates the containers. If the version in `package.json` hasn't changed, you can skip the helper script:
+This rebuilds all three images from source, tags them with the current `APP_VERSION`, and recreates the containers. If the version in `package.json` hasn't changed, you can skip the helper script:
 
 ```bash
 git pull origin main
