@@ -212,6 +212,20 @@ describe('POST /api/assignments/:id/complete', () => {
     expect(res.status).toBe(403)
   })
 
+  it('returns 200 when PARENT completes a child\'s assignment, crediting the child', async () => {
+    const childAssign = await request(app).post(BASE).set('Cookie', parentCookies)
+      .send({ choreTemplateId: aliceTemplateId, assignedToId: 3, dueDate: '2026-06-10' })
+    const childAssignmentId = childAssign.body.data.id
+    createdAssignmentIds.push(childAssignmentId)
+
+    const res = await request(app).post(`${BASE}/${childAssignmentId}/complete`).set('Cookie', parentCookies)
+    expect(res.status).toBe(200)
+    expect(res.body.data.status).toBe('COMPLETED')
+    expect(res.body.data.pointsAwarded).toBe(20)
+    expect(res.body.data.assignedToId).toBe(3)
+    expect(res.body.data.completedAt).not.toBeNull()
+  })
+
   it('returns 409 when already completed', async () => {
     const res = await request(app).post(`${BASE}/${aliceAssignmentId}/complete`).set('Cookie', childCookies)
     expect(res.status).toBe(409)

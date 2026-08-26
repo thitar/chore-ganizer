@@ -15,6 +15,7 @@ export function OverduePage() {
   const { overdue, isLoading, error } = useOverdue()
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [completeError, setCompleteError] = useState<string | null>(null)
 
   useEffect(() => {
     if (successMessage) {
@@ -22,6 +23,13 @@ export function OverduePage() {
       return () => clearTimeout(timer)
     }
   }, [successMessage])
+
+  useEffect(() => {
+    if (completeError) {
+      const timer = setTimeout(() => setCompleteError(null), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [completeError])
 
   const sorted = useMemo(
     () => [...overdue].sort((a, b) => a.dueDate.localeCompare(b.dueDate)),
@@ -74,13 +82,14 @@ export function OverduePage() {
                   <span className="font-display font-bold text-accent">{chore.template.points} pts</span>
                 </div>
               </div>
-              <OverdueChoreActions chore={chore} onAction={setSuccessMessage} />
+              <OverdueChoreActions chore={chore} onAction={setSuccessMessage} onError={setCompleteError} />
             </Card>
           ))}
         </div>
       )}
 
       {successMessage && <Toast kind="success">{successMessage}</Toast>}
+      {completeError && <Toast kind="error">{completeError}</Toast>}
     </AppShell>
   )
 }

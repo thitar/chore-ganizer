@@ -97,7 +97,7 @@ router.post(
   async (req, res, next) => {
     try {
       const id = parseInt(req.params.id, 10)
-      const assignment = await assignmentService.complete(id, req.session.userId!)
+      const assignment = await assignmentService.complete(id, req.session.userId!, req.session.role!)
       res.json({ success: true, data: assignment, error: null })
     } catch (err) {
       next(err)

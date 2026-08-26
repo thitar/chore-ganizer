@@ -12,7 +12,18 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
-- 2026-08-11 — Parent dashboard (Option D) + Nudge feature. Parents now see a status strip, needs-action list, leaderboard, and latest-win on `/`; new `POST /api/assignments/nudge` (15-min cooldown via `lastNudgedAt`) and `GET /api/points/weekly`. Spec: `docs/superpowers/specs/2026-08-11-parent-dashboard-nudge-design.md`.
+### 2026-08-26 — Parents can complete children's chores (v3.5.1)
+
+- **Status**: Completed
+- **Description**: Fixed production bug where a parent couldn't mark a child's (overdue) chore as complete — the completion endpoints only allowed the assignee, contradicting documented UAT intent, while the parent-facing UI exposed a "Mark Complete" button that always failed. Both `assignment.service.complete()` and `recurring.service.completeOccurrence()` now accept the caller's `role` and allow `PARENT` (points still credit the assignee); added a "Mark Complete" action to `OverdueChoreActions` (Overdue page + parent dashboard overdue rows) and to due-today rows on the parent dashboard; `useAssignments` complete mutations now invalidate `['overdue']`. Backend +2 unit +2 integration tests, frontend +4 tests; e2e spec 3.6 now genuinely assigns to a child and completes as the parent.
+- **Verification**: backend 377/377, frontend 195/195, backend/frontend/e2e typechecks clean. e2e suite not run live (needs running app).
+- **URL**: local (no ticket)
+
+---
+
+### 2026-08-11 — Parent dashboard + Nudge feature (v3.5.0)
+
+- Parents now see a status strip, needs-action list, leaderboard, and latest-win on `/`; new `POST /api/assignments/nudge` (15-min cooldown via `lastNudgedAt`) and `GET /api/points/weekly`. Spec: `docs/superpowers/specs/2026-08-11-parent-dashboard-nudge-design.md`.
 
 ---
 

@@ -7,6 +7,7 @@ const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false 
 
 const mockCancel = vi.fn()
 const mockReschedule = vi.fn()
+const mockComplete = vi.fn()
 
 vi.mock('../hooks/useAuth', () => ({
   useAuth: vi.fn().mockReturnValue({
@@ -16,6 +17,7 @@ vi.mock('../hooks/useAuth', () => ({
 }))
 
 vi.mock('../hooks/useOverdue', () => ({ useOverdue: vi.fn() }))
+vi.mock('../hooks/useAssignments', () => ({ useAssignments: vi.fn() }))
 vi.mock('../hooks/useGames', () => ({ useGames: vi.fn().mockReturnValue({ data: { pong: { unlocked: true } } }) }))
 vi.mock('../hooks/usePoints', () => ({
   useMyPoints: vi.fn(),
@@ -24,6 +26,7 @@ vi.mock('../hooks/usePoints', () => ({
 }))
 
 import { useOverdue } from '../hooks/useOverdue'
+import { useAssignments } from '../hooks/useAssignments'
 
 const overdueChore = {
   id: 1, type: 'REGULAR' as const, choreTemplateId: 1, assignedToId: 3,
@@ -43,6 +46,9 @@ function mockOverdueState(overrides: Record<string, unknown> = {}) {
     cancelChore: mockCancel, isCancelling: false,
     rescheduleChore: mockReschedule, isRescheduling: false,
     ...overrides,
+  })
+  ;(useAssignments as ReturnType<typeof vi.fn>).mockReturnValue({
+    completeAssignment: mockComplete, isCompleting: false,
   })
 }
 
@@ -127,5 +133,26 @@ describe('OverduePage', () => {
 
     await waitFor(() => expect(mockReschedule).toHaveBeenCalledWith(1, '2026-06-15'))
     expect(screen.getByText('Due date updated.')).toBeInTheDocument()
+  })
+
+  it('marks an overdue chore complete and shows a toast', async () => {
+    mockComplete.mockResolvedValue({})
+    mockOverdueState({ overdue: [overdueChore] })
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: /mark complete/i }))
+
+    await waitFor(() => expect(mockComplete).toHaveBeenCalledWith(1, 'REGULAR'))
+    expect(screen.getByText('Chore marked complete! 🎉')).toBeInTheDocument()
+  })
+
+  it('shows an error toast when completing fails', async () => {
+    mockComplete.mockRejectedValue(new Error('nope'))
+    mockOverdueState({ overdue: [overdueChore] })
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: /mark complete/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText('Failed to complete chore. Please try again.')).toBeInTheDocument()
+    )
   })
 })

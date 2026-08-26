@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { CalendarClock, XCircle } from 'lucide-react'
+import { CheckCircle2, CalendarClock, XCircle } from 'lucide-react'
 import { useOverdue } from '../hooks/useOverdue'
+import { useAssignments } from '../hooks/useAssignments'
 import { Button } from './ui/Button'
 import { Modal } from './ui/Modal'
 import type { OverdueChore } from '../api/overdue.api'
@@ -15,11 +16,14 @@ function todayInputDate(): string {
 export function OverdueChoreActions({
   chore,
   onAction,
+  onError,
 }: {
   chore: OverdueChore
   onAction: (message: string) => void
+  onError: (message: string) => void
 }) {
   const { cancelChore, isCancelling, rescheduleChore, isRescheduling } = useOverdue()
+  const { completeAssignment, isCompleting } = useAssignments()
 
   const [cancelOpen, setCancelOpen] = useState(false)
   const [penalty, setPenalty] = useState('0')
@@ -62,9 +66,21 @@ export function OverdueChoreActions({
     }
   }
 
+  async function handleComplete() {
+    try {
+      await completeAssignment(chore.id, chore.type)
+      onAction('Chore marked complete! 🎉')
+    } catch {
+      onError('Failed to complete chore. Please try again.')
+    }
+  }
+
   return (
     <>
       <div className="flex shrink-0 gap-2">
+        <Button onClick={handleComplete} loading={isCompleting}>
+          <CheckCircle2 className="h-4 w-4" aria-hidden /> Mark Complete
+        </Button>
         <Button variant="danger" onClick={openCancel}>
           <XCircle className="h-4 w-4" aria-hidden /> Cancel
         </Button>

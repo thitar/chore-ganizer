@@ -354,7 +354,7 @@ describe('assignmentService.complete', () => {
       return cb(tx)
     })
 
-    const result = await assignmentService.complete(1, 2)
+    const result = await assignmentService.complete(1, 2, 'CHILD')
 
     expect(result).toBe(completed)
     expect(prisma.$transaction).toHaveBeenCalled()
@@ -364,31 +364,52 @@ describe('assignmentService.complete', () => {
     })
   })
 
-  it('throws AppError 403 when non-owner tries to complete', async () => {
+  it('throws AppError 403 when a non-owner child tries to complete', async () => {
     prisma.choreAssignment.findUnique.mockResolvedValue(mockAssignment)
 
-    await expect(assignmentService.complete(1, 999))
+    await expect(assignmentService.complete(1, 999, 'CHILD'))
       .rejects.toMatchObject({ statusCode: 403, message: 'You can only complete your own assignments' })
+  })
+
+  it('allows a PARENT to complete another user\'s assignment and credits the assignee', async () => {
+    prisma.choreAssignment.findUnique.mockResolvedValue(mockAssignment)
+    let tx: { choreAssignment: unknown; pointLog: unknown; user: { update: jest.Mock } }
+    prisma.$transaction.mockImplementation(async (cb: Function) => {
+      tx = {
+        choreAssignment: { update: jest.fn(), findUnique: jest.fn().mockResolvedValue(completed) },
+        pointLog: { create: jest.fn() },
+        user: { update: jest.fn() },
+      }
+      return cb(tx)
+    })
+
+    const result = await assignmentService.complete(1, 999, 'PARENT')
+
+    expect(result).toBe(completed)
+    expect(tx!.user.update).toHaveBeenCalledWith({
+      where: { id: mockAssignment.assignedToId },
+      data: { lifetimePoints: { increment: 10 } },
+    })
   })
 
   it('throws AppError 409 when already completed', async () => {
     prisma.choreAssignment.findUnique.mockResolvedValue({ ...mockAssignment, status: 'COMPLETED' })
 
-    await expect(assignmentService.complete(1, 2))
+    await expect(assignmentService.complete(1, 2, 'CHILD'))
       .rejects.toMatchObject({ statusCode: 409, message: 'Assignment is already completed' })
   })
 
   it('throws AppError 409 when assignment is CANCELLED', async () => {
     prisma.choreAssignment.findUnique.mockResolvedValue({ ...mockAssignment, status: 'CANCELLED' })
 
-    await expect(assignmentService.complete(1, 2))
+    await expect(assignmentService.complete(1, 2, 'CHILD'))
       .rejects.toMatchObject({ statusCode: 409, message: 'Assignment is cancelled and cannot be completed' })
   })
 
   it('throws AppError 404 when assignment not found', async () => {
     prisma.choreAssignment.findUnique.mockResolvedValue(null)
 
-    await expect(assignmentService.complete(999, 2))
+    await expect(assignmentService.complete(999, 2, 'CHILD'))
       .rejects.toMatchObject({ statusCode: 404 })
   })
 })

@@ -393,21 +393,21 @@ test.describe('Section 3 — Chores (parent)', () => {
   test('3.6 Parent completes on behalf of child then uncompletes; points reverse', async ({ page }) => {
     await uiLogin(page, DAD);
     const due = new Date().toISOString().slice(0, 10);
-    // Assign to Dad so the logged-in user matches assignedToId (complete endpoint requires ownership)
-    const created = await createAssignmentApi(page, 'Make Bed', DAD.email, due);
+    // Assign to a child; the parent completes it on the child's behalf.
+    const created = await createAssignmentApi(page, 'Make Bed', ALICE.email, due);
     expect(created.status).toBe(201);
     const newId = created.id!;
-    const dadId = await getUserId(page, DAD.email);
+    const aliceId = await getUserId(page, ALICE.email);
 
-    const before = await getUserPoints(page, dadId);
+    const before = await getUserPoints(page, aliceId);
     const comp = await api(page, 'POST', `/api/assignments/${newId}/complete`);
     expect(comp.status).toBe(200);
-    const afterComplete = await getUserPoints(page, dadId);
+    const afterComplete = await getUserPoints(page, aliceId);
     expect(afterComplete.balance).toBeGreaterThan(before.balance);
 
     const un = await api(page, 'POST', `/api/assignments/${newId}/uncomplete`);
     expect(un.status).toBe(200);
-    const afterUn = await getUserPoints(page, dadId);
+    const afterUn = await getUserPoints(page, aliceId);
     expect(afterUn.balance).toBe(before.balance);
 
     logResult('3.6', 'PASS', `Points reversed (${before.balance} -> ${afterComplete.balance} -> ${afterUn.balance})`);
