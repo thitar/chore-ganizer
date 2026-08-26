@@ -106,13 +106,13 @@ export async function generateOccurrences(from: Date, to: Date): Promise<void> {
   }
 }
 
-export async function completeOccurrence(occurrenceId: number, userId: number) {
+export async function completeOccurrence(occurrenceId: number, userId: number, role: string) {
   const occurrence = await prisma.recurringOccurrence.findUnique({
     where: { id: occurrenceId },
     include: { chore: { include: { template: true } } },
   })
   if (!occurrence) throw new AppError('Occurrence not found', 404)
-  if (occurrence.assignedToId !== userId) {
+  if (occurrence.assignedToId !== userId && role !== 'PARENT') {
     throw new AppError('You can only complete your own occurrences', 403)
   }
   if (occurrence.status === 'COMPLETED') {

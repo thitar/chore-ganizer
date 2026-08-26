@@ -12,6 +12,14 @@ Date-ordered log of bugs and their solutions.
 
 ---
 
+### 2026-08-26 - Parent couldn't complete a child's (overdue) chore — backend 403 behind a UI button that always fails for parents
+
+- **Issue**: A parent clicking "Mark Complete" on a child's overdue chore got a toast "Failed to complete chore."; log showed `POST /api/assignments/30/complete` returning 403 from the `/my-chores` page. `/my-chores` is not role-restricted and `assignment.service.getAll()` returns **all** family chores to a PARENT (`roleFilter = {}`), so the page renders a "Mark Complete" button for every pending chore — including children's — but both completion endpoints rejected anyone who wasn't the assignee
+- **Root Cause**: `assignment.service.complete()` (`assignedToId !== userId` → 403) and `recurring.service.completeOccurrence()` enforced assignee-only completion, contradicting the documented intent: `docs/UAT-CHECKLIST.md` item 3.6 ("complete a chore on behalf of a child") and the UAT plan both describe parents completing children's chores, and the e2e spec had been silently working around the ownership check by assigning the chore *to the parent* before completing it (comment "complete endpoint requires ownership")
+- **Solution**: Both services now take the caller's `role` and allow a `PARENT` to complete any assignment/occurrence (points still credit the assignee). `POST /api/assignments/:id/complete` and `POST /api/occurrences/:id/complete` pass `req.session.role`. Frontend: added a "Mark Complete" action to `OverdueChoreActions` (used on the Overdue page and the parent dashboard's overdue rows) and to due-today rows on the parent dashboard; `useAssignments` complete mutations now also invalidate the `['overdue']` query so completed chores drop off the overdue list. Backend: +1 unit +1 integration test per service (parent completes child, credits child); frontend: +4 tests. Full suites green (backend 377, frontend 195), both typechecks clean, e2e spec 3.6 updated to genuinely test parent-completes-child (typechecks; not run — needs live app)
+- **Prevention**: When a UI action exists for a role, the backend authorization for that action must permit it (or the UI must hide it). Cross-check UAT checklist claims against the actual service authorization, not the e2e spec that may have been written to sidestep them
+- **File**: `backend/src/services/assignment.service.ts`, `backend/src/services/recurring.service.ts`, `frontend/src/components/OverdueChoreActions.tsx`, `frontend/src/pages/ParentDashboard.tsx`, `frontend/src/hooks/useAssignments.tsx`
+
 ### 2026-08-11 - Favicon 403 in production nginx container (file shipped at mode 0640)
 
 - **Issue**: No tab icon; `curl /favicon.svg` returned HTTP 403 from the running frontend container even though `frontend/public/favicon.svg` exists, `index.html` references it correctly, and the file is present in the image at `/usr/share/nginx/html/favicon.svg`

@@ -66,7 +66,7 @@ function extractErrorMessage(err: unknown): string | null {
 
 export function ParentDashboard() {
   const { user } = useAuth()
-  const { assignments, isLoading: isLoadingAssignments } = useAssignments()
+  const { assignments, isLoading: isLoadingAssignments, completeAssignment, isCompleting } = useAssignments()
   const { overdue, isLoading: isLoadingOverdue } = useOverdue()
   const { data: leaderboard, isLoading: isLeaderboardLoading } = useLeaderboard()
   const { data: weeklyPoints, isLoading: isLoadingWeekly } = useWeeklyPoints()
@@ -155,6 +155,15 @@ export function ParentDashboard() {
     }
   }
 
+  async function handleComplete(chore: ActionChore) {
+    try {
+      await completeAssignment(chore.id, chore.type)
+      setToast({ kind: 'success', text: `Chore marked complete for ${chore.assignedTo.name}! 🎉` })
+    } catch {
+      setToast({ kind: 'error', text: 'Failed to complete chore. Please try again.' })
+    }
+  }
+
   const isLoading = isLoadingAssignments || isLoadingOverdue || isLoadingWeekly || isLeaderboardLoading
 
   return (
@@ -224,7 +233,16 @@ export function ParentDashboard() {
                     </div>
                     <div className="flex shrink-0 gap-2">
                       {isOverdue && (
-                        <OverdueChoreActions chore={chore} onAction={msg => setToast({ kind: 'success', text: msg })} />
+                        <OverdueChoreActions
+                          chore={chore}
+                          onAction={msg => setToast({ kind: 'success', text: msg })}
+                          onError={msg => setToast({ kind: 'error', text: msg })}
+                        />
+                      )}
+                      {!isOverdue && (
+                        <Button onClick={() => handleComplete(chore)} loading={isCompleting}>
+                          <CheckCircle2 className="h-4 w-4" aria-hidden /> Mark Complete
+                        </Button>
                       )}
                       <Button
                         variant="secondary"

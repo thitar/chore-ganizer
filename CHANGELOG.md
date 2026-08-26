@@ -5,6 +5,11 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.1] - 2026-08-26
+
+### Fixed
+- Parents could not mark a child's chore (regular assignment or recurring occurrence) as complete: the backend completion endpoints rejected anyone who wasn't the assignee with a 403, even though the parent UI (and `/my-chores`, which parents can reach) exposes a "Mark Complete" button for every pending chore. Completion now allows `PARENT`-role users to complete any chore, crediting the assignee's points as before, and a "Mark Complete" action was added to the parent dashboard's Needs-action list and the Overdue page.
+
 ## [3.5.0] - 2026-08-11
 
 ### Added

@@ -162,6 +162,22 @@ describe('POST /api/occurrences/:id/complete', () => {
     expect(res.body.data.status).toBe('COMPLETED')
     expect(res.body.data.pointsAwarded).toBe(7)
   })
+
+  it('returns 200 when PARENT completes a child\'s occurrence, crediting the child', async () => {
+    const listRes = await request(app).get('/api/assignments').set('Cookie', parentCookies)
+    const pendingOcc = listRes.body.data.find(
+      (a: { type: string; status: string }) => a.type === 'RECURRING' && a.status === 'PENDING'
+    )
+    if (!pendingOcc) return
+
+    const res = await request(app)
+      .post(`/api/occurrences/${pendingOcc.id}/complete`)
+      .set('Cookie', parentCookies)
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.status).toBe('COMPLETED')
+    expect(res.body.data.assignedToId).toBeDefined()
+  })
 })
 
 describe('DELETE /api/recurring/:id', () => {

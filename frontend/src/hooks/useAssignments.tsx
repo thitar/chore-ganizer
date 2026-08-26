@@ -29,6 +29,7 @@ export function useAssignments() {
     mutationFn: assignmentsApi.complete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments'] })
+      queryClient.invalidateQueries({ queryKey: ['overdue'] })
       queryClient.invalidateQueries({ queryKey: ['points'] })
       queryClient.invalidateQueries({ queryKey: ['points', 'gamification'] })
       queryClient.invalidateQueries({ queryKey: ['games'] })
@@ -39,6 +40,7 @@ export function useAssignments() {
     mutationFn: recurringApi.complete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments'] })
+      queryClient.invalidateQueries({ queryKey: ['overdue'] })
       queryClient.invalidateQueries({ queryKey: ['points'] })
       queryClient.invalidateQueries({ queryKey: ['points', 'gamification'] })
       queryClient.invalidateQueries({ queryKey: ['games'] })

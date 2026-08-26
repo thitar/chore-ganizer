@@ -148,13 +148,13 @@ export async function update(
   }
 }
 
-export async function complete(assignmentId: number, userId: number) {
+export async function complete(assignmentId: number, userId: number, role: string) {
   const assignment = await prisma.choreAssignment.findUnique({
     where: { id: assignmentId },
     include: { template: true },
   })
   if (!assignment) throw new AppError('Assignment not found', 404)
-  if (assignment.assignedToId !== userId) throw new AppError('You can only complete your own assignments', 403)
+  if (assignment.assignedToId !== userId && role !== 'PARENT') throw new AppError('You can only complete your own assignments', 403)
   if (assignment.status === 'COMPLETED') throw new AppError('Assignment is already completed', 409)
   if (assignment.status === 'CANCELLED') throw new AppError('Assignment is cancelled and cannot be completed', 409)
 

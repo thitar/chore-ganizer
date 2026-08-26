@@ -230,7 +230,7 @@ describe('recurringService.completeOccurrence', () => {
         assignedTo: { id: 3, name: 'Alice', color: '#10B981' },
       })
 
-    const result = await recurringService.completeOccurrence(1, 3)
+    const result = await recurringService.completeOccurrence(1, 3, 'CHILD')
 
     expect(prisma.recurringOccurrence.update).toHaveBeenCalledWith({
       where: { id: 1 },
@@ -251,7 +251,7 @@ describe('recurringService.completeOccurrence', () => {
     expect(result?.status).toBe('COMPLETED')
   })
 
-  it('throws 403 when user is not the assignee', async () => {
+  it('throws 403 when a non-owner child tries to complete', async () => {
     prisma.recurringOccurrence.findUnique.mockResolvedValue({
       id: 1,
       assignedToId: 3,
@@ -259,8 +259,43 @@ describe('recurringService.completeOccurrence', () => {
       chore: { template: { id: 1, title: 'Make Bed', points: 5 } },
     })
 
-    await expect(recurringService.completeOccurrence(1, 999)).rejects.toThrow(AppError)
-    await expect(recurringService.completeOccurrence(1, 999)).rejects.toMatchObject({ statusCode: 403 })
+    await expect(recurringService.completeOccurrence(1, 999, 'CHILD')).rejects.toThrow(AppError)
+    await expect(recurringService.completeOccurrence(1, 999, 'CHILD')).rejects.toMatchObject({ statusCode: 403 })
+  })
+
+  it('allows a PARENT to complete another user\'s occurrence and credits the assignee', async () => {
+    const occurrence = {
+      id: 1,
+      assignedToId: 3,
+      status: 'PENDING',
+      chore: { template: { id: 1, title: 'Make Bed', points: 5 } },
+    }
+    const updated = { ...occurrence, status: 'COMPLETED', pointsAwarded: 5 }
+    prisma.recurringOccurrence.findUnique
+      .mockResolvedValueOnce(occurrence)
+      .mockResolvedValueOnce({
+        ...updated,
+        chore: { template: { id: 1, title: 'Make Bed', points: 5, category: 'bedroom' } },
+        assignedTo: { id: 3, name: 'Alice', color: '#10B981' },
+      })
+    prisma.recurringOccurrence.update.mockResolvedValue(updated)
+    prisma.pointLog.create.mockResolvedValue({})
+
+    const result = await recurringService.completeOccurrence(1, 999, 'PARENT')
+
+    expect(prisma.pointLog.create).toHaveBeenCalledWith({
+      data: {
+        userId: 3,
+        amount: 5,
+        type: 'EARNED',
+        reason: 'Make Bed',
+      },
+    })
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 3 },
+      data: { lifetimePoints: { increment: 5 } },
+    })
+    expect(result?.status).toBe('COMPLETED')
   })
 
   it('throws 409 when occurrence is already completed', async () => {
@@ -271,8 +306,8 @@ describe('recurringService.completeOccurrence', () => {
       chore: { template: { id: 1, title: 'Make Bed', points: 5 } },
     })
 
-    await expect(recurringService.completeOccurrence(1, 3)).rejects.toThrow(AppError)
-    await expect(recurringService.completeOccurrence(1, 3)).rejects.toMatchObject({ statusCode: 409 })
+    await expect(recurringService.completeOccurrence(1, 3, 'CHILD')).rejects.toThrow(AppError)
+    await expect(recurringService.completeOccurrence(1, 3, 'CHILD')).rejects.toMatchObject({ statusCode: 409 })
   })
 
   it('throws 409 when occurrence is CANCELLED', async () => {
@@ -283,8 +318,8 @@ describe('recurringService.completeOccurrence', () => {
       chore: { template: { id: 1, title: 'Make Bed', points: 5 } },
     })
 
-    await expect(recurringService.completeOccurrence(7, 3)).rejects.toThrow(AppError)
-    await expect(recurringService.completeOccurrence(7, 3)).rejects.toMatchObject({
+    await expect(recurringService.completeOccurrence(7, 3, 'CHILD')).rejects.toThrow(AppError)
+    await expect(recurringService.completeOccurrence(7, 3, 'CHILD')).rejects.toMatchObject({
       statusCode: 409,
       message: 'Occurrence is cancelled and cannot be completed',
     })
@@ -293,8 +328,8 @@ describe('recurringService.completeOccurrence', () => {
   it('throws 404 when occurrence does not exist', async () => {
     prisma.recurringOccurrence.findUnique.mockResolvedValue(null)
 
-    await expect(recurringService.completeOccurrence(999, 3)).rejects.toThrow(AppError)
-    await expect(recurringService.completeOccurrence(999, 3)).rejects.toMatchObject({ statusCode: 404 })
+    await expect(recurringService.completeOccurrence(999, 3, 'CHILD')).rejects.toThrow(AppError)
+    await expect(recurringService.completeOccurrence(999, 3, 'CHILD')).rejects.toMatchObject({ statusCode: 404 })
   })
 })
 

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ParentDashboard } from '../pages/ParentDashboard'
@@ -20,6 +20,7 @@ function mockMatchMedia(reduced: boolean) {
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
 
 const mockNudge = vi.fn()
+const mockComplete = vi.fn()
 
 vi.mock('../hooks/useAuth', () => ({
   useAuth: vi.fn(),
@@ -78,6 +79,7 @@ function mockParentState(overrides: Record<string, unknown> = {}) {
   })
   ;(useAssignments as ReturnType<typeof vi.fn>).mockReturnValue({
     assignments: [todayChore, overdueChore, doneChore], isLoading: false, error: null,
+    completeAssignment: mockComplete, isCompleting: false,
   })
   ;(useOverdue as ReturnType<typeof vi.fn>).mockReturnValue({
     overdue: [overdueChore], isLoading: false, error: null, ...overrides,
@@ -161,6 +163,26 @@ describe('ParentDashboard', () => {
     renderPage()
     // Only the single overdue row renders these; the due-today row does not.
     expect(screen.getAllByText('Cancel').length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('marks a due-today chore complete and shows a success toast', async () => {
+    mockComplete.mockResolvedValue({})
+    renderPage()
+    const todayCard = screen.getByText('Load dishwasher').closest('.border-edge') as HTMLElement
+    fireEvent.click(within(todayCard).getByRole('button', { name: /mark complete/i }))
+
+    await waitFor(() => expect(mockComplete).toHaveBeenCalledWith(1, 'REGULAR'))
+    expect(await screen.findByText('Chore marked complete for Alice! 🎉')).toBeInTheDocument()
+  })
+
+  it('marks an overdue chore complete from the actions row', async () => {
+    mockComplete.mockResolvedValue({})
+    renderPage()
+    const overdueCard = screen.getByText('Take out trash').closest('.border-edge') as HTMLElement
+    fireEvent.click(within(overdueCard).getByRole('button', { name: /mark complete/i }))
+
+    await waitFor(() => expect(mockComplete).toHaveBeenCalledWith(2, 'REGULAR'))
+    expect(await screen.findByText('Chore marked complete! 🎉')).toBeInTheDocument()
   })
 
   it('shows the latest completed chore in the right rail', () => {
