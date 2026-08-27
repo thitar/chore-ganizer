@@ -18,7 +18,7 @@ interface CalendarDayAssignment {
   description: string | null
   assignee: string
   color: string
-  status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'PARTIALLY_COMPLETE'
+  status: 'PENDING' | 'COMPLETED' | 'CANCELLED'
   points: number
 }
 
