@@ -5,6 +5,7 @@ import { AppShell } from '../components/AppShell'
 import { Skeleton } from '../components/ui/Skeleton'
 import { Button } from '../components/ui/Button'
 import { assignmentKey } from '../utils/assignmentKey'
+import { StatusBadge } from '../components/StatusBadge'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -17,7 +18,7 @@ interface CalendarDayAssignment {
   description: string | null
   assignee: string
   color: string
-  status: string
+  status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'PARTIALLY_COMPLETE'
   points: number
 }
 
@@ -206,7 +207,7 @@ export function CalendarPage() {
                 {day.assignments.slice(0, 3).map((a) => (
                   <div
                     key={assignmentKey(a)}
-                    className={`text-xs px-1 py-0.5 rounded truncate flex items-center gap-1 ${a.status === 'COMPLETED' ? 'opacity-50 line-through' : ''}`}
+                    className={`text-xs px-1 py-0.5 rounded truncate flex items-center gap-1 ${a.status === 'COMPLETED' || a.status === 'CANCELLED' ? 'opacity-50 line-through' : ''}`}
                     style={{
                       backgroundColor: colorWithAlpha(a.color, 0.15),
                       color: a.color,
@@ -282,9 +283,7 @@ export function CalendarPage() {
                       <div className="text-sm text-zinc-500">{assignment.description}</div>
                     )}
                     <div className="text-sm text-zinc-400">{assignment.assignee}</div>
-                    <div className={assignment.status === 'COMPLETED' ? 'text-emerald-400' : 'text-amber-400'}>
-                      {assignment.status === 'COMPLETED' ? 'Completed' : 'Pending'}
-                    </div>
+                    <StatusBadge status={assignment.status} />
                     <div className="text-sm text-zinc-400">{assignment.points} pts</div>
                   </div>
                 ))}

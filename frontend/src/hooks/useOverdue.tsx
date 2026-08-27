@@ -19,6 +19,7 @@ export function useOverdue() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['overdue'] })
       queryClient.invalidateQueries({ queryKey: ['assignments'] })
+      queryClient.invalidateQueries({ queryKey: ['calendar'] })
       if ((data.penaltyPoints ?? 0) > 0) {
         queryClient.invalidateQueries({ queryKey: ['points'] })
         queryClient.invalidateQueries({ queryKey: ['points', 'gamification'] })

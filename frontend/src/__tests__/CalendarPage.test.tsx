@@ -149,6 +149,40 @@ describe('CalendarPage', () => {
     expect(within(dialog).getByText('10 pts')).toBeInTheDocument()
   })
 
+  it('renders a cancelled chore as Cancelled (not Pending) in the selected-date dialog', () => {
+    mockCalendarState({
+      data: [
+        {
+          ...defaultAssignments[0],
+          status: 'CANCELLED',
+        },
+      ],
+    })
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'View chores for June 15, 2026' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Chores for June 15, 2026' })
+    expect(within(dialog).getByText('Cancelled')).toBeInTheDocument()
+    expect(within(dialog).queryByText('Pending')).not.toBeInTheDocument()
+  })
+
+  it('renders cancelled chore pills dimmed and struck through like completed ones', () => {
+    mockCalendarState({
+      data: [
+        {
+          ...defaultAssignments[0],
+          status: 'CANCELLED',
+        },
+      ],
+    })
+    renderPage()
+
+    const pill = screen.getByTitle('Wash Dishes')
+    expect(pill.className).toContain('line-through')
+    expect(pill.className).toContain('opacity-50')
+  })
+
   it('shows the template description in the selected-date dialog', () => {
     mockCalendarState({
       data: [

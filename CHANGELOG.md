@@ -5,6 +5,11 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.2] - 2026-08-26
+
+### Fixed
+- A chore cancelled from the Overdue page still showed as "Pending" on the calendar: the calendar only handled the `COMPLETED` status, so `CANCELLED` rows rendered identically to pending ones in both the day-cell pills and the day-detail dialog. Cancelled chores are now dimmed and struck through, the dialog shows a "Cancelled" badge, and cancelling a chore invalidates the calendar query so it refetches.
+
 ## [3.5.1] - 2026-08-26
 
 ### Fixed

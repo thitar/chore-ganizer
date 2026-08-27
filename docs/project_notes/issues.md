@@ -12,6 +12,15 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-08-26 — Cancelled chore shows as "Pending" on the calendar (v3.5.2)
+
+- **Status**: Completed
+- **Description**: Production bug — a chore cancelled from the Overdue page still rendered as "Pending" on the calendar. `CalendarPage` only branched on `COMPLETED`, so `CANCELLED` rows looked pending in both the day-cell pills and the day-detail dialog; the cancel mutation also never invalidated the calendar query cache. Fixed by dimming/striking cancelled pills, swapping the dialog's status text for the shared `StatusBadge` (renders "Cancelled"), widening `calendar.api.ts`'s status type, and invalidating `['calendar']` after a cancel. Tests written test-first.
+- **Verification**: frontend 197/197 (was 195; +2 `CalendarPage` tests, +1 `useOverdue` assertion), `tsc --noEmit` clean; backend 377/377 unchanged.
+- **URL**: local (no ticket)
+
+---
+
 ### 2026-08-26 — Parents can complete children's chores (v3.5.1)
 
 - **Status**: Completed

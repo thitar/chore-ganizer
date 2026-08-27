@@ -12,6 +12,14 @@ Date-ordered log of bugs and their solutions.
 
 ---
 
+### 2026-08-26 - Cancelled chore still shows as "Pending" on the calendar
+
+- **Issue**: A chore cancelled from the Overdue page (`POST /api/overdue/cancel` sets `status: 'CANCELLED'`) still rendered as Pending on the calendar.
+- **Root Cause**: `CalendarPage.tsx` only special-cased `COMPLETED` — cancelled day-cell pills got no dimmed/struck-through styling, and the day-detail dialog rendered every non-COMPLETED status as "Pending". The calendar API (`GET /api/assignments` → `assignment.service.getAll()`) correctly returns `CANCELLED` rows (no status filter), so this was a pure frontend display gap. Secondary: the cancel mutation in `useOverdue` invalidated `['overdue']`/`['assignments']` but not `['calendar', year, month]`, so the calendar could also show stale data after a cancel.
+- **Solution**: `CalendarPage` now renders `CANCELLED` pills dimmed/struck-through (same treatment as completed) and the day-detail dialog uses the shared `StatusBadge` (shows "Cancelled"); `calendar.api.ts`'s `CalendarAssignment.status` union widened to include `CANCELLED`/`PARTIALLY_COMPLETE`. The cancel mutation now also invalidates `['calendar']`. Tests written test-first (+2 `CalendarPage`, +1 `useOverdue` assertion).
+- **Prevention**: Any status-aware UI must handle all four statuses (`PENDING`/`COMPLETED`/`CANCELLED`/`PARTIALLY_COMPLETE`) — a binary "is it COMPLETED?" check silently renders cancelled chores as pending. When a mutation changes a record's status, invalidate every query key that renders that status (calendar included), not just the list it originated from.
+- **File**: `frontend/src/pages/CalendarPage.tsx`, `frontend/src/api/calendar.api.ts`, `frontend/src/hooks/useOverdue.tsx`
+
 ### 2026-08-26 - Parent couldn't complete a child's (overdue) chore — backend 403 behind a UI button that always fails for parents
 
 - **Issue**: A parent clicking "Mark Complete" on a child's overdue chore got a toast "Failed to complete chore."; log showed `POST /api/assignments/30/complete` returning 403 from the `/my-chores` page. `/my-chores` is not role-restricted and `assignment.service.getAll()` returns **all** family chores to a PARENT (`roleFilter = {}`), so the page renders a "Mark Complete" button for every pending chore — including children's — but both completion endpoints rejected anyone who wasn't the assignee
