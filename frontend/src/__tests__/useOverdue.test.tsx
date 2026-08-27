@@ -43,6 +43,7 @@ describe('useOverdue', () => {
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['overdue'] })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['assignments'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['calendar'] })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['points'] })
   })
 
@@ -59,6 +60,7 @@ describe('useOverdue', () => {
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['overdue'] })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['assignments'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['calendar'] })
     expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['points'] })
   })
 })

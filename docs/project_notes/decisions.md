@@ -194,6 +194,8 @@ Date-ordered Architectural Decision Records (ADRs).
 - ✅ Docs no longer read as an inconsistency/bug — they reflect a known, intentional gap.
 - ❌ The status remains inert until someone actually designs and implements it.
 
+**Amendment (2026-08-26):** Added a display-only `PARTIALLY_COMPLETE` branch to `StatusBadge` (renders "Partially Complete", sky styling) so no UI silently mislabels it as "Completed" via the component's fallthrough, and the calendar dims such pills. This is presentation-only — no producer, no semantics defined, no API/DB change. The "do not implement opportunistically" constraint still holds for anything beyond a label.
+
 ### ADR-006: Lazy Self-Healing Cache Pattern for lifetimePoints (2026-07-10)
 
 **Context:**

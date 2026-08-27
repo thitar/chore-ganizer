@@ -208,6 +208,30 @@ describe('recurringService.generateOccurrences', () => {
     expect(call.data[0].dueDate.getUTCDate()).toBe(31)
     expect(call.data[1].dueDate.getUTCDate()).toBe(28)
   })
+
+  it('does not double-insert an occurrence when two calls race for the same chore and date', async () => {
+    const chore = { id: 1, frequency: 'DAILY', dayOfWeek: null, dayOfMonth: null, assignedToId: 3 }
+    prisma.recurringChore.findMany.mockResolvedValue([chore])
+    const existingDates: Date[] = []
+    prisma.recurringOccurrence.findMany.mockImplementation(async () =>
+      existingDates.map((dueDate) => ({ dueDate }))
+    )
+    prisma.recurringOccurrence.createMany.mockImplementation(async (args: { data: Array<{ dueDate: Date }> }) => {
+      for (const row of args.data) existingDates.push(row.dueDate)
+      return { count: args.data.length }
+    })
+
+    const from = new Date('2026-06-01T00:00:00Z')
+    const to = new Date('2026-06-01T00:00:00Z')
+
+    await Promise.all([
+      recurringService.generateOccurrences(from, to),
+      recurringService.generateOccurrences(from, to),
+    ])
+
+    expect(prisma.recurringOccurrence.createMany).toHaveBeenCalledTimes(1)
+    expect(existingDates).toHaveLength(1)
+  })
 })
 
 describe('recurringService.completeOccurrence', () => {

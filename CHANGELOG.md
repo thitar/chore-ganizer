@@ -5,6 +5,14 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.2] - 2026-08-26
+
+### Fixed
+- A chore cancelled from the Overdue page still showed as "Pending" on the calendar: the calendar only handled the `COMPLETED` status, so `CANCELLED` rows rendered identically to pending ones in both the day-cell pills and the day-detail dialog. Cancelled chores are now dimmed and struck through, the dialog shows a "Cancelled" badge, and cancelling a chore invalidates the calendar query so it refetches.
+- `generateOccurrences` could 500 with a unique-constraint violation when two calendar/assignment loads ran concurrently (a TOCTOU race: both computed the same missing occurrence dates and one `createMany` hit the `@@unique([recurringChoreId, dueDate])` index). Occurrence generation is now serialized, and the backend integration suite runs with a single jest worker so the shared test DB can't race across workers.
+- `StatusBadge` mislabeled `PARTIALLY_COMPLETE` chores as "Completed" (no branch for the status, so it fell through to the Completed label). The badge now renders "Partially Complete" and the calendar dims partially-complete pills.
+- The frontend test suite emitted a jsdom `AggregateError` on every run: `scaffold.test.tsx` mocked `auth.api` but left `getAuthStatus` as the real function, which fired a network call from the login page. It is now mocked.
+
 ## [3.5.1] - 2026-08-26
 
 ### Fixed

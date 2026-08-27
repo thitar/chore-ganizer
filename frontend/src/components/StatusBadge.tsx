@@ -28,6 +28,14 @@ export function StatusBadge({ status, overdue }: StatusBadgeProps) {
     )
   }
 
+  if (status === 'PARTIALLY_COMPLETE') {
+    return (
+      <span className="inline-flex items-center rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-xs text-sky-400">
+        Partially Complete
+      </span>
+    )
+  }
+
   return (
     <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
       Completed
