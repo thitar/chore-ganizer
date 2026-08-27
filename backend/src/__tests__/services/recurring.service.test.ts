@@ -192,7 +192,7 @@ describe('recurringService.generateOccurrences', () => {
     expect(call.data.length).toBe(28)
   })
 
-it('clamps monthly dayOfMonth to last day of month', async () => {
+  it('clamps monthly dayOfMonth to last day of month', async () => {
     const chore = { id: 3, frequency: 'MONTHLY', dayOfWeek: null, dayOfMonth: 31, assignedToId: 3 }
     prisma.recurringChore.findMany.mockResolvedValue([chore])
     prisma.recurringOccurrence.findMany.mockResolvedValue([])
@@ -205,6 +205,8 @@ it('clamps monthly dayOfMonth to last day of month', async () => {
 
     const call = prisma.recurringOccurrence.createMany.mock.calls[0][0]
     expect(call.data.length).toBe(2)
+    expect(call.data[0].dueDate.getUTCDate()).toBe(31)
+    expect(call.data[1].dueDate.getUTCDate()).toBe(28)
   })
 
   it('does not double-insert an occurrence when two calls race for the same chore and date', async () => {
