@@ -18,7 +18,7 @@ interface CalendarDayAssignment {
   description: string | null
   assignee: string
   color: string
-  status: 'PENDING' | 'COMPLETED' | 'CANCELLED'
+  status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'PARTIALLY_COMPLETE'
   points: number
 }
 
@@ -207,7 +207,13 @@ export function CalendarPage() {
                 {day.assignments.slice(0, 3).map((a) => (
                   <div
                     key={assignmentKey(a)}
-                    className={`text-xs px-1 py-0.5 rounded truncate flex items-center gap-1 ${a.status === 'COMPLETED' || a.status === 'CANCELLED' ? 'opacity-50 line-through' : ''}`}
+                    className={`text-xs px-1 py-0.5 rounded truncate flex items-center gap-1 ${
+                      a.status === 'COMPLETED' || a.status === 'CANCELLED'
+                        ? 'opacity-50 line-through'
+                        : a.status === 'PARTIALLY_COMPLETE'
+                          ? 'opacity-50'
+                          : ''
+                    }`}
                     style={{
                       backgroundColor: colorWithAlpha(a.color, 0.15),
                       color: a.color,

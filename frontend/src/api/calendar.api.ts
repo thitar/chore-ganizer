@@ -8,7 +8,7 @@ export interface CalendarAssignment {
   choreTemplateId: number
   assignedToId: number
   dueDate: string
-  status: 'PENDING' | 'COMPLETED' | 'CANCELLED'
+  status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'PARTIALLY_COMPLETE'
   pointsAwarded: number | null
   template: {
     id: number

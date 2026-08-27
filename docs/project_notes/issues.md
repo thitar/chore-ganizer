@@ -12,6 +12,15 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-08-26 — Fixed three pre-existing errors surfaced by the cancelled-calendar review (v3.5.2)
+
+- **Status**: Completed
+- **Description**: (1) `generateOccurrences` had a TOCTOU race — concurrent `getAll()` calls both computed the same missing occurrence dates and the second hit the `@@unique([recurringChoreId, dueDate])` constraint → 500 (flaky backend suite; also a real production race between two simultaneous users). Fixed with an in-process promise-chain lock (single-container app) + `maxWorkers: 1` in `backend/jest.config.js` for the shared-`dev.db` integration suites. `skipDuplicates: true` was tried and rejected — Prisma 5.22 doesn't support it on SQLite. (2) `StatusBadge` mislabeled `PARTIALLY_COMPLETE` as "Completed" via fallthrough; added a display-only branch ("Partially Complete") + dim pills on the calendar; ADR-007 amended to record this presentation-only exception. (3) `scaffold.test.tsx` left `getAuthStatus` unmocked (real XHR → jsdom `AggregateError` on every run); now mocked + `queryClient.clear()` per test.
+- **Verification**: backend 378/378 (was 377; +1 concurrency unit test), 5 consecutive forced-parallelism runs clean; frontend 201/201 (was 197; +1 StatusBadge, +2 CalendarPage, +1 scaffold), 3 consecutive runs with zero `AggregateError`; both `tsc --noEmit` clean.
+- **URL**: local (no ticket)
+
+---
+
 ### 2026-08-26 — Cancelled chore shows as "Pending" on the calendar (v3.5.2)
 
 - **Status**: Completed

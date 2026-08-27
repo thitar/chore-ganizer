@@ -75,7 +75,15 @@ export async function getAll() {
   })
 }
 
+let generationQueue: Promise<void> = Promise.resolve()
+
 export async function generateOccurrences(from: Date, to: Date): Promise<void> {
+  const run = generationQueue.then(() => generateOccurrencesInner(from, to))
+  generationQueue = run.then(() => undefined, () => undefined)
+  return run
+}
+
+async function generateOccurrencesInner(from: Date, to: Date): Promise<void> {
   const chores = await prisma.recurringChore.findMany()
   if (chores.length === 0) return
 

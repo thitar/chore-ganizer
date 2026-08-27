@@ -11,6 +11,7 @@ vi.mock('../api/auth.api', async () => {
     getCurrentUser: vi.fn().mockRejectedValue(new actual.AuthError('Not authenticated', 401)),
     login: vi.fn(),
     logout: vi.fn(),
+    getAuthStatus: vi.fn().mockResolvedValue({ passwordResetEnabled: false }),
   }
 })
 
@@ -29,6 +30,10 @@ function renderWithProviders(ui: React.ReactElement) {
 }
 
 describe('App shell', () => {
+  beforeEach(() => {
+    queryClient.clear()
+  })
+
   it('renders without crashing', () => {
     const { container } = renderWithProviders(<App />)
     expect(container.firstChild).toBeInTheDocument()
@@ -39,6 +44,17 @@ describe('App shell', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Sign in to your account')).toBeInTheDocument()
+    })
+  })
+
+  it('renders the forgot-password link from the mocked auth status (no real network call)', async () => {
+    const authApi = await import('../api/auth.api')
+    ;(authApi.getAuthStatus as ReturnType<typeof vi.fn>).mockResolvedValue({ passwordResetEnabled: true })
+
+    renderWithProviders(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Forgot password?')).toBeInTheDocument()
     })
   })
 })
