@@ -105,3 +105,17 @@ This project maintains institutional knowledge in `docs/project_notes/` for cons
 **When user requests memory updates:**
 - Update the appropriate memory file (bugs, decisions, key_facts, or issues)
 - Follow the established format and style (bullet lists, dates, concise entries)
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues for thitar/chore-ganizer. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default labels: needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` + `docs/adr/` at repo root. See `docs/agents/domain.md`.
