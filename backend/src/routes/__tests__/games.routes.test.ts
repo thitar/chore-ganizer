@@ -128,4 +128,17 @@ describe('games.routes', () => {
       error: { message: 'Unknown game: BOGUS' },
     })
   })
+
+  it('rejects inherited Object.prototype properties as unknown games', async () => {
+    for (const maliciousId of ['toString', 'constructor']) {
+      gamesService.recordScore.mockRejectedValue(new AppError(`Unknown game: ${maliciousId}`, 404))
+      const res = await authenticatedRequest('post', `/api/games/${maliciousId}/scores`).send({ score: 10 })
+      expect(res.status).toBe(404)
+      expect(res.body).toEqual({
+        success: false,
+        data: null,
+        error: { message: `Unknown game: ${maliciousId}` },
+      })
+    }
+  })
 })

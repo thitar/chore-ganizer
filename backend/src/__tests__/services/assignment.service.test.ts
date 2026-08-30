@@ -490,7 +490,7 @@ describe('assignmentService.getAll - notification sweep', () => {
       id: 1,
       choreTemplateId: 1,
       assignedToId: 3,
-      dueDate: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+      dueDate: new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())),
       status: 'PENDING',
       dueNotifiedAt: null,
       completedAt: null,
@@ -509,7 +509,7 @@ describe('assignmentService.getAll - notification sweep', () => {
       id: 10,
       recurringChoreId: 5,
       assignedToId: 3,
-      dueDate: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+      dueDate: new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())),
       status: 'PENDING',
       dueNotifiedAt: null,
       completedAt: null,
@@ -526,9 +526,8 @@ describe('assignmentService.getAll - notification sweep', () => {
   }
 
   function tomorrow(): Date {
-    const d = new Date()
-    d.setDate(d.getDate() + 1)
-    return d
+    const today = new Date()
+    return new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 1))
   }
 
   beforeEach(() => {

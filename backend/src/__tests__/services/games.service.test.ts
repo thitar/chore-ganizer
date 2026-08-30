@@ -124,6 +124,20 @@ describe('recordScore', () => {
     })
   })
 
+  it('rejects inherited Object.prototype properties as unknown games (prototype pollution guard)', async () => {
+    for (const maliciousId of ['toString', 'constructor', '__proto__', 'hasOwnProperty']) {
+      await expect(gamesService.recordScore(maliciousId, 1, 'PARENT', 10)).rejects.toMatchObject({
+        message: `Unknown game: ${maliciousId}`,
+        statusCode: 404,
+      })
+      await expect(gamesService.recordScore(maliciousId, 2, 'CHILD', 10)).rejects.toMatchObject({
+        message: `Unknown game: ${maliciousId}`,
+        statusCode: 404,
+      })
+    }
+    expect(prisma.gameHighScore.create).not.toHaveBeenCalled()
+  })
+
   it('preserves an equal or lower personal best without writing', async () => {
     prisma.userBadge.findUnique.mockResolvedValue({ id: 1 })
     prisma.gameHighScore.updateMany.mockResolvedValue({ count: 0 })

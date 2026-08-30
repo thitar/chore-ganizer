@@ -21,10 +21,10 @@ export function listGameIds(): string[] {
 }
 
 async function canPlay(gameId: string, userId: number, role: string): Promise<boolean> {
+  if (!Object.prototype.hasOwnProperty.call(GAME_DEFS, gameId)) return false
   if (role === 'PARENT') return true
 
   const def = GAME_DEFS[gameId]
-  if (!def) return false
 
   const badge = await prisma.userBadge.findUnique({
     where: { userId_badgeId: { userId, badgeId: def.unlockBadge } },
@@ -81,10 +81,10 @@ export async function getGames(userId: number, role: string): Promise<Record<str
 }
 
 export async function recordScore(gameId: string, userId: number, role: string, score: number) {
-  const def = GAME_DEFS[gameId]
-  if (!def) {
+  if (!Object.prototype.hasOwnProperty.call(GAME_DEFS, gameId)) {
     throw new AppError(`Unknown game: ${gameId}`, 404)
   }
+  const def = GAME_DEFS[gameId]
 
   if (!(await canPlay(gameId, userId, role))) {
     throw new AppError(`${gameId} is locked until you earn the ${def.unlockBadge} badge`, 403)
