@@ -300,6 +300,41 @@ describe('evaluateBadges', () => {
   })
 })
 
+describe('twenty/thirty-chores badge thresholds', () => {
+  it('awards twenty-chores at 20 completions and thirty-chores at 30', async () => {
+    prisma.choreAssignment.count.mockResolvedValue(20)
+    prisma.recurringOccurrence.count.mockResolvedValue(0)
+    prisma.choreAssignment.findMany.mockResolvedValue([])
+    prisma.recurringOccurrence.findMany.mockResolvedValue([])
+    prisma.pointLog.aggregate.mockResolvedValue({ _sum: { amount: null } })
+    prisma.userBadge.findMany.mockResolvedValue([])
+    prisma.userBadge.create.mockResolvedValue({})
+    prisma.user.findUnique.mockResolvedValue({
+      streakCount: 0,
+      streakComputedAt: new Date(),
+      lifetimePoints: 0,
+      lifetimePointsSyncedAt: new Date(),
+    })
+    let earned = await gamification.evaluateBadges(3)
+    expect(earned.map((b) => b.id)).toContain('twenty-chores')
+    expect(earned.map((b) => b.id)).not.toContain('thirty-chores')
+
+    prisma.choreAssignment.count.mockResolvedValue(30)
+    earned = await gamification.evaluateBadges(3)
+    expect(earned.map((b) => b.id)).toContain('thirty-chores')
+  })
+})
+
+describe('GAME_DEFS / BADGE_CATALOG invariant', () => {
+  it('every GAME_DEFS unlockBadge exists in BADGE_CATALOG', () => {
+    const { GAME_DEFS } = require('../../services/games.service')
+    const catalogIds = new Set(gamification.BADGE_CATALOG.map((b: { id: string }) => b.id))
+    for (const [gameId, def] of Object.entries(GAME_DEFS) as [string, { unlockBadge: string }][]) {
+      expect(catalogIds.has(def.unlockBadge)).toBe(true)
+    }
+  })
+})
+
 describe('getGamification', () => {
   it('returns streak, level, and full catalog with earnedAt flags', async () => {
     prisma.user.findUnique.mockResolvedValue({
@@ -318,7 +353,7 @@ describe('getGamification', () => {
 
     expect(g.streak).toBe(2)
     expect(g.level.level).toBe(2)
-    expect(g.badges).toHaveLength(8)
+    expect(g.badges).toHaveLength(10)
     const first = g.badges.find((b) => b.id === 'first-chore')!
     expect(first.earnedAt).toBe('2026-07-01T10:00:00.000Z')
     const locked = g.badges.find((b) => b.id === 'fifty-chores')!

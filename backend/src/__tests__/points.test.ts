@@ -127,7 +127,7 @@ describe('GET /api/points/gamification', () => {
     expect(res.body.data.level).toHaveProperty('level')
     expect(res.body.data.level).toHaveProperty('progress')
     expect(Array.isArray(res.body.data.badges)).toBe(true)
-    expect(res.body.data.badges).toHaveLength(8)
+    expect(res.body.data.badges).toHaveLength(10)
     expect(res.body.data.badges[0]).toHaveProperty('earnedAt')
   })
 })

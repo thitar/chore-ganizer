@@ -139,6 +139,8 @@ export interface BadgeDef {
 export const BADGE_CATALOG: BadgeDef[] = [
   { id: 'first-chore', name: 'First Chore', description: 'Complete your first chore', emoji: '🎉' },
   { id: 'ten-chores', name: '10 Chores', description: 'Complete 10 chores', emoji: '✅' },
+  { id: 'twenty-chores', name: '20 Chores', description: 'Complete 20 chores', emoji: '🐍' },
+  { id: 'thirty-chores', name: '30 Chores', description: 'Complete 30 chores', emoji: '🧱' },
   { id: 'fifty-chores', name: '50 Chores', description: 'Complete 50 chores', emoji: '🏆' },
   { id: 'hundred-points', name: '100 Points', description: 'Earn 100 lifetime points', emoji: '💯' },
   { id: 'five-hundred-points', name: '500 Points', description: 'Earn 500 lifetime points', emoji: '💎' },
@@ -181,6 +183,8 @@ type Stats = Awaited<ReturnType<typeof collectStats>>
 const BADGE_RULES: Record<string, (s: Stats) => boolean> = {
   'first-chore': (s) => s.completions >= 1,
   'ten-chores': (s) => s.completions >= 10,
+  'twenty-chores': (s) => s.completions >= 20,
+  'thirty-chores': (s) => s.completions >= 30,
   'fifty-chores': (s) => s.completions >= 50,
   'hundred-points': (s) => s.lifetimePoints >= 100,
   'five-hundred-points': (s) => s.lifetimePoints >= 500,

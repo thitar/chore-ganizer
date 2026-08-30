@@ -5,6 +5,12 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] - 2026-08-30
+
+### Added
+- Generalized games registry: `GAME_DEFS` with `PONG` (`ten-chores`) and `SNAKE` (`twenty-chores`), generic `getGames`/`recordScore(gameId, …)` and `POST /api/games/:gameId/scores` (keeps legacy `POST /api/games/pong/scores` for backward-compat). `GET /api/games/me` now returns a per-game record map keyed by `gameId` (`PONG`/`SNAKE`) plus lowercase `pong`/`snake` aliases for shipped clients. No DB migration.
+- New badges `twenty-chores` (20 chores, unlocks Snake) and `thirty-chores` (30 chores, reserves Breakout) in `BADGE_CATALOG`/`BADGE_RULES`; `BadgeGrid` renders them automatically.
+
 ## [3.5.2] - 2026-08-26
 
 ### Fixed

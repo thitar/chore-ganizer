@@ -12,7 +12,7 @@ jest.mock('../../config/prisma', () => ({
 
 jest.mock('../../services/games.service', () => ({
   getGames: jest.fn(),
-  recordPongScore: jest.fn(),
+  recordScore: jest.fn(),
 }))
 
 const { prisma } = require('../../config/prisma')
@@ -60,7 +60,7 @@ describe('games.routes', () => {
   })
 
   it('delegates GET /me with the session user and role', async () => {
-    const games = { pong: { unlocked: true, personalBest: 12, leaderboard: [] } }
+    const games = { PONG: { unlocked: true, personalBest: 12, leaderboard: [] } }
     gamesService.getGames.mockResolvedValue(games)
     const res = await authenticatedRequest('get', '/api/games/me')
 
@@ -70,50 +70,75 @@ describe('games.routes', () => {
   })
 
   it('rejects a negative score', async () => {
-    const res = await authenticatedRequest('post', '/api/games/pong/scores').send({ score: -1 })
+    const res = await authenticatedRequest('post', '/api/games/SNAKE/scores').send({ score: -1 })
 
     expect(res.status).toBe(400)
     expect(res.body.success).toBe(false)
-    expect(gamesService.recordPongScore).not.toHaveBeenCalled()
+    expect(gamesService.recordScore).not.toHaveBeenCalled()
   })
 
   it('rejects a fractional score', async () => {
-    const res = await authenticatedRequest('post', '/api/games/pong/scores').send({ score: 1.5 })
+    const res = await authenticatedRequest('post', '/api/games/SNAKE/scores').send({ score: 1.5 })
 
     expect(res.status).toBe(400)
     expect(res.body.success).toBe(false)
-    expect(gamesService.recordPongScore).not.toHaveBeenCalled()
+    expect(gamesService.recordScore).not.toHaveBeenCalled()
   })
 
-  it('records a zero score with 201', async () => {
-    const result = { personalBest: 0, isNewBest: true }
-    gamesService.recordPongScore.mockResolvedValue(result)
-    const res = await authenticatedRequest('post', '/api/games/pong/scores').send({ score: 0 })
+  it('records a SNAKE score with 201 via the generic route', async () => {
+    const result = { personalBest: 7, isNewBest: true }
+    gamesService.recordScore.mockResolvedValue(result)
+    const res = await authenticatedRequest('post', '/api/games/SNAKE/scores').send({ score: 7 })
 
     expect(res.status).toBe(201)
     expect(res.body).toEqual({ success: true, data: result, error: null })
-    expect(gamesService.recordPongScore).toHaveBeenCalledWith(7, 'CHILD', 0)
+    expect(gamesService.recordScore).toHaveBeenCalledWith('SNAKE', 7, 'CHILD', 7)
   })
 
-  it('records a positive score with 201', async () => {
+  it('records a legacy PONG score with 201', async () => {
     const result = { personalBest: 7, isNewBest: true }
-    gamesService.recordPongScore.mockResolvedValue(result)
+    gamesService.recordScore.mockResolvedValue(result)
     const res = await authenticatedRequest('post', '/api/games/pong/scores').send({ score: 7 })
 
     expect(res.status).toBe(201)
     expect(res.body).toEqual({ success: true, data: result, error: null })
-    expect(gamesService.recordPongScore).toHaveBeenCalledWith(7, 'CHILD', 7)
+    expect(gamesService.recordScore).toHaveBeenCalledWith('PONG', 7, 'CHILD', 7)
   })
 
   it('forwards service 403 errors', async () => {
-    gamesService.recordPongScore.mockRejectedValue(new AppError('Pong is locked', 403))
-    const res = await authenticatedRequest('post', '/api/games/pong/scores').send({ score: 10 })
+    gamesService.recordScore.mockRejectedValue(new AppError('SNAKE is locked', 403))
+    const res = await authenticatedRequest('post', '/api/games/SNAKE/scores').send({ score: 10 })
 
     expect(res.status).toBe(403)
     expect(res.body).toEqual({
       success: false,
       data: null,
-      error: { message: 'Pong is locked' },
+      error: { message: 'SNAKE is locked' },
     })
+  })
+
+  it('forwards service 404 errors for an unknown game', async () => {
+    gamesService.recordScore.mockRejectedValue(new AppError('Unknown game: BOGUS', 404))
+    const res = await authenticatedRequest('post', '/api/games/BOGUS/scores').send({ score: 10 })
+
+    expect(res.status).toBe(404)
+    expect(res.body).toEqual({
+      success: false,
+      data: null,
+      error: { message: 'Unknown game: BOGUS' },
+    })
+  })
+
+  it('rejects inherited Object.prototype properties as unknown games', async () => {
+    for (const maliciousId of ['toString', 'constructor']) {
+      gamesService.recordScore.mockRejectedValue(new AppError(`Unknown game: ${maliciousId}`, 404))
+      const res = await authenticatedRequest('post', `/api/games/${maliciousId}/scores`).send({ score: 10 })
+      expect(res.status).toBe(404)
+      expect(res.body).toEqual({
+        success: false,
+        data: null,
+        error: { message: `Unknown game: ${maliciousId}` },
+      })
+    }
   })
 })
