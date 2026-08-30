@@ -75,7 +75,7 @@ test.describe('M2 The Game — gamification + CSRF-protected mutations', () => {
     // state via aria-label="{name} — earned|locked", making state assertable
     // without relying on CSS class names.
     const badges = page.locator('[aria-label$="— locked"], [aria-label$="— earned"]');
-    await expect(badges).toHaveCount(8, { timeout: 10000 });
+    await expect(badges).toHaveCount(10, { timeout: 10000 });
 
     const lockedBadges = page.locator('[aria-label$="— locked"]');
     expect(await lockedBadges.count(), 'At least one badge should be locked for a fresh seeded account').toBeGreaterThan(0);

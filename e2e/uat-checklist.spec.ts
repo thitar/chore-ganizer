@@ -668,10 +668,10 @@ test.describe('Section 6 — Gamification', () => {
     await page.goto('/profile');
     await page.waitForSelector('h2:has-text("My Profile")', { timeout: 10000 });
     const badges = page.locator('[aria-label$="— locked"], [aria-label$="— earned"]');
-    await expect(badges).toHaveCount(8, { timeout: 10000 });
+    await expect(badges).toHaveCount(10, { timeout: 10000 });
     const locked = await page.locator('[aria-label$="— locked"]').count();
     expect(locked).toBeGreaterThan(0);
-    logResult('6.1', 'PASS', `8 badges rendered, ${locked} locked`);
+    logResult('6.1', 'PASS', `10 badges rendered, ${locked} locked`);
     await shot(page, 's6-badges');
   });
 
