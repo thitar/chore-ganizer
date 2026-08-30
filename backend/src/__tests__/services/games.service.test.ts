@@ -22,6 +22,8 @@ describe('getGames', () => {
     await expect(gamesService.getGames(1, 'PARENT')).resolves.toEqual({
       PONG: { unlocked: true, personalBest: null, leaderboard: null },
       SNAKE: { unlocked: true, personalBest: null, leaderboard: null },
+      pong: { unlocked: true, personalBest: null, leaderboard: null },
+      snake: { unlocked: true, personalBest: null, leaderboard: null },
     })
     expect(prisma.userBadge.findUnique).not.toHaveBeenCalled()
     expect(prisma.gameHighScore.findMany).not.toHaveBeenCalled()
@@ -33,6 +35,8 @@ describe('getGames', () => {
     await expect(gamesService.getGames(2, 'CHILD')).resolves.toEqual({
       PONG: { unlocked: false, personalBest: null, leaderboard: null },
       SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
+      pong: { unlocked: false, personalBest: null, leaderboard: null },
+      snake: { unlocked: false, personalBest: null, leaderboard: null },
     })
     expect(prisma.gameHighScore.findUnique).not.toHaveBeenCalled()
     expect(prisma.gameHighScore.findMany).not.toHaveBeenCalled()
@@ -48,6 +52,8 @@ describe('getGames', () => {
     await expect(gamesService.getGames(2, 'CHILD')).resolves.toEqual({
       PONG: { unlocked: true, personalBest: null, leaderboard: [] },
       SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
+      pong: { unlocked: true, personalBest: null, leaderboard: [] },
+      snake: { unlocked: false, personalBest: null, leaderboard: null },
     })
   })
 
@@ -59,23 +65,27 @@ describe('getGames', () => {
       { score: 42, user: { id: 2, name: 'Alex', color: '#3B82F6' } },
     ])
 
+    const pongEntry = {
+      unlocked: true,
+      personalBest: 42,
+      leaderboard: [
+        { user: { id: 3, name: 'Sam', color: '#10B981' }, score: 99 },
+        { user: { id: 2, name: 'Alex', color: '#3B82F6' }, score: 42 },
+      ],
+    }
+    const snakeEntry = {
+      unlocked: true,
+      personalBest: 42,
+      leaderboard: [
+        { user: { id: 3, name: 'Sam', color: '#10B981' }, score: 99 },
+        { user: { id: 2, name: 'Alex', color: '#3B82F6' }, score: 42 },
+      ],
+    }
     await expect(gamesService.getGames(2, 'CHILD')).resolves.toEqual({
-      PONG: {
-        unlocked: true,
-        personalBest: 42,
-        leaderboard: [
-          { user: { id: 3, name: 'Sam', color: '#10B981' }, score: 99 },
-          { user: { id: 2, name: 'Alex', color: '#3B82F6' }, score: 42 },
-        ],
-      },
-      SNAKE: {
-        unlocked: true,
-        personalBest: 42,
-        leaderboard: [
-          { user: { id: 3, name: 'Sam', color: '#10B981' }, score: 99 },
-          { user: { id: 2, name: 'Alex', color: '#3B82F6' }, score: 42 },
-        ],
-      },
+      PONG: pongEntry,
+      SNAKE: snakeEntry,
+      pong: pongEntry,
+      snake: snakeEntry,
     })
     expect(prisma.gameHighScore.findMany).toHaveBeenNthCalledWith(1, {
       where: {
