@@ -8,6 +8,8 @@ export interface GameRegistryEntry {
   /** Short instruction lines shown on the game card */
   instructions: string[]
   Canvas: React.ComponentType<{ onGameOver: (score: number) => void; onRestart: () => void; runId: number }>
+  // submitScore per-entry will be added in #222 when GameCard wires the registry
+  // (see PR #228 review). Keeping shape minimal until GamesPage consumes the registry.
 }
 
 /**
@@ -15,8 +17,9 @@ export interface GameRegistryEntry {
  * adding a game is a single registry line with zero page/API churn.
  * Backend parity: GAME_DEFS in backend/src/services/games.service.ts.
  *
- * PONG is shipped. SNAKE (twenty-chores) will be added in #221 once
- * SnakeCanvas + snake.ts land; Breakout (thirty-chores) + 2 more are reserved
+ * PONG is shipped. SNAKE is registered here in #221 but not yet rendered —
+ * GamesPage still hardcodes Pong and will be migrated to the registry in #222
+ * (see PR #228 review). Breakout (thirty-chores) + 2 more are reserved
  * config-only additions to reach the 5-game intent.
  */
 export const GAME_REGISTRY: GameRegistryEntry[] = [

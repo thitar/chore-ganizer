@@ -25,7 +25,8 @@ export function useSubmitPongScore() {
   })
 }
 
-// Alias for the upcoming Snake game — kept as a thin wrapper over the generic hook
+// Scaffolding for #222 — no callers yet (GamesPage still uses useSubmitPongScore).
+// useSubmitScore is the generic entry point; useSubmitSnakeScore is a thin wrapper
 // so callers can migrate to useSubmitScore({ gameId: 'SNAKE', score }) without churn.
 export function useSubmitSnakeScore() {
   const queryClient = useQueryClient()

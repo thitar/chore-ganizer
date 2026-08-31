@@ -20,8 +20,9 @@ export interface GameScoreResult {
   isNewBest: boolean
 }
 
-// Legacy aliases for backward compat — callers should migrate to Game* names and the
-// generic submitScore(gameId, score) / keyed GamesSummary shape (PONG, SNAKE).
+// Legacy aliases for backward compat — kept until #222 migrates the single caller
+// (GamesPage) from `data.pong` / `submitPongScore` to the keyed shape + generic
+// submitScore(gameId, score). See PR #228 review.
 export type PongLeaderboardEntry = GameLeaderboardEntry
 export type PongStatus = GameStatus
 export type PongScoreResult = GameScoreResult

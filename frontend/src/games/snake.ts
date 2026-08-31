@@ -3,6 +3,7 @@ export const SNAKE_GRID_HEIGHT = 20
 export const SNAKE_TICK_SECONDS = 0.12
 export const SNAKE_CANVAS_SIZE = 400
 export const SNAKE_INITIAL_LENGTH = 3
+export const SNAKE_MAX_DELTA_SECONDS = 0.5
 
 export type SnakeDirection = 'up' | 'down' | 'left' | 'right'
 export type SnakeStatus = 'playing' | 'game-over'
@@ -185,6 +186,15 @@ function stepOnce(game: SnakeGame): SnakeGame {
   }
 }
 
+/** Explicit single-tick step for deterministic unit tests — prefers over the `advanceSnakeGame(game)` sentinel. */
+export function stepSnake(game: SnakeGame): SnakeGame {
+  if (game.status === 'game-over') {
+    return { ...game, snake: game.snake.map(p => ({ ...p })), apple: { ...game.apple } }
+  }
+  const stepped = stepOnce({ ...game, elapsed: game.elapsed })
+  return { ...stepped, elapsed: 0 }
+}
+
 export function advanceSnakeGame(game: SnakeGame, deltaSeconds?: number): SnakeGame {
   if (game.status === 'game-over') {
     return { ...game, snake: game.snake.map(p => ({ ...p })), apple: { ...game.apple } }
@@ -192,12 +202,13 @@ export function advanceSnakeGame(game: SnakeGame, deltaSeconds?: number): SnakeG
 
   // Deterministic single-step mode: when delta is not a finite number, step once.
   // This keeps unit tests simple: advanceSnakeGame(game) === one tick.
+  // Prefer `stepSnake(game)` explicitly — the sentinel exists for backward compat with
+  // the `deltaSeconds | ticks` ticket wording and to avoid silent NaN stepping.
   if (!Number.isFinite(deltaSeconds as number)) {
-    const stepped = stepOnce({ ...game, elapsed: game.elapsed })
-    return { ...stepped, elapsed: 0 }
+    return stepSnake(game)
   }
 
-  const delta = Math.max(0, deltaSeconds as number)
+  const delta = Math.min(SNAKE_MAX_DELTA_SECONDS, Math.max(0, deltaSeconds as number))
   let elapsed = game.elapsed + delta
   let current: SnakeGame = {
     ...game,
