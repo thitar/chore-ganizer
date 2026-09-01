@@ -5,6 +5,13 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.0] - 2026-08-31
+
+### Added
+- Snake games-reward: pure deterministic engine `frontend/src/games/snake.ts` (`createSnakeGame`/`steerSnake`/`advanceSnakeGame`/`stepSnake` — 20×20 grid, 0.12s tick, apple grow, wall/self collision with tail-vacate, immutable) and `frontend/src/games/SnakeCanvas.tsx` (400×400 canvas, `requestAnimationFrame` loop mirroring `PongCanvas`, swipe 4-direction 20px threshold via pointer+touch, `onGameOver`/`runId`, no keyboard — mobile-first).
+- Generalized `GamesPage` rendering one `<GameCard>` per `GAME_REGISTRY` entry (data-driven, no new nav). Each card shows locked state (`Earn the 20 Chores badge to unlock Snake` / `10 Chores` for Pong), personal best, instructions, launch/canvas, and per-game leaderboard. Leaderboard hidden before first child unlock and for parents; `Snake` leaderboard visible only after `twenty-chores` unlock.
+- Frontend tests: `snake.test.ts` deterministic unit coverage (movement, apple eat/grow, wall collision, self collision with tail-vacate, restart, game-over, delta accumulation); `games.service` registry-driven tests for `PONG`+`SNAKE` (generic eligibility, 403 when locked, high-score-only, parent leaderboard exclusion); `GamesPage` registry tests + `games.api`/`useGames` per-game record shape tests via `createApiClient()`.
+
 ## [3.6.0] - 2026-08-30
 
 ### Added

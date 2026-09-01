@@ -8,6 +8,7 @@ vi.mock('../hooks/useAuth', () => ({
 
 vi.mock('../hooks/useGames', () => ({
   useGames: vi.fn(),
+  useSubmitScore: vi.fn(),
   useSubmitPongScore: vi.fn(),
 }))
 
@@ -20,7 +21,7 @@ vi.mock('../games/PongCanvas', () => ({
 }))
 
 import { useAuth } from '../hooks/useAuth'
-import { useGames, useSubmitPongScore } from '../hooks/useGames'
+import { useGames, useSubmitPongScore, useSubmitScore } from '../hooks/useGames'
 
 describe('App games route', () => {
   beforeEach(() => {
@@ -38,6 +39,10 @@ describe('App games route', () => {
       error: null,
     })
     ;(useSubmitPongScore as ReturnType<typeof vi.fn>).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    })
+    ;(useSubmitScore as ReturnType<typeof vi.fn>).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
     })
