@@ -24,7 +24,6 @@ vi.mock('../hooks/useAuth', () => ({
 vi.mock('../hooks/useGames', () => ({
   useGames: vi.fn(),
   useSubmitScore: vi.fn(),
-  useSubmitPongScore: vi.fn(),
 }))
 
 vi.mock('../hooks/usePoints', () => ({
@@ -59,7 +58,6 @@ vi.mock('../games/SnakeCanvas', () => ({
 
 import { useAuth } from '../hooks/useAuth'
 import { useGames, useSubmitScore } from '../hooks/useGames'
-import { useSubmitPongScore } from '../hooks/useGames'
 
 const child = { id: 2, email: 'alice@test.com', name: 'Alice', role: 'CHILD', color: '#10B981' }
 const parent = { id: 1, email: 'dad@test.com', name: 'Dad', role: 'PARENT', color: '#3B82F6' }
