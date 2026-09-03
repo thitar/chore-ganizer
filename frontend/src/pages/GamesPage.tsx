@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Skeleton } from '../components/ui/Skeleton'
-import type { GameLeaderboardEntry, GameScoreResult } from '../api/games.api'
+import type { GameLeaderboardEntry, GameScoreResult, GamesSummary, GameStatus } from '../api/games.api'
 import { GAME_REGISTRY, type GameRegistryEntry } from '../games/registry'
 import { useGames, useSubmitScore } from '../hooks/useGames'
 
@@ -35,7 +35,7 @@ function GameLeaderboard({ entries }: { entries: GameLeaderboardEntry[] }) {
   )
 }
 
-function GameCard({ entry, status }: { entry: GameRegistryEntry; status: { unlocked: boolean; personalBest: number | null; leaderboard: GameLeaderboardEntry[] | null } }) {
+function GameCard({ entry, status }: { entry: GameRegistryEntry; status: GameStatus }) {
   const submitMutation = useSubmitScore()
   const [launched, setLaunched] = useState(false)
   const [runId, setRunId] = useState(0)
@@ -182,7 +182,10 @@ export function GamesPage() {
         <PageHeader title="Games" />
 
         {GAME_REGISTRY.map(entry => {
-          const status = (data[entry.id] ?? (data as Record<string, unknown>)[entry.id.toLowerCase()] ?? { unlocked: false, personalBest: null, leaderboard: null }) as { unlocked: boolean; personalBest: number | null; leaderboard: GameLeaderboardEntry[] | null }
+          const summary = data as GamesSummary
+          const status: GameStatus =
+            summary[entry.id] ??
+            summary[entry.id.toLowerCase()] ?? { unlocked: false, personalBest: null, leaderboard: null }
           return <GameCard key={entry.id} entry={entry} status={status} />
         })}
       </div>
