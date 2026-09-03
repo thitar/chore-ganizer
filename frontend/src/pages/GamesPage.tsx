@@ -9,12 +9,6 @@ import type { GameLeaderboardEntry, GameScoreResult, GamesSummary, GameStatus } 
 import { GAME_REGISTRY, type GameRegistryEntry } from '../games/registry'
 import { useGames, useSubmitScore } from '../hooks/useGames'
 
-function badgeLabelFor(gameId: string): string {
-  if (gameId === 'PONG') return '10 Chores'
-  if (gameId === 'SNAKE') return '20 Chores'
-  return gameId
-}
-
 function GameLeaderboard({ entries }: { entries: GameLeaderboardEntry[] }) {
   return (
     <Card className="divide-y divide-edge p-0">
@@ -75,7 +69,7 @@ function GameCard({ entry, status }: { entry: GameRegistryEntry; status: GameSta
     return (
       <Card className="p-8 text-center" data-testid={`game-card-${entry.id}`}>
         <h3 className="mb-2 font-display text-xl font-bold text-zinc-100">{entry.title} is locked</h3>
-        <p className="text-zinc-400">Earn the {badgeLabelFor(entry.id)} badge to unlock {entry.title}.</p>
+        <p className="text-zinc-400">Earn the {entry.unlockLabel} badge to unlock {entry.title}.</p>
       </Card>
     )
   }

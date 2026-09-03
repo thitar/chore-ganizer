@@ -74,7 +74,9 @@ export async function getGames(userId: number, role: string): Promise<Record<str
 
   const result: Record<string, GameStatus> = Object.fromEntries(entries)
 
-  // Backward-compat for shipped clients that read `pong` (lowercase) — keep until #219 migrates to PONG/SNAKE keys.
+  // Backward-compat: shipped clients may still read lowercase aliases (`pong`/`snake`).
+  // Keep until next major version or after verifying no shipped client reads lowercase —
+  // do not remove on a single-ticket basis.
   for (const gameId of listGameIds()) {
     const lower = gameId.toLowerCase()
     if (result[gameId] && !Object.prototype.hasOwnProperty.call(result, lower)) {
