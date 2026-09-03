@@ -19,14 +19,16 @@ function createWrapper(queryClient: QueryClient) {
   }
 }
 
+type GameStatus = { unlocked: boolean; personalBest: number | null; leaderboard: Array<{ user: { id: number; name: string; color: string }; score: number }> | null }
+function gamesRecord(pong: GameStatus, snake: GameStatus) {
+  return { PONG: pong, SNAKE: snake, pong, snake }
+}
+
+const LOCKED: GameStatus = { unlocked: false, personalBest: null, leaderboard: null }
+
 describe('useGames', () => {
   it('refetches eligibility when mounted again despite the app default stale time', async () => {
-    vi.mocked(getGames).mockResolvedValue({
-      PONG: { unlocked: false, personalBest: null, leaderboard: null },
-      SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
-      pong: { unlocked: false, personalBest: null, leaderboard: null },
-      snake: { unlocked: false, personalBest: null, leaderboard: null },
-    })
+    vi.mocked(getGames).mockResolvedValue(gamesRecord(LOCKED, LOCKED))
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: 5 * 60 * 1000 } },
     })
@@ -42,26 +44,16 @@ describe('useGames', () => {
   })
 
   it('returns a per-game record keyed by gameId', async () => {
-    const pongEntry = { unlocked: true, personalBest: 12, leaderboard: [] as never[] }
-    const snakeEntry = { unlocked: false, personalBest: null, leaderboard: null as null }
-    vi.mocked(getGames).mockResolvedValue({
-      PONG: pongEntry,
-      SNAKE: snakeEntry,
-      pong: pongEntry,
-      snake: snakeEntry,
-    })
+    const pongEntry: GameStatus = { unlocked: true, personalBest: 12, leaderboard: [] }
+    const snakeEntry: GameStatus = { unlocked: false, personalBest: null, leaderboard: null }
+    vi.mocked(getGames).mockResolvedValue(gamesRecord(pongEntry, snakeEntry))
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     const wrapper = createWrapper(queryClient)
 
     const { result } = renderHook(() => useGames(), { wrapper })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data).toEqual({
-      PONG: pongEntry,
-      SNAKE: snakeEntry,
-      pong: pongEntry,
-      snake: snakeEntry,
-    })
+    expect(result.current.data).toEqual(gamesRecord(pongEntry, snakeEntry))
     expect(result.current.data!.SNAKE.unlocked).toBe(false)
     expect(result.current.data!.PONG.unlocked).toBe(true)
     expect(result.current.data!.PONG.personalBest).toBe(12)
@@ -71,12 +63,7 @@ describe('useGames', () => {
 describe('useSubmitScore', () => {
   it('submits a score for the given gameId and invalidates games', async () => {
     vi.mocked(submitScore).mockResolvedValue({ personalBest: 10, isNewBest: true })
-    vi.mocked(getGames).mockResolvedValue({
-      PONG: { unlocked: true, personalBest: null, leaderboard: null },
-      SNAKE: { unlocked: true, personalBest: null, leaderboard: null },
-      pong: { unlocked: true, personalBest: null, leaderboard: null },
-      snake: { unlocked: true, personalBest: null, leaderboard: null },
-    })
+    vi.mocked(getGames).mockResolvedValue(gamesRecord({ unlocked: true, personalBest: null, leaderboard: null }, { unlocked: true, personalBest: null, leaderboard: null }))
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     const spy = vi.spyOn(queryClient, 'invalidateQueries')
     const wrapper = createWrapper(queryClient)

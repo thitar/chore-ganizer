@@ -73,6 +73,13 @@ function mockAuth(user: typeof child | typeof parent = child) {
 }
 
 type GameData = Record<string, { unlocked: boolean; personalBest: number | null; leaderboard: Array<{ user: { id: number; name: string; color: string }; score: number }> | null }>
+type GameStatus = GameData[string]
+
+function gamesRecord(pong: GameStatus, snake: GameStatus): GameData {
+  return { PONG: pong, SNAKE: snake, pong, snake }
+}
+
+const LOCKED: GameStatus = { unlocked: false, personalBest: null, leaderboard: null }
 
 function mockGames(data: GameData) {
   ;(useGames as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -83,12 +90,7 @@ function mockGames(data: GameData) {
 }
 
 function defaultLocked(): GameData {
-  return {
-    PONG: { unlocked: false, personalBest: null, leaderboard: null },
-    SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
-    pong: { unlocked: false, personalBest: null, leaderboard: null },
-    snake: { unlocked: false, personalBest: null, leaderboard: null },
-  }
+  return gamesRecord(LOCKED, LOCKED)
 }
 
 function mockSubmit(mutateAsync = vi.fn().mockResolvedValue({ personalBest: 10, isNewBest: false })) {
@@ -137,12 +139,7 @@ describe('GamesPage', () => {
   })
 
   it('shows Snake locked state while Pong is unlocked', () => {
-    mockGames({
-      PONG: { unlocked: true, personalBest: null, leaderboard: [] },
-      SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
-      pong: { unlocked: true, personalBest: null, leaderboard: [] },
-      snake: { unlocked: false, personalBest: null, leaderboard: null },
-    })
+    mockGames(gamesRecord({ unlocked: true, personalBest: null, leaderboard: [] }, LOCKED))
     renderPage()
 
     expect(screen.getByText('Earn the 20 Chores badge to unlock Snake.')).toBeInTheDocument()
@@ -153,12 +150,7 @@ describe('GamesPage', () => {
   })
 
   it('hides Snake leaderboard before first child unlock', () => {
-    mockGames({
-      PONG: { unlocked: true, personalBest: null, leaderboard: [] },
-      SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
-      pong: { unlocked: true, personalBest: null, leaderboard: [] },
-      snake: { unlocked: false, personalBest: null, leaderboard: null },
-    })
+    mockGames(gamesRecord({ unlocked: true, personalBest: null, leaderboard: [] }, LOCKED))
     renderPage()
 
     expect(screen.getByText('Pong leaderboard')).toBeInTheDocument()
@@ -166,12 +158,12 @@ describe('GamesPage', () => {
   })
 
   it('shows Snake leaderboard after unlock', () => {
-    mockGames({
-      PONG: { unlocked: true, personalBest: 5, leaderboard: [] },
-      SNAKE: { unlocked: true, personalBest: 7, leaderboard: [{ user: { id: 2, name: 'Alice', color: '#10B981' }, score: 7 }] },
-      pong: { unlocked: true, personalBest: 5, leaderboard: [] },
-      snake: { unlocked: true, personalBest: 7, leaderboard: [{ user: { id: 2, name: 'Alice', color: '#10B981' }, score: 7 }] },
-    })
+    mockGames(
+      gamesRecord(
+        { unlocked: true, personalBest: 5, leaderboard: [] },
+        { unlocked: true, personalBest: 7, leaderboard: [{ user: { id: 2, name: 'Alice', color: '#10B981' }, score: 7 }] },
+      ),
+    )
     renderPage()
 
     expect(screen.getByText('Snake leaderboard')).toBeInTheDocument()
@@ -180,12 +172,12 @@ describe('GamesPage', () => {
   })
 
   it('shows an unlocked child leaderboard before launch', () => {
-    mockGames({
-      PONG: { unlocked: true, personalBest: 14, leaderboard: [{ user: { id: 2, name: 'Alice', color: '#10B981' }, score: 14 }] },
-      SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
-      pong: { unlocked: true, personalBest: 14, leaderboard: [{ user: { id: 2, name: 'Alice', color: '#10B981' }, score: 14 }] },
-      snake: { unlocked: false, personalBest: null, leaderboard: null },
-    })
+    mockGames(
+      gamesRecord(
+        { unlocked: true, personalBest: 14, leaderboard: [{ user: { id: 2, name: 'Alice', color: '#10B981' }, score: 14 }] },
+        LOCKED,
+      ),
+    )
     renderPage()
 
     expect(screen.getByText('Pong leaderboard')).toBeInTheDocument()
@@ -197,12 +189,12 @@ describe('GamesPage', () => {
   it('lets a parent play while omitting the child leaderboard', async () => {
     const user = userEvent.setup()
     mockAuth(parent)
-    mockGames({
-      PONG: { unlocked: true, personalBest: 8, leaderboard: null },
-      SNAKE: { unlocked: true, personalBest: null, leaderboard: null },
-      pong: { unlocked: true, personalBest: 8, leaderboard: null },
-      snake: { unlocked: true, personalBest: null, leaderboard: null },
-    })
+    mockGames(
+      gamesRecord(
+        { unlocked: true, personalBest: 8, leaderboard: null },
+        { unlocked: true, personalBest: null, leaderboard: null },
+      ),
+    )
     renderPage()
 
     expect(screen.getAllByText(/Best score:/)[0].textContent).toContain('8')
@@ -216,12 +208,7 @@ describe('GamesPage', () => {
   it('submits the final Pong score via generic submitScore and reports a new best score', async () => {
     const user = userEvent.setup()
     const mutateAsync = mockSubmit(vi.fn().mockResolvedValue({ personalBest: 21, isNewBest: true }))
-    mockGames({
-      PONG: { unlocked: true, personalBest: 12, leaderboard: null },
-      SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
-      pong: { unlocked: true, personalBest: 12, leaderboard: null },
-      snake: { unlocked: false, personalBest: null, leaderboard: null },
-    })
+    mockGames(gamesRecord({ unlocked: true, personalBest: 12, leaderboard: null }, LOCKED))
     renderPage()
 
     await user.click(screen.getByRole('button', { name: 'Launch Pong' }))
@@ -235,12 +222,7 @@ describe('GamesPage', () => {
   it('submits the final Snake score via generic submitScore', async () => {
     const user = userEvent.setup()
     const mutateAsync = mockSubmit(vi.fn().mockResolvedValue({ personalBest: 9, isNewBest: true }))
-    mockGames({
-      PONG: { unlocked: false, personalBest: null, leaderboard: null },
-      SNAKE: { unlocked: true, personalBest: null, leaderboard: null },
-      pong: { unlocked: false, personalBest: null, leaderboard: null },
-      snake: { unlocked: true, personalBest: null, leaderboard: null },
-    })
+    mockGames(gamesRecord(LOCKED, { unlocked: true, personalBest: null, leaderboard: null }))
     renderPage()
 
     await user.click(screen.getByRole('button', { name: 'Launch Snake' }))
@@ -257,12 +239,7 @@ describe('GamesPage', () => {
       .mockRejectedValueOnce(new Error('offline'))
       .mockResolvedValueOnce({ personalBest: 16, isNewBest: false })
     mockSubmit(mutateAsync)
-    mockGames({
-      PONG: { unlocked: true, personalBest: null, leaderboard: null },
-      SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
-      pong: { unlocked: true, personalBest: null, leaderboard: null },
-      snake: { unlocked: false, personalBest: null, leaderboard: null },
-    })
+    mockGames(gamesRecord({ unlocked: true, personalBest: null, leaderboard: null }, LOCKED))
     renderPage()
 
     await user.click(screen.getByRole('button', { name: 'Launch Pong' }))
@@ -281,12 +258,7 @@ describe('GamesPage', () => {
 
   it('restarts an active Pong run and clears its final submission state', async () => {
     const user = userEvent.setup()
-    mockGames({
-      PONG: { unlocked: true, personalBest: null, leaderboard: null },
-      SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
-      pong: { unlocked: true, personalBest: null, leaderboard: null },
-      snake: { unlocked: false, personalBest: null, leaderboard: null },
-    })
+    mockGames(gamesRecord({ unlocked: true, personalBest: null, leaderboard: null }, LOCKED))
     renderPage()
 
     await user.click(screen.getByRole('button', { name: 'Launch Pong' }))
@@ -300,12 +272,7 @@ describe('GamesPage', () => {
 
   it('restarts an active Snake run and clears its final submission state', async () => {
     const user = userEvent.setup()
-    mockGames({
-      PONG: { unlocked: false, personalBest: null, leaderboard: null },
-      SNAKE: { unlocked: true, personalBest: null, leaderboard: null },
-      pong: { unlocked: false, personalBest: null, leaderboard: null },
-      snake: { unlocked: true, personalBest: null, leaderboard: null },
-    })
+    mockGames(gamesRecord(LOCKED, { unlocked: true, personalBest: null, leaderboard: null }))
     renderPage()
 
     await user.click(screen.getByRole('button', { name: 'Launch Snake' }))
@@ -318,12 +285,12 @@ describe('GamesPage', () => {
   })
 
   it('uses Pong score labels instead of points labels', () => {
-    mockGames({
-      PONG: { unlocked: true, personalBest: 14, leaderboard: [{ user: { id: 2, name: 'Alice', color: '#10B981' }, score: 14 }] },
-      SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
-      pong: { unlocked: true, personalBest: 14, leaderboard: [{ user: { id: 2, name: 'Alice', color: '#10B981' }, score: 14 }] },
-      snake: { unlocked: false, personalBest: null, leaderboard: null },
-    })
+    mockGames(
+      gamesRecord(
+        { unlocked: true, personalBest: 14, leaderboard: [{ user: { id: 2, name: 'Alice', color: '#10B981' }, score: 14 }] },
+        LOCKED,
+      ),
+    )
     renderPage()
 
     expect(screen.getAllByText(/Best score:/)[0].textContent).toContain('Best score: 14')
