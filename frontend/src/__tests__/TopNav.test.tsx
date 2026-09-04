@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { TopNav } from '../components/TopNav'
 import { BottomTabBar } from '../components/BottomTabBar'
+import type { GamesSummary, GameStatus } from '../api/games.api'
 
 vi.mock('../hooks/useAuth', () => ({
   useAuth: vi.fn(),
@@ -18,10 +19,17 @@ import { useGames } from '../hooks/useGames'
 const parent = { id: 1, email: 'dad@test.com', name: 'Dad', role: 'PARENT', color: '#3B82F6' }
 const child = { id: 2, email: 'alice@test.com', name: 'Alice', role: 'CHILD', color: '#F59E0B' }
 
+function gamesRecord(pong: GameStatus, snake: GameStatus): GamesSummary {
+  return { PONG: pong, SNAKE: snake, pong, snake }
+}
+
+const LOCKED: GameStatus = { unlocked: false, personalBest: null, leaderboard: null }
+const UNLOCKED: GameStatus = { unlocked: true, personalBest: null, leaderboard: null }
+
 function renderNav(
   user: typeof parent,
   ui: React.ReactElement,
-  games: { data?: { pong: { unlocked: boolean } }; isLoading?: boolean } = {}
+  games: { data?: GamesSummary; isLoading?: boolean } = {}
 ) {
   ;(useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
     user,
@@ -36,7 +44,7 @@ function renderNav(
 
 describe('TopNav', () => {
   it('shows Manage dropdown for parents with admin links', async () => {
-    renderNav(parent, <TopNav />, { data: { pong: { unlocked: true } } })
+    renderNav(parent, <TopNav />, { data: gamesRecord(UNLOCKED, UNLOCKED) })
     await userEvent.click(screen.getByRole('button', { name: /manage/i }))
     expect(screen.getByRole('link', { name: /templates/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /users/i })).toBeInTheDocument()
@@ -49,12 +57,17 @@ describe('TopNav', () => {
   })
 
   it.each([child, parent])('shows Games for unlocked %s users', user => {
-    renderNav(user, <TopNav />, { data: { pong: { unlocked: true } } })
+    renderNav(user, <TopNav />, { data: gamesRecord(UNLOCKED, UNLOCKED) })
+    expect(screen.getByRole('link', { name: 'Games' })).toHaveAttribute('href', '/games')
+  })
+
+  it('shows Games for a child with only Snake unlocked (Pong locked)', () => {
+    renderNav(child, <TopNav />, { data: gamesRecord(LOCKED, UNLOCKED) })
     expect(screen.getByRole('link', { name: 'Games' })).toHaveAttribute('href', '/games')
   })
 
   it('hides Games for a locked child', () => {
-    renderNav(child, <TopNav />, { data: { pong: { unlocked: false } } })
+    renderNav(child, <TopNav />, { data: gamesRecord(LOCKED, LOCKED) })
     expect(screen.queryByRole('link', { name: 'Games' })).not.toBeInTheDocument()
   })
 
@@ -84,11 +97,11 @@ describe('BottomTabBar', () => {
     }
   })
 
-  it('renders the Games tab only when Pong is unlocked', () => {
-    const { rerender } = renderNav(child, <BottomTabBar />, { data: { pong: { unlocked: true } } })
+  it('renders the Games tab only when a game is unlocked', () => {
+    const { rerender } = renderNav(child, <BottomTabBar />, { data: gamesRecord(UNLOCKED, LOCKED) })
     expect(screen.getByRole('link', { name: 'Games' })).toHaveAttribute('href', '/games')
 
-    ;(useGames as ReturnType<typeof vi.fn>).mockReturnValue({ data: { pong: { unlocked: false } } })
+    ;(useGames as ReturnType<typeof vi.fn>).mockReturnValue({ data: gamesRecord(LOCKED, LOCKED) })
     rerender(
       <MemoryRouter>
         <BottomTabBar />
@@ -98,8 +111,13 @@ describe('BottomTabBar', () => {
     expect(screen.queryByRole('link', { name: 'Games' })).not.toBeInTheDocument()
   })
 
+  it('renders the Games tab for a child with only Snake unlocked (Pong locked)', () => {
+    renderNav(child, <BottomTabBar />, { data: gamesRecord(LOCKED, UNLOCKED) })
+    expect(screen.getByRole('link', { name: 'Games' })).toHaveAttribute('href', '/games')
+  })
+
   it('renders the Games tab for an eligible parent', () => {
-    renderNav(parent, <BottomTabBar />, { data: { pong: { unlocked: true } } })
+    renderNav(parent, <BottomTabBar />, { data: gamesRecord(UNLOCKED, UNLOCKED) })
     expect(screen.getByRole('link', { name: 'Games' })).toHaveAttribute('href', '/games')
   })
 })

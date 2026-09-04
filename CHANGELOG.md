@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generalized `GamesPage` rendering one `<GameCard>` per `GAME_REGISTRY` entry (data-driven, no new nav). Each card shows locked state (`Earn the 20 Chores badge to unlock Snake` / `10 Chores` for Pong), personal best, instructions, launch/canvas, and per-game leaderboard. Leaderboard hidden before first child unlock and for parents; `Snake` leaderboard visible only after `twenty-chores` unlock.
 - Frontend tests: `snake.test.ts` deterministic unit coverage (movement, apple eat/grow, wall collision, self collision with tail-vacate, restart, game-over, delta accumulation); `GamesPage` registry tests + `games.api`/`useGames` per-game record shape tests via `createApiClient()`. (Backend `games.service` registry-driven tests for `PONG`+`SNAKE` were already added in 3.6.0.)
 
+### Fixed
+- Games navigation (desktop `TopNav` and mobile `BottomTabBar`) showed the Games entry only when Pong was unlocked, so a child who had earned `twenty-chores` (Snake) but not `ten-chores` (Pong) had a playable Snake card yet no way to reach `/games`. Both navs now show Games when any game is unlocked (`hasUnlockedGame()`), with Snake-only navigation coverage in the nav tests.
+
 ## [3.6.0] - 2026-08-30
 
 ### Added

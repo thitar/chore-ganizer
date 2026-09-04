@@ -36,3 +36,7 @@ export async function submitScore(gameId: string, score: number): Promise<GameSc
   const response = await api.post(`/${gameId}/scores`, { score })
   return response.data.data
 }
+
+export function hasUnlockedGame(games: GamesSummary | undefined): boolean {
+  return Object.values(games ?? {}).some(game => game.unlocked)
+}
