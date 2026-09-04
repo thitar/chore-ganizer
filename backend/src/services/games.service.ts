@@ -33,43 +33,50 @@ async function canPlay(gameId: string, userId: number, role: string): Promise<bo
 }
 
 export async function getGames(userId: number, role: string): Promise<Record<string, GameStatus>> {
-  const result: Record<string, GameStatus> = {}
+  const gameIds = listGameIds()
 
-  for (const gameId of listGameIds()) {
-    const def = GAME_DEFS[gameId]
-    const unlocked = await canPlay(gameId, userId, role)
+  const entries = await Promise.all(
+    gameIds.map(async (gameId): Promise<[string, GameStatus]> => {
+      const def = GAME_DEFS[gameId]
+      const unlocked = await canPlay(gameId, userId, role)
 
-    if (!unlocked) {
-      result[gameId] = { unlocked: false, personalBest: null, leaderboard: null }
-      continue
-    }
+      if (!unlocked) {
+        return [gameId, { unlocked: false, personalBest: null, leaderboard: null }]
+      }
 
-    const personalBest = await prisma.gameHighScore.findUnique({
-      where: { userId_game: { userId, game: gameId } },
-    })
+      const personalBest = await prisma.gameHighScore.findUnique({
+        where: { userId_game: { userId, game: gameId } },
+      })
 
-    if (role === 'PARENT') {
-      result[gameId] = { unlocked: true, personalBest: personalBest?.score ?? null, leaderboard: null }
-      continue
-    }
+      if (role === 'PARENT') {
+        return [gameId, { unlocked: true, personalBest: personalBest?.score ?? null, leaderboard: null }]
+      }
 
-    const scores = await prisma.gameHighScore.findMany({
-      where: {
-        game: gameId,
-        user: { role: 'CHILD', badges: { some: { badgeId: def.unlockBadge } } },
-      },
-      include: { user: { select: { id: true, name: true, color: true } } },
-      orderBy: { score: 'desc' },
-    })
+      const scores = await prisma.gameHighScore.findMany({
+        where: {
+          game: gameId,
+          user: { role: 'CHILD', badges: { some: { badgeId: def.unlockBadge } } },
+        },
+        include: { user: { select: { id: true, name: true, color: true } } },
+        orderBy: { score: 'desc' },
+      })
 
-    result[gameId] = {
-      unlocked: true,
-      personalBest: personalBest?.score ?? null,
-      leaderboard: scores.map(({ user, score }) => ({ user, score })),
-    }
-  }
+      return [
+        gameId,
+        {
+          unlocked: true,
+          personalBest: personalBest?.score ?? null,
+          leaderboard: scores.map(({ user, score }) => ({ user, score })),
+        },
+      ]
+    }),
+  )
 
-  // Backward-compat for shipped clients that read `pong` (lowercase) — keep until #219 migrates to PONG/SNAKE keys.
+  const result: Record<string, GameStatus> = Object.fromEntries(entries)
+
+  // Backward-compat: shipped clients may still read lowercase aliases (`pong`/`snake`).
+  // Keep until next major version or after verifying no shipped client reads lowercase —
+  // do not remove on a single-ticket basis.
   for (const gameId of listGameIds()) {
     const lower = gameId.toLowerCase()
     if (result[gameId] && !Object.prototype.hasOwnProperty.call(result, lower)) {
