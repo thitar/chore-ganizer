@@ -58,6 +58,7 @@ vi.mock('../games/SnakeCanvas', () => ({
 
 import { useAuth } from '../hooks/useAuth'
 import { useGames, useSubmitScore } from '../hooks/useGames'
+import type { GamesSummary, GameStatus } from '../api/games.api'
 
 const child = { id: 2, email: 'alice@test.com', name: 'Alice', role: 'CHILD', color: '#10B981' }
 const parent = { id: 1, email: 'dad@test.com', name: 'Dad', role: 'PARENT', color: '#3B82F6' }
@@ -72,8 +73,7 @@ function mockAuth(user: typeof child | typeof parent = child) {
   })
 }
 
-type GameData = Record<string, { unlocked: boolean; personalBest: number | null; leaderboard: Array<{ user: { id: number; name: string; color: string }; score: number }> | null }>
-type GameStatus = GameData[string]
+type GameData = GamesSummary
 
 function gamesRecord(pong: GameStatus, snake: GameStatus): GameData {
   return { PONG: pong, SNAKE: snake, pong, snake }

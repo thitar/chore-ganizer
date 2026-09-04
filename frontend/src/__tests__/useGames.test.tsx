@@ -8,9 +8,9 @@ vi.unmock('../hooks/useGames')
 vi.mock('../api/games.api', () => ({
   getGames: vi.fn(),
   submitScore: vi.fn(),
-  submitPongScore: vi.fn(),
 }))
 
+import type { GameStatus } from '../api/games.api'
 import { getGames, submitScore } from '../api/games.api'
 
 function createWrapper(queryClient: QueryClient) {
@@ -19,7 +19,6 @@ function createWrapper(queryClient: QueryClient) {
   }
 }
 
-type GameStatus = { unlocked: boolean; personalBest: number | null; leaderboard: Array<{ user: { id: number; name: string; color: string }; score: number }> | null }
 function gamesRecord(pong: GameStatus, snake: GameStatus) {
   return { PONG: pong, SNAKE: snake, pong, snake }
 }

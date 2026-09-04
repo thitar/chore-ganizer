@@ -36,7 +36,3 @@ export async function submitScore(gameId: string, score: number): Promise<GameSc
   const response = await api.post(`/${gameId}/scores`, { score })
   return response.data.data
 }
-
-export async function submitPongScore(score: number): Promise<GameScoreResult> {
-  return submitScore('PONG', score)
-}

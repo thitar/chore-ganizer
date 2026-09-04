@@ -12,7 +12,7 @@ vi.mock('../lib/apiClient', () => ({
   })),
 }))
 
-import { getGames, submitScore, submitPongScore } from '../api/games.api'
+import { getGames, submitScore } from '../api/games.api'
 
 describe('games.api', () => {
   beforeEach(() => {
@@ -43,14 +43,6 @@ describe('games.api', () => {
 
     await expect(submitScore('PONG', 12)).resolves.toEqual(result)
     expect(postMock).toHaveBeenCalledWith('/PONG/scores', { score: 12 })
-  })
-
-  it('keeps submitPongScore as a backward-compat alias', async () => {
-    const result = { personalBest: 15, isNewBest: false }
-    postMock.mockResolvedValue({ data: { data: result } })
-
-    await expect(submitPongScore(15)).resolves.toEqual(result)
-    expect(postMock).toHaveBeenCalledWith('/PONG/scores', { score: 15 })
   })
 
   it('uses createApiClient for the /api/games base path', async () => {

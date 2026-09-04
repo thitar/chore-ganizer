@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Skeleton } from '../components/ui/Skeleton'
-import type { GameLeaderboardEntry, GameScoreResult, GamesSummary, GameStatus } from '../api/games.api'
+import type { GameLeaderboardEntry, GameScoreResult, GameStatus } from '../api/games.api'
 import { GAME_REGISTRY, type GameRegistryEntry } from '../games/registry'
 import { useGames, useSubmitScore } from '../hooks/useGames'
 
@@ -176,10 +176,9 @@ export function GamesPage() {
         <PageHeader title="Games" />
 
         {GAME_REGISTRY.map(entry => {
-          const summary = data as GamesSummary
           const status: GameStatus =
-            summary[entry.id] ??
-            summary[entry.id.toLowerCase()] ?? { unlocked: false, personalBest: null, leaderboard: null }
+            data[entry.id] ??
+            data[entry.id.toLowerCase()] ?? { unlocked: false, personalBest: null, leaderboard: null }
           return <GameCard key={entry.id} entry={entry} status={status} />
         })}
       </div>
