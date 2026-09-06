@@ -12,6 +12,14 @@ Date-ordered log of bugs and their solutions.
 
 ---
 
+### 2026-09-06 - Games nav hidden from children who unlocked Snake but not Pong
+
+- **Issue**: A child who earned `twenty-chores` (unlocks Snake) but not `ten-chores` (unlocks Pong) had a playable Snake card on `/games` but no nav entry pointing there — `TopNav` and `BottomTabBar` both gated the Games link on `games?.pong.unlocked` alone. Found by the automated reviewer during PR #232, six commits after the games feature shipped.
+- **Root Cause**: The nav gate was written when Pong was the only game and never generalized when the registry went multi-game in 3.6.0. It hard-referenced one specific game's unlock flag instead of asking the aggregate question "does this user have any playable game?".
+- **Solution**: Added `hasUnlockedGame(games)` to `frontend/src/api/games.api.ts` (`Object.values(games ?? {}).some(g => g.unlocked)` — safe over the canonical+lowercase-alias record because alias entries share values with their canonical keys) and gated both navs on it. BottomTabBar's tab flag renamed `requiresPong` → `requiresAnyGame`. Snake-only (Pong locked) nav coverage added to `TopNav.test.tsx` with fixtures in the real `GamesSummary` record shape.
+- **Prevention**: When a feature generalizes from one item to a registry, grep for hard-coded references to the old single item (its id, key, flag names) — they survive the refactor as stale logic. Feature gates should ask the aggregate question ("any unlocked?") so new registry entries inherit visibility automatically. Reviewing cross-cutting consumers (nav, dashboards), not just the feature files, is what catches this class.
+- **File**: `frontend/src/api/games.api.ts`, `frontend/src/components/TopNav.tsx`, `frontend/src/components/BottomTabBar.tsx`, `frontend/src/__tests__/TopNav.test.tsx`
+
 ### 2026-08-26 - Pre-existing errors: `generateOccurrences` TOCTOU race (500 under concurrency), StatusBadge `PARTIALLY_COMPLETE` mislabel, scaffold test real network call
 
 - **Issue**: Three pre-existing problems surfaced while reviewing the cancelled-chore calendar fix. (1) The backend integration suite flaked: `GET /api/assignments` returned 500 intermittently in full-suite runs (passed isolated). (2) `StatusBadge` has no `PARTIALLY_COMPLETE` branch, so any consumer passing that status rendered it as "Completed" via the fallthrough. (3) The frontend test suite emitted a jsdom `AggregateError` on every run.

@@ -12,6 +12,15 @@ Date-ordered log of completed work and in-progress tickets.
 
 ---
 
+### 2026-09-06 — Snake tests + generalized GamesPage + APP_VERSION 3.7.0 (PR #232, closes #222)
+
+- **Status**: Completed (squash-merged to main as `b00e7ce`; images `3.7.0` auto-published to ghcr)
+- **Description**: Closed the Snake effort's wayfinder map #215 + ticket #222. Added deterministic `snake.test.ts` (20 tests), generalized `GamesPage` to render one `<GameCard>` per `GAME_REGISTRY` entry (registry entries gained `unlockLabel`), per-game record tests for `games.api`/`useGames`, parallelized `games.service.getGames()` via `Promise.all`, removed dead frontend `submitPongScore`, and bumped APP_VERSION to 3.7.0 everywhere per VERSION_MAP. Six review rounds fixed along the way; the final review round caught a real bug: Games nav (TopNav + BottomTabBar) was gated on `games?.pong.unlocked` only, hiding `/games` from Snake-only children — fixed with shared `hasUnlockedGame()` (see bugs.md 2026-09-06).
+- **Verification**: backend 27 suites / 386 tests, frontend 31 files / 233 tests (net +2 nav, +1 api after dedup/removals), `tsc --noEmit` + `npm run build` clean on head `11a1ae4`; all 10 CI checks green; one manual UAT item (Snake-only child nav walkthrough on desktop + mobile) left to the human per the reviewer's requirement.
+- **URL**: https://github.com/thitar/chore-ganizer/pull/232 (ticket: https://github.com/thitar/chore-ganizer/issues/222, map: https://github.com/thitar/chore-ganizer/issues/215)
+
+---
+
 ### 2026-08-26 — Fixed three pre-existing errors surfaced by the cancelled-calendar review (v3.5.2)
 
 - **Status**: Completed
