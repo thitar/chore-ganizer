@@ -5,11 +5,11 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { PageHeader } from '../components/ui/PageHeader'
 import { Skeleton } from '../components/ui/Skeleton'
-import { PongCanvas } from '../games/PongCanvas'
-import { useGames, useSubmitPongScore } from '../hooks/useGames'
-import type { PongLeaderboardEntry, PongScoreResult } from '../api/games.api'
+import type { GameLeaderboardEntry, GameScoreResult, GameStatus } from '../api/games.api'
+import { GAME_REGISTRY, type GameRegistryEntry } from '../games/registry'
+import { useGames, useSubmitScore } from '../hooks/useGames'
 
-function PongLeaderboard({ entries }: { entries: PongLeaderboardEntry[] }) {
+function GameLeaderboard({ entries }: { entries: GameLeaderboardEntry[] }) {
   return (
     <Card className="divide-y divide-edge p-0">
       <div className="flex items-center gap-3 px-4 py-2 text-xs uppercase tracking-wider text-zinc-500">
@@ -29,15 +29,120 @@ function PongLeaderboard({ entries }: { entries: PongLeaderboardEntry[] }) {
   )
 }
 
-export function GamesPage() {
-  const { data, isLoading, error } = useGames()
-  const submitMutation = useSubmitPongScore()
+function GameCard({ entry, status }: { entry: GameRegistryEntry; status: GameStatus }) {
+  const submitMutation = useSubmitScore()
   const [launched, setLaunched] = useState(false)
   const [runId, setRunId] = useState(0)
   const [finalScore, setFinalScore] = useState<number | null>(null)
-  const [scoreResult, setScoreResult] = useState<PongScoreResult | null>(null)
+  const [scoreResult, setScoreResult] = useState<GameScoreResult | null>(null)
   const [submissionFailed, setSubmissionFailed] = useState(false)
   const submissionIdRef = useRef(0)
+
+  function submitScore(score: number) {
+    const submissionId = ++submissionIdRef.current
+    setSubmissionFailed(false)
+    setScoreResult(null)
+    void submitMutation.mutateAsync({ gameId: entry.id, score })
+      .then((result: GameScoreResult) => {
+        if (submissionId === submissionIdRef.current) setScoreResult(result)
+      })
+      .catch(() => {
+        if (submissionId === submissionIdRef.current) setSubmissionFailed(true)
+      })
+  }
+
+  function handleGameOver(score: number) {
+    setFinalScore(score)
+    submitScore(score)
+  }
+
+  function launchGame() {
+    submissionIdRef.current++
+    setLaunched(true)
+    setFinalScore(null)
+    setScoreResult(null)
+    setSubmissionFailed(false)
+    setRunId(current => current + 1)
+  }
+
+  if (!status.unlocked) {
+    return (
+      <Card className="p-8 text-center" data-testid={`game-card-${entry.id}`}>
+        <h3 className="mb-2 font-display text-xl font-bold text-zinc-100">{entry.title} is locked</h3>
+        <p className="text-zinc-400">Earn the {entry.unlockLabel} badge to unlock {entry.title}.</p>
+      </Card>
+    )
+  }
+
+  const Canvas = entry.Canvas
+
+  return (
+    <div data-testid={`game-card-${entry.id}`} className="mb-8">
+      <Card className="mb-6 overflow-hidden p-0">
+        <div className="border-b border-edge bg-gradient-to-r from-accent/15 via-surface to-surface p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="mb-1 text-xs uppercase tracking-wider text-accent">Arcade</p>
+              <h3 className="font-display text-2xl font-bold text-zinc-100">{entry.title}</h3>
+              <p className="mt-2 max-w-xl text-sm text-zinc-400">{entry.description}</p>
+            </div>
+            {!launched && <Button onClick={launchGame}>Launch {entry.title}</Button>}
+          </div>
+        </div>
+
+        <div className="space-y-4 p-6">
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-zinc-400">
+            {entry.instructions.map(text => (
+              <span key={text}>{text}</span>
+            ))}
+          </div>
+          <p className="text-sm text-zinc-500">
+            Best score:{' '}
+            <span className="font-semibold text-zinc-200">{status.personalBest ?? 'No score yet'}</span>
+          </p>
+
+          {launched && (
+            <div className="space-y-4">
+              <Canvas onGameOver={handleGameOver} onRestart={launchGame} runId={runId} />
+              {finalScore !== null && (
+                <div className="rounded-xl border border-edge bg-surface-raised p-4">
+                  <p className="font-display text-lg font-bold text-zinc-100">{entry.title} score: {finalScore}</p>
+                  {submitMutation.isPending && <p className="mt-1 text-sm text-zinc-400">Submitting score...</p>}
+                  {submissionFailed && (
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <p className="text-sm text-rose-400">Unable to submit score.</p>
+                      <Button variant="secondary" onClick={() => submitScore(finalScore)}>Retry score</Button>
+                    </div>
+                  )}
+                  {scoreResult && (
+                    <p className="mt-1 text-sm text-emerald-400">
+                      {scoreResult.isNewBest ? 'New best score!' : `Best score: ${scoreResult.personalBest}`}
+                    </p>
+                  )}
+                  <Button className="mt-4" variant="secondary" onClick={launchGame}>Restart</Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {status.leaderboard !== null && (
+        <section>
+          <h3 className="mb-3 font-display text-base font-bold text-zinc-100">{entry.title} leaderboard</h3>
+          {status.leaderboard.length > 0 ? (
+            <GameLeaderboard entries={status.leaderboard} />
+          ) : (
+            <Card><p className="text-sm text-zinc-500">No scores yet.</p></Card>
+          )}
+        </section>
+      )}
+    </div>
+  )
+}
+
+export function GamesPage() {
+  const { data, isLoading, error } = useGames()
 
   if (isLoading) {
     return (
@@ -65,111 +170,20 @@ export function GamesPage() {
 
   if (!data) return null
 
-  if (!data.pong.unlocked) {
-    return (
-      <AppShell>
-        <div className="mx-auto max-w-4xl">
-          <PageHeader title="Games" />
-          <Card className="p-8 text-center">
-            <h3 className="mb-2 font-display text-xl font-bold text-zinc-100">Pong is locked</h3>
-            <p className="text-zinc-400">Earn the 10 Chores badge to unlock Pong.</p>
-          </Card>
-        </div>
-      </AppShell>
-    )
-  }
-
-  function submitScore(score: number) {
-    const submissionId = ++submissionIdRef.current
-    setSubmissionFailed(false)
-    setScoreResult(null)
-    void submitMutation.mutateAsync(score)
-      .then(result => {
-        if (submissionId === submissionIdRef.current) setScoreResult(result)
-      })
-      .catch(() => {
-        if (submissionId === submissionIdRef.current) setSubmissionFailed(true)
-      })
-  }
-
-  function handleGameOver(score: number) {
-    setFinalScore(score)
-    submitScore(score)
-  }
-
-  function launchGame() {
-    submissionIdRef.current++
-    setLaunched(true)
-    setFinalScore(null)
-    setScoreResult(null)
-    setSubmissionFailed(false)
-    setRunId(current => current + 1)
-  }
-
   return (
     <AppShell>
       <div className="mx-auto max-w-4xl">
         <PageHeader title="Games" />
 
-        <Card className="mb-6 overflow-hidden p-0">
-          <div className="border-b border-edge bg-gradient-to-r from-accent/15 via-surface to-surface p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="mb-1 text-xs uppercase tracking-wider text-accent">Arcade</p>
-                <h3 className="font-display text-2xl font-bold text-zinc-100">Pong</h3>
-                <p className="mt-2 max-w-xl text-sm text-zinc-400">Keep the ball in play and build your score.</p>
-              </div>
-              {!launched && <Button onClick={launchGame}>Launch Pong</Button>}
-            </div>
-          </div>
-
-          <div className="space-y-4 p-6">
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-zinc-400">
-              <span>Move the paddle with your pointer.</span>
-              <span>Survive as long as you can.</span>
-            </div>
-            <p className="text-sm text-zinc-500">
-              Best score:{' '}
-              <span className="font-semibold text-zinc-200">{data.pong.personalBest ?? 'No score yet'}</span>
-            </p>
-
-            {launched && (
-              <div className="space-y-4">
-                <PongCanvas onGameOver={handleGameOver} onRestart={launchGame} runId={runId} />
-                {finalScore !== null && (
-                  <div className="rounded-xl border border-edge bg-surface-raised p-4">
-                    <p className="font-display text-lg font-bold text-zinc-100">Pong score: {finalScore}</p>
-                    {submitMutation.isPending && <p className="mt-1 text-sm text-zinc-400">Submitting score...</p>}
-                    {submissionFailed && (
-                      <div className="mt-3 flex flex-wrap items-center gap-3">
-                        <p className="text-sm text-rose-400">Unable to submit score.</p>
-                        <Button variant="secondary" onClick={() => submitScore(finalScore)}>Retry score</Button>
-                      </div>
-                    )}
-                    {scoreResult && (
-                      <p className="mt-1 text-sm text-emerald-400">
-                        {scoreResult.isNewBest ? 'New best score!' : `Best score: ${scoreResult.personalBest}`}
-                      </p>
-                    )}
-                    <Button className="mt-4" variant="secondary" onClick={launchGame}>Restart</Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </Card>
-
-        {data.pong.leaderboard !== null && (
-          <section>
-            <h3 className="mb-3 font-display text-base font-bold text-zinc-100">Pong leaderboard</h3>
-            {data.pong.leaderboard.length > 0 ? (
-              <PongLeaderboard entries={data.pong.leaderboard} />
-            ) : (
-              <Card><p className="text-sm text-zinc-500">No scores yet.</p></Card>
-            )}
-          </section>
-        )}
+        {GAME_REGISTRY.map(entry => {
+          const status: GameStatus =
+            data[entry.id] ??
+            data[entry.id.toLowerCase()] ?? { unlocked: false, personalBest: null, leaderboard: null }
+          return <GameCard key={entry.id} entry={entry} status={status} />
+        })}
       </div>
     </AppShell>
   )
 }
+
+export { GameLeaderboard }

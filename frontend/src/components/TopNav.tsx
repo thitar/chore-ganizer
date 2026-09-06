@@ -4,6 +4,7 @@ import { ChevronDown, LogOut } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useDismissableMenu } from '../hooks/useDismissableMenu'
 import { useGames } from '../hooks/useGames'
+import { hasUnlockedGame } from '../api/games.api'
 import { Avatar } from './ui/Avatar'
 
 const MAIN_LINKS = [
@@ -58,7 +59,7 @@ export function TopNav() {
               {l.label}
             </Link>
           ))}
-          {games?.pong.unlocked === true && (
+          {hasUnlockedGame(games) && (
             <Link
               to="/games"
               className={`inline-flex min-h-[44px] items-center rounded-xl px-3 text-sm font-medium transition-colors ${linkClass('/games')}`}
