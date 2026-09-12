@@ -118,11 +118,12 @@ None — v3.0.0 (rewrite) switchover complete (commit 38feb91), legacy archived 
 | feature   | Recurring chore uncomplete                  | Future (not in RECUR scope) | v1-rewrite  |
 | feature   | Bulk create recurring chores                | Future (out of RECUR scope) | v1-rewrite  |
 | feature   | Custom recurrence rules (RRULE)             | Future (out of RECUR scope) | v1-rewrite  |
-| feature   | Per-user ntfyBaseUrl override               | Out of scope (env var is enough) | v3.1       |
 | feature   | Per-event notification toggles              | Out of scope (not in NOTIFY-01..08) | v3.1       |
 | feature   | In-app notification center                  | Out of scope (ntfy push only) | v3.1       |
-| feature   | Email / Slack / Discord fallback channels for chore events | Out of scope (ntfy is the only channel); SMTP now exists (v3.2.1, PR #158) but only for auth password recovery, not chore-event notifications | v3.1       |
 | feature   | Unassigned "chore pool" (children voluntarily claim unassigned dated chores for bonus points) | Proposed, not yet scoped — needs `assignedToId` to become nullable on `ChoreAssignment`/`RecurringChore`/`RecurringOccurrence` plus a claim flow | 2026-07-23 |
+| feature   | Points statistics over a period — per week, per month, arbitrary range (`GET /api/points/weekly` from v3.5.0 is the seed) | Proposed, not yet scoped | 2026-09-07 |
+| feature   | Gamification — additional games beyond Pong/Snake (Breakout reserved at thirty-chores badge; up to 5 games total per games-rewards design) | Proposed, not yet scoped | 2026-09-07 |
+| feature   | ntfy notifications should have direct links to the chores (Click URL per notification) | Captured note, not yet scoped — `.planning/notes/2026-09-06-ntfy-notifications-direct-links.md` | 2026-09-06 |
 
 ## Phase 4 Artifacts (v1-rewrite reference)
 
