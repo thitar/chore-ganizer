@@ -23,9 +23,11 @@ describe('getGames', () => {
       PONG: { unlocked: true, personalBest: null, leaderboard: null },
       SNAKE: { unlocked: true, personalBest: null, leaderboard: null },
       BREAKOUT: { unlocked: true, personalBest: null, leaderboard: null },
+      SPACE_INVADERS: { unlocked: true, personalBest: null, leaderboard: null },
       pong: { unlocked: true, personalBest: null, leaderboard: null },
       snake: { unlocked: true, personalBest: null, leaderboard: null },
       breakout: { unlocked: true, personalBest: null, leaderboard: null },
+      space_invaders: { unlocked: true, personalBest: null, leaderboard: null },
     })
     expect(prisma.userBadge.findUnique).not.toHaveBeenCalled()
     expect(prisma.gameHighScore.findMany).not.toHaveBeenCalled()
@@ -38,9 +40,11 @@ describe('getGames', () => {
       PONG: { unlocked: false, personalBest: null, leaderboard: null },
       SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
       BREAKOUT: { unlocked: false, personalBest: null, leaderboard: null },
+      SPACE_INVADERS: { unlocked: false, personalBest: null, leaderboard: null },
       pong: { unlocked: false, personalBest: null, leaderboard: null },
       snake: { unlocked: false, personalBest: null, leaderboard: null },
       breakout: { unlocked: false, personalBest: null, leaderboard: null },
+      space_invaders: { unlocked: false, personalBest: null, leaderboard: null },
     })
     expect(prisma.gameHighScore.findUnique).not.toHaveBeenCalled()
     expect(prisma.gameHighScore.findMany).not.toHaveBeenCalled()
@@ -57,9 +61,11 @@ describe('getGames', () => {
       PONG: { unlocked: true, personalBest: null, leaderboard: [] },
       SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
       BREAKOUT: { unlocked: false, personalBest: null, leaderboard: null },
+      SPACE_INVADERS: { unlocked: false, personalBest: null, leaderboard: null },
       pong: { unlocked: true, personalBest: null, leaderboard: [] },
       snake: { unlocked: false, personalBest: null, leaderboard: null },
       breakout: { unlocked: false, personalBest: null, leaderboard: null },
+      space_invaders: { unlocked: false, personalBest: null, leaderboard: null },
     })
   })
 
@@ -95,13 +101,23 @@ describe('getGames', () => {
         { user: { id: 2, name: 'Alex', color: '#3B82F6' }, score: 42 },
       ],
     }
+    const spaceInvadersEntry = {
+      unlocked: true,
+      personalBest: 42,
+      leaderboard: [
+        { user: { id: 3, name: 'Sam', color: '#10B981' }, score: 99 },
+        { user: { id: 2, name: 'Alex', color: '#3B82F6' }, score: 42 },
+      ],
+    }
     await expect(gamesService.getGames(2, 'CHILD')).resolves.toEqual({
       PONG: pongEntry,
       SNAKE: snakeEntry,
       BREAKOUT: breakoutEntry,
+      SPACE_INVADERS: spaceInvadersEntry,
       pong: pongEntry,
       snake: snakeEntry,
       breakout: breakoutEntry,
+      space_invaders: spaceInvadersEntry,
     })
     expect(prisma.gameHighScore.findMany).toHaveBeenNthCalledWith(1, {
       where: {
@@ -123,6 +139,14 @@ describe('getGames', () => {
       where: {
         game: 'BREAKOUT',
         user: { role: 'CHILD', badges: { some: { badgeId: 'thirty-chores' } } },
+      },
+      include: { user: { select: { id: true, name: true, color: true } } },
+      orderBy: { score: 'desc' },
+    })
+    expect(prisma.gameHighScore.findMany).toHaveBeenNthCalledWith(4, {
+      where: {
+        game: 'SPACE_INVADERS',
+        user: { role: 'CHILD', badges: { some: { badgeId: 'fifty-chores' } } },
       },
       include: { user: { select: { id: true, name: true, color: true } } },
       orderBy: { score: 'desc' },
@@ -266,6 +290,28 @@ describe('recordScore', () => {
     prisma.gameHighScore.findUnique.mockResolvedValue({ score: 50 })
 
     await expect(gamesService.recordScore('BREAKOUT', 2, 'CHILD', 50)).resolves.toEqual({
+      personalBest: 50,
+      isNewBest: false,
+    })
+    expect(prisma.gameHighScore.findMany).not.toHaveBeenCalled()
+  })
+
+  it('rejects a locked child score for SPACE_INVADERS', async () => {
+    prisma.userBadge.findUnique.mockResolvedValue(null)
+
+    await expect(gamesService.recordScore('SPACE_INVADERS', 2, 'CHILD', 10)).rejects.toMatchObject({
+      message: 'SPACE_INVADERS is locked until you earn the fifty-chores badge',
+      statusCode: 403,
+    })
+    expect(prisma.gameHighScore.findUnique).not.toHaveBeenCalled()
+  })
+
+  it('mirrors PONG behavior for an eligible SPACE_INVADERS child', async () => {
+    prisma.userBadge.findUnique.mockResolvedValue({ id: 1 })
+    prisma.gameHighScore.updateMany.mockResolvedValue({ count: 0 })
+    prisma.gameHighScore.findUnique.mockResolvedValue({ score: 50 })
+
+    await expect(gamesService.recordScore('SPACE_INVADERS', 2, 'CHILD', 50)).resolves.toEqual({
       personalBest: 50,
       isNewBest: false,
     })

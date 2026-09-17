@@ -5,6 +5,14 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.11.0] - 2026-09-17
+
+### Added
+- Space Invaders games-reward: 4th arcade game, unlocked by the existing `fifty-chores` badge (50 completed chores). Backend: `SPACE_INVADERS: { unlockBadge: 'fifty-chores' }` added to `GAME_DEFS` in `backend/src/services/games.service.ts` — no new routes/schemas needed, the existing generic `/api/games/me` and `/api/games/:gameId/scores` cover it.
+- Pure deterministic engine `frontend/src/games/spaceInvaders.ts` (`createSpaceInvadersGame`/`advanceSpaceInvadersGame`/`moveShip`/`fireShot` — 800x500 field, 4x8 enemy grid that speeds up as fewer enemies remain and drops + reverses direction at the horizontal edges, a single active player bullet, periodic random enemy fire, single life, ends the run whether the ship is hit, an enemy reaches the ship's line, or every enemy is cleared) and `frontend/src/games/SpaceInvadersCanvas.tsx` (canvas + `requestAnimationFrame` loop mirroring `BreakoutCanvas`, pointer/touch drag-to-move plus tap-to-fire — a gesture that stays within a small radius fires, anything that drifts further just steers).
+- Registered `SPACE_INVADERS` in `frontend/src/games/registry.ts` (`unlockLabel: '50 Chores'`); `GamesPage` now renders 4 game cards with no page-level changes (data-driven registry).
+- Tests: `spaceInvaders.test.ts` and `SpaceInvadersCanvas.test.tsx` (mirroring the Breakout suites), `GamesPage` registry/leaderboard/submit coverage extended to Space Invaders, backend `games.service` tests extended for the 4th game (registry-driven `toEqual` shapes + per-game leaderboard query assertions).
+
 ## [3.10.0] - 2026-09-17
 
 ### Added
