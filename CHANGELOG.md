@@ -5,6 +5,14 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.10.0] - 2026-09-17
+
+### Added
+- Breakout games-reward: 3rd arcade game, unlocked by the existing `thirty-chores` badge (30 completed chores). Backend: `BREAKOUT: { unlockBadge: 'thirty-chores' }` added to `GAME_DEFS` in `backend/src/services/games.service.ts` — no new routes/schemas needed, the existing generic `/api/games/me` and `/api/games/:gameId/scores` cover it.
+- Pure deterministic engine `frontend/src/games/breakout.ts` (`createBreakoutGame`/`advanceBreakoutGame`/`movePaddle` — 800x500 field, 5x10 brick grid, paddle/wall/brick collision with AABB axis resolution gated on the ball's approach direction, an angled serve so the initial vertical shot can't drill through a column undeflected, single life, ends the run and reports the final score whether the ball passes the paddle or the last brick clears) and `frontend/src/games/BreakoutCanvas.tsx` (canvas + `requestAnimationFrame` loop mirroring `PongCanvas`, pointer-drag paddle control, no keyboard).
+- Registered `BREAKOUT` in `frontend/src/games/registry.ts` (`unlockLabel: '30 Chores'`); `GamesPage` now renders 3 game cards with no page-level changes (data-driven registry).
+- Tests: `breakout.test.ts` and `BreakoutCanvas.test.tsx` (mirroring the Pong suites), `GamesPage` registry/leaderboard/submit coverage extended to Breakout, backend `games.service` tests extended for the 3rd game (registry-driven `toEqual` shapes + per-game leaderboard query assertions).
+
 ## [3.9.0] - 2026-09-17
 
 ### Added

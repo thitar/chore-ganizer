@@ -14,6 +14,7 @@ export interface GameStatus {
 export const GAME_DEFS: Record<string, GameDef> = {
   PONG: { unlockBadge: 'ten-chores' },
   SNAKE: { unlockBadge: 'twenty-chores' },
+  BREAKOUT: { unlockBadge: 'thirty-chores' },
 }
 
 export function listGameIds(): string[] {

@@ -1,5 +1,6 @@
 import { PongCanvas } from './PongCanvas'
 import { SnakeCanvas } from './SnakeCanvas'
+import { BreakoutCanvas } from './BreakoutCanvas'
 
 export interface GameRegistryEntry {
   id: string
@@ -18,8 +19,8 @@ export interface GameRegistryEntry {
  * so adding a game is a single registry line with zero page/API churn.
  * Backend parity: GAME_DEFS in backend/src/services/games.service.ts.
  *
- * PONG and SNAKE are shipped. Breakout (thirty-chores) + 2 more are
- * reserved config-only additions to reach the 5-game intent.
+ * PONG, SNAKE, and BREAKOUT are shipped. 2 more are reserved config-only
+ * additions to reach the 5-game intent.
  */
 export const GAME_REGISTRY: GameRegistryEntry[] = [
   {
@@ -37,6 +38,14 @@ export const GAME_REGISTRY: GameRegistryEntry[] = [
     instructions: ['Swipe to steer the snake.', 'Eat apples to grow.'],
     unlockLabel: '20 Chores',
     Canvas: SnakeCanvas,
+  },
+  {
+    id: 'BREAKOUT',
+    title: 'Breakout',
+    description: 'Clear every brick without letting the ball get past your paddle.',
+    instructions: ['Move the paddle with your pointer.', 'Break all the bricks to clear the board.'],
+    unlockLabel: '30 Chores',
+    Canvas: BreakoutCanvas,
   },
 ]
 
