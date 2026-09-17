@@ -17,6 +17,12 @@ const snakeCanvasMock = vi.hoisted(() => ({
   runId: undefined as number | undefined,
 }))
 
+const breakoutCanvasMock = vi.hoisted(() => ({
+  onGameOver: undefined as ((score: number) => void) | undefined,
+  onRestart: undefined as (() => void) | undefined,
+  runId: undefined as number | undefined,
+}))
+
 vi.mock('../hooks/useAuth', () => ({
   useAuth: vi.fn(),
 }))
@@ -56,6 +62,19 @@ vi.mock('../games/SnakeCanvas', () => ({
   },
 }))
 
+vi.mock('../games/BreakoutCanvas', () => ({
+  BreakoutCanvas: (props: { onGameOver: (score: number) => void; onRestart: () => void; runId: number }) => {
+    breakoutCanvasMock.onGameOver = props.onGameOver
+    breakoutCanvasMock.onRestart = props.onRestart
+    breakoutCanvasMock.runId = props.runId
+    return (
+      <div data-testid="breakout-canvas">
+        <button onClick={props.onRestart}>Restart Breakout</button>
+      </div>
+    )
+  },
+}))
+
 import { useAuth } from '../hooks/useAuth'
 import { useGames, useSubmitScore } from '../hooks/useGames'
 import type { GamesSummary, GameStatus } from '../api/games.api'
@@ -75,8 +94,8 @@ function mockAuth(user: typeof child | typeof parent = child) {
 
 type GameData = GamesSummary
 
-function gamesRecord(pong: GameStatus, snake: GameStatus): GameData {
-  return { PONG: pong, SNAKE: snake, pong, snake }
+function gamesRecord(pong: GameStatus, snake: GameStatus, breakout: GameStatus = LOCKED): GameData {
+  return { PONG: pong, SNAKE: snake, BREAKOUT: breakout, pong, snake, breakout }
 }
 
 const LOCKED: GameStatus = { unlocked: false, personalBest: null, leaderboard: null }
@@ -118,6 +137,9 @@ describe('GamesPage', () => {
     snakeCanvasMock.onGameOver = undefined
     snakeCanvasMock.onRestart = undefined
     snakeCanvasMock.runId = undefined
+    breakoutCanvasMock.onGameOver = undefined
+    breakoutCanvasMock.onRestart = undefined
+    breakoutCanvasMock.runId = undefined
     mockAuth()
     mockGames(defaultLocked())
     mockSubmit()
@@ -127,7 +149,8 @@ describe('GamesPage', () => {
     renderPage()
     expect(screen.getByTestId('game-card-PONG')).toBeInTheDocument()
     expect(screen.getByTestId('game-card-SNAKE')).toBeInTheDocument()
-    expect(GAME_REGISTRY).toHaveLength(2)
+    expect(screen.getByTestId('game-card-BREAKOUT')).toBeInTheDocument()
+    expect(GAME_REGISTRY).toHaveLength(3)
   })
 
   it('keeps a locked child from seeing the game or leaderboard (Pong locked)', () => {
@@ -147,6 +170,21 @@ describe('GamesPage', () => {
     // Pong should still be playable
     expect(screen.getByRole('button', { name: 'Launch Pong' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Launch Snake' })).not.toBeInTheDocument()
+  })
+
+  it('shows Breakout locked state while Pong and Snake are unlocked', () => {
+    mockGames(
+      gamesRecord(
+        { unlocked: true, personalBest: null, leaderboard: [] },
+        { unlocked: true, personalBest: null, leaderboard: [] },
+        LOCKED,
+      ),
+    )
+    renderPage()
+
+    expect(screen.getByText('Earn the 30 Chores badge to unlock Breakout.')).toBeInTheDocument()
+    expect(screen.queryByTestId('breakout-canvas')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Launch Breakout' })).not.toBeInTheDocument()
   })
 
   it('hides Snake leaderboard before first child unlock', () => {
@@ -230,6 +268,20 @@ describe('GamesPage', () => {
 
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ gameId: 'SNAKE', score: 9 }))
     expect(screen.getByText('Snake score: 9')).toBeInTheDocument()
+    expect(screen.getByText('New best score!')).toBeInTheDocument()
+  })
+
+  it('submits the final Breakout score via generic submitScore', async () => {
+    const user = userEvent.setup()
+    const mutateAsync = mockSubmit(vi.fn().mockResolvedValue({ personalBest: 50, isNewBest: true }))
+    mockGames(gamesRecord(LOCKED, LOCKED, { unlocked: true, personalBest: null, leaderboard: null }))
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: 'Launch Breakout' }))
+    act(() => breakoutCanvasMock.onGameOver?.(50))
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ gameId: 'BREAKOUT', score: 50 }))
+    expect(screen.getByText('Breakout score: 50')).toBeInTheDocument()
     expect(screen.getByText('New best score!')).toBeInTheDocument()
   })
 

@@ -22,8 +22,10 @@ describe('getGames', () => {
     await expect(gamesService.getGames(1, 'PARENT')).resolves.toEqual({
       PONG: { unlocked: true, personalBest: null, leaderboard: null },
       SNAKE: { unlocked: true, personalBest: null, leaderboard: null },
+      BREAKOUT: { unlocked: true, personalBest: null, leaderboard: null },
       pong: { unlocked: true, personalBest: null, leaderboard: null },
       snake: { unlocked: true, personalBest: null, leaderboard: null },
+      breakout: { unlocked: true, personalBest: null, leaderboard: null },
     })
     expect(prisma.userBadge.findUnique).not.toHaveBeenCalled()
     expect(prisma.gameHighScore.findMany).not.toHaveBeenCalled()
@@ -35,8 +37,10 @@ describe('getGames', () => {
     await expect(gamesService.getGames(2, 'CHILD')).resolves.toEqual({
       PONG: { unlocked: false, personalBest: null, leaderboard: null },
       SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
+      BREAKOUT: { unlocked: false, personalBest: null, leaderboard: null },
       pong: { unlocked: false, personalBest: null, leaderboard: null },
       snake: { unlocked: false, personalBest: null, leaderboard: null },
+      breakout: { unlocked: false, personalBest: null, leaderboard: null },
     })
     expect(prisma.gameHighScore.findUnique).not.toHaveBeenCalled()
     expect(prisma.gameHighScore.findMany).not.toHaveBeenCalled()
@@ -52,8 +56,10 @@ describe('getGames', () => {
     await expect(gamesService.getGames(2, 'CHILD')).resolves.toEqual({
       PONG: { unlocked: true, personalBest: null, leaderboard: [] },
       SNAKE: { unlocked: false, personalBest: null, leaderboard: null },
+      BREAKOUT: { unlocked: false, personalBest: null, leaderboard: null },
       pong: { unlocked: true, personalBest: null, leaderboard: [] },
       snake: { unlocked: false, personalBest: null, leaderboard: null },
+      breakout: { unlocked: false, personalBest: null, leaderboard: null },
     })
   })
 
@@ -81,11 +87,21 @@ describe('getGames', () => {
         { user: { id: 2, name: 'Alex', color: '#3B82F6' }, score: 42 },
       ],
     }
+    const breakoutEntry = {
+      unlocked: true,
+      personalBest: 42,
+      leaderboard: [
+        { user: { id: 3, name: 'Sam', color: '#10B981' }, score: 99 },
+        { user: { id: 2, name: 'Alex', color: '#3B82F6' }, score: 42 },
+      ],
+    }
     await expect(gamesService.getGames(2, 'CHILD')).resolves.toEqual({
       PONG: pongEntry,
       SNAKE: snakeEntry,
+      BREAKOUT: breakoutEntry,
       pong: pongEntry,
       snake: snakeEntry,
+      breakout: breakoutEntry,
     })
     expect(prisma.gameHighScore.findMany).toHaveBeenNthCalledWith(1, {
       where: {
@@ -99,6 +115,14 @@ describe('getGames', () => {
       where: {
         game: 'SNAKE',
         user: { role: 'CHILD', badges: { some: { badgeId: 'twenty-chores' } } },
+      },
+      include: { user: { select: { id: true, name: true, color: true } } },
+      orderBy: { score: 'desc' },
+    })
+    expect(prisma.gameHighScore.findMany).toHaveBeenNthCalledWith(3, {
+      where: {
+        game: 'BREAKOUT',
+        user: { role: 'CHILD', badges: { some: { badgeId: 'thirty-chores' } } },
       },
       include: { user: { select: { id: true, name: true, color: true } } },
       orderBy: { score: 'desc' },
@@ -220,6 +244,28 @@ describe('recordScore', () => {
     prisma.gameHighScore.findUnique.mockResolvedValue({ score: 50 })
 
     await expect(gamesService.recordScore('PONG', 2, 'CHILD', 50)).resolves.toEqual({
+      personalBest: 50,
+      isNewBest: false,
+    })
+    expect(prisma.gameHighScore.findMany).not.toHaveBeenCalled()
+  })
+
+  it('rejects a locked child score for BREAKOUT', async () => {
+    prisma.userBadge.findUnique.mockResolvedValue(null)
+
+    await expect(gamesService.recordScore('BREAKOUT', 2, 'CHILD', 10)).rejects.toMatchObject({
+      message: 'BREAKOUT is locked until you earn the thirty-chores badge',
+      statusCode: 403,
+    })
+    expect(prisma.gameHighScore.findUnique).not.toHaveBeenCalled()
+  })
+
+  it('mirrors PONG behavior for an eligible BREAKOUT child', async () => {
+    prisma.userBadge.findUnique.mockResolvedValue({ id: 1 })
+    prisma.gameHighScore.updateMany.mockResolvedValue({ count: 0 })
+    prisma.gameHighScore.findUnique.mockResolvedValue({ score: 50 })
+
+    await expect(gamesService.recordScore('BREAKOUT', 2, 'CHILD', 50)).resolves.toEqual({
       personalBest: 50,
       isNewBest: false,
     })
