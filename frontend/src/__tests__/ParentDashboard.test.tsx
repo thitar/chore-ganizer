@@ -30,6 +30,7 @@ vi.mock('../hooks/useOverdue', () => ({ useOverdue: vi.fn() }))
 vi.mock('../hooks/usePoints', () => ({
   useLeaderboard: vi.fn(),
   useWeeklyPoints: vi.fn(),
+  usePointsStats: vi.fn(),
 }))
 vi.mock('../hooks/useNudge', () => ({ useNudge: vi.fn() }))
 vi.mock('../hooks/useTemplates', () => ({ useTemplates: vi.fn() }))
@@ -38,7 +39,7 @@ vi.mock('../hooks/useUsers', () => ({ useUsers: vi.fn() }))
 import { useAuth } from '../hooks/useAuth'
 import { useAssignments } from '../hooks/useAssignments'
 import { useOverdue } from '../hooks/useOverdue'
-import { useLeaderboard, useWeeklyPoints } from '../hooks/usePoints'
+import { useLeaderboard, useWeeklyPoints, usePointsStats } from '../hooks/usePoints'
 import { useNudge } from '../hooks/useNudge'
 import { useTemplates } from '../hooks/useTemplates'
 import { useUsers } from '../hooks/useUsers'
@@ -92,6 +93,10 @@ function mockParentState(overrides: Record<string, unknown> = {}) {
     data: [{ user: { id: 3, name: 'Alice', color: '#10B981', role: 'CHILD' }, points: 120 }],
     isLoading: false,
   })
+  ;(usePointsStats as ReturnType<typeof vi.fn>).mockReturnValue({
+    data: { from: '2026-06-15T00:00:00.000Z', to: null, entries: [] },
+    isLoading: false,
+  })
   ;(useNudge as ReturnType<typeof vi.fn>).mockReturnValue({
     mutateAsync: mockNudge, isPending: false,
   })
@@ -125,7 +130,7 @@ describe('ParentDashboard', () => {
     // "Overdue" appears both as the stat label and as the needs-action badge text.
     expect(screen.getAllByText('Overdue').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Due today').closest('div')).toHaveTextContent('1')
-    expect(screen.getByText('This week').closest('div')).toHaveTextContent('1 of 3 done')
+    expect(screen.getByText('This week', { selector: 'span' }).closest('div')).toHaveTextContent('1 of 3 done')
     expect(screen.getByText('Pts this week').closest('div')).toHaveTextContent('120')
   })
 

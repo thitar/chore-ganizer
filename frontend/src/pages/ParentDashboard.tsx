@@ -8,6 +8,7 @@ import { useNudge } from '../hooks/useNudge'
 import { formatDueDate } from '../utils/dateFormat'
 import { assignmentKey } from '../utils/assignmentKey'
 import { Leaderboard } from '../components/Leaderboard'
+import { PointsStats } from '../components/PointsStats'
 import { Avatar } from '../components/ui/Avatar'
 import { Card } from '../components/ui/Card'
 import { StatCard } from '../components/ui/StatCard'
@@ -288,6 +289,9 @@ export function ParentDashboard() {
                 ))}
               </div>
             )}
+          </div>
+          <div>
+            <PointsStats />
           </div>
         </section>
       </div>
