@@ -35,6 +35,28 @@ router.get('/weekly', authenticate, authorize('PARENT'), async (req, res, next) 
   }
 })
 
+router.get('/stats', authenticate, authorize('PARENT'), async (req, res, next) => {
+  try {
+    const { from, to } = req.query
+    if (from !== undefined && typeof from !== 'string') {
+      return res.status(400).json({ success: false, data: null, error: { code: 'VALIDATION_ERROR', message: 'from must be an ISO date string' } })
+    }
+    if (to !== undefined && typeof to !== 'string') {
+      return res.status(400).json({ success: false, data: null, error: { code: 'VALIDATION_ERROR', message: 'to must be an ISO date string' } })
+    }
+    if (from !== undefined && Number.isNaN(Date.parse(from))) {
+      return res.status(400).json({ success: false, data: null, error: { code: 'VALIDATION_ERROR', message: 'from must be a valid ISO date' } })
+    }
+    if (to !== undefined && Number.isNaN(Date.parse(to))) {
+      return res.status(400).json({ success: false, data: null, error: { code: 'VALIDATION_ERROR', message: 'to must be a valid ISO date' } })
+    }
+    const result = await pointsService.getPointsStats(from as string | undefined, to as string | undefined)
+    res.json({ success: true, data: result, error: null })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.get('/gamification', authenticate, async (req, res, next) => {
   try {
     const result = await gamificationService.getGamification(req.session.userId!)
