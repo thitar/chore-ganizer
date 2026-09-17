@@ -261,3 +261,65 @@ describe('pointsService.getWeeklyPoints', () => {
     ])
   })
 })
+
+describe('pointsService.getPointsStats', () => {
+  const alice = { id: 3, name: 'Alice', color: '#10B981', role: 'CHILD' }
+  const bob = { id: 4, name: 'Bob', color: '#F59E0B', role: 'CHILD' }
+
+  it('defaults to the current week when no range is given', async () => {
+    prisma.user.findMany.mockResolvedValue([alice, bob])
+    prisma.pointLog.groupBy.mockResolvedValue([{ userId: 3, _sum: { amount: 40 } }])
+
+    const result = await pointsService.getPointsStats()
+
+    expect(prisma.pointLog.groupBy).toHaveBeenCalledWith({
+      by: ['userId'],
+      where: { type: 'EARNED', createdAt: { gte: expect.any(Date) } },
+      _sum: { amount: true },
+    })
+    expect(result.to).toBeNull()
+    expect(result.entries).toEqual([
+      { user: alice, points: 40 },
+      { user: bob, points: 0 },
+    ])
+  })
+
+  it('filters by an inclusive from/to date range and sorts descending', async () => {
+    prisma.user.findMany.mockResolvedValue([alice, bob])
+    prisma.pointLog.groupBy.mockResolvedValue([
+      { userId: 3, _sum: { amount: 10 } },
+      { userId: 4, _sum: { amount: 90 } },
+    ])
+
+    const result = await pointsService.getPointsStats('2026-08-01', '2026-08-31')
+
+    expect(prisma.pointLog.groupBy).toHaveBeenCalledWith({
+      by: ['userId'],
+      where: {
+        type: 'EARNED',
+        createdAt: { gte: new Date('2026-08-01'), lt: new Date('2026-09-01T00:00:00.000Z') },
+      },
+      _sum: { amount: true },
+    })
+    expect(result.from).toBe(new Date('2026-08-01').toISOString())
+    expect(result.to).toBe(new Date('2026-08-31T23:59:59.999Z').toISOString())
+    expect(result.entries).toEqual([
+      { user: bob, points: 90 },
+      { user: alice, points: 10 },
+    ])
+  })
+
+  it('treats a from-only range as open-ended', async () => {
+    prisma.user.findMany.mockResolvedValue([alice])
+    prisma.pointLog.groupBy.mockResolvedValue([])
+
+    const result = await pointsService.getPointsStats('2026-08-01')
+
+    expect(prisma.pointLog.groupBy).toHaveBeenCalledWith({
+      by: ['userId'],
+      where: { type: 'EARNED', createdAt: { gte: new Date('2026-08-01') } },
+      _sum: { amount: true },
+    })
+    expect(result.to).toBeNull()
+  })
+})
