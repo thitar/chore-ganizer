@@ -65,7 +65,7 @@ describe('notifyOverdue', () => {
       expect.objectContaining({
         method: 'POST',
         body: 'Wash Dishes — overdue',
-        headers: expect.objectContaining({ Title: 'Chore-Ganizer', Priority: '5', Tags: 'warning,exclamation', Click: '/chores/1' }),
+        headers: expect.objectContaining({ Title: 'Chore-Ganizer', Priority: '5', Tags: 'warning,exclamation' }),
       })
     )
     expect(fetchSpy).toHaveBeenCalledWith(

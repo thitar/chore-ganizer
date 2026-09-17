@@ -12,6 +12,12 @@ type AssignmentWithIncludes = {
   dueDate: Date
 }
 
+function absoluteClickUrl(path: string): string | null {
+  const frontendUrl = (process.env.FRONTEND_URL ?? '').trim()
+  if (!frontendUrl) return null
+  return `${frontendUrl.replace(/\/+$/, '')}${path}`
+}
+
 export async function sendNtfy(
   topic: string | null,
   title: string,
@@ -26,7 +32,10 @@ export async function sendNtfy(
     Priority: String(opts.priority ?? 3),
   }
   if (opts.tags?.length) headers['Tags'] = opts.tags.join(',')
-  if (opts.click) headers['Click'] = opts.click
+  if (opts.click) {
+    const clickUrl = absoluteClickUrl(opts.click)
+    if (clickUrl) headers['Click'] = clickUrl
+  }
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 3000)
   try {
