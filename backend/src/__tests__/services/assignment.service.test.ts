@@ -118,7 +118,6 @@ describe('assignmentService.create', () => {
           Title: 'Chore-Ganizer',
           Priority: '3',
           Tags: 'clipboard,bell',
-          Click: '/chores/1',
         }),
       })
     )
@@ -558,7 +557,6 @@ describe('assignmentService.getAll - notification sweep', () => {
           Title: 'Chore-Ganizer',
           Priority: '4',
           Tags: 'warning,alarm_clock',
-          Click: '/chores/1',
         }),
       })
     )
