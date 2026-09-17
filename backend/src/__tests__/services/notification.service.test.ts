@@ -88,10 +88,52 @@ describe('notification.service', () => {
       expect(callArgs[1].headers.Click).toBeUndefined()
     })
 
-    it('sets Click header when provided', async () => {
-      await sendNtfy('topic', 'Title', 'body', { click: '/chores/42' })
-      const callArgs = (global.fetch as jest.Mock).mock.calls[0]
-      expect(callArgs[1].headers.Click).toBe('/chores/42')
+    it('sets an absolute Click header when FRONTEND_URL is set', async () => {
+      const original = process.env.FRONTEND_URL
+      process.env.FRONTEND_URL = 'https://chore.example.com'
+      try {
+        await sendNtfy('topic', 'Title', 'body', { click: '/chores/42' })
+        const callArgs = (global.fetch as jest.Mock).mock.calls[0]
+        expect(callArgs[1].headers.Click).toBe('https://chore.example.com/chores/42')
+      } finally {
+        process.env.FRONTEND_URL = original
+      }
+    })
+
+    it('strips a trailing slash from FRONTEND_URL before joining the path', async () => {
+      const original = process.env.FRONTEND_URL
+      process.env.FRONTEND_URL = 'https://chore.example.com/'
+      try {
+        await sendNtfy('topic', 'Title', 'body', { click: '/profile' })
+        const callArgs = (global.fetch as jest.Mock).mock.calls[0]
+        expect(callArgs[1].headers.Click).toBe('https://chore.example.com/profile')
+      } finally {
+        process.env.FRONTEND_URL = original
+      }
+    })
+
+    it('omits the Click header when FRONTEND_URL is not set', async () => {
+      const original = process.env.FRONTEND_URL
+      delete process.env.FRONTEND_URL
+      try {
+        await sendNtfy('topic', 'Title', 'body', { click: '/chores/42' })
+        const callArgs = (global.fetch as jest.Mock).mock.calls[0]
+        expect(callArgs[1].headers.Click).toBeUndefined()
+      } finally {
+        process.env.FRONTEND_URL = original
+      }
+    })
+
+    it('omits the Click header when no click path was given', async () => {
+      const original = process.env.FRONTEND_URL
+      process.env.FRONTEND_URL = 'https://chore.example.com'
+      try {
+        await sendNtfy('topic', 'Title', 'body')
+        const callArgs = (global.fetch as jest.Mock).mock.calls[0]
+        expect(callArgs[1].headers.Click).toBeUndefined()
+      } finally {
+        process.env.FRONTEND_URL = original
+      }
     })
 
     it('uses AbortController with 3000ms timeout', async () => {
