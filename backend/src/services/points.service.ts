@@ -109,3 +109,41 @@ export async function getWeeklyPoints() {
     .map(user => ({ user, points: pointsByUser.get(user.id) ?? 0 }))
     .sort((a, b) => b.points - a.points)
 }
+
+export async function getPointsStats(fromStr?: string, toStr?: string) {
+  const from = fromStr ? new Date(fromStr) : startOfWeekUTC(new Date())
+
+  let toExclusive: Date | undefined
+  if (toStr) {
+    const to = new Date(toStr)
+    toExclusive = new Date(Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate() + 1))
+  }
+
+  if (toExclusive && toExclusive <= from) {
+    throw new AppError('to must not be before from', 400, 'VALIDATION_ERROR')
+  }
+
+  const [users, sums] = await Promise.all([
+    prisma.user.findMany({
+      where: { role: 'CHILD' },
+      select: { id: true, name: true, color: true, role: true },
+    }),
+    prisma.pointLog.groupBy({
+      by: ['userId'],
+      where: {
+        type: 'EARNED',
+        createdAt: toExclusive ? { gte: from, lt: toExclusive } : { gte: from },
+      },
+      _sum: { amount: true },
+    }),
+  ])
+
+  const pointsByUser = new Map(sums.map(s => [s.userId, s._sum.amount ?? 0]))
+  return {
+    from: from.toISOString(),
+    to: toExclusive ? new Date(toExclusive.getTime() - 1).toISOString() : null,
+    entries: users
+      .map(user => ({ user, points: pointsByUser.get(user.id) ?? 0 }))
+      .sort((a, b) => b.points - a.points),
+  }
+}

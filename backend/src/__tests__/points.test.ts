@@ -155,3 +155,78 @@ describe('GET /api/points/weekly', () => {
     }
   })
 })
+
+describe('GET /api/points/stats', () => {
+  it('returns 401 without authentication', async () => {
+    const res = await request(app).get('/api/points/stats')
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 403 for CHILD role', async () => {
+    const res = await request(app).get('/api/points/stats').set('Cookie', childCookies)
+    expect(res.status).toBe(403)
+  })
+
+  it('defaults to the current week when no range is given', async () => {
+    const res = await request(app).get('/api/points/stats').set('Cookie', parentCookies)
+    expect(res.status).toBe(200)
+    expect(res.body.data).toHaveProperty('from')
+    expect(res.body.data.to).toBeNull()
+    expect(Array.isArray(res.body.data.entries)).toBe(true)
+    expect(res.body.data.entries.every((e: { user: { role: string } }) => e.user.role === 'CHILD')).toBe(true)
+  })
+
+  it('accepts an explicit from/to range', async () => {
+    const res = await request(app)
+      .get('/api/points/stats?from=2026-01-01&to=2026-12-31')
+      .set('Cookie', parentCookies)
+    expect(res.status).toBe(200)
+    expect(res.body.data.from).toBe(new Date('2026-01-01').toISOString())
+    expect(res.body.data.to).toBe(new Date('2026-12-31T23:59:59.999Z').toISOString())
+  })
+
+  it('rejects an invalid date string', async () => {
+    const res = await request(app).get('/api/points/stats?from=not-a-date').set('Cookie', parentCookies)
+    expect(res.status).toBe(400)
+    expect(res.body.error.code).toBe('VALIDATION_ERROR')
+  })
+
+  it('rejects a to before from', async () => {
+    const res = await request(app)
+      .get('/api/points/stats?from=2026-08-31&to=2026-08-01')
+      .set('Cookie', parentCookies)
+    expect(res.status).toBe(400)
+    expect(res.body.error.code).toBe('VALIDATION_ERROR')
+  })
+
+  it('rejects a day-overflow date instead of silently normalizing it', async () => {
+    const res = await request(app).get('/api/points/stats?from=2026-02-30').set('Cookie', parentCookies)
+    expect(res.status).toBe(400)
+    expect(res.body.error.code).toBe('VALIDATION_ERROR')
+  })
+
+  it('rejects Feb 29 on a non-leap year', async () => {
+    const res = await request(app).get('/api/points/stats?to=2026-02-29').set('Cookie', parentCookies)
+    expect(res.status).toBe(400)
+    expect(res.body.error.code).toBe('VALIDATION_ERROR')
+  })
+
+  it('accepts Feb 29 on a leap year', async () => {
+    const res = await request(app).get('/api/points/stats?from=2024-02-29&to=2024-02-29').set('Cookie', parentCookies)
+    expect(res.status).toBe(200)
+  })
+
+  it('rejects a month-overflow date', async () => {
+    const res = await request(app).get('/api/points/stats?from=2026-13-01').set('Cookie', parentCookies)
+    expect(res.status).toBe(400)
+    expect(res.body.error.code).toBe('VALIDATION_ERROR')
+  })
+
+  it('rejects a full ISO datetime string, requiring date-only YYYY-MM-DD', async () => {
+    const res = await request(app)
+      .get('/api/points/stats?from=2026-08-01T18:00:00Z')
+      .set('Cookie', parentCookies)
+    expect(res.status).toBe(400)
+    expect(res.body.error.code).toBe('VALIDATION_ERROR')
+  })
+})

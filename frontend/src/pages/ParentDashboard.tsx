@@ -5,9 +5,10 @@ import { useAssignments } from '../hooks/useAssignments'
 import { useOverdue } from '../hooks/useOverdue'
 import { useLeaderboard, useWeeklyPoints } from '../hooks/usePoints'
 import { useNudge } from '../hooks/useNudge'
-import { formatDueDate } from '../utils/dateFormat'
+import { formatDueDate, startOfWeekUTC } from '../utils/dateFormat'
 import { assignmentKey } from '../utils/assignmentKey'
 import { Leaderboard } from '../components/Leaderboard'
+import { PointsStats } from '../components/PointsStats'
 import { Avatar } from '../components/ui/Avatar'
 import { Card } from '../components/ui/Card'
 import { StatCard } from '../components/ui/StatCard'
@@ -30,13 +31,6 @@ type ActionChore = {
   status: 'PENDING'
   template: { id: number; title: string; points: number; category: string | null }
   assignedTo: { id: number; name: string; color: string; ntfyTopic: string | null }
-}
-
-function startOfWeek(d: Date): Date {
-  const day = (d.getUTCDay() + 6) % 7
-  const monday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
-  monday.setUTCDate(monday.getUTCDate() - day)
-  return monday
 }
 
 function isTodayUTC(dateStr: string): boolean {
@@ -114,7 +108,7 @@ export function ParentDashboard() {
 
   const week = useMemo(() => {
     const now = new Date()
-    const monday = startOfWeek(now)
+    const monday = startOfWeekUTC(now)
     const nextMonday = new Date(monday)
     nextMonday.setUTCDate(monday.getUTCDate() + 7)
     const thisWeek = assignments.filter(a => {
@@ -288,6 +282,9 @@ export function ParentDashboard() {
                 ))}
               </div>
             )}
+          </div>
+          <div>
+            <PointsStats />
           </div>
         </section>
       </div>

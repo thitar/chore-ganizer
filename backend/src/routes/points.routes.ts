@@ -8,6 +8,20 @@ import { adjustPointsSchema } from '../schemas/points.schema'
 
 const router = Router()
 
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
+
+function isValidCalendarDate(dateStr: string): boolean {
+  if (!DATE_ONLY.test(dateStr)) return false
+  const parsed = new Date(dateStr)
+  if (Number.isNaN(parsed.getTime())) return false
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return (
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day
+  )
+}
+
 router.get('/me', authenticate, async (req, res, next) => {
   try {
     const result = await pointsService.getMyPoints(req.session.userId!)
@@ -29,6 +43,28 @@ router.get('/leaderboard', authenticate, async (_req, res, next) => {
 router.get('/weekly', authenticate, authorize('PARENT'), async (req, res, next) => {
   try {
     const result = await pointsService.getWeeklyPoints()
+    res.json({ success: true, data: result, error: null })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.get('/stats', authenticate, authorize('PARENT'), async (req, res, next) => {
+  try {
+    const { from, to } = req.query
+    if (from !== undefined && typeof from !== 'string') {
+      return res.status(400).json({ success: false, data: null, error: { code: 'VALIDATION_ERROR', message: 'from must be an ISO date string' } })
+    }
+    if (to !== undefined && typeof to !== 'string') {
+      return res.status(400).json({ success: false, data: null, error: { code: 'VALIDATION_ERROR', message: 'to must be an ISO date string' } })
+    }
+    if (from !== undefined && !isValidCalendarDate(from)) {
+      return res.status(400).json({ success: false, data: null, error: { code: 'VALIDATION_ERROR', message: 'from must be a valid YYYY-MM-DD date' } })
+    }
+    if (to !== undefined && !isValidCalendarDate(to)) {
+      return res.status(400).json({ success: false, data: null, error: { code: 'VALIDATION_ERROR', message: 'to must be a valid YYYY-MM-DD date' } })
+    }
+    const result = await pointsService.getPointsStats(from as string | undefined, to as string | undefined)
     res.json({ success: true, data: result, error: null })
   } catch (err) {
     next(err)

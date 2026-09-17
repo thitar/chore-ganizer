@@ -30,6 +30,7 @@ vi.mock('../hooks/usePoints', () => ({
   useLeaderboard: vi.fn(),
   useGamification: vi.fn(),
   useWeeklyPoints: vi.fn(),
+  usePointsStats: vi.fn(),
 }))
 
 vi.mock('../hooks/useOverdue', () => ({ useOverdue: vi.fn() }))
@@ -46,7 +47,7 @@ vi.mock('../hooks/useUsers', () => ({
 
 import { useAuth } from '../hooks/useAuth'
 import { useAssignments } from '../hooks/useAssignments'
-import { useMyPoints, useLeaderboard, useGamification, useWeeklyPoints } from '../hooks/usePoints'
+import { useMyPoints, useLeaderboard, useGamification, useWeeklyPoints, usePointsStats } from '../hooks/usePoints'
 import { useTemplates } from '../hooks/useTemplates'
 import { useUsers } from '../hooks/useUsers'
 import { useOverdue } from '../hooks/useOverdue'
@@ -122,6 +123,7 @@ describe('DashboardPage', () => {
     ;(useOverdue as ReturnType<typeof vi.fn>).mockReturnValue({ overdue: [], isLoading: false, error: null })
     ;(useNudge as ReturnType<typeof vi.fn>).mockReturnValue({ mutateAsync: vi.fn(), isPending: false })
     ;(useWeeklyPoints as ReturnType<typeof vi.fn>).mockReturnValue({ data: [], isLoading: false })
+    ;(usePointsStats as ReturnType<typeof vi.fn>).mockReturnValue({ data: { from: '2026-06-15T00:00:00.000Z', to: null, entries: [] }, isLoading: false })
   })
 
   it('greets the user by name', () => {
