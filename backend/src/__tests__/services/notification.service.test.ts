@@ -30,6 +30,14 @@ const mockAssignment = {
   dueDate: new Date('2026-07-15T00:00:00Z'),
 }
 
+function restoreFrontendUrl(original: string | undefined) {
+  if (original === undefined) {
+    delete process.env.FRONTEND_URL
+  } else {
+    process.env.FRONTEND_URL = original
+  }
+}
+
 describe('notification.service', () => {
   beforeEach(() => {
     jest.spyOn(global, 'fetch').mockResolvedValue(new Response())
@@ -96,7 +104,7 @@ describe('notification.service', () => {
         const callArgs = (global.fetch as jest.Mock).mock.calls[0]
         expect(callArgs[1].headers.Click).toBe('https://chore.example.com/chores/42')
       } finally {
-        process.env.FRONTEND_URL = original
+        restoreFrontendUrl(original)
       }
     })
 
@@ -108,7 +116,7 @@ describe('notification.service', () => {
         const callArgs = (global.fetch as jest.Mock).mock.calls[0]
         expect(callArgs[1].headers.Click).toBe('https://chore.example.com/profile')
       } finally {
-        process.env.FRONTEND_URL = original
+        restoreFrontendUrl(original)
       }
     })
 
@@ -120,7 +128,7 @@ describe('notification.service', () => {
         const callArgs = (global.fetch as jest.Mock).mock.calls[0]
         expect(callArgs[1].headers.Click).toBeUndefined()
       } finally {
-        process.env.FRONTEND_URL = original
+        restoreFrontendUrl(original)
       }
     })
 
@@ -132,7 +140,7 @@ describe('notification.service', () => {
         const callArgs = (global.fetch as jest.Mock).mock.calls[0]
         expect(callArgs[1].headers.Click).toBeUndefined()
       } finally {
-        process.env.FRONTEND_URL = original
+        restoreFrontendUrl(original)
       }
     })
 
