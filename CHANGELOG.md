@@ -5,6 +5,11 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.8.0] - 2026-09-17
+
+### Added
+- ntfy push notifications now include an absolute `Click` URL (`FRONTEND_URL` + the existing relative path from `notification.formatters.ts`, e.g. `/chores/42`), so tapping a notification opens the chore directly instead of just opening the app. Startup now warns once (`backend/src/app.ts`) if ntfy is configured but `FRONTEND_URL` is unset, mirroring the existing SMTP+`FRONTEND_URL` warning. When `FRONTEND_URL` is unset, the `Click` header is omitted entirely rather than sending a broken relative URL.
+
 ## [3.7.0] - 2026-08-31
 
 ### Added
