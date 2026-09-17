@@ -8,6 +8,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler'
 import { csrfProtection } from './middleware/csrf'
 import { generalLimiter } from './middleware/rateLimiter'
 import { isSmtpConfigured } from './config/smtp'
+import { isNtfyConfigured } from './config/notifications'
 import { PrismaSessionStore } from './config/sessionStore'
 
 const app = express()
@@ -66,6 +67,12 @@ if (isSmtpConfigured && !frontendUrl) {
   console.log(`[smtp] Password recovery enabled — reset links will point to ${frontendUrl}`)
 } else if (!frontendUrl) {
   console.warn('[config] FRONTEND_URL not set — password reset links will be broken if SMTP is enabled')
+}
+
+if (isNtfyConfigured && !frontendUrl) {
+  console.warn('[config] ntfy is configured but FRONTEND_URL is not set — push notifications will not link directly to chores')
+} else if (isNtfyConfigured && frontendUrl) {
+  console.log(`[ntfy] Notification click-through enabled — links will point to ${frontendUrl}`)
 }
 
 app.use(session({
