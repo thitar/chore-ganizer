@@ -5,6 +5,12 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.8.0] - 2026-09-17
+
+### Added
+- `GET /api/points/stats?from=&to=` — per-child earned points over an arbitrary date range, generalizing the fixed-current-week `GET /api/points/weekly` seed (which is unchanged and still used on the dashboard's "Pts this week" tile). Parent-only, same as `/weekly`. Defaults to the current week when no range is given.
+- `PointsStats` card on the parent dashboard with This week / This month / Last 30 days period presets, backed by the new endpoint.
+
 ## [3.7.0] - 2026-08-31
 
 ### Added
