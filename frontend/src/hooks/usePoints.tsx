@@ -41,6 +41,13 @@ export function useWeeklyPoints() {
   })
 }
 
+export function usePointsStats(from?: string, to?: string) {
+  return useQuery({
+    queryKey: ['points', 'stats', from ?? null, to ?? null],
+    queryFn: () => pointsApi.getPointsStats(from, to),
+  })
+}
+
 export function useGamification() {
   return useQuery({
     queryKey: ['points', 'gamification'],

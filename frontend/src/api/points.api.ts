@@ -67,6 +67,22 @@ export async function getWeeklyPoints(): Promise<WeeklyPointsEntry[]> {
   return response.data.data
 }
 
+export interface PointsStatsEntry {
+  user: { id: number; name: string; color: string; role: string }
+  points: number
+}
+
+export interface PointsStatsResponse {
+  from: string
+  to: string | null
+  entries: PointsStatsEntry[]
+}
+
+export async function getPointsStats(from?: string, to?: string): Promise<PointsStatsResponse> {
+  const response = await api.get('/stats', { params: { from, to } })
+  return response.data.data
+}
+
 export interface GamificationBadge {
   id: string
   name: string
