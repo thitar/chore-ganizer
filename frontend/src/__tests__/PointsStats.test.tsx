@@ -64,4 +64,15 @@ describe('PointsStats', () => {
     renderCard()
     expect(screen.getByText('No points earned in this period.')).toBeInTheDocument()
   })
+
+  it('shows an error message instead of an empty state when the request fails', () => {
+    ;(usePointsStats as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    })
+    renderCard()
+    expect(screen.getByText("Couldn't load points stats.")).toBeInTheDocument()
+    expect(screen.queryByText('No points earned in this period.')).not.toBeInTheDocument()
+  })
 })

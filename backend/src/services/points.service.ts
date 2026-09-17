@@ -119,6 +119,10 @@ export async function getPointsStats(fromStr?: string, toStr?: string) {
     toExclusive = new Date(Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate() + 1))
   }
 
+  if (toExclusive && toExclusive <= from) {
+    throw new AppError('to must not be before from', 400, 'VALIDATION_ERROR')
+  }
+
   const [users, sums] = await Promise.all([
     prisma.user.findMany({
       where: { role: 'CHILD' },

@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Avatar } from './ui/Avatar'
 import { Card } from './ui/Card'
 import { Skeleton } from './ui/Skeleton'
 import { usePointsStats } from '../hooks/usePoints'
+import { startOfWeekUTC } from '../utils/dateFormat'
 
 type Period = 'week' | 'month' | 'last30'
 
@@ -11,13 +12,6 @@ const PERIODS: { id: Period; label: string }[] = [
   { id: 'month', label: 'This month' },
   { id: 'last30', label: 'Last 30 days' },
 ]
-
-function startOfWeekUTC(d: Date): Date {
-  const day = (d.getUTCDay() + 6) % 7
-  const monday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
-  monday.setUTCDate(monday.getUTCDate() - day)
-  return monday
-}
 
 function toDateParam(d: Date): string {
   return d.toISOString().slice(0, 10)
@@ -35,8 +29,8 @@ function rangeForPeriod(period: Period): { from: string; to: string } {
 
 export function PointsStats() {
   const [period, setPeriod] = useState<Period>('week')
-  const { from, to } = useMemo(() => rangeForPeriod(period), [period])
-  const { data, isLoading } = usePointsStats(from, to)
+  const { from, to } = rangeForPeriod(period)
+  const { data, isLoading, isError } = usePointsStats(from, to)
 
   return (
     <div>
@@ -61,6 +55,8 @@ export function PointsStats() {
           <Skeleton className="h-12" />
           <Skeleton className="h-12" />
         </div>
+      ) : isError ? (
+        <p className="text-sm text-red-400">Couldn&apos;t load points stats.</p>
       ) : !data || data.entries.length === 0 ? (
         <p className="text-sm text-zinc-500">No points earned in this period.</p>
       ) : (

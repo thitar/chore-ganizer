@@ -4,6 +4,13 @@ function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
+export function startOfWeekUTC(d: Date): Date {
+  const day = (d.getUTCDay() + 6) % 7
+  const monday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+  monday.setUTCDate(monday.getUTCDate() - day)
+  return monday
+}
+
 export function formatDateLabel(dateStr: string): string {
   const date = new Date(dateStr)
   return `${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`

@@ -190,4 +190,12 @@ describe('GET /api/points/stats', () => {
     expect(res.status).toBe(400)
     expect(res.body.error.code).toBe('VALIDATION_ERROR')
   })
+
+  it('rejects a to before from', async () => {
+    const res = await request(app)
+      .get('/api/points/stats?from=2026-08-31&to=2026-08-01')
+      .set('Cookie', parentCookies)
+    expect(res.status).toBe(400)
+    expect(res.body.error.code).toBe('VALIDATION_ERROR')
+  })
 })

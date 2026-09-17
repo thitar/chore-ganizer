@@ -322,4 +322,19 @@ describe('pointsService.getPointsStats', () => {
     })
     expect(result.to).toBeNull()
   })
+
+  it('rejects a to before from', async () => {
+    await expect(pointsService.getPointsStats('2026-08-31', '2026-08-01')).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'VALIDATION_ERROR',
+    })
+    expect(prisma.pointLog.groupBy).not.toHaveBeenCalled()
+  })
+
+  it('rejects a to-only request when to falls before the default current-week start', async () => {
+    await expect(pointsService.getPointsStats(undefined, '2020-01-01')).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'VALIDATION_ERROR',
+    })
+  })
 })
