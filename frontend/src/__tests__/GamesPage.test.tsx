@@ -23,6 +23,12 @@ const breakoutCanvasMock = vi.hoisted(() => ({
   runId: undefined as number | undefined,
 }))
 
+const spaceInvadersCanvasMock = vi.hoisted(() => ({
+  onGameOver: undefined as ((score: number) => void) | undefined,
+  onRestart: undefined as (() => void) | undefined,
+  runId: undefined as number | undefined,
+}))
+
 vi.mock('../hooks/useAuth', () => ({
   useAuth: vi.fn(),
 }))
@@ -75,6 +81,19 @@ vi.mock('../games/BreakoutCanvas', () => ({
   },
 }))
 
+vi.mock('../games/SpaceInvadersCanvas', () => ({
+  SpaceInvadersCanvas: (props: { onGameOver: (score: number) => void; onRestart: () => void; runId: number }) => {
+    spaceInvadersCanvasMock.onGameOver = props.onGameOver
+    spaceInvadersCanvasMock.onRestart = props.onRestart
+    spaceInvadersCanvasMock.runId = props.runId
+    return (
+      <div data-testid="space-invaders-canvas">
+        <button onClick={props.onRestart}>Restart Space Invaders</button>
+      </div>
+    )
+  },
+}))
+
 import { useAuth } from '../hooks/useAuth'
 import { useGames, useSubmitScore } from '../hooks/useGames'
 import type { GamesSummary, GameStatus } from '../api/games.api'
@@ -94,8 +113,22 @@ function mockAuth(user: typeof child | typeof parent = child) {
 
 type GameData = GamesSummary
 
-function gamesRecord(pong: GameStatus, snake: GameStatus, breakout: GameStatus = LOCKED): GameData {
-  return { PONG: pong, SNAKE: snake, BREAKOUT: breakout, pong, snake, breakout }
+function gamesRecord(
+  pong: GameStatus,
+  snake: GameStatus,
+  breakout: GameStatus = LOCKED,
+  spaceInvaders: GameStatus = LOCKED,
+): GameData {
+  return {
+    PONG: pong,
+    SNAKE: snake,
+    BREAKOUT: breakout,
+    SPACE_INVADERS: spaceInvaders,
+    pong,
+    snake,
+    breakout,
+    space_invaders: spaceInvaders,
+  }
 }
 
 const LOCKED: GameStatus = { unlocked: false, personalBest: null, leaderboard: null }
@@ -140,6 +173,9 @@ describe('GamesPage', () => {
     breakoutCanvasMock.onGameOver = undefined
     breakoutCanvasMock.onRestart = undefined
     breakoutCanvasMock.runId = undefined
+    spaceInvadersCanvasMock.onGameOver = undefined
+    spaceInvadersCanvasMock.onRestart = undefined
+    spaceInvadersCanvasMock.runId = undefined
     mockAuth()
     mockGames(defaultLocked())
     mockSubmit()
@@ -150,7 +186,8 @@ describe('GamesPage', () => {
     expect(screen.getByTestId('game-card-PONG')).toBeInTheDocument()
     expect(screen.getByTestId('game-card-SNAKE')).toBeInTheDocument()
     expect(screen.getByTestId('game-card-BREAKOUT')).toBeInTheDocument()
-    expect(GAME_REGISTRY).toHaveLength(3)
+    expect(screen.getByTestId('game-card-SPACE_INVADERS')).toBeInTheDocument()
+    expect(GAME_REGISTRY).toHaveLength(4)
   })
 
   it('keeps a locked child from seeing the game or leaderboard (Pong locked)', () => {
@@ -185,6 +222,22 @@ describe('GamesPage', () => {
     expect(screen.getByText('Earn the 30 Chores badge to unlock Breakout.')).toBeInTheDocument()
     expect(screen.queryByTestId('breakout-canvas')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Launch Breakout' })).not.toBeInTheDocument()
+  })
+
+  it('shows Space Invaders locked state while the other games are unlocked', () => {
+    mockGames(
+      gamesRecord(
+        { unlocked: true, personalBest: null, leaderboard: [] },
+        { unlocked: true, personalBest: null, leaderboard: [] },
+        { unlocked: true, personalBest: null, leaderboard: [] },
+        LOCKED,
+      ),
+    )
+    renderPage()
+
+    expect(screen.getByText('Earn the 50 Chores badge to unlock Space Invaders.')).toBeInTheDocument()
+    expect(screen.queryByTestId('space-invaders-canvas')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Launch Space Invaders' })).not.toBeInTheDocument()
   })
 
   it('hides Snake leaderboard before first child unlock', () => {
@@ -282,6 +335,20 @@ describe('GamesPage', () => {
 
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ gameId: 'BREAKOUT', score: 50 }))
     expect(screen.getByText('Breakout score: 50')).toBeInTheDocument()
+    expect(screen.getByText('New best score!')).toBeInTheDocument()
+  })
+
+  it('submits the final Space Invaders score via generic submitScore', async () => {
+    const user = userEvent.setup()
+    const mutateAsync = mockSubmit(vi.fn().mockResolvedValue({ personalBest: 32, isNewBest: true }))
+    mockGames(gamesRecord(LOCKED, LOCKED, LOCKED, { unlocked: true, personalBest: null, leaderboard: null }))
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: 'Launch Space Invaders' }))
+    act(() => spaceInvadersCanvasMock.onGameOver?.(32))
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ gameId: 'SPACE_INVADERS', score: 32 }))
+    expect(screen.getByText('Space Invaders score: 32')).toBeInTheDocument()
     expect(screen.getByText('New best score!')).toBeInTheDocument()
   })
 

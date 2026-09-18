@@ -1,6 +1,7 @@
 import { PongCanvas } from './PongCanvas'
 import { SnakeCanvas } from './SnakeCanvas'
 import { BreakoutCanvas } from './BreakoutCanvas'
+import { SpaceInvadersCanvas } from './SpaceInvadersCanvas'
 
 export interface GameRegistryEntry {
   id: string
@@ -19,8 +20,8 @@ export interface GameRegistryEntry {
  * so adding a game is a single registry line with zero page/API churn.
  * Backend parity: GAME_DEFS in backend/src/services/games.service.ts.
  *
- * PONG, SNAKE, and BREAKOUT are shipped. 2 more are reserved config-only
- * additions to reach the 5-game intent.
+ * PONG, SNAKE, BREAKOUT, and SPACE_INVADERS are shipped. 1 more is
+ * reserved config-only to reach the 5-game intent.
  */
 export const GAME_REGISTRY: GameRegistryEntry[] = [
   {
@@ -46,6 +47,14 @@ export const GAME_REGISTRY: GameRegistryEntry[] = [
     instructions: ['Move the paddle with your pointer.', 'Break all the bricks to clear the board.'],
     unlockLabel: '30 Chores',
     Canvas: BreakoutCanvas,
+  },
+  {
+    id: 'SPACE_INVADERS',
+    title: 'Space Invaders',
+    description: 'Hold the line against the descending enemy formation.',
+    instructions: ['Drag to move your ship.', 'Tap to fire.'],
+    unlockLabel: '50 Chores',
+    Canvas: SpaceInvadersCanvas,
   },
 ]
 
