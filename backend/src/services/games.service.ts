@@ -16,6 +16,7 @@ export const GAME_DEFS: Record<string, GameDef> = {
   SNAKE: { unlockBadge: 'twenty-chores' },
   BREAKOUT: { unlockBadge: 'thirty-chores' },
   SPACE_INVADERS: { unlockBadge: 'fifty-chores' },
+  FLAPPY_BIRD: { unlockBadge: 'hundred-points' },
 }
 
 export function listGameIds(): string[] {
