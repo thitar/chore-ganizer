@@ -22,7 +22,7 @@ Frontend serves on `${FRONTEND_PORT:-3002}`, backend on `${PORT:-3010}`.
 ### What happens on container start
 
 - **Backend** (`backend/docker-entrypoint.sh`): runs as root → adjusts `appuser` UID/GID if `PUID`/`PGID` differ from the image default (`1001`) → creates and chowns `DATA_DIR` → generates the Prisma client → `prisma db push --accept-data-loss` (auto-applies schema, dropping any column/table a schema change removed) → if `prisma.user.count()` is `0`, runs `bootstrap-parent.js` which creates exactly one PARENT from `BOOTSTRAP_PARENT_*` env vars (fails fast if vars are missing); if users exist, skips bootstrap entirely → drops to `appuser` via `su-exec` → starts `node dist/server.js`.
-- **Frontend** (`frontend/docker-entrypoint.sh`): writes `/usr/share/nginx/html/config.js` (`window.APP_CONFIG = { apiUrl, debug, appVersion }` from `VITE_API_URL`/`VITE_DEBUG`/`VITE_APP_VERSION`), substitutes `BACKEND_PORT` into the nginx config via `envsubst`, then starts nginx.
+- **Frontend** (`frontend/docker-entrypoint.sh`): writes `/usr/share/nginx/html/config.js` (`window.APP_CONFIG = { apiUrl, debug, appVersion }`) — `apiUrl`/`debug` come from the `VITE_API_URL`/`VITE_DEBUG` env vars at container start, but `appVersion` is read from `/etc/chore-ganizer/VERSION`, a file baked into the image from `frontend/package.json` at `docker build` time (see `frontend/Dockerfile`) — then substitutes `BACKEND_PORT` into the nginx config via `envsubst`, then starts nginx. Baking `appVersion` at build time (rather than injecting it from `.env` at start) means a plain local rebuild always shows the correct version, with no `.env` sync step required — fixed 2026-09-19 after `.env`'s `APP_VERSION` drifted from the actual deployed code (see `docs/project_notes/bugs.md`).
 - Schema changes and bootstrap are automatic — no manual migration step on first run or after a schema change. Demo fixtures remain available only through explicit `npx prisma db seed` in development. `DATA_DIR` must exist on the host before starting (Docker creates it as root if missing).
 
 ## Environment Variables
@@ -38,7 +38,7 @@ For a new production database, uncomment and replace all three required `BOOTSTR
 | `BOOTSTRAP_PARENT_EMAIL` | **Required** (first start only) | none | Email for the first PARENT user. |
 | `BOOTSTRAP_PARENT_PASSWORD` | **Required** (first start only) | none | Temporary password for the first PARENT. Bcrypt-hashed at creation. Remove after first login. |
 | `BOOTSTRAP_PARENT_COLOR` | Optional | `#4F46E5` | Hex color for the first PARENT user. |
-| `APP_VERSION` | **Required** (for Docker tagging) | none | Passed through to `VITE_APP_VERSION` for the frontend build/runtime config. **Not currently read by any backend application code** — no runtime version display or version-in-response feature exists yet. Keep `backend/package.json` and `frontend/package.json` versions identical regardless. |
+| `APP_VERSION` | Optional | none | Passed to the backend container only. **Not currently read by any backend application code** — no runtime version display or version-in-response feature exists yet. The frontend does **not** read this var: its displayed version is baked into the image from `frontend/package.json` at build time (see "What happens on container start" above). Keep `backend/package.json` and `frontend/package.json` versions identical regardless. |
 | `DATABASE_URL` | Optional | `file:${DATA_DIR}/chore-ganizer.db` | SQLite connection string, read directly by Prisma (`schema.prisma`'s `datasource db`). In Docker Compose, it must be a `file:` path to a database file under `DATA_DIR`; arbitrary host directories are not mounted. |
 | `DATA_DIR` | Optional | `/opt/app-data/chore-ganizer` | Host path bind-mounted into the backend container for the SQLite file. Must exist on the host (Docker creates it as root if missing). |
 | `PORT` | Optional | `3010` | Backend listen port (`server.ts`). |
@@ -142,6 +142,9 @@ Confirm `NTFY_BASE_URL` is set — if unset, ntfy sends are a deliberate silent 
 
 **Login/e2e requests getting 403'd unexpectedly**
 Check `AUTH_RATE_LIMIT_MAX` (default 10/15min) and `RATE_LIMIT_MAX` (default 300/15min) — a full automated test run or a burst of legitimate traffic can exhaust either. Both are configurable via env for exactly this reason.
+
+**Frontend shows the wrong version after a rebuild**
+Before 2026-09-19 this meant `.env`'s `APP_VERSION` was stale — fixed by baking the version into the image from `frontend/package.json` at build time instead, so a plain `docker compose up --build -d` is now always correct with no `.env` sync step. If you still see a stale version after that fix, the container likely wasn't actually rebuilt (`docker compose up -d` without `--build` reuses the existing image) — run `docker compose up --build -d` or check `docker inspect <container> --format '{{.Created}}'` against when you last edited source.
 
 ## Notification Setup
 

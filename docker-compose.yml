@@ -22,7 +22,8 @@ services:
       # Runtime configuration (injected at container start)
       - VITE_API_URL=${VITE_API_URL:-}
       - VITE_DEBUG=${VITE_DEBUG:-false}
-      - VITE_APP_VERSION=${APP_VERSION}
+      # appVersion is baked into the image from frontend/package.json at
+      # build time (frontend/Dockerfile) — no env var needed here.
       # Backend port for nginx API proxy (substituted at runtime via envsubst)
       - BACKEND_PORT=${BACKEND_PORT:-3010}
     depends_on:
