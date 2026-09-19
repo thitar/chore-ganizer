@@ -29,6 +29,12 @@ const spaceInvadersCanvasMock = vi.hoisted(() => ({
   runId: undefined as number | undefined,
 }))
 
+const flappyBirdCanvasMock = vi.hoisted(() => ({
+  onGameOver: undefined as ((score: number) => void) | undefined,
+  onRestart: undefined as (() => void) | undefined,
+  runId: undefined as number | undefined,
+}))
+
 vi.mock('../hooks/useAuth', () => ({
   useAuth: vi.fn(),
 }))
@@ -94,6 +100,19 @@ vi.mock('../games/SpaceInvadersCanvas', () => ({
   },
 }))
 
+vi.mock('../games/FlappyBirdCanvas', () => ({
+  FlappyBirdCanvas: (props: { onGameOver: (score: number) => void; onRestart: () => void; runId: number }) => {
+    flappyBirdCanvasMock.onGameOver = props.onGameOver
+    flappyBirdCanvasMock.onRestart = props.onRestart
+    flappyBirdCanvasMock.runId = props.runId
+    return (
+      <div data-testid="flappy-bird-canvas">
+        <button onClick={props.onRestart}>Restart Flappy Bird</button>
+      </div>
+    )
+  },
+}))
+
 import { useAuth } from '../hooks/useAuth'
 import { useGames, useSubmitScore } from '../hooks/useGames'
 import type { GamesSummary, GameStatus } from '../api/games.api'
@@ -118,16 +137,19 @@ function gamesRecord(
   snake: GameStatus,
   breakout: GameStatus = LOCKED,
   spaceInvaders: GameStatus = LOCKED,
+  flappyBird: GameStatus = LOCKED,
 ): GameData {
   return {
     PONG: pong,
     SNAKE: snake,
     BREAKOUT: breakout,
     SPACE_INVADERS: spaceInvaders,
+    FLAPPY_BIRD: flappyBird,
     pong,
     snake,
     breakout,
     space_invaders: spaceInvaders,
+    flappy_bird: flappyBird,
   }
 }
 
@@ -176,6 +198,9 @@ describe('GamesPage', () => {
     spaceInvadersCanvasMock.onGameOver = undefined
     spaceInvadersCanvasMock.onRestart = undefined
     spaceInvadersCanvasMock.runId = undefined
+    flappyBirdCanvasMock.onGameOver = undefined
+    flappyBirdCanvasMock.onRestart = undefined
+    flappyBirdCanvasMock.runId = undefined
     mockAuth()
     mockGames(defaultLocked())
     mockSubmit()
@@ -187,7 +212,8 @@ describe('GamesPage', () => {
     expect(screen.getByTestId('game-card-SNAKE')).toBeInTheDocument()
     expect(screen.getByTestId('game-card-BREAKOUT')).toBeInTheDocument()
     expect(screen.getByTestId('game-card-SPACE_INVADERS')).toBeInTheDocument()
-    expect(GAME_REGISTRY).toHaveLength(4)
+    expect(screen.getByTestId('game-card-FLAPPY_BIRD')).toBeInTheDocument()
+    expect(GAME_REGISTRY).toHaveLength(5)
   })
 
   it('keeps a locked child from seeing the game or leaderboard (Pong locked)', () => {
@@ -238,6 +264,23 @@ describe('GamesPage', () => {
     expect(screen.getByText('Earn the 50 Chores badge to unlock Space Invaders.')).toBeInTheDocument()
     expect(screen.queryByTestId('space-invaders-canvas')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Launch Space Invaders' })).not.toBeInTheDocument()
+  })
+
+  it('shows Flappy Bird locked state while the other games are unlocked', () => {
+    mockGames(
+      gamesRecord(
+        { unlocked: true, personalBest: null, leaderboard: [] },
+        { unlocked: true, personalBest: null, leaderboard: [] },
+        { unlocked: true, personalBest: null, leaderboard: [] },
+        { unlocked: true, personalBest: null, leaderboard: [] },
+        LOCKED,
+      ),
+    )
+    renderPage()
+
+    expect(screen.getByText('Earn the 100 Points badge to unlock Flappy Bird.')).toBeInTheDocument()
+    expect(screen.queryByTestId('flappy-bird-canvas')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Launch Flappy Bird' })).not.toBeInTheDocument()
   })
 
   it('hides Snake leaderboard before first child unlock', () => {
@@ -349,6 +392,22 @@ describe('GamesPage', () => {
 
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ gameId: 'SPACE_INVADERS', score: 32 }))
     expect(screen.getByText('Space Invaders score: 32')).toBeInTheDocument()
+    expect(screen.getByText('New best score!')).toBeInTheDocument()
+  })
+
+  it('submits the final Flappy Bird score via generic submitScore', async () => {
+    const user = userEvent.setup()
+    const mutateAsync = mockSubmit(vi.fn().mockResolvedValue({ personalBest: 6, isNewBest: true }))
+    mockGames(
+      gamesRecord(LOCKED, LOCKED, LOCKED, LOCKED, { unlocked: true, personalBest: null, leaderboard: null }),
+    )
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: 'Launch Flappy Bird' }))
+    act(() => flappyBirdCanvasMock.onGameOver?.(6))
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ gameId: 'FLAPPY_BIRD', score: 6 }))
+    expect(screen.getByText('Flappy Bird score: 6')).toBeInTheDocument()
     expect(screen.getByText('New best score!')).toBeInTheDocument()
   })
 

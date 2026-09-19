@@ -5,6 +5,14 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.12.0] - 2026-09-18
+
+### Added
+- Flappy Bird games-reward: 5th and final arcade game, unlocked by the existing `hundred-points` badge (100 lifetime points) — the only games unlock so far gated on points rather than a chores-completed count. Backend: `FLAPPY_BIRD: { unlockBadge: 'hundred-points' }` added to `GAME_DEFS` in `backend/src/services/games.service.ts` — no new routes/schemas needed.
+- Pure deterministic engine `frontend/src/games/flappyBird.ts` (`createFlappyBirdGame`/`advanceFlappyBirdGame`/`flap` — 800x500 field, a gravity-driven bird with a single flap impulse, scrolling pipe pairs with a fixed gap that spawn on a timer and despawn offscreen, score += 1 per pipe passed, single life, ends the run on a pipe/ground/ceiling collision) and `frontend/src/games/FlappyBirdCanvas.tsx` (canvas + `requestAnimationFrame` loop mirroring the other games, a single tap anywhere on the canvas triggers one flap via pointer + touch fallback handlers).
+- Registered `FLAPPY_BIRD` in `frontend/src/games/registry.ts` (`unlockLabel: '100 Points'`); `GamesPage` now renders all 5 game cards with no page-level changes (data-driven registry) — completes the "up to 5 games" intent.
+- Tests: `flappyBird.test.ts` and `FlappyBirdCanvas.test.tsx` (mirroring the Space Invaders suites), `GamesPage` registry/leaderboard/submit coverage extended to Flappy Bird, backend `games.service` tests extended for the 5th game.
+
 ## [3.11.0] - 2026-09-17
 
 ### Added
