@@ -15,6 +15,11 @@ COPY public ./public
 COPY src ./src
 RUN npm run build
 
+# Bake the version from package.json into the image so the displayed
+# appVersion always matches what was actually built — no external env var
+# to keep in sync (see docs/project_notes/bugs.md, 2026-09-19).
+RUN node -p "require('./package.json').version" > /app/VERSION
+
 # ---- Stage 2: runtime (nginx) ----
 FROM nginx:1.31-alpine AS runtime
 
@@ -23,6 +28,7 @@ RUN apk add --no-cache bash
 
 # Copy built artifacts
 COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/VERSION /etc/chore-ganizer/VERSION
 
 # nginx workers run as the unprivileged "nginx" user; ensure every file is
 # world-readable regardless of the build context's umask (favicon.svg was

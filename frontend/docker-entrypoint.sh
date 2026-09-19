@@ -4,12 +4,18 @@
 
 set -e
 
+# appVersion comes from the VERSION file baked into the image at build time
+# (from frontend/package.json — see Dockerfile), not an env var: this way it
+# always matches what was actually built, with no separate value to keep in
+# sync across rebuilds.
+APP_VERSION="$(cat /etc/chore-ganizer/VERSION 2>/dev/null || echo dev)"
+
 # Generate config.js with runtime env vars
 cat > /usr/share/nginx/html/config.js <<EOF
 window.APP_CONFIG = {
   apiUrl: "${VITE_API_URL:-}",
   debug: ${VITE_DEBUG:-false},
-  appVersion: "${VITE_APP_VERSION:-dev}"
+  appVersion: "${APP_VERSION}"
 };
 EOF
 
