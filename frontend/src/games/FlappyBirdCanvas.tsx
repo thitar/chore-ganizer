@@ -71,7 +71,13 @@ const TILT_MAX_UP_RAD = (-25 * Math.PI) / 180
 const TILT_MAX_DOWN_RAD = (90 * Math.PI) / 180
 const TILT_VELOCITY_RANGE = 500
 
-const GROUND_HEIGHT = 28
+// Kept shallow relative to BIRD_SIZE (24) on purpose: the engine's floor
+// collision only fires once the bird's bottom edge reaches FLAPPY_BIRD_HEIGHT
+// exactly (no engine change here), so a tall ground band would let the bird
+// visibly sink into what looks like solid ground well before it actually
+// dies. A thin strip keeps that pre-death overlap small instead of eliminating
+// it outright (see the regression test in FlappyBirdCanvas.test.tsx).
+export const GROUND_HEIGHT = 8
 const PIPE_CAP_HEIGHT = 24
 const PIPE_CAP_OVERHANG = 6
 
@@ -169,11 +175,11 @@ function drawGround(context: CanvasRenderingContext2D) {
   context.fillStyle = '#78350f'
   context.fillRect(0, groundY, FLAPPY_BIRD_WIDTH, GROUND_HEIGHT)
   context.fillStyle = '#4ade80'
-  context.fillRect(0, groundY, FLAPPY_BIRD_WIDTH, 4)
+  context.fillRect(0, groundY, FLAPPY_BIRD_WIDTH, 2)
 
   context.fillStyle = '#5c2d0c'
   for (const patch of GROUND_TEXTURE) {
-    context.fillRect(patch.x, groundY + 12, patch.width, 3)
+    context.fillRect(patch.x, groundY + 4, patch.width, 2)
   }
 }
 

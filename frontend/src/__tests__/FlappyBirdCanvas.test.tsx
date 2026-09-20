@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { vi } from 'vitest'
-import { createFlappyBirdGame, type FlappyBirdGame } from '../games/flappyBird'
-import { FlappyBirdCanvas, birdTiltRadians } from '../games/FlappyBirdCanvas'
+import { BIRD_SIZE, createFlappyBirdGame, type FlappyBirdGame } from '../games/flappyBird'
+import { FlappyBirdCanvas, GROUND_HEIGHT, birdTiltRadians } from '../games/FlappyBirdCanvas'
 
 const flappyBirdTestState = vi.hoisted(() => ({
   nextGame: null as FlappyBirdGame | null,
@@ -138,5 +138,16 @@ describe('birdTiltRadians', () => {
 
   it('never exceeds the max diving tilt beyond the fall-speed cap', () => {
     expect(birdTiltRadians(5000)).toBeCloseTo((90 * Math.PI) / 180)
+  })
+})
+
+describe('ground strip vs. floor collision', () => {
+  it('stays shallow enough that the bird cannot visibly sink far into it before the engine\'s floor collision fires', () => {
+    // Regression (PR #257 review): the engine's floor collision only fires once
+    // the bird's bottom edge reaches FLAPPY_BIRD_HEIGHT exactly (unchanged here
+    // by design), so a ground band taller than the bird would let the bird
+    // appear to sink fully into "solid" ground while still alive. Keeping the
+    // band well under BIRD_SIZE bounds how much pre-death overlap is visible.
+    expect(GROUND_HEIGHT).toBeLessThan(BIRD_SIZE / 2)
   })
 })
