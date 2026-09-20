@@ -5,6 +5,16 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.14.0] - 2026-09-20
+
+### Changed
+- Breakout overhaul (design: `docs/superpowers/specs/2026-09-20-breakout-overhaul-design.md`):
+  - **`ball` → `balls: BreakoutBall[]`.** The engine now resolves every ball's movement/bounces/brick-collisions independently each frame against a shared `bricks` array — the architecture multiball needs.
+  - **Lives.** 3 starting lives (`STARTING_LIVES`); a life is lost only once *every* ball has dropped past the paddle in the same tick, not on the first ball to drop. The game ends at 0 lives.
+  - **Infinite level ramp**, replacing "clear the board = game over": clearing every brick advances `level` and spawns a harder layout (more rows up to a cap, some 2-hit "tough" bricks from level 3 on via `Brick.hits` replacing `Brick.alive`, faster ball) plus a level-clear score bonus. The now-dead `BreakoutGame.cleared` field and its `Cleared!` overlay are removed.
+  - **Power-up capsules.** Destroying a brick has a random chance to drop a falling capsule; the paddle catching it applies **WIDEN** (temporarily wider paddle, refreshes rather than stacks on repeat catches) or **MULTIBALL** (clones every ball in play into two more, capped at `MAX_BALLS`). `movePaddle`'s clamp/centering now reads the paddle's current width instead of the `PADDLE_WIDTH` constant, so a widened paddle stays on-field and centered on the pointer.
+  - Rendering reads level-up/life-lost events directly off engine-returned fields (`leveledUp`, `lifeLost`) rather than the canvas diffing frames to infer them, applying the lesson from the Space Invaders overhaul's code review.
+
 ## [3.13.0] - 2026-09-20
 
 ### Changed
