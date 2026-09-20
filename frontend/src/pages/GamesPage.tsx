@@ -90,19 +90,21 @@ function GameCard({ entry, status }: { entry: GameRegistryEntry; status: GameSta
           </div>
         </div>
 
-        <div className="space-y-4 p-6">
-          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-zinc-400">
+        <div className="space-y-4 py-6">
+          <div className="flex flex-wrap gap-x-6 gap-y-2 px-6 text-sm text-zinc-400">
             {entry.instructions.map(text => (
               <span key={text}>{text}</span>
             ))}
           </div>
-          <p className="text-sm text-zinc-500">
+          <p className="px-6 text-sm text-zinc-500">
             Best score:{' '}
             <span className="font-semibold text-zinc-200">{status.personalBest ?? 'No score yet'}</span>
           </p>
 
           {launched && (
-            <div className="space-y-4">
+            // Narrower horizontal padding than the text above: on small screens the
+            // canvas needs every pixel it can get for touch precision.
+            <div className="space-y-4 px-2 sm:px-6">
               <Canvas onGameOver={handleGameOver} onRestart={launchGame} runId={runId} />
               {finalScore !== null && (
                 <div className="rounded-xl border border-edge bg-surface-raised p-4">

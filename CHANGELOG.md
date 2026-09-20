@@ -5,6 +5,16 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.13.0] - 2026-09-20
+
+### Changed
+- Space Invaders overhaul (design: `docs/superpowers/specs/2026-09-20-space-invaders-overhaul-design.md`):
+  - **Mobile controls fixed.** Manual tap-to-fire is gone — `frontend/src/games/spaceInvaders.ts` now auto-fires the player's bullet on a cooldown (`AUTO_FIRE_INTERVAL_SECONDS`) whenever none is in flight, so the canvas only needs drag-to-move. This was previously unplayable on touchscreens because firing required a tap gesture on the same pointer used to drag-steer.
+  - **Levels replace "cleared = game over."** Clearing a wave now advances `level` and spawns a harder one (more rows up to a cap, faster enemies, shorter enemy fire interval, more simultaneous shooters per volley — see `enemyRowsForLevel`/`enemySpeedForLevel`/`enemyFireIntervalForLevel`/`enemyVolleyForLevel`) instead of ending the run; a run now only ends on a ship hit or an enemy reaching the ship's row. A level-clear bonus (`+10 × level`) is added to score. This is also what keeps the game from getting trivially easy now that firing is automatic.
+  - Retuned base difficulty (`ENEMY_BASE_SPEED` 30→22, `ENEMY_SPEED_PER_KILL` 4→2, `ENEMY_DROP_DISTANCE` 20→12) so a single wave no longer feels like it accelerates out of control late-game.
+  - Pixel-art sprite pass in `SpaceInvadersCanvas.tsx`: two-frame animated invader bitmaps (two variants by row), a proper ship silhouette, a starfield background, and a cosmetic explosion flash on enemy death and "Level up!" flash on wave clear — all drawn via scaled `fillRect`, no image assets.
+  - Bigger play area on mobile: `GamesPage.tsx`'s game-card canvas wrapper now uses `px-2 sm:px-6` instead of a flat `p-6`, recovering horizontal space on phone screens for every game in `GAME_REGISTRY`, not just Space Invaders.
+
 ## [3.12.1] - 2026-09-19
 
 ### Fixed
