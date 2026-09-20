@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { vi } from 'vitest'
 import { createFlappyBirdGame, type FlappyBirdGame } from '../games/flappyBird'
-import { FlappyBirdCanvas } from '../games/FlappyBirdCanvas'
+import { FlappyBirdCanvas, birdTiltRadians } from '../games/FlappyBirdCanvas'
 
 const flappyBirdTestState = vi.hoisted(() => ({
   nextGame: null as FlappyBirdGame | null,
@@ -116,5 +116,27 @@ describe('FlappyBirdCanvas', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restart Flappy Bird' }))
 
     expect(onRestart).toHaveBeenCalledOnce()
+  })
+})
+
+describe('birdTiltRadians', () => {
+  it('snaps to the max climbing tilt right after a flap', () => {
+    // FLAP_VELOCITY from flappyBird.ts is -320, well past the point where the
+    // -25° clamp kicks in — matches the design spec's "-25° (climbing, right
+    // after a flap)" rather than a proportional angle at that velocity.
+    expect(birdTiltRadians(-320)).toBeCloseTo((-25 * Math.PI) / 180)
+  })
+
+  it('stays level at zero velocity', () => {
+    expect(birdTiltRadians(0)).toBe(0)
+  })
+
+  it('clamps to the max diving tilt at the engine fall-speed cap', () => {
+    // MAX_FALL_SPEED from flappyBird.ts is 500.
+    expect(birdTiltRadians(500)).toBeCloseTo((90 * Math.PI) / 180)
+  })
+
+  it('never exceeds the max diving tilt beyond the fall-speed cap', () => {
+    expect(birdTiltRadians(5000)).toBeCloseTo((90 * Math.PI) / 180)
   })
 })

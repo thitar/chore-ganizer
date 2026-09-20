@@ -112,7 +112,7 @@ function drawBeak(context: CanvasRenderingContext2D, size: number) {
   context.fillRect(8 * cell, 4.5 * cell, cell, cell)
 }
 
-function birdTiltRadians(vy: number): number {
+export function birdTiltRadians(vy: number): number {
   const ratio = vy / TILT_VELOCITY_RANGE
   return Math.max(TILT_MAX_UP_RAD, Math.min(TILT_MAX_DOWN_RAD, ratio * TILT_MAX_DOWN_RAD))
 }
