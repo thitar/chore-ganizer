@@ -44,8 +44,8 @@ export const GAME_REGISTRY: GameRegistryEntry[] = [
   {
     id: 'BREAKOUT',
     title: 'Breakout',
-    description: 'Clear every brick without letting the ball get past your paddle.',
-    instructions: ['Move the paddle with your pointer.', 'Break all the bricks to clear the board.'],
+    description: 'Clear every board to level up, and catch falling power-ups along the way.',
+    instructions: ['Move the paddle with your pointer.', 'Catch power-ups — clear the board to level up.'],
     unlockLabel: '30 Chores',
     Canvas: BreakoutCanvas,
   },
