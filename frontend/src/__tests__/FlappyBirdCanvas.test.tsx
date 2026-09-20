@@ -23,6 +23,16 @@ const context = {
   font: '',
   textAlign: '',
   fillText: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  translate: vi.fn(),
+  rotate: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  closePath: vi.fn(),
+  arc: vi.fn(),
+  fill: vi.fn(),
 } as unknown as CanvasRenderingContext2D
 
 let animationCallbacks: Map<number, FrameRequestCallback>
