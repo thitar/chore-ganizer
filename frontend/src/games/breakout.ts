@@ -249,7 +249,13 @@ interface BallStepResult {
   capsule: Capsule | null
 }
 
-function advanceBall(ball: BreakoutBall, paddle: BreakoutPaddle, bricks: Brick[], seconds: number): BallStepResult {
+function advanceBall(
+  ball: BreakoutBall,
+  paddle: BreakoutPaddle,
+  bricks: Brick[],
+  seconds: number,
+  resolvedThisTick: Set<number>,
+): BallStepResult {
   let nextX = ball.x + ball.vx * seconds
   let nextY = ball.y + ball.vy * seconds
   let vx = ball.vx
@@ -300,19 +306,30 @@ function advanceBall(ball: BreakoutBall, paddle: BreakoutPaddle, bricks: Brick[]
   if (hitBrickIndex !== -1) {
     const brick = bricks[hitBrickIndex]
     const axis = brickBounceAxis(candidateBall, brick)
-    const hits = brick.hits - 1
-    const destroyed = hits <= 0
-    const nextBricks = bricks.map((b, i) => (i === hitBrickIndex ? { ...b, hits } : b))
-
+    // A brick already hit by an earlier ball this same tick still bounces this
+    // ball (it's a solid object), but doesn't take a second hit or score
+    // again — otherwise multiball convergence lets several balls "gang up" on
+    // one brick for extra hits/score in a single tick.
+    const alreadyResolved = resolvedThisTick.has(hitBrickIndex)
+    let nextBricks = bricks
+    let scoreDelta = 0
     let capsule: Capsule | null = null
-    if (destroyed && Math.random() < POWERUP_DROP_CHANCE) {
-      capsule = {
-        x: brick.x + brick.width / 2 - CAPSULE_SIZE / 2,
-        y: brick.y + brick.height / 2 - CAPSULE_SIZE / 2,
-        width: CAPSULE_SIZE,
-        height: CAPSULE_SIZE,
-        type: Math.random() < 0.5 ? 'WIDEN' : 'MULTIBALL',
-        vy: CAPSULE_FALL_SPEED,
+
+    if (!alreadyResolved) {
+      resolvedThisTick.add(hitBrickIndex)
+      const hits = brick.hits - 1
+      const destroyed = hits <= 0
+      nextBricks = bricks.map((b, i) => (i === hitBrickIndex ? { ...b, hits } : b))
+      scoreDelta = 1
+      if (destroyed && Math.random() < POWERUP_DROP_CHANCE) {
+        capsule = {
+          x: brick.x + brick.width / 2 - CAPSULE_SIZE / 2,
+          y: brick.y + brick.height / 2 - CAPSULE_SIZE / 2,
+          width: CAPSULE_SIZE,
+          height: CAPSULE_SIZE,
+          type: Math.random() < 0.5 ? 'WIDEN' : 'MULTIBALL',
+          vy: CAPSULE_FALL_SPEED,
+        }
       }
     }
 
@@ -325,7 +342,7 @@ function advanceBall(ball: BreakoutBall, paddle: BreakoutPaddle, bricks: Brick[]
         vy: axis === 'y' ? -vy : vy,
       },
       bricks: nextBricks,
-      scoreDelta: 1,
+      scoreDelta,
       capsule,
     }
   }
@@ -363,9 +380,10 @@ export function advanceBreakoutGame(game: BreakoutGame, deltaSeconds: number): B
   let score = game.score
   let balls: BreakoutBall[] = []
   const newCapsules: Capsule[] = []
+  const resolvedThisTick = new Set<number>()
 
   for (const ball of game.balls) {
-    const result = advanceBall(ball, paddleForCollisions, bricks, seconds)
+    const result = advanceBall(ball, paddleForCollisions, bricks, seconds, resolvedThisTick)
     bricks = result.bricks
     score += result.scoreDelta
     if (result.ball) balls.push(result.ball)
@@ -399,7 +417,10 @@ export function advanceBreakoutGame(game: BreakoutGame, deltaSeconds: number): B
   }
 
   let level = game.level
-  let capsules = remainingCapsules
+  // In-flight capsules are discarded on a life lost, same as on a level-up —
+  // a fresh ball shouldn't retroactively let the player collect a capsule
+  // dropped by a brick from before the drop.
+  let capsules = lifeLost ? [] : remainingCapsules
   let leveledUp = false
   // A tick can't both lose the last ball and clear the last brick: a ball
   // either hits a brick (returns non-null) or drops (returns null), never

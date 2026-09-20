@@ -196,6 +196,32 @@ describe('Breakout game engine', () => {
     expect(afterSecondHit.score).toBe(2)
   })
 
+  it('only lets the first ball to hit a brick this tick score, even when a second ball also collides with it', () => {
+    // Regression: two balls converging on the same tough brick in one tick
+    // (a realistic multiball scenario) must not stack two hits/points in a
+    // single tick — only the first ball to resolve against it counts, though
+    // the second still bounces off it like a solid object.
+    const game = createBreakoutGame()
+    const toughBrick = { ...game.bricks[0], hits: 2 }
+    const bricks = game.bricks.map((b, i) => (i === 0 ? toughBrick : b))
+    const ballA = {
+      ...game.balls[0],
+      x: toughBrick.x + toughBrick.width / 2 - BALL_SIZE / 2,
+      y: toughBrick.y + toughBrick.height - 1,
+      vx: 0,
+      vy: -100,
+      speed: 100,
+    }
+    const ballB = { ...ballA }
+
+    const next = advanceBreakoutGame({ ...game, bricks, balls: [ballA, ballB] }, 0.05)
+
+    expect(next.bricks[0].hits).toBe(1)
+    expect(next.score).toBe(1)
+    expect(next.balls).toHaveLength(2)
+    expect(next.balls[1].vy).toBeGreaterThan(0)
+  })
+
   describe('lives', () => {
     it('does not lose a life while at least one other ball is still in play', () => {
       const game = createBreakoutGame()
@@ -231,6 +257,26 @@ describe('Breakout game engine', () => {
       const next = advanceBreakoutGame({ ...game, balls: [dropped] }, 0.05)
 
       expect(next.widenRemaining).toBe(0)
+    })
+
+    it('clears any in-flight capsules when a life is lost', () => {
+      // Regression: an in-flight capsule survived a life loss and could be
+      // collected by the freshly respawned ball, even though it was dropped
+      // by a brick destroyed during the run that just ended.
+      const game = createBreakoutGame()
+      const dropped = { ...game.balls[0], x: 0, y: BREAKOUT_HEIGHT - BALL_SIZE - 1, vx: 0, vy: 100 }
+      const inFlightCapsule: Capsule = {
+        x: 10,
+        y: 200,
+        width: CAPSULE_SIZE,
+        height: CAPSULE_SIZE,
+        type: 'WIDEN',
+        vy: 1,
+      }
+
+      const next = advanceBreakoutGame({ ...game, balls: [dropped], capsules: [inFlightCapsule] }, 0.05)
+
+      expect(next.capsules).toEqual([])
     })
 
     it('ends the game once the last life is lost', () => {
