@@ -82,6 +82,13 @@ const CLOUDS = [
   { x: 720, y: 65, r: 12 },
 ]
 
+// Fixed dirt-clump texture for the ground strip — deterministic and cheap to
+// redraw every frame, same technique as Space Invaders' STARS array.
+const GROUND_TEXTURE = Array.from({ length: 20 }, (_, i) => ({
+  x: (i * 41) % FLAPPY_BIRD_WIDTH,
+  width: 8 + (i % 3) * 4,
+}))
+
 function drawColorBitmap(
   context: CanvasRenderingContext2D,
   bitmap: Bitmap,
@@ -163,6 +170,11 @@ function drawGround(context: CanvasRenderingContext2D) {
   context.fillRect(0, groundY, FLAPPY_BIRD_WIDTH, GROUND_HEIGHT)
   context.fillStyle = '#4ade80'
   context.fillRect(0, groundY, FLAPPY_BIRD_WIDTH, 4)
+
+  context.fillStyle = '#5c2d0c'
+  for (const patch of GROUND_TEXTURE) {
+    context.fillRect(patch.x, groundY + 12, patch.width, 3)
+  }
 }
 
 function drawPipe(
