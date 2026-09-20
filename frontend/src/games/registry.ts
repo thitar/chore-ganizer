@@ -53,7 +53,7 @@ export const GAME_REGISTRY: GameRegistryEntry[] = [
     id: 'SPACE_INVADERS',
     title: 'Space Invaders',
     description: 'Hold the line against the descending enemy formation.',
-    instructions: ['Drag to move your ship.', 'Tap to fire.'],
+    instructions: ['Drag to move your ship.', 'Fires automatically — just dodge and steer.'],
     unlockLabel: '50 Chores',
     Canvas: SpaceInvadersCanvas,
   },

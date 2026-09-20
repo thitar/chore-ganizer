@@ -10,6 +10,7 @@ export const ENEMY_PADDING = 16
 export const ENEMY_HEIGHT = 32
 export const ENEMY_TOP_OFFSET = 50
 export const ENEMY_FIRE_INTERVAL_SECONDS = 1.2
+export const AUTO_FIRE_INTERVAL_SECONDS = 0.45
 
 export const BULLET_WIDTH = 4
 export const BULLET_HEIGHT = 16
@@ -17,13 +18,20 @@ export const BULLET_HEIGHT = 16
 const SHIP_BOTTOM_GAP = 24
 const PLAYER_BULLET_SPEED = 480
 const ENEMY_BULLET_SPEED = 220
-const ENEMY_BASE_SPEED = 30
-const ENEMY_SPEED_PER_KILL = 4
-const ENEMY_DROP_DISTANCE = 20
+const ENEMY_BASE_SPEED = 22
+const ENEMY_SPEED_PER_KILL = 2
+const ENEMY_DROP_DISTANCE = 12
+
+const MAX_ENEMY_ROWS = 6
+const ENEMY_LEVEL_SPEED_STEP = 4
+const ENEMY_MAX_SPEED = 70
+const ENEMY_MIN_FIRE_INTERVAL = 0.5
+const ENEMY_FIRE_INTERVAL_STEP = 0.08
+const ENEMY_MAX_VOLLEY = 3
+const LEVEL_CLEAR_BONUS = 10
 
 const ENEMY_WIDTH =
   (SPACE_INVADERS_WIDTH - ENEMY_PADDING * (ENEMY_COLS + 1)) / ENEMY_COLS
-const TOTAL_ENEMIES = ENEMY_ROWS * ENEMY_COLS
 
 export type SpaceInvadersStatus = 'playing' | 'game-over'
 
@@ -58,9 +66,32 @@ export interface SpaceInvadersGame {
   direction: 1 | -1
   score: number
   status: SpaceInvadersStatus
-  cleared: boolean
-  /** Accumulated time since the last enemy shot, in seconds */
+  /** Wave number, starting at 1. Clearing a wave advances this and spawns a harder one. */
+  level: number
+  /** Accumulated time since the last enemy volley, in seconds */
   fireElapsed: number
+  /** Accumulated time since the last player auto-fire shot, in seconds */
+  playerFireElapsed: number
+  /** The enemy destroyed this tick (for a renderer's explosion effect), or null. Not persisted across ticks. */
+  lastKilled: { x: number; y: number; width: number; height: number } | null
+  /** True only on the tick a wave was just cleared and the next one spawned (for a renderer's flash effect). */
+  leveledUp: boolean
+}
+
+export function enemyRowsForLevel(level: number): number {
+  return Math.min(ENEMY_ROWS + Math.floor((level - 1) / 2), MAX_ENEMY_ROWS)
+}
+
+export function enemySpeedForLevel(level: number): number {
+  return Math.min(ENEMY_BASE_SPEED + (level - 1) * ENEMY_LEVEL_SPEED_STEP, ENEMY_MAX_SPEED)
+}
+
+export function enemyFireIntervalForLevel(level: number): number {
+  return Math.max(ENEMY_MIN_FIRE_INTERVAL, ENEMY_FIRE_INTERVAL_SECONDS - (level - 1) * ENEMY_FIRE_INTERVAL_STEP)
+}
+
+export function enemyVolleyForLevel(level: number): number {
+  return Math.min(1 + Math.floor((level - 1) / 3), ENEMY_MAX_VOLLEY)
 }
 
 function overlaps(
@@ -70,9 +101,10 @@ function overlaps(
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y
 }
 
-function buildEnemies(): Enemy[] {
+function buildEnemies(level: number): Enemy[] {
+  const rows = enemyRowsForLevel(level)
   const enemies: Enemy[] = []
-  for (let row = 0; row < ENEMY_ROWS; row++) {
+  for (let row = 0; row < rows; row++) {
     for (let col = 0; col < ENEMY_COLS; col++) {
       enemies.push({
         x: ENEMY_PADDING + col * (ENEMY_WIDTH + ENEMY_PADDING),
@@ -86,6 +118,16 @@ function buildEnemies(): Enemy[] {
   return enemies
 }
 
+function spawnPlayerBullet(ship: Ship): Bullet {
+  return {
+    x: ship.x + ship.width / 2 - BULLET_WIDTH / 2,
+    y: ship.y - BULLET_HEIGHT,
+    width: BULLET_WIDTH,
+    height: BULLET_HEIGHT,
+    vy: -PLAYER_BULLET_SPEED,
+  }
+}
+
 export function createSpaceInvadersGame(): SpaceInvadersGame {
   return {
     ship: {
@@ -95,13 +137,16 @@ export function createSpaceInvadersGame(): SpaceInvadersGame {
       height: SHIP_HEIGHT,
     },
     playerBullet: null,
-    enemies: buildEnemies(),
+    enemies: buildEnemies(1),
     enemyBullets: [],
     direction: 1,
     score: 0,
     status: 'playing',
-    cleared: false,
+    level: 1,
     fireElapsed: 0,
+    playerFireElapsed: 0,
+    lastKilled: null,
+    leveledUp: false,
   }
 }
 
@@ -115,6 +160,7 @@ export function moveShip(game: SpaceInvadersGame, pointerX: number): SpaceInvade
   return { ...game, ship: { ...game.ship, x } }
 }
 
+/** Manual fire, kept for direct testing. The canvas no longer calls this — see AUTO_FIRE_INTERVAL_SECONDS. */
 export function fireShot(game: SpaceInvadersGame): SpaceInvadersGame {
   if (game.status === 'game-over' || game.playerBullet) {
     return { ...game, ship: { ...game.ship } }
@@ -122,13 +168,7 @@ export function fireShot(game: SpaceInvadersGame): SpaceInvadersGame {
 
   return {
     ...game,
-    playerBullet: {
-      x: game.ship.x + game.ship.width / 2 - BULLET_WIDTH / 2,
-      y: game.ship.y - BULLET_HEIGHT,
-      width: BULLET_WIDTH,
-      height: BULLET_HEIGHT,
-      vy: -PLAYER_BULLET_SPEED,
-    },
+    playerBullet: spawnPlayerBullet(game.ship),
   }
 }
 
@@ -136,11 +176,19 @@ function moveEnemies(
   enemies: Enemy[],
   direction: 1 | -1,
   seconds: number,
+  level: number,
 ): { enemies: Enemy[]; direction: 1 | -1 } {
   const alive = enemies.filter(e => e.alive)
   if (alive.length === 0) return { enemies, direction }
 
-  const speed = ENEMY_BASE_SPEED + (TOTAL_ENEMIES - alive.length) * ENEMY_SPEED_PER_KILL
+  // Capped at the same ceiling as the level's base speed — otherwise the
+  // within-wave per-kill bonus alone can exceed ENEMY_MAX_SPEED once a wave
+  // is large enough (higher levels have more rows), reintroducing the
+  // "accelerates out of control late in a wave" problem this cap exists to prevent.
+  const speed = Math.min(
+    enemySpeedForLevel(level) + (enemies.length - alive.length) * ENEMY_SPEED_PER_KILL,
+    ENEMY_MAX_SPEED,
+  )
   const delta = direction * speed * seconds
   const minX = Math.min(...alive.map(e => e.x))
   const maxX = Math.max(...alive.map(e => e.x + e.width))
@@ -158,6 +206,20 @@ function moveEnemies(
   }
 }
 
+function pickShooters(alive: Enemy[], count: number): Enemy[] {
+  if (count >= alive.length) return alive
+  if (count === 1) return [alive[Math.floor(Math.random() * alive.length)]]
+
+  const pool = [...alive]
+  const shooters: Enemy[] = []
+  for (let i = 0; i < count; i++) {
+    const index = Math.floor(Math.random() * pool.length)
+    shooters.push(pool[index])
+    pool.splice(index, 1)
+  }
+  return shooters
+}
+
 export function advanceSpaceInvadersGame(game: SpaceInvadersGame, deltaSeconds: number): SpaceInvadersGame {
   if (game.status === 'game-over') {
     return game
@@ -165,7 +227,7 @@ export function advanceSpaceInvadersGame(game: SpaceInvadersGame, deltaSeconds: 
 
   const seconds = Number.isFinite(deltaSeconds) ? Math.max(0, Math.min(MAX_DELTA_SECONDS, deltaSeconds)) : 0
 
-  const { enemies: movedEnemies, direction } = moveEnemies(game.enemies, game.direction, seconds)
+  const { enemies: movedEnemies, direction: movedDirection } = moveEnemies(game.enemies, game.direction, seconds, game.level)
 
   let playerBullet = game.playerBullet
   if (playerBullet) {
@@ -173,32 +235,42 @@ export function advanceSpaceInvadersGame(game: SpaceInvadersGame, deltaSeconds: 
     playerBullet = y + playerBullet.height < 0 ? null : { ...playerBullet, y }
   }
 
+  let playerFireElapsed = game.playerFireElapsed + seconds
+  if (!playerBullet && playerFireElapsed >= AUTO_FIRE_INTERVAL_SECONDS) {
+    playerFireElapsed -= AUTO_FIRE_INTERVAL_SECONDS
+    playerBullet = spawnPlayerBullet(game.ship)
+  }
+
   let enemyBullets = game.enemyBullets
     .map(b => ({ ...b, y: b.y + b.vy * seconds }))
     .filter(b => b.y < SPACE_INVADERS_HEIGHT)
 
   let fireElapsed = game.fireElapsed + seconds
-  const aliveEnemies = movedEnemies.filter(e => e.alive)
-  if (fireElapsed >= ENEMY_FIRE_INTERVAL_SECONDS && aliveEnemies.length > 0) {
-    fireElapsed -= ENEMY_FIRE_INTERVAL_SECONDS
-    const shooter = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)]
+  const fireInterval = enemyFireIntervalForLevel(game.level)
+  const aliveBeforeFire = movedEnemies.filter(e => e.alive)
+  if (fireElapsed >= fireInterval && aliveBeforeFire.length > 0) {
+    fireElapsed -= fireInterval
+    const shooters = pickShooters(aliveBeforeFire, enemyVolleyForLevel(game.level))
     enemyBullets = [
       ...enemyBullets,
-      {
+      ...shooters.map(shooter => ({
         x: shooter.x + shooter.width / 2 - BULLET_WIDTH / 2,
         y: shooter.y + shooter.height,
         width: BULLET_WIDTH,
         height: BULLET_HEIGHT,
         vy: ENEMY_BULLET_SPEED,
-      },
+      })),
     ]
   }
 
   let enemies = movedEnemies
   let score = game.score
+  let lastKilled: SpaceInvadersGame['lastKilled'] = null
   if (playerBullet) {
     const hitIndex = enemies.findIndex(e => e.alive && overlaps(playerBullet!, e))
     if (hitIndex !== -1) {
+      const hit = enemies[hitIndex]
+      lastKilled = { x: hit.x, y: hit.y, width: hit.width, height: hit.height }
       enemies = enemies.map((e, i) => (i === hitIndex ? { ...e, alive: false } : e))
       score += 1
       playerBullet = null
@@ -207,17 +279,47 @@ export function advanceSpaceInvadersGame(game: SpaceInvadersGame, deltaSeconds: 
 
   const shipHit = enemyBullets.some(b => overlaps(b, game.ship))
   const enemiesReachedShip = enemies.some(e => e.alive && e.y + e.height >= game.ship.y)
-  const cleared = enemies.every(e => !e.alive)
 
-  return {
+  const base = {
     ship: { ...game.ship },
     playerBullet,
-    enemies,
     enemyBullets,
+    fireElapsed,
+    playerFireElapsed,
+    lastKilled,
+  }
+
+  if (shipHit || enemiesReachedShip) {
+    return {
+      ...base,
+      enemies,
+      direction: movedDirection,
+      score,
+      status: 'game-over',
+      level: game.level,
+      leveledUp: false,
+    }
+  }
+
+  let level = game.level
+  let direction = movedDirection
+  const waveCleared = enemies.every(e => !e.alive)
+  if (waveCleared) {
+    score += LEVEL_CLEAR_BONUS * level
+    level += 1
+    enemies = buildEnemies(level)
+    direction = 1
+  }
+
+  return {
+    ...base,
+    enemies,
+    enemyBullets: waveCleared ? [] : base.enemyBullets,
+    fireElapsed: waveCleared ? 0 : base.fireElapsed,
     direction,
     score,
-    status: shipHit || enemiesReachedShip || cleared ? 'game-over' : 'playing',
-    cleared,
-    fireElapsed,
+    status: 'playing',
+    level,
+    leveledUp: waveCleared,
   }
 }
