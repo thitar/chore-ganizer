@@ -37,13 +37,13 @@ jobs:
         uses: actions/checkout@v7
       
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4.37.3
+        uses: github/codeql-action/init@v4.37.9
         with:
           languages: ${{ matrix.language }}
           queries: security-extended,security-and-quality
       
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4.37.3
+        uses: github/codeql-action/analyze@v4.37.9
         with:
           category: "/language:${{ matrix.language }}"
           upload: true
@@ -159,7 +159,7 @@ jobs:
           fi
 
       - name: Upload Semgrep SARIF
-        uses: github/codeql-action/upload-sarif@v4.37.3
+        uses: github/codeql-action/upload-sarif@v4.37.9
         if: env.SARIF_FILE_EXISTS == 'true'
         with:
           sarif_file: semgrep.sarif
@@ -197,7 +197,7 @@ jobs:
           fi
 
       - name: Upload Trivy scan results (Backend)
-        uses: github/codeql-action/upload-sarif@v4.37.3
+        uses: github/codeql-action/upload-sarif@v4.37.9
         if: env.TRIVY_BACKEND_EXISTS == 'true'
         with:
           sarif_file: 'trivy-backend.sarif'
@@ -222,7 +222,7 @@ jobs:
           fi
 
       - name: Upload Trivy scan results (Frontend)
-        uses: github/codeql-action/upload-sarif@v4.37.3
+        uses: github/codeql-action/upload-sarif@v4.37.9
         if: env.TRIVY_FRONTEND_EXISTS == 'true'
         with:
           sarif_file: 'trivy-frontend.sarif'
