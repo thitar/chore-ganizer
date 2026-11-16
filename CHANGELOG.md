@@ -5,6 +5,14 @@ All notable changes to the Chore-Ganizer project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.15.0] - 2026-09-20
+
+### Changed
+- Flappy Bird pixel-art visual polish (design: `docs/superpowers/specs/2026-09-20-flappy-bird-visual-polish-design.md`), a pure rendering-layer pass confined to `frontend/src/games/FlappyBirdCanvas.tsx` — no changes to the engine (`flappyBird.ts`), gameplay, or collision logic:
+  - **Bird sprite.** Replaced the flat yellow square with a hand-drawn pixel-art bitmap (body, wing, eye, beak), a 2-frame wing-flap animation, and a velocity-based tilt (rotated around the bird's center from `bird.vy`, clamped -25°/climbing to +90°/diving) for the classic Flappy Bird look.
+  - **Pipes.** Added a distinct darker-green cap/lip at each pipe's gap-facing end plus a lighter vertical shading stripe, replacing the flat single-color rectangles.
+  - **Background.** Added static cloud silhouettes, a hill/skyline silhouette, and a visible ground strip at the bottom edge (previously an invisible collision boundary only, still cosmetic — collision logic unchanged).
+
 ## [3.14.0] - 2026-09-20
 
 ### Changed

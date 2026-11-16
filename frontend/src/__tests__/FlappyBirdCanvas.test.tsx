@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { vi } from 'vitest'
-import { createFlappyBirdGame, type FlappyBirdGame } from '../games/flappyBird'
-import { FlappyBirdCanvas } from '../games/FlappyBirdCanvas'
+import { BIRD_SIZE, createFlappyBirdGame, type FlappyBirdGame } from '../games/flappyBird'
+import { FlappyBirdCanvas, GROUND_HEIGHT, birdTiltRadians } from '../games/FlappyBirdCanvas'
 
 const flappyBirdTestState = vi.hoisted(() => ({
   nextGame: null as FlappyBirdGame | null,
@@ -23,6 +23,16 @@ const context = {
   font: '',
   textAlign: '',
   fillText: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  translate: vi.fn(),
+  rotate: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  closePath: vi.fn(),
+  arc: vi.fn(),
+  fill: vi.fn(),
 } as unknown as CanvasRenderingContext2D
 
 let animationCallbacks: Map<number, FrameRequestCallback>
@@ -106,5 +116,38 @@ describe('FlappyBirdCanvas', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restart Flappy Bird' }))
 
     expect(onRestart).toHaveBeenCalledOnce()
+  })
+})
+
+describe('birdTiltRadians', () => {
+  it('snaps to the max climbing tilt right after a flap', () => {
+    // FLAP_VELOCITY from flappyBird.ts is -320, well past the point where the
+    // -25° clamp kicks in — matches the design spec's "-25° (climbing, right
+    // after a flap)" rather than a proportional angle at that velocity.
+    expect(birdTiltRadians(-320)).toBeCloseTo((-25 * Math.PI) / 180)
+  })
+
+  it('stays level at zero velocity', () => {
+    expect(birdTiltRadians(0)).toBe(0)
+  })
+
+  it('clamps to the max diving tilt at the engine fall-speed cap', () => {
+    // MAX_FALL_SPEED from flappyBird.ts is 500.
+    expect(birdTiltRadians(500)).toBeCloseTo((90 * Math.PI) / 180)
+  })
+
+  it('never exceeds the max diving tilt beyond the fall-speed cap', () => {
+    expect(birdTiltRadians(5000)).toBeCloseTo((90 * Math.PI) / 180)
+  })
+})
+
+describe('ground strip vs. floor collision', () => {
+  it('stays shallow enough that the bird cannot visibly sink far into it before the engine\'s floor collision fires', () => {
+    // Regression (PR #257 review): the engine's floor collision only fires once
+    // the bird's bottom edge reaches FLAPPY_BIRD_HEIGHT exactly (unchanged here
+    // by design), so a ground band taller than the bird would let the bird
+    // appear to sink fully into "solid" ground while still alive. Keeping the
+    // band well under BIRD_SIZE bounds how much pre-death overlap is visible.
+    expect(GROUND_HEIGHT).toBeLessThan(BIRD_SIZE / 2)
   })
 })
