@@ -1,37 +1,19 @@
-# Dependabot Configuration for Chore-Ganizer
-# Automatically checks for dependency updates and creates pull requests
-
+# Dependabot: monthly, grouped. Security updates ignore schedule/limits.
 version: 2
-
 updates:
-  # Backend dependencies (Node.js)
   - package-ecosystem: "npm"
     directory: "/backend"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 2
     commit-message:
       prefix: "deps"
       include: "scope"
-    labels:
-      - "dependencies"
-      - "backend"
-    reviewers:
-      - "thitar"
-    # Group minor and patch updates together
     groups:
       minor-and-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-    # Ignore specific packages if needed
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
     ignore:
-      # Don't automatically update major versions of these packages
       - dependency-name: "prisma"
         update-types: ["version-update:semver-major"]
       - dependency-name: "@prisma/client"
@@ -43,31 +25,18 @@ updates:
       - dependency-name: "@types/supertest"
         update-types: ["version-update:semver-major"]
 
-  # Frontend dependencies (Node.js)
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 2
     commit-message:
       prefix: "deps"
       include: "scope"
-    labels:
-      - "dependencies"
-      - "frontend"
-    reviewers:
-      - "thitar"
     groups:
       minor-and-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-    # Ignore major version updates for packages with breaking changes
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
     ignore:
       - dependency-name: "vite"
         update-types: ["version-update:semver-major"]
@@ -76,57 +45,26 @@ updates:
       - dependency-name: "jsdom"
         update-types: ["version-update:semver-major"]
 
-  # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
-      day: "monday"
-      time: "06:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 1
     commit-message:
       prefix: "ci"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "github-actions"
-    reviewers:
-      - "thitar"
 
-  # Docker dependencies
   - package-ecosystem: "docker"
     directory: "/backend"
     schedule:
       interval: "monthly"
-      day: "monday"
-      time: "06:00"
-      timezone: "UTC"
     open-pull-requests-limit: 1
     commit-message:
       prefix: "docker"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "docker"
-      - "backend"
-    reviewers:
-      - "thitar"
 
   - package-ecosystem: "docker"
     directory: "/frontend"
     schedule:
       interval: "monthly"
-      day: "monday"
-      time: "06:00"
-      timezone: "UTC"
     open-pull-requests-limit: 1
     commit-message:
       prefix: "docker"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "docker"
-      - "frontend"
-    reviewers:
-      - "thitar"
